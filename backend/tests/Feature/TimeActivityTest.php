@@ -10,6 +10,8 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Laravel\Sanctum\Sanctum;
 use QuickBooksOnline\API\Data\IPPTimeActivity;
 use QuickBooksOnline\API\DataService\DataService;
+use Tests\Support\ActingUser;
+use Tests\Support\MockeryCapture;
 
 covers(TimeActivityController::class);
 
@@ -58,7 +60,7 @@ describe('authenticated time activities', function () {
     });
 
     it('lists time activities from quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Query')
             ->once()
@@ -80,7 +82,7 @@ describe('authenticated time activities', function () {
     });
 
     it('paginates time activities with start position and max results', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Query')
             ->once()
@@ -100,7 +102,7 @@ describe('authenticated time activities', function () {
     });
 
     it('marks list responses as truncated when the quickbooks cap is reached', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $rows = array_map(fn (int $id) => ['Id' => (string) $id], range(1, 100));
         $dataService->shouldReceive('Query')
@@ -124,7 +126,7 @@ describe('authenticated time activities', function () {
     });
 
     it('does not mark list as truncated when the cap is reached but no probe row exists', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $rows = array_map(fn (int $id) => ['Id' => (string) $id], range(1, 100));
         $dataService->shouldReceive('Query')
@@ -148,7 +150,7 @@ describe('authenticated time activities', function () {
     });
 
     it('rejects list max results above the configured cap', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
 
         $this->getJson('/api/time-activities?max_results=101')
             ->assertUnprocessable()
@@ -156,7 +158,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns an empty list when quickbooks query result is not an array', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Query')->once()->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
@@ -174,7 +176,7 @@ describe('authenticated time activities', function () {
 
     it('returns quickbooks errors when listing time activities fails', function () {
         config(['quickbooks.expose_api_errors' => false]);
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $error = Mockery::mock();
         $error->shouldReceive('getResponseBody')->andReturn('query failed');
@@ -193,7 +195,7 @@ describe('authenticated time activities', function () {
 
     it('exposes quickbooks error details when configured', function () {
         config(['quickbooks.expose_api_errors' => true]);
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $error = Mockery::mock();
         $error->shouldReceive('getResponseBody')->andReturn('query failed');
@@ -223,7 +225,7 @@ describe('authenticated time activities', function () {
     });
 
     it('requires start and end times on create', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
 
         $this->postJson('/api/time-activities', [])
             ->assertUnprocessable()
@@ -231,7 +233,7 @@ describe('authenticated time activities', function () {
     });
 
     it('rejects end time before existing start time on update', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = (object) [
             'Id' => '12',
             'SyncToken' => '1',
@@ -255,7 +257,7 @@ describe('authenticated time activities', function () {
     });
 
     it('validates end time order on create', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
 
         $this->postJson('/api/time-activities', [
             'start_time' => '2026-07-27T17:00:00',
@@ -266,7 +268,7 @@ describe('authenticated time activities', function () {
     });
 
     it('creates a time activity with description in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Add')
@@ -285,11 +287,11 @@ describe('authenticated time activities', function () {
             'description' => 'Billable work',
         ])->assertCreated();
 
-        expect($captured->Description)->toBe('Billable work');
+        expect(MockeryCapture::unwrap($captured)->Description)->toBe('Billable work');
     });
 
     it('returns quickbooks errors when creating a time activity fails', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $error = Mockery::mock();
         $error->shouldReceive('getResponseBody')->andReturn('create failed');
@@ -309,7 +311,7 @@ describe('authenticated time activities', function () {
     });
 
     it('creates a time activity in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => '99']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
@@ -328,7 +330,7 @@ describe('authenticated time activities', function () {
     });
 
     it('includes customer reference when provided on create', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Add')
@@ -348,14 +350,14 @@ describe('authenticated time activities', function () {
             'end_time' => '2026-07-27T17:00:00',
         ])->assertCreated();
 
-        expect($captured->CustomerRef)->toMatchArray([
+        expect(MockeryCapture::unwrap($captured)->CustomerRef)->toMatchArray([
             'value' => '42',
             'name' => 'Acme Corp',
         ]);
     });
 
     it('includes customer reference without name when only ref is provided', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Add')
@@ -374,12 +376,13 @@ describe('authenticated time activities', function () {
             'end_time' => '2026-07-27T17:00:00',
         ])->assertCreated();
 
-        expect($captured->CustomerRef)->toMatchArray(['value' => '42'])
-            ->and(isset($captured->CustomerRef->name))->toBeFalse();
+        $payload = MockeryCapture::unwrap($captured);
+        expect($payload->CustomerRef)->toMatchArray(['value' => '42'])
+            ->and(isset($payload->CustomerRef->name))->toBeFalse();
     });
 
     it('omits description when explicitly null on create', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Add')
@@ -398,12 +401,13 @@ describe('authenticated time activities', function () {
             'description' => null,
         ])->assertCreated();
 
-        expect(isset($captured->Description))->toBeFalse();
+        $payload = MockeryCapture::unwrap($captured);
+        expect(isset($payload->Description))->toBeFalse();
     });
 
     it('omits empty customer names on create', function () {
-        auth()->user()->update(['qbo_employee_name' => null]);
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        ActingUser::current()->update(['qbo_employee_name' => null]);
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Add')
@@ -423,13 +427,14 @@ describe('authenticated time activities', function () {
             'end_time' => '2026-07-27T17:00:00',
         ])->assertCreated();
 
-        expect($captured->EmployeeRef)->toMatchArray(['value' => '7'])
-            ->and(isset($captured->EmployeeRef->name))->toBeFalse()
-            ->and(isset($captured->CustomerRef))->toBeFalse();
+        $payload = MockeryCapture::unwrap($captured);
+        expect($payload->EmployeeRef)->toMatchArray(['value' => '7'])
+            ->and(isset($payload->EmployeeRef->name))->toBeFalse()
+            ->and(isset($payload->CustomerRef))->toBeFalse();
     });
 
     it('returns 404 when a time activity belongs to another employee', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $activity = (object) [
             'Id' => '1',
             'EmployeeRef' => (object) ['value' => '99'],
@@ -446,7 +451,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns 404 when a time activity is missing', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', 'missing')->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
@@ -459,7 +464,7 @@ describe('authenticated time activities', function () {
     });
 
     it('shows an existing time activity from quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $activity = (object) [
             'Id' => '1',
             'Description' => 'Support',
@@ -479,7 +484,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns 404 when updating a missing time activity', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', 'missing')->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
@@ -494,7 +499,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns 404 when deleting a missing time activity', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', 'missing')->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
@@ -507,7 +512,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns quickbooks errors when showing a time activity fails', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
         $error = Mockery::mock();
         $error->shouldReceive('getResponseBody')->andReturn('find failed');
@@ -524,7 +529,7 @@ describe('authenticated time activities', function () {
     });
 
     it('updates a time activity in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = new IPPTimeActivity;
         $existing->Id = '12';
         $existing->SyncToken = '1';
@@ -548,7 +553,7 @@ describe('authenticated time activities', function () {
     });
 
     it('rejects invalid end time on update', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = (object) [
             'Id' => '12',
             'SyncToken' => '1',
@@ -576,14 +581,13 @@ describe('authenticated time activities', function () {
     });
 
     it('updates start time and description in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = new IPPTimeActivity;
         $existing->Id = '12';
         $existing->SyncToken = '1';
         $existing->StartTime = '2026-07-27T09:00:00';
         $existing->EmployeeRef = (object) ['value' => '7'];
         $existing->EndTime = '2026-07-27T18:00:00';
-        $existing->EmployeeRef = (object) ['value' => '7'];
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('FindById')->once()->andReturn($existing);
@@ -602,19 +606,19 @@ describe('authenticated time activities', function () {
             'description' => 'Updated scope',
         ])->assertOk();
 
-        expect($captured->StartTime)->toBe('2026-07-27T10:00:00')
-            ->and($captured->Description)->toBe('Updated scope');
+        $payload = MockeryCapture::unwrap($captured);
+        expect($payload->StartTime)->toBe('2026-07-27T10:00:00')
+            ->and($payload->Description)->toBe('Updated scope');
     });
 
     it('returns quickbooks errors when updating a time activity fails', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = new IPPTimeActivity;
         $existing->Id = '12';
         $existing->SyncToken = '1';
         $existing->StartTime = '2026-07-27T09:00:00';
         $existing->EmployeeRef = (object) ['value' => '7'];
         $existing->EndTime = '2026-07-27T18:00:00';
-        $existing->EmployeeRef = (object) ['value' => '7'];
         $error = Mockery::mock();
         $error->shouldReceive('getResponseBody')->andReturn('update failed');
         $dataService = Mockery::mock(DataService::class);
@@ -632,7 +636,7 @@ describe('authenticated time activities', function () {
     });
 
     it('rejects invalid start time on update', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = (object) [
             'Id' => '12',
             'SyncToken' => '1',
@@ -653,7 +657,7 @@ describe('authenticated time activities', function () {
     });
 
     it('rejects partial time updates when existing end time is missing', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = (object) [
             'Id' => '12',
             'SyncToken' => '1',
@@ -676,7 +680,7 @@ describe('authenticated time activities', function () {
     });
 
     it('rejects partial time updates when existing start time is missing', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = (object) [
             'Id' => '12',
             'SyncToken' => '1',
@@ -699,7 +703,7 @@ describe('authenticated time activities', function () {
     });
 
     it('deletes a time activity in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = (object) [
             'Id' => '12',
             'SyncToken' => '1',
@@ -718,7 +722,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns quickbooks errors when deleting a time activity fails', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $existing = (object) [
             'Id' => '12',
             'SyncToken' => '1',
@@ -739,7 +743,7 @@ describe('authenticated time activities', function () {
     });
 
     it('refreshes expired quickbooks tokens before api calls', function () {
-        $user = auth()->user();
+        $user = ActingUser::current();
         $token = QuickBooksToken::factory()->forUser($user)->expired()->create();
         $refreshed = QuickBooksToken::factory()->forUser($user)->make([
             'id' => $token->id,
@@ -762,7 +766,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns forbidden when quickbooks token refresh fails', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->expired()->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->expired()->create();
 
         $this->partialMock(QuickBooksService::class, function ($mock) {
             $mock->shouldReceive('refreshToken')
@@ -776,7 +780,7 @@ describe('authenticated time activities', function () {
     });
 
     it('returns service unavailable when quickbooks token refresh is locked', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->expired()->create();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->expired()->create();
 
         $this->partialMock(QuickBooksService::class, function ($mock) {
             $mock->shouldReceive('refreshToken')
@@ -790,7 +794,7 @@ describe('authenticated time activities', function () {
     });
 
     it('uses the latest quickbooks token for the authenticated user', function () {
-        $user = auth()->user();
+        $user = ActingUser::current();
         QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'old-realm']);
         $latest = QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'new-realm']);
 

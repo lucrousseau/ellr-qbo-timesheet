@@ -13,6 +13,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Validator;
 use QuickBooksOnline\API\Data\IPPTimeActivity;
 use QuickBooksOnline\API\DataService\DataService;
+use Tests\Support\MockeryCapture;
 
 covers(TimeActivityService::class);
 
@@ -119,15 +120,17 @@ it('creates a time activity for a user', function () {
         'customer_name' => 'Acme',
     ]);
 
+    $payload = MockeryCapture::unwrap($captured);
+
     expect($result->Id)->toBe('99')
-        ->and($captured->NameOf->value)->toBe('Employee')
-        ->and((string) $captured->EmployeeRef->value)->toBe('7')
-        ->and($captured->EmployeeRef->name)->toBe('Jane Doe')
-        ->and($captured->StartTime)->toBe('2026-07-27T09:00:00')
-        ->and($captured->EndTime)->toBe('2026-07-27T17:00:00')
-        ->and($captured->Description)->toBe('Client work')
-        ->and((string) $captured->CustomerRef->value)->toBe('42')
-        ->and($captured->CustomerRef->name)->toBe('Acme');
+        ->and($payload->NameOf->value)->toBe('Employee')
+        ->and((string) $payload->EmployeeRef->value)->toBe('7')
+        ->and($payload->EmployeeRef->name)->toBe('Jane Doe')
+        ->and($payload->StartTime)->toBe('2026-07-27T09:00:00')
+        ->and($payload->EndTime)->toBe('2026-07-27T17:00:00')
+        ->and($payload->Description)->toBe('Client work')
+        ->and((string) $payload->CustomerRef->value)->toBe('42')
+        ->and($payload->CustomerRef->name)->toBe('Acme');
 });
 
 it('omits optional customer and description fields when absent', function () {
@@ -150,10 +153,12 @@ it('omits optional customer and description fields when absent', function () {
         'customer_ref' => '',
     ]);
 
-    expect((string) $captured->EmployeeRef->value)->toBe('7')
-        ->and(isset($captured->EmployeeRef->name))->toBeFalse()
-        ->and(isset($captured->Description))->toBeFalse()
-        ->and(isset($captured->CustomerRef))->toBeFalse();
+    $payload = MockeryCapture::unwrap($captured);
+
+    expect((string) $payload->EmployeeRef->value)->toBe('7')
+        ->and(isset($payload->EmployeeRef->name))->toBeFalse()
+        ->and(isset($payload->Description))->toBeFalse()
+        ->and(isset($payload->CustomerRef))->toBeFalse();
 });
 
 it('finds a time activity for a user', function () {
@@ -257,7 +262,7 @@ it('requires sync token in the update payload', function () {
         'description' => 'Sync token required',
     ]);
 
-    expect($captured->SyncToken)->toBe('4');
+    expect(MockeryCapture::unwrap($captured)->SyncToken)->toBe('4');
 });
 
 it('updates a time activity using existing times when only description changes', function () {
@@ -282,9 +287,11 @@ it('updates a time activity using existing times when only description changes',
         'description' => 'Notes only',
     ]);
 
-    expect($captured->Description)->toBe('Notes only')
-        ->and($captured->StartTime)->toBe('2026-07-27T09:00:00')
-        ->and($captured->EndTime)->toBe('2026-07-27T17:00:00');
+    $payload = MockeryCapture::unwrap($captured);
+
+    expect($payload->Description)->toBe('Notes only')
+        ->and($payload->StartTime)->toBe('2026-07-27T09:00:00')
+        ->and($payload->EndTime)->toBe('2026-07-27T17:00:00');
 });
 
 it('rejects equal start and end times on update', function () {
@@ -396,12 +403,14 @@ it('updates a time activity for a user', function () {
         'end_time' => '2026-07-27T18:00:00',
     ]);
 
+    $payload = MockeryCapture::unwrap($captured);
+
     expect($result->Id)->toBe('10')
-        ->and($captured->Id->value)->toBe('10')
-        ->and($captured->SyncToken)->toBe('0')
-        ->and($captured->StartTime)->toBe('2026-07-27T10:00:00')
-        ->and($captured->EndTime)->toBe('2026-07-27T18:00:00')
-        ->and($captured->Description)->toBe('Updated notes');
+        ->and($payload->Id->value)->toBe('10')
+        ->and($payload->SyncToken)->toBe('0')
+        ->and($payload->StartTime)->toBe('2026-07-27T10:00:00')
+        ->and($payload->EndTime)->toBe('2026-07-27T18:00:00')
+        ->and($payload->Description)->toBe('Updated notes');
 });
 
 it('aborts when updating a time activity fails in quickbooks', function () {
