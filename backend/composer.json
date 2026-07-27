@@ -67,9 +67,9 @@
         "qa": [
             "@format:check",
             "@analyse",
+            "@test:behat",
             "@test:coverage",
-            "@test:arch",
-            "@test:behat"
+            "@test:arch"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
