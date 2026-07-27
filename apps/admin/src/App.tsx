@@ -5,6 +5,7 @@ import {
   getApiErrorMessage,
   login,
   logout,
+  updateQboEmployee,
   type User,
 } from '@ellr/api-client'
 
@@ -22,6 +23,9 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
+  const [qboEmployeeRef, setQboEmployeeRef] = useState('')
+  const [qboEmployeeName, setQboEmployeeName] = useState('')
+  const [savingEmployee, setSavingEmployee] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -47,6 +51,8 @@ function App() {
       .then((currentUser) => {
         setUser(currentUser)
         if (currentUser) {
+          setQboEmployeeRef(currentUser.qbo_employee_ref ?? '')
+          setQboEmployeeName(currentUser.qbo_employee_name ?? '')
           return apiFetch<QuickBooksStatus>('/quickbooks/status').then(setStatus)
         }
         return undefined
@@ -62,6 +68,9 @@ function App() {
     try {
       const loggedInUser = await login(email, password)
       setUser(loggedInUser)
+      setPassword('')
+      setQboEmployeeRef(loggedInUser.qbo_employee_ref ?? '')
+      setQboEmployeeName(loggedInUser.qbo_employee_name ?? '')
       const quickBooksStatus = await apiFetch<QuickBooksStatus>('/quickbooks/status')
       setStatus(quickBooksStatus)
     } catch (caught) {
@@ -89,6 +98,22 @@ function App() {
     } catch (caught) {
       setError(getApiErrorMessage(caught, 'Impossible de démarrer la connexion QuickBooks.'))
       setConnecting(false)
+    }
+  }
+
+  const saveQboEmployee = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setSavingEmployee(true)
+    setError(null)
+
+    try {
+      const updatedUser = await updateQboEmployee(qboEmployeeRef, qboEmployeeName || undefined)
+      setUser(updatedUser)
+      setNotice('Employé QuickBooks enregistré.')
+    } catch (caught) {
+      setError(getApiErrorMessage(caught, 'Impossible d\'enregistrer l\'employé QuickBooks.'))
+    } finally {
+      setSavingEmployee(false)
     }
   }
 
@@ -171,6 +196,37 @@ function App() {
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-medium text-slate-900">Connexion QuickBooks Online</h2>
           <p className="mt-2 text-sm text-slate-600">Connecté en tant que {user.email}</p>
+
+          <form className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4" onSubmit={saveQboEmployee}>
+            <h3 className="text-sm font-medium text-slate-900">Employé QuickBooks</h3>
+            <p className="text-sm text-slate-600">
+              Associez ce compte à un employé QBO pour la feuille de temps.
+            </p>
+            <label className="block text-sm font-medium text-slate-700">
+              ID employé QBO
+              <input
+                required
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                value={qboEmployeeRef}
+                onChange={(event) => setQboEmployeeRef(event.target.value)}
+              />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
+              Nom employé (optionnel)
+              <input
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                value={qboEmployeeName}
+                onChange={(event) => setQboEmployeeName(event.target.value)}
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={savingEmployee}
+              className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {savingEmployee ? 'Enregistrement...' : 'Enregistrer l\'employé'}
+            </button>
+          </form>
 
           {notice && (
             <p className="mt-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-green-800">{notice}</p>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\QuickBooksException;
 use App\Http\Controllers\Controller;
 use App\Models\QuickBooksToken;
+use App\Models\User;
 use App\Services\QuickBooksService;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\JsonResponse;
@@ -13,16 +14,23 @@ use QuickBooksOnline\API\Facades\TimeActivity;
 
 class TimeActivityController extends Controller
 {
+    private const MAX_EMPLOYEE_REF_LENGTH = 255;
+
+    private const MAX_NAME_LENGTH = 255;
+
     public function __construct(
         private readonly QuickBooksService $quickBooks,
     ) {}
 
     public function index(): JsonResponse
     {
+        $employeeRef = $this->resolveEmployeeRef();
         $token = $this->resolveToken();
         $dataService = $this->quickBooks->dataService($token);
 
-        $activities = $dataService->Query('SELECT * FROM TimeActivity MAXRESULTS 100');
+        $activities = $dataService->Query(
+            "SELECT * FROM TimeActivity WHERE EmployeeRef = '{$this->escapeQueryValue($employeeRef)}' MAXRESULTS 100",
+        );
 
         if ($error = $dataService->getLastError()) {
             return $this->quickBooksApiError($error);
@@ -34,26 +42,26 @@ class TimeActivityController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'employee_ref' => ['required', 'string'],
-            'employee_name' => ['nullable', 'string'],
-            'customer_ref' => ['nullable', 'string'],
-            'customer_name' => ['nullable', 'string'],
+            'customer_ref' => ['nullable', 'string', 'max:'.self::MAX_EMPLOYEE_REF_LENGTH],
+            'customer_name' => ['nullable', 'string', 'max:'.self::MAX_NAME_LENGTH],
             'start_time' => ['required', 'date'],
             'end_time' => ['required', 'date', 'after:start_time'],
             'description' => ['nullable', 'string', 'max:4000'],
         ]);
 
+        $employeeRef = $this->resolveEmployeeRef();
+        $user = auth()->user();
         $token = $this->resolveToken();
         $dataService = $this->quickBooks->dataService($token);
 
-        $employeeRef = ['value' => $validated['employee_ref']];
-        if (! empty($validated['employee_name'])) {
-            $employeeRef['name'] = $validated['employee_name'];
+        $employeePayload = ['value' => $employeeRef];
+        if (! empty($user->qbo_employee_name)) {
+            $employeePayload['name'] = $user->qbo_employee_name;
         }
 
         $timeActivityPayload = [
             'NameOf' => 'Employee',
-            'EmployeeRef' => $employeeRef,
+            'EmployeeRef' => $employeePayload,
             'StartTime' => $validated['start_time'],
             'EndTime' => $validated['end_time'],
         ];
@@ -96,6 +104,8 @@ class TimeActivityController extends Controller
             return response()->json(['message' => 'Time activity not found'], 404);
         }
 
+        $this->assertActivityBelongsToUser($activity);
+
         return response()->json(['data' => $activity]);
     }
 
@@ -119,6 +129,8 @@ class TimeActivityController extends Controller
         if (! $existing) {
             return response()->json(['message' => 'Time activity not found'], 404);
         }
+
+        $this->assertActivityBelongsToUser($existing);
 
         $startTime = $validated['start_time'] ?? $existing->StartTime ?? null;
         $endTime = $validated['end_time'] ?? $existing->EndTime ?? null;
@@ -172,6 +184,8 @@ class TimeActivityController extends Controller
             return response()->json(['message' => 'Time activity not found'], 404);
         }
 
+        $this->assertActivityBelongsToUser($existing);
+
         $dataService->Delete($existing);
 
         if ($error = $dataService->getLastError()) {
@@ -179,6 +193,52 @@ class TimeActivityController extends Controller
         }
 
         return response()->json(null, 204);
+    }
+
+    private function resolveEmployeeRef(): string
+    {
+        /** @var User|null $user */
+        $user = auth()->user();
+        $employeeRef = $user?->qbo_employee_ref;
+
+        if ($employeeRef === null || $employeeRef === '') {
+            abort(response()->json([
+                'message' => 'QBO employee is not configured for this user.',
+                'error' => 'qbo_employee_not_configured',
+            ], 403));
+        }
+
+        return $employeeRef;
+    }
+
+    private function assertActivityBelongsToUser(object $activity): void
+    {
+        $employeeRef = $this->resolveEmployeeRef();
+        $activityEmployeeRef = $this->extractEmployeeRef($activity);
+
+        if ($activityEmployeeRef !== $employeeRef) {
+            abort(response()->json(['message' => 'Time activity not found'], 404));
+        }
+    }
+
+    private function extractEmployeeRef(object $activity): ?string
+    {
+        $employeeRef = $activity->EmployeeRef ?? null;
+
+        if ($employeeRef === null) {
+            return null;
+        }
+
+        if (is_object($employeeRef) && isset($employeeRef->value)) {
+            return (string) $employeeRef->value;
+        }
+
+        return (string) $employeeRef;
+    }
+
+    private function escapeQueryValue(string $value): string
+    {
+        return str_replace("'", "\\'", $value);
     }
 
     private function resolveToken(): QuickBooksToken

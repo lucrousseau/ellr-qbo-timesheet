@@ -12,24 +12,74 @@ export class ApiError extends Error {
 
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
 
-const CSRF_URL = API_URL.replace(/\/api$/, '/sanctum/csrf-cookie')
+let csrfPrimed = false
+
+/** @internal Test helper */
+export function resetCsrfStateForTests(): void {
+  csrfPrimed = false
+}
+
+function resolveCsrfUrl(): string {
+  try {
+    const apiUrl = new URL(API_URL)
+    const basePath = apiUrl.pathname.replace(/\/api\/?$/, '')
+    apiUrl.pathname = `${basePath}/sanctum/csrf-cookie`.replace(/\/{2,}/g, '/')
+    return apiUrl.toString()
+  } catch {
+    return API_URL.replace(/\/api\/?$/, '/sanctum/csrf-cookie')
+  }
+}
+
+function readXsrfToken(): string | null {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/)
+  if (!match?.[1]) {
+    return null
+  }
+
+  return decodeURIComponent(match[1])
+}
+
+function isMutatingMethod(method?: string): boolean {
+  const normalized = (method ?? 'GET').toUpperCase()
+  return normalized !== 'GET' && normalized !== 'HEAD' && normalized !== 'OPTIONS'
+}
 
 export async function ensureCsrfCookie(): Promise<void> {
-  await fetch(CSRF_URL, {
+  await fetch(resolveCsrfUrl(), {
     credentials: 'include',
     headers: { Accept: 'application/json' },
   })
+  csrfPrimed = true
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const { headers: initHeaders, credentials: initCredentials, ...rest } = init ?? {}
+  const { headers: initHeaders, credentials: initCredentials, method, ...rest } = init ?? {}
+  const normalizedMethod = method ?? 'GET'
+  let csrfHeaders: Record<string, string> = {}
+
+  if (isMutatingMethod(normalizedMethod)) {
+    if (!csrfPrimed || readXsrfToken() === null) {
+      await ensureCsrfCookie()
+    }
+
+    const xsrfToken = readXsrfToken()
+    if (xsrfToken) {
+      csrfHeaders['X-XSRF-TOKEN'] = xsrfToken
+    }
+  }
 
   const response = await fetch(`${API_URL}${path}`, {
     ...rest,
+    method: normalizedMethod,
     credentials: initCredentials ?? 'include',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      ...csrfHeaders,
       ...normalizeHeaders(initHeaders),
     },
   })
@@ -97,6 +147,9 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
       }
       if (error.code === 'registration_disabled') {
         return 'Inscription désactivée.'
+      }
+      if (error.code === 'qbo_employee_not_configured') {
+        return 'Employé QuickBooks non configuré. Contactez un administrateur.'
       }
       return 'Accès refusé.'
     }

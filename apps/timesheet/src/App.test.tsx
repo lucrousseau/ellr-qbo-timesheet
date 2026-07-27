@@ -15,6 +15,14 @@ vi.mock('@ellr/api-client', async () => {
   }
 })
 
+const authenticatedUser = {
+  id: 1,
+  name: 'Test User',
+  email: 'test@example.com',
+  qbo_employee_ref: '7',
+  qbo_employee_name: 'Jane Doe',
+}
+
 describe('Timesheet App', () => {
   beforeEach(() => {
     vi.mocked(apiFetch).mockReset()
@@ -93,13 +101,9 @@ describe('Timesheet App', () => {
     })
   })
 
-  it('submits optional employee and description fields', async () => {
+  it('submits optional description fields', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockResolvedValue({ data: { Id: '1' } })
 
     render(<App />)
@@ -108,8 +112,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
-    await user.type(screen.getByLabelText(/nom employé/i), 'Jane Doe')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.type(screen.getByLabelText(/description/i), 'Support client')
@@ -120,8 +122,6 @@ describe('Timesheet App', () => {
       const [, init] = vi.mocked(apiFetch).mock.calls.at(-1)!
       const body = JSON.parse(init?.body as string)
       expect(body).toMatchObject({
-        employee_ref: '7',
-        employee_name: 'Jane Doe',
         description: 'Support client',
       })
       expect(body.start_time).toContain('2026-07-27')
@@ -151,11 +151,7 @@ describe('Timesheet App', () => {
 
   it('shows a service unavailable error on submission', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockRejectedValue(new ApiError(503, 'API error: 503'))
 
     render(<App />)
@@ -164,7 +160,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.click(screen.getByRole('button', { name: /enregistrer/i }))
@@ -186,7 +181,20 @@ describe('Timesheet App', () => {
     })
   })
 
-  it('renders the time entry form when authenticated', async () => {
+  it('renders the time entry form when authenticated with a configured employee', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /feuille de temps/i })).toBeInTheDocument()
+      expect(screen.getByText('Connecté en tant que test@example.com')).toBeInTheDocument()
+      expect(screen.getByText(/Jane Doe \(7\)/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
+    })
+  })
+
+  it('shows a message when the qbo employee is not configured', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       id: 1,
       name: 'Test User',
@@ -196,19 +204,14 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /feuille de temps/i })).toBeInTheDocument()
-      expect(screen.getByText('Connecté en tant que test@example.com')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
+      expect(screen.getByText(/employé quickbooks non configuré/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /enregistrer/i })).not.toBeInTheDocument()
     })
   })
 
   it('submits a time entry through the api', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockResolvedValue({ data: { Id: '1' } })
 
     render(<App />)
@@ -217,7 +220,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.click(screen.getByRole('button', { name: /enregistrer/i }))
@@ -228,7 +230,6 @@ describe('Timesheet App', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
-            employee_ref: '7',
             start_time: '2026-07-27T09:00',
             end_time: '2026-07-27T17:00',
           }),
@@ -241,11 +242,7 @@ describe('Timesheet App', () => {
 
   it('shows a quickbooks connection error on forbidden responses', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockRejectedValue(new ApiError(403, 'API error: 403', 'quickbooks_not_connected'))
 
     render(<App />)
@@ -254,7 +251,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.click(screen.getByRole('button', { name: /enregistrer/i }))
@@ -266,11 +262,7 @@ describe('Timesheet App', () => {
 
   it('shows a quickbooks expired error on forbidden responses', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockRejectedValue(new ApiError(403, 'API error: 403', 'quickbooks_expired'))
 
     render(<App />)
@@ -279,7 +271,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.click(screen.getByRole('button', { name: /enregistrer/i }))
@@ -291,11 +282,7 @@ describe('Timesheet App', () => {
 
   it('shows a generic error when submission fails', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockRejectedValue(new Error('failed'))
 
     render(<App />)
@@ -304,7 +291,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.click(screen.getByRole('button', { name: /enregistrer/i }))
@@ -318,11 +304,7 @@ describe('Timesheet App', () => {
   it('logs in from the timesheet app', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(null)
-    vi.mocked(login).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(login).mockResolvedValue(authenticatedUser)
 
     render(<App />)
 
@@ -342,33 +324,23 @@ describe('Timesheet App', () => {
 
   it('updates optional form fields', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/nom employé/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/nom employé/i), 'Jane Doe')
     await user.type(screen.getByLabelText(/description/i), 'Support client')
 
-    expect(screen.getByLabelText(/nom employé/i)).toHaveValue('Jane Doe')
     expect(screen.getByLabelText(/description/i)).toHaveValue('Support client')
   })
 
   it('logs out from the timesheet app', async () => {
     const user = userEvent.setup()
     const { logout } = await import('@ellr/api-client')
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
 
     render(<App />)
 
@@ -388,11 +360,7 @@ describe('Timesheet App', () => {
     const user = userEvent.setup()
     const { logout } = await import('@ellr/api-client')
     vi.mocked(logout).mockRejectedValue(new ApiError(500, 'API error: 500'))
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
 
     render(<App />)
 
@@ -409,11 +377,7 @@ describe('Timesheet App', () => {
 
   it('disables submit while saving', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve({ data: { Id: '1' } }), 100)),
     )
@@ -424,7 +388,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.click(screen.getByRole('button', { name: /enregistrer/i }))
@@ -440,11 +403,7 @@ describe('Timesheet App', () => {
 
   it('omits optional fields from the submission payload', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(apiFetch).mockResolvedValue({ data: { Id: '1' } })
 
     render(<App />)
@@ -453,7 +412,6 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('button', { name: /enregistrer/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
     await user.type(screen.getByLabelText(/début/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/fin/i), '2026-07-27T17:00')
     await user.click(screen.getByRole('button', { name: /enregistrer/i }))
@@ -462,7 +420,6 @@ describe('Timesheet App', () => {
       const [, init] = vi.mocked(apiFetch).mock.calls.at(-1)!
       const body = JSON.parse(init?.body as string)
       expect(body).toEqual({
-        employee_ref: '7',
         start_time: '2026-07-27T09:00',
         end_time: '2026-07-27T17:00',
       })

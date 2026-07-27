@@ -99,6 +99,7 @@ npm run dev:timesheet
 | POST | `/api/login` | Connexion Sanctum |
 | POST | `/api/logout` | Déconnexion (auth) |
 | GET | `/api/user` | Utilisateur courant (auth) |
+| PATCH | `/api/user/qbo-employee` | Associer un employé QBO au compte (auth) |
 | GET | `/api/quickbooks/connect` | URL d'autorisation OAuth2 (auth) |
 | GET | `/api/quickbooks/callback` | Callback OAuth2 Intuit |
 | GET | `/api/quickbooks/status` | Statut connexion QBO (auth) |
@@ -128,6 +129,8 @@ DB_CONNECTION=mysql
 SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SESSION_SAME_SITE=lax
+SESSION_ENCRYPT=true
+SESSION_DOMAIN=.votredomaine.com
 
 CACHE_STORE=redis
 QUEUE_CONNECTION=redis
@@ -167,7 +170,9 @@ Servir `apps/admin/dist` et `apps/timesheet/dist` en HTTPS (CDN, nginx, etc.). L
 - `ALLOW_REGISTRATION=false` : pas d'inscription publique
 - `QUICKBOOKS_EXPOSE_API_ERRORS=false` : ne pas exposer les corps d'erreur Intuit
 - Tokens OAuth chiffrés en base (`quickbooks_tokens`), jamais loggés
-- CORS/Sanctum : domaines front listés dans `SANCTUM_STATEFUL_DOMAINS`
+- CORS/Sanctum : domaines front listés dans `SANCTUM_STATEFUL_DOMAINS` ; `config/cors.php` avec `supports_credentials`
+- Cookies session : `SESSION_DOMAIN` parent (ex. `.votredomaine.com`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
+- Employé QBO lié par utilisateur (`qbo_employee_ref`) : configuré depuis l'admin, validé côté API
 
 ### Validation pré-release
 

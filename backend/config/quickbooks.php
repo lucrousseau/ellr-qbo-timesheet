@@ -30,6 +30,6 @@ return [
     |
     */
 
-    'expose_api_errors' => (bool) env('QUICKBOOKS_EXPOSE_API_ERRORS', env('APP_DEBUG', false)),
+    'expose_api_errors' => (bool) env('QUICKBOOKS_EXPOSE_API_ERRORS', false),
 
 ];

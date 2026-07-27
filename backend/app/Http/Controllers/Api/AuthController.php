@@ -75,4 +75,17 @@ class AuthController extends Controller
     {
         return response()->json(['user' => $request->user()]);
     }
+
+    public function updateQboEmployee(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'qbo_employee_ref' => ['required', 'string', 'max:255'],
+            'qbo_employee_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = $request->user();
+        $user->update($validated);
+
+        return response()->json(['user' => $user->fresh()]);
+    }
 }

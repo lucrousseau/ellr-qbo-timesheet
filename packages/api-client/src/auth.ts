@@ -1,14 +1,14 @@
-import { ApiError, apiFetch, ensureCsrfCookie } from './api'
+import { ApiError, apiFetch } from './api'
 
 export type User = {
   id: number
   name: string
   email: string
+  qbo_employee_ref?: string | null
+  qbo_employee_name?: string | null
 }
 
 export async function login(email: string, password: string): Promise<User> {
-  await ensureCsrfCookie()
-
   const response = await apiFetch<{ user: User }>('/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
@@ -18,13 +18,10 @@ export async function login(email: string, password: string): Promise<User> {
 }
 
 export async function logout(): Promise<void> {
-  await ensureCsrfCookie()
   await apiFetch('/logout', { method: 'POST' })
 }
 
 export async function fetchCurrentUser(): Promise<User | null> {
-  await ensureCsrfCookie()
-
   try {
     const response = await apiFetch<{ user: User }>('/user')
     return response.user
@@ -34,4 +31,19 @@ export async function fetchCurrentUser(): Promise<User | null> {
     }
     throw error
   }
+}
+
+export async function updateQboEmployee(
+  qboEmployeeRef: string,
+  qboEmployeeName?: string,
+): Promise<User> {
+  const response = await apiFetch<{ user: User }>('/user/qbo-employee', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      qbo_employee_ref: qboEmployeeRef,
+      qbo_employee_name: qboEmployeeName ?? null,
+    }),
+  })
+
+  return response.user
 }

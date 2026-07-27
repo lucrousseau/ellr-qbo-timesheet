@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage } from './api'
+import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
 import { fetchCurrentUser, login, logout } from './auth'
 
 describe('apiFetch', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    document.cookie = ''
+    resetCsrfStateForTests()
   })
 
   it('returns parsed json for successful responses', async () => {
@@ -281,7 +283,13 @@ describe('getApiErrorMessage', () => {
 describe('auth helpers', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    document.cookie = ''
+    resetCsrfStateForTests()
   })
+
+  function mockCsrfCookie(token = 'csrf-token-value') {
+    document.cookie = `XSRF-TOKEN=${encodeURIComponent(token)}`
+  }
 
   it('primes the csrf cookie endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true })
@@ -298,7 +306,40 @@ describe('auth helpers', () => {
     )
   })
 
+  it('sends the xsrf token header on mutating requests', async () => {
+    mockCsrfCookie('encoded-token')
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ message: 'ok' }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await apiFetch('/logout', { method: 'POST' })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/logout',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'X-XSRF-TOKEN': 'encoded-token',
+        }),
+      }),
+    )
+  })
+
+  it('maps qbo employee not configured responses', () => {
+    expect(
+      getApiErrorMessage(new ApiError(403, 'API error: 403', 'qbo_employee_not_configured'), 'fallback'),
+    ).toBe('Employé QuickBooks non configuré. Contactez un administrateur.')
+  })
+
   it('logs in and returns the user', async () => {
+    mockCsrfCookie()
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: true })
@@ -315,33 +356,27 @@ describe('auth helpers', () => {
       email: 'jane@example.com',
     })
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
+    expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:8000/api/login',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ email: 'jane@example.com', password: 'password' }),
+        headers: expect.objectContaining({
+          'X-XSRF-TOKEN': expect.any(String),
+        }),
       }),
     )
   })
 
   it('returns null when the current user is unauthorized', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-      })
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+    })
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(fetchCurrentUser()).resolves.toBeNull()
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'http://localhost:8000/sanctum/csrf-cookie',
-      expect.objectContaining({ credentials: 'include' }),
-    )
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'http://localhost:8000/api/user', expect.any(Object))
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8000/api/user', expect.any(Object))
   })
 
   it('rethrows unexpected current user errors', async () => {
@@ -357,6 +392,7 @@ describe('auth helpers', () => {
   })
 
   it('logs out through the api', async () => {
+    mockCsrfCookie()
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({ ok: true })
@@ -377,7 +413,12 @@ describe('auth helpers', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       'http://localhost:8000/api/logout',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'X-XSRF-TOKEN': expect.any(String),
+        }),
+      }),
     )
   })
 })

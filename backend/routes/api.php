@@ -13,11 +13,14 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback']);
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback']);
+});
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
+    Route::patch('/user/qbo-employee', [AuthController::class, 'updateQboEmployee']);
 
     Route::prefix('quickbooks')->group(function () {
         Route::get('/connect', [QuickBooksAuthController::class, 'connect']);

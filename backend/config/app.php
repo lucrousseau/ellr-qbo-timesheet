@@ -51,7 +51,7 @@ return [
     |
     */
 
-    'allow_registration' => (bool) env('ALLOW_REGISTRATION', true),
+    'allow_registration' => (bool) env('ALLOW_REGISTRATION', env('APP_ENV', 'production') === 'local'),
 
     /*
     |--------------------------------------------------------------------------
