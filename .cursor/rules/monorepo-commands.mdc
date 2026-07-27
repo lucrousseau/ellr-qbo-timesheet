@@ -13,6 +13,8 @@ alwaysApply: true
 
 ## Hooks Husky
 
+Format **v9+** : les fichiers `.husky/pre-commit` et `.husky/pre-push` contiennent uniquement la commande npm (pas de shebang ni `husky.sh`, obsolète avant v10).
+
 | Hook | Commande | Vérifie |
 |------|----------|---------|
 | `pre-commit` | `npm run precommit` | oxlint (apps + api-client), Pint (backend), TypeScript |

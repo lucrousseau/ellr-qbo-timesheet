@@ -49,6 +49,8 @@ cd backend && composer test:mutation
 
 ## Hooks Git (Husky)
 
+Format v9+ : `.husky/*` = commande npm seule (pas de `husky.sh`).
+
 | Hook | Commande | Vérifie |
 |------|----------|---------|
 | `pre-commit` | `npm run precommit` | Lint + format (Pint) + typecheck |

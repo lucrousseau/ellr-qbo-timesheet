@@ -212,6 +212,8 @@ Philosophie : ne pas relire le code généré, mais l'entourer de contraintes fo
 
 ### Husky (pre-commit / pre-push)
 
+Hooks au format Husky v9+ : une commande par fichier (ex. `npm run precommit`), sans `husky.sh`.
+
 | Hook | Commande | Vérifie |
 |------|----------|---------|
 | `pre-commit` | `npm run precommit` | oxlint (apps + api-client), Pint, TypeScript |
