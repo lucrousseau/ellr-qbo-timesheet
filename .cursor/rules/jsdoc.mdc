@@ -1,0 +1,53 @@
+---
+description: Required JSDoc on public TypeScript exports (packages and apps)
+globs: apps/**/*.{ts,tsx},packages/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# JSDoc (TypeScript / React)
+
+## Scope
+
+| Area | JSDoc required |
+|------|----------------|
+| `packages/api-client`, `@ellr/ui`, `@ellr/test-utils`, `@ellr/vite-config` | All **public exports** and **module-level helpers** (see `oxlint.packages.json`) |
+| `apps/admin`, `apps/timesheet` | Public exports only (`oxlint.app.json`; React handlers stay undocumented) |
+| `*.test.ts`, `*.spec.ts` | No (excluded from package lint) |
+| Internal class methods | No (except **public methods on exported classes** in `packages/*`) |
+
+## Content
+
+- **Description** in **English**, one clear sentence.
+- **`@param`** for each parameter (no `@param {type}`: TypeScript is enough).
+- **`@returns`** for functions that return a value (including `Promise<void>`).
+- **`@internal`** on its own line for exported test helpers (e.g. `resetCsrfStateForTests`).
+
+```typescript
+/**
+ * Creates a time activity for the signed-in user's QBO employee.
+ * @param payload Time range and optional description.
+ * @returns Created QuickBooks activity data.
+ */
+export async function createTimeActivity(payload: TimeActivityPayload): Promise<TimeActivity> {
+```
+
+Exported React components: document important props via `@param props.xxx` or a short render description.
+
+## Lint (oxlint)
+
+Shared configs: `packages/vite-config/oxlint.base.json` (tag rules), `oxlint.app.json` (apps), `oxlint.packages.json` (packages).
+
+Active rules:
+
+- `jsdoc-js/require-jsdoc`: public exports only
+- `jsdoc/require-param-description`, `jsdoc/require-returns-description`
+- `jsdoc/check-tag-names`, `jsdoc/empty-tags`
+- JSDoc types **off** (`require-param-type`, `require-returns-type`: redundant with TS)
+
+`.oxlintrc.json` `extends` paths must use the repo root (`../../packages/vite-config/...`) so `eslint-plugin-jsdoc` resolves.
+
+## Agent routine
+
+1. New public export: add JSDoc before finishing the task.
+2. Run `npm run lint` (included in `precommit`).
+3. Do not line-comment obvious code; document public API intent only.

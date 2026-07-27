@@ -12,13 +12,19 @@ use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use RuntimeException;
 
+/**
+ * Behat context for API scenarios (in-memory Laravel app + HTTP assertions).
+ */
 class FeatureContext implements Context
 {
     private static ?Application $app = null;
 
     private ?TestResponse $response = null;
 
-    /** @BeforeScenario */
+    /**
+     * @BeforeScenario
+     * @return void
+     */
     public function setUpBehat(): void
     {
         $this->bootApplication();
@@ -27,25 +33,40 @@ class FeatureContext implements Context
         $this->response = null;
     }
 
-    /** @AfterScenario */
+    /**
+     * @AfterScenario
+     * @return void
+     */
     public function tearDownBehat(): void
     {
         $this->response = null;
     }
 
-    /** @Given an authenticated API user */
+    /**
+     * @Given an authenticated API user
+     * @return void
+     */
     public function anAuthenticatedApiUser(): void
     {
         Sanctum::actingAs(User::factory()->create());
     }
 
-    /** @Given I am logged out */
+    /**
+     * @Given I am logged out
+     * @return void
+     */
     public function iAmLoggedOut(): void
     {
         auth()->forgetGuards();
     }
 
-    /** @When I request :method :path with JSON: */
+    /**
+     * @When I request :method :path with JSON:
+     * @param  string  $method  HTTP method.
+     * @param  string  $path  Request path.
+     * @param  string  $body  JSON request body.
+     * @return void
+     */
     public function iRequestWithJson(string $method, string $path, string $body): void
     {
         $kernel = self::$app->make(HttpKernel::class);
@@ -58,7 +79,12 @@ class FeatureContext implements Context
         $this->response = TestResponse::fromBaseResponse($kernel->handle($request));
     }
 
-    /** @When I request :method :path */
+    /**
+     * @When I request :method :path
+     * @param  string  $method  HTTP method.
+     * @param  string  $path  Request path.
+     * @return void
+     */
     public function iRequest(string $method, string $path): void
     {
         $kernel = self::$app->make(HttpKernel::class);
@@ -71,7 +97,11 @@ class FeatureContext implements Context
         $this->response = TestResponse::fromBaseResponse($kernel->handle($request));
     }
 
-    /** @Then the response status should be :status */
+    /**
+     * @Then the response status should be :status
+     * @param  int  $status  Expected HTTP status code.
+     * @return void
+     */
     public function theResponseStatusShouldBe(int $status): void
     {
         if ($this->response === null) {
@@ -87,7 +117,12 @@ class FeatureContext implements Context
         }
     }
 
-    /** @Then the JSON field :field should be :value */
+    /**
+     * @Then the JSON field :field should be :value
+     * @param  string  $field  Dot-notated JSON field path.
+     * @param  string  $value  Expected field value.
+     * @return void
+     */
     public function theJsonFieldShouldBe(string $field, string $value): void
     {
         if ($this->response === null) {
@@ -109,6 +144,11 @@ class FeatureContext implements Context
         }
     }
 
+    /**
+     * Boots the Laravel application once per Behat process.
+     *
+     * @return void
+     */
     private function bootApplication(): void
     {
         if (self::$app !== null) {
@@ -119,6 +159,11 @@ class FeatureContext implements Context
         self::$app->make(ConsoleKernel::class)->bootstrap();
     }
 
+    /**
+     * Runs migrations against an in-memory SQLite database for isolation.
+     *
+     * @return void
+     */
     private function migrateDatabase(): void
     {
         $this->bootApplication();

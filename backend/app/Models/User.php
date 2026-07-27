@@ -14,6 +14,9 @@ use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password', 'qbo_employee_ref', 'qbo_employee_name'])]
 #[Hidden(['password', 'remember_token'])]
+/**
+ * Application user with optional QuickBooks employee association.
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -33,6 +36,8 @@ class User extends Authenticatable
     }
 
     /**
+     * Relationship to the most recent QuickBooks OAuth token.
+     *
      * @return HasOne<QuickBooksToken, $this>
      */
     public function quickBooksToken(): HasOne

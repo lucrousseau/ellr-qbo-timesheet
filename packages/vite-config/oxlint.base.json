@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "oxc", "jsdoc"],
+  "jsPlugins": [
+    {
+      "name": "jsdoc-js",
+      "specifier": "../../node_modules/eslint-plugin-jsdoc"
+    }
+  ],
+  "ignorePatterns": [".stryker-tmp/**", "build/**", "dist/**", "coverage/**"],
+  "settings": {
+    "jsdoc": {
+      "ignorePrivate": true,
+      "ignoreInternal": true
+    }
+  },
+  "rules": {
+    "jsdoc-js/require-jsdoc": [
+      "error",
+      {
+        "publicOnly": true,
+        "require": {
+          "FunctionDeclaration": true,
+          "ClassDeclaration": true,
+          "MethodDefinition": false
+        },
+        "contexts": [
+          "ExportNamedDeclaration > FunctionDeclaration",
+          "ExportNamedDeclaration > ClassDeclaration",
+          "ExportNamedDeclaration > ClassDeclaration MethodDefinition[kind='method']",
+          "ExportNamedDeclaration > TSTypeAliasDeclaration",
+          "ExportDefaultDeclaration > FunctionDeclaration"
+        ]
+      }
+    ],
+    "jsdoc/check-tag-names": "error",
+    "jsdoc/empty-tags": "error",
+    "jsdoc/require-param-description": "error",
+    "jsdoc/require-returns-description": "error",
+    "jsdoc/require-param-type": "off",
+    "jsdoc/require-returns-type": "off"
+  }
+}

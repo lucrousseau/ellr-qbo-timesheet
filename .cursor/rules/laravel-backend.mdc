@@ -1,45 +1,47 @@
 ---
-description: Conventions Laravel et tests pour le backend API
+description: Laravel conventions and tests for the API backend
 globs: backend/**/*.php
 alwaysApply: false
 ---
 
-# Backend Laravel
+# Laravel backend
 
 ## Structure
 
-- Controllers dans `app/Http/Controllers/Api/` : minces, JSON only (SRP : pas de SDK QBO, pas de règles métier lourdes).
-- Services dans `app/Services/` : suffixe `Service`, logique métier et QBO (seul point d'accès SDK).
-- Routes dans `routes/api.php`, préfixe `/api`.
-- DRY : toute logique QBO/OAuth/tokens vit dans `QuickBooksService` ; codes `error` JSON réutilisables côté frontend via `getApiErrorMessage`.
+- Controllers in `app/Http/Controllers/Api/`: thin, JSON only (SRP: no QBO SDK, no heavy business rules).
+- Services in `app/Services/`: `Service` suffix, business logic and QBO (sole SDK access point).
+- Routes in `routes/api.php`, `/api` prefix.
+- DRY: all QBO/OAuth/token logic lives in `QuickBooksService`; JSON `error` codes reused by the frontend via `getApiErrorMessage`.
 
 ## QuickBooks
 
-- SDK : `quickbooks/v3-php-sdk` via `QuickBooksService`.
-- Tokens OAuth : modèle `QuickBooksToken`, table `quickbooks_tokens`.
-- Ne pas passer `null` aux refs QBO (ex. `CustomerRef` omis si absent).
-- Codes erreur JSON : `error` (ex. `quickbooks_not_connected`, `registration_disabled`).
-- `ALLOW_REGISTRATION` contrôle l'inscription publique ; `QUICKBOOKS_EXPOSE_API_ERRORS` filtre les détails Intuit.
+- SDK: `quickbooks/v3-php-sdk` via `QuickBooksService`.
+- OAuth tokens: `QuickBooksToken` model, `quickbooks_tokens` table.
+- Do not pass `null` to QBO refs (e.g. omit `CustomerRef` when absent).
+- JSON error codes: `error` (e.g. `quickbooks_not_connected`, `registration_disabled`).
+- `ALLOW_REGISTRATION` controls public registration; `QUICKBOOKS_EXPOSE_API_ERRORS` filters Intuit details.
 
-## Tests (obligatoire)
+## Tests (required)
 
 ```php
-// Feature test avec mock
+// Feature test with mock
 $this->mock(QuickBooksService::class, function ($mock) { ... });
 
-// Scoper pour mutation testing
+// Scope for mutation testing
 covers(TimeActivityController::class);
 ```
 
-- Feature : `tests/Feature/`
-- Unit : `tests/Unit/` (ex. mock session/Auth pour `AuthController::logout`)
-- Arch : `tests/Arch/`
-- Gherkin : `features/api/*.feature`
-- Couverture minimale : **85 %** (`composer test:coverage`, standard finance QBO)
-- Mutation : **Pest `--mutate`** score ≥ 80 % (`composer test:mutation`)
-- `app/Services/QuickBooksService.php` : viser **100 %** (cœur métier OAuth + tokens)
+- Feature: `tests/Feature/`
+- Unit: `tests/Unit/` (e.g. mock session/Auth for `AuthController::logout`)
+- Arch: `tests/Arch/`
+- Gherkin: `features/api/*.feature`
+- Minimum coverage: **85 %** (`composer test:coverage`, QBO finance standard)
+- Mutation: **Pest `--mutate`** score ≥ 80 % (`composer test:mutation`)
+- `app/Services/QuickBooksService.php`: aim for **100 %** (OAuth + tokens core)
 
 ## Style
 
-- `composer format` (Pint preset Laravel) avant commit.
-- PHPStan niveau 5 : `composer analyse`.
+- `composer format` (Laravel Pint preset) before commit.
+- `composer phpcs`: required PHPDoc on `app/` (see `.cursor/rules/phpdoc.mdc`).
+- `composer lint`: Pint + PHPCS (called by root `npm run lint`).
+- PHPStan level 5: `composer analyse`.

@@ -78,7 +78,7 @@ it('rejects invalid login credentials', function () {
         'password' => 'wrong-password',
     ], frontendHeaders())
         ->assertUnauthorized()
-        ->assertJsonPath('message', 'Identifiants invalides.');
+        ->assertJsonPath('message', 'Invalid credentials.');
 });
 
 it('requires email on login', function () {
@@ -133,7 +133,7 @@ it('rejects registration when disabled', function () {
     ], frontendHeaders())
         ->assertForbidden()
         ->assertJsonPath('error', 'registration_disabled')
-        ->assertJsonPath('message', 'Inscription désactivée.');
+        ->assertJsonPath('message', 'Registration disabled.');
 
     $this->assertGuest();
 });
@@ -278,7 +278,7 @@ it('logs out the authenticated user', function () {
 
     $this->postJson('/api/logout', [], frontendHeaders())
         ->assertOk()
-        ->assertJsonPath('message', 'Déconnecté.');
+        ->assertJsonPath('message', 'Logged out.');
 });
 
 it('requires authentication for protected routes', function () {

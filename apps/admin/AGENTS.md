@@ -1,16 +1,16 @@
 # Admin (React)
 
-Interface d'administration : connexion QuickBooks Online, statut OAuth, configuration.
+Administration UI: QuickBooks Online connection, OAuth status, configuration.
 
-Voir aussi le [README racine](../../README.md) et [`packages/api-client/AGENTS.md`](../../packages/api-client/AGENTS.md).
+See also the [root README](../../README.md) and [`packages/api-client/AGENTS.md`](../../packages/api-client/AGENTS.md).
 
 ## Stack
 
 - React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4
-- Port dev : **5173**
-- API : `@ellr/api-client` (`VITE_API_URL`, défaut `http://localhost:8000/api`)
+- Dev port: **5173**
+- API: `@ellr/api-client` (`VITE_API_URL`, default `http://localhost:8000/api`)
 
-## Commandes
+## Commands
 
 ```bash
 npm run dev --workspace=admin
@@ -24,26 +24,27 @@ npm run build --workspace=admin
 
 ## Conventions
 
-- Appels API via `@ellr/api-client`, jamais de fetch direct vers QBO (DRY).
-- Composants fonctionnels ; logique réseau et erreurs dans le package partagé (SRP).
-- Configuration employé QBO : `updateQboEmployee` ; pas de duplication de validation métier côté UI.
-- Classes Tailwind utilitaires, pas de CSS custom sauf `index.css`.
-- Tests : `*.test.tsx` à côté du code testé.
+- API calls via `@ellr/api-client`, never direct fetch to QBO (DRY).
+- Functional components; network and error logic in the shared package (SRP).
+- QBO employee config: `updateQboEmployee`; no duplicated business validation in the UI.
+- **JSDoc** on the `App` component and every new export; see `.cursor/rules/jsdoc.mdc` and `.cursor/rules/language.mdc`.
+- Utility Tailwind classes, no custom CSS except `index.css`.
+- Tests: `*.test.tsx` next to the code under test.
 
-## Fichiers clés
+## Key files
 
 ```
-src/App.tsx          # Page principale admin
-src/App.test.tsx     # Tests composants (mock @ellr/api-client)
-src/test/setup.ts    # Setup Vitest + cleanup
+src/App.tsx          # Main admin page
+src/App.test.tsx     # Component tests (mock @ellr/api-client)
+src/test/setup.ts    # Vitest setup + cleanup
 ```
 
-## Tests obligatoires
+## Required tests
 
-- Tout changement UI visible : mettre à jour `App.test.tsx`.
-- Changement client HTTP partagé : `packages/api-client/src/api.test.ts`.
+- Any visible UI change: update `App.test.tsx`.
+- Shared HTTP client change: `packages/api-client/src/api.test.ts`.
 
-## Seuils qualité
+## Quality thresholds
 
-- Couverture : 85 % lignes/stmts/funcs, 75 % branches.
-- Mutation Stryker : break ≥ 55 %, low ≥ 65 %, high ≥ 80 % (validé, score ~85 %).
+- Coverage: 85 % lines/stmts/funcs, 75 % branches.
+- Stryker mutation: break ≥ 55 %, low ≥ 65 %, high ≥ 80 % (validated, score ~85 %).

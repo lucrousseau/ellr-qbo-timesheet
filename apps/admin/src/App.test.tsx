@@ -67,7 +67,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /connexion$/i })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /sign in$/i })).toBeInTheDocument()
     })
   })
 
@@ -85,7 +85,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/connecté \(realm realm-42\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
     })
   })
 
@@ -102,7 +102,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/non connecté/i)).toBeInTheDocument()
+      expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
     })
   })
 
@@ -133,10 +133,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /connecter quickbooks/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /connecter quickbooks/i }))
+    await user.click(screen.getByRole('button', { name: /connect quickbooks/i }))
 
     await waitFor(() => {
       expect(redirectedTo).toBe('https://intuit.example/oauth')
@@ -156,13 +156,13 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /connecter quickbooks/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /connecter quickbooks/i }))
+    await user.click(screen.getByRole('button', { name: /connect quickbooks/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/impossible de démarrer la connexion quickbooks/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to start quickbooks connection/i)).toBeInTheDocument()
     })
   })
 
@@ -179,14 +179,14 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/courriel/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     })
 
     await fillLoginForm(user)
 
     await waitFor(() => {
       expect(login).toHaveBeenCalledWith('test@example.com', 'password')
-      expect(screen.getByText(/non connecté/i)).toBeInTheDocument()
+      expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
     })
   })
 
@@ -202,7 +202,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/quickbooks connecté avec succès/i)).toBeInTheDocument()
+      expect(screen.getByText(/quickbooks connected successfully/i)).toBeInTheDocument()
       expect(replaceState).toHaveBeenCalled()
     })
   })
@@ -214,7 +214,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/paramètres oauth manquants/i)).toBeInTheDocument()
+      expect(screen.getByText(/missing oauth parameters/i)).toBeInTheDocument()
     })
   })
 
@@ -225,7 +225,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/connexion quickbooks impossible/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to connect quickbooks/i)).toBeInTheDocument()
     })
   })
 
@@ -236,7 +236,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/connexion quickbooks refusée ou expirée/i)).toBeInTheDocument()
+      expect(screen.getByText(/quickbooks connection denied or expired/i)).toBeInTheDocument()
     })
   })
 
@@ -246,7 +246,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/impossible de joindre l'api laravel/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to reach the laravel api/i)).toBeInTheDocument()
     })
   })
 
@@ -256,7 +256,7 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/impossible de charger l'application/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to load the application/i)).toBeInTheDocument()
     })
   })
 
@@ -268,13 +268,13 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/courriel/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     })
 
     await fillLoginForm(user, { password: 'wrong-password' })
 
     await waitFor(() => {
-      expect(screen.getByText(/connexion impossible/i)).toBeInTheDocument()
+      expect(screen.getByText(/sign-in failed/i)).toBeInTheDocument()
     })
   })
 
@@ -291,13 +291,13 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /déconnexion/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /déconnexion/i }))
+    await user.click(screen.getByRole('button', { name: /sign out/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/déconnexion impossible/i)).toBeInTheDocument()
+      expect(screen.getByText(/sign-out failed/i)).toBeInTheDocument()
     })
   })
 
@@ -314,13 +314,13 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /déconnecter quickbooks/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /déconnecter quickbooks/i }))
+    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/déconnexion quickbooks impossible/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to disconnect quickbooks/i)).toBeInTheDocument()
     })
   })
 
@@ -337,13 +337,13 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /connecter quickbooks/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /connecter quickbooks/i }))
+    await user.click(screen.getByRole('button', { name: /connect quickbooks/i }))
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /redirection/i })).toBeDisabled()
+      expect(screen.getByRole('button', { name: /Redirecting/i })).toBeDisabled()
     })
   })
 
@@ -360,14 +360,14 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /déconnecter quickbooks/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /déconnecter quickbooks/i }))
+    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
 
     await waitFor(() => {
       expect(disconnectQuickBooks).toHaveBeenCalled()
-      expect(screen.getByText(/non connecté/i)).toBeInTheDocument()
+      expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
     })
   })
 
@@ -382,8 +382,8 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/impossible de charger l'application/i)).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: /déconnecter quickbooks/i })).not.toBeInTheDocument()
+      expect(screen.getByText(/unable to load the application/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /disconnect quickbooks/i })).not.toBeInTheDocument()
     })
   })
 
@@ -400,14 +400,14 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/courriel/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     })
 
     await fillLoginForm(user)
 
     await waitFor(() => {
       expect(fetchQuickBooksStatus).toHaveBeenCalled()
-      expect(screen.getByText(/connecté \(realm realm-99\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/Connected \(realm realm-99\)/i)).toBeInTheDocument()
     })
   })
 
@@ -423,14 +423,14 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /déconnexion/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /déconnexion/i }))
+    await user.click(screen.getByRole('button', { name: /sign out/i }))
 
     await waitFor(() => {
       expect(logout).toHaveBeenCalled()
-      expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
     })
   })
 
@@ -453,16 +453,16 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/id employé qbo/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/qbo employee id/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
-    await user.type(screen.getByLabelText(/nom employé/i), 'Jane Doe')
-    await user.click(screen.getByRole('button', { name: /enregistrer l'employé/i }))
+    await user.type(screen.getByLabelText(/qbo employee id/i), '7')
+    await user.type(screen.getByLabelText(/employee name/i), 'Jane Doe')
+    await user.click(screen.getByRole('button', { name: /save employee/i }))
 
     await waitFor(() => {
       expect(updateQboEmployee).toHaveBeenCalledWith('7', 'Jane Doe')
-      expect(screen.getByText(/employé quickbooks enregistré/i)).toBeInTheDocument()
+      expect(screen.getByText(/quickbooks employee saved/i)).toBeInTheDocument()
     })
   })
 
@@ -479,14 +479,14 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/id employé qbo/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/qbo employee id/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
-    await user.click(screen.getByRole('button', { name: /enregistrer l'employé/i }))
+    await user.type(screen.getByLabelText(/qbo employee id/i), '7')
+    await user.click(screen.getByRole('button', { name: /save employee/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/impossible d'enregistrer l'employé quickbooks/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to save the quickbooks employee/i)).toBeInTheDocument()
     })
   })
 
@@ -503,13 +503,13 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /déconnecter quickbooks/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /déconnecter quickbooks/i }))
+    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/quickbooks déconnecté/i)).toBeInTheDocument()
+      expect(screen.getByText(/quickbooks disconnected/i)).toBeInTheDocument()
     })
   })
 })

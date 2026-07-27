@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-abstract class Controller
-{
-    //
-}
+/**
+ * Base controller for JSON API endpoints.
+ */
+abstract class Controller {}

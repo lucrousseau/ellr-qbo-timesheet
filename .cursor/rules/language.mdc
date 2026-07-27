@@ -1,0 +1,29 @@
+---
+description: English as the primary project language (code, docs, UI, API messages)
+alwaysApply: true
+---
+
+# Language (English)
+
+**English is the primary language** for this monorepo. Write and maintain everything in English unless a file explicitly documents another locale.
+
+| Layer | Language |
+|-------|----------|
+| Code comments (JSDoc, PHPDoc) | English |
+| User-facing UI (`apps/*`, `@ellr/ui`) | English |
+| API messages consumed by the frontend | English |
+| `getApiErrorMessage` mappings | English |
+| All documentation (`*.md`, `*.mdc`, `README`, `AGENTS.md`, `.cursor/`) | English |
+| Cursor rules, PR/commit prose | English |
+| Tests (assertions on visible copy) | English |
+
+## Exceptions
+
+- Third-party SDK or framework docs quoted verbatim
+- `backend/features/*.feature` Gherkin: English (align with API copy)
+
+## Agent routine
+
+1. Do not add French strings to new code, comments, or rules.
+2. When touching a file that still has French copy, translate it in the same change.
+3. Keep error `code` values stable (`registration_disabled`, etc.); only translate human `message` fields.

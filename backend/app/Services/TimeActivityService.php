@@ -7,13 +7,25 @@ use App\Models\QuickBooksToken;
 use App\Models\User;
 use QuickBooksOnline\API\Facades\TimeActivity;
 
+/**
+ * Business operations on QuickBooks time activities for a user's employee.
+ */
 class TimeActivityService
 {
+    /**
+     * Injects the QuickBooks service.
+     *
+     * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
+     */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
     ) {}
 
     /**
+     * Lists time activities for the QBO employee linked to the user.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
      * @return array<int, mixed>
      */
     public function listForUser(User $user, QuickBooksToken $token): array
@@ -33,7 +45,12 @@ class TimeActivityService
     }
 
     /**
-     * @param  array<string, mixed>  $validated
+     * Creates a time activity in QuickBooks for the user's employee.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  array<string, mixed>  $validated  Validated request payload.
+     * @return object
      */
     public function createForUser(User $user, QuickBooksToken $token, array $validated): object
     {
@@ -74,6 +91,14 @@ class TimeActivityService
         return $result;
     }
 
+    /**
+     * Returns a time activity if it belongs to the user's employee.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  string  $id  QuickBooks time activity identifier.
+     * @return object
+     */
     public function findForUser(User $user, QuickBooksToken $token, string $id): object
     {
         $dataService = $this->quickBooks->dataService($token);
@@ -82,7 +107,13 @@ class TimeActivityService
     }
 
     /**
-     * @param  array<string, mixed>  $validated
+     * Updates an existing time activity in QuickBooks.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  string  $id  QuickBooks time activity identifier.
+     * @param  array<string, mixed>  $validated  Validated request payload.
+     * @return object
      */
     public function updateForUser(User $user, QuickBooksToken $token, string $id, array $validated): object
     {
@@ -126,6 +157,14 @@ class TimeActivityService
         return $result;
     }
 
+    /**
+     * Deletes a time activity in QuickBooks.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  string  $id  QuickBooks time activity identifier.
+     * @return void
+     */
     public function deleteForUser(User $user, QuickBooksToken $token, string $id): void
     {
         $dataService = $this->quickBooks->dataService($token);
@@ -138,6 +177,14 @@ class TimeActivityService
         }
     }
 
+    /**
+     * Loads an activity and verifies it belongs to the user's employee.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  object  $dataService  Configured QuickBooks DataService instance.
+     * @param  string  $id  QuickBooks time activity identifier.
+     * @return object
+     */
     private function findActivityForUser(User $user, object $dataService, string $id): object
     {
         $activity = $dataService->FindById('TimeActivity', $id);
@@ -155,6 +202,12 @@ class TimeActivityService
         return $activity;
     }
 
+    /**
+     * Returns the QBO employee reference or aborts with 403.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @return string
+     */
     private function resolveEmployeeRef(User $user): string
     {
         $employeeRef = $user->qbo_employee_ref;
@@ -169,6 +222,13 @@ class TimeActivityService
         return $employeeRef;
     }
 
+    /**
+     * Verifies the activity targets the same QBO employee as the user.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  object  $activity  QuickBooks time activity object.
+     * @return void
+     */
     private function assertActivityBelongsToUser(User $user, object $activity): void
     {
         $employeeRef = $this->resolveEmployeeRef($user);
@@ -179,6 +239,12 @@ class TimeActivityService
         }
     }
 
+    /**
+     * Extracts the employee reference from an SDK activity object.
+     *
+     * @param  object  $activity  QuickBooks time activity object.
+     * @return string|null
+     */
     private function extractEmployeeRef(object $activity): ?string
     {
         $employeeRef = $activity->EmployeeRef ?? null;
@@ -194,6 +260,12 @@ class TimeActivityService
         return (string) $employeeRef;
     }
 
+    /**
+     * Escapes a value for a single-quoted QBO query.
+     *
+     * @param  string  $value  Raw value to escape for a QBO query.
+     * @return string
+     */
     private function escapeQueryValue(string $value): string
     {
         return str_replace("'", "\\'", $value);

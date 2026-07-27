@@ -1,16 +1,16 @@
 # Timesheet (React)
 
-Interface utilisateur pour enregistrer du temps. Communique avec l'API Laravel qui pousse vers QBO.
+User interface to record time. Talks to the Laravel API which pushes to QBO.
 
-Voir aussi le [README racine](../../README.md) et [`packages/api-client/AGENTS.md`](../../packages/api-client/AGENTS.md).
+See also the [root README](../../README.md) and [`packages/api-client/AGENTS.md`](../../packages/api-client/AGENTS.md).
 
 ## Stack
 
 - React 19 + TypeScript 6 + Vite 8 + Tailwind CSS 4
-- Port dev : **5174**
-- API : `@ellr/api-client` (`VITE_API_URL`, défaut `http://localhost:8000/api`)
+- Dev port: **5174**
+- API: `@ellr/api-client` (`VITE_API_URL`, default `http://localhost:8000/api`)
 
-## Commandes
+## Commands
 
 ```bash
 npm run dev --workspace=timesheet
@@ -24,27 +24,28 @@ npm run build --workspace=timesheet
 
 ## Conventions
 
-- Formulaire de saisie via `POST /api/time-activities` (auth Sanctum requise côté API).
-- Appels API via `@ellr/api-client`, jamais de fetch direct vers QBO (DRY).
-- Employé QBO : assigné au compte (admin), pas saisi dans le formulaire (règle métier côté API).
-- Erreurs : `getApiErrorMessage` uniquement ; pas de messages dupliqués.
-- Validation côté backend ; le frontend envoie les champs documentés dans l'API.
-- Tests avec Testing Library + Vitest.
+- Time entry form via `POST /api/time-activities` (Sanctum auth required on the API).
+- API calls via `@ellr/api-client`, never direct fetch to QBO (DRY).
+- QBO employee: assigned on the account (admin), not entered in the form (business rule on the API).
+- Errors: `getApiErrorMessage` only; no duplicated messages.
+- **JSDoc** on the `App` component and every new export; see `.cursor/rules/jsdoc.mdc` and `.cursor/rules/language.mdc`.
+- Validation on the backend; the frontend sends fields documented in the API.
+- Tests with Testing Library + Vitest.
 
-## Fichiers clés
+## Key files
 
 ```
-src/App.tsx          # Formulaire de saisie de temps
-src/App.test.tsx     # Tests composants (mock @ellr/api-client)
-src/test/setup.ts    # Setup Vitest + cleanup
+src/App.tsx          # Time entry form
+src/App.test.tsx     # Component tests (mock @ellr/api-client)
+src/test/setup.ts    # Vitest setup + cleanup
 ```
 
-## Tests obligatoires
+## Required tests
 
-- Changement formulaire ou soumission : mettre à jour `App.test.tsx`.
-- Changement client HTTP partagé : `packages/api-client/src/api.test.ts`.
+- Form or submit behavior change: update `App.test.tsx`.
+- Shared HTTP client change: `packages/api-client/src/api.test.ts`.
 
-## Seuils qualité
+## Quality thresholds
 
-- Couverture : 85 % lignes/stmts/funcs, 75 % branches.
-- Mutation Stryker : break ≥ 55 %, low ≥ 65 %, high ≥ 80 % (validé, score ~91 %).
+- Coverage: 85 % lines/stmts/funcs, 75 % branches.
+- Stryker mutation: break ≥ 55 %, low ≥ 65 %, high ≥ 80 % (validated, score ~91 %).

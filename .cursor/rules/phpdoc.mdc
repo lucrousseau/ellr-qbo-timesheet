@@ -1,0 +1,48 @@
+---
+description: Required PHPDoc on Laravel application code (app/)
+globs: backend/app/**/*.php
+alwaysApply: false
+---
+
+# PHPDoc (Laravel / PHP)
+
+## Scope
+
+| Area | PHPDoc required |
+|------|-----------------|
+| `app/Http/Controllers`, `app/Services`, `app/Models` | Class + public/protected/**private** methods |
+| `app/Http/Requests`, `app/Enums`, `app/Exceptions` | Class (+ methods when non-trivial) |
+| `features/bootstrap/` (Behat context) | Class + methods (including private helpers) |
+| `tests/`, `database/migrations/` | No (Pest/Gherkin steps and schema files stay lean) |
+
+## Content
+
+- Description in **English**, one sentence (business or technical role).
+- **`@param`** for every parameter (short description after the name, per Squiz).
+- **`@return`** on every method (use `void` when applicable).
+- `@property` on Eloquent models when useful for PHPStan.
+- No empty `//` placeholders in methods: use `{}` instead.
+
+```php
+/**
+ * Creates a time activity in QuickBooks for the user's employee.
+ */
+public function createForUser(User $user, QuickBooksToken $token, array $validated): object
+```
+
+## Backend lint
+
+| Tool | Role | Command |
+|------|------|---------|
+| **Pint** | Laravel style | `composer format:check` |
+| **PHPCS** + Slevomat | Required PHPDoc | `composer phpcs` |
+| **PHPStan 5** + Larastan | Static analysis | `composer analyse` |
+| **Pest Arch** | Structure (QBO SDK only in services) | `composer test:arch` |
+
+PHPCS config: `backend/phpcs.xml`. Aggregate: `composer lint` (= Pint + PHPCS).
+
+## Agent routine
+
+1. New public class/method in `app/`: PHPDoc before finishing.
+2. `cd backend && composer lint && composer analyse && composer test`.
+3. QuickBooks SDK: only in `app/Services/` (plus token conversion on the model).

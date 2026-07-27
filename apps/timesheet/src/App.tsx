@@ -18,6 +18,10 @@ type TimeActivityForm = {
   description: string
 }
 
+/**
+ * Timesheet app: Sanctum sign-in and QBO time activity entry.
+ * @returns Loading screen, sign-in, or time form depending on session.
+ */
 function App() {
   const { message, clearMessage, showError, showSuccess } = useFlashMessage()
   const [form, setForm] = useState<TimeActivityForm>({
@@ -59,9 +63,9 @@ function App() {
 
     try {
       await createTimeActivity(buildPayload())
-      showSuccess('Temps enregistré dans QuickBooks Online.')
+      showSuccess('Time saved to QuickBooks Online.')
     } catch (caught) {
-      showError(getApiErrorMessage(caught, 'Erreur lors de l\'enregistrement.'))
+      showError(getApiErrorMessage(caught, 'Error while saving.'))
     } finally {
       setSubmitting(false)
     }
@@ -74,15 +78,15 @@ function App() {
   if (!user) {
     return (
       <LoginForm
-        title="Feuille de temps"
-        subtitle="Connectez-vous pour enregistrer votre temps"
+        title="Timesheet"
+        subtitle="Sign in to record your time"
         email={email}
         password={password}
         onEmailChange={setEmail}
         onPasswordChange={setPassword}
         onSubmit={handleLogin}
         error={bootstrapError}
-        heading="Connexion"
+        heading="Sign in"
         footer={
           message ? (
             <Alert variant={message.type === 'error' ? 'error' : 'success'}>{message.text}</Alert>
@@ -97,7 +101,7 @@ function App() {
     : user.qbo_employee_ref
 
   return (
-    <AppShell title="Feuille de temps" userEmail={user.email} onLogout={handleLogout}>
+    <AppShell title="Timesheet" userEmail={user.email} onLogout={handleLogout}>
       {bootstrapError && (
         <div className="mb-4">
           <Alert variant="error">{bootstrapError}</Alert>
@@ -105,16 +109,16 @@ function App() {
       )}
       {!user.qbo_employee_ref ? (
         <Alert variant="warning">
-          Employé QuickBooks non configuré. Un administrateur doit associer votre compte à un employé QBO.
+          QuickBooks employee not configured. An administrator must link your account to a QBO employee.
         </Alert>
       ) : (
         <form className={`space-y-5 ${cardClass}`} onSubmit={submit}>
           <p className="text-sm text-slate-600">
-            Employé QBO : <span className="font-medium text-slate-900">{employeeLabel}</span>
+            QBO employee: <span className="font-medium text-slate-900">{employeeLabel}</span>
           </p>
 
           <label className="block text-sm font-medium text-slate-700">
-            Début
+            Start
             <input
               type="datetime-local"
               required
@@ -125,7 +129,7 @@ function App() {
           </label>
 
           <label className="block text-sm font-medium text-slate-700">
-            Fin
+            End
             <input
               type="datetime-local"
               required
@@ -146,7 +150,7 @@ function App() {
           </label>
 
           <button type="submit" disabled={submitting} className={primaryButtonClass}>
-            {submitting ? 'Enregistrement...' : 'Enregistrer'}
+            {submitting ? 'Saving...' : 'Save'}
           </button>
 
           {message && <Alert variant={message.type}>{message.text}</Alert>}

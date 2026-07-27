@@ -1,84 +1,84 @@
-# Plan DRY et réutilisabilité
+# DRY and reusability plan
 
-Scan du dépôt (juillet 2026). Objectif : une source de vérité par responsabilité, composants et fonctions réutilisables entre admin et timesheet.
+Repository scan (July 2026). Goal: one source of truth per responsibility, reusable components and functions across admin and timesheet.
 
-**Statut (juillet 2026) :** phases 1 à 5 implémentées et nettoyage post-audit appliqué.
+**Status (July 2026):** phases 1 through 5 implemented and post-audit cleanup applied.
 
-## Carte actuelle
+## Current map
 
 ```
-packages/api-client/     ✅ HTTP, auth, quickbooks, timesheet, erreurs FR
+packages/api-client/     ✅ HTTP, auth, quickbooks, timesheet, EN errors
 packages/ui/             ✅ useAuth, LoginForm, Alert, AppShell, tokens
 packages/test-utils/     ✅ buildApiClientMock, fillLoginForm, fixtures
-packages/vite-config/    ✅ Vite, Vitest, Stryker, oxlint, main, CSS, setup test
-apps/admin/App.tsx       ✅ écran métier QBO + employé (~215 lignes)
-apps/timesheet/App.tsx   ✅ formulaire feuille de temps (~159 lignes)
-backend/TimeActivityService  ✅ CRUD QBO + ownership
-backend/TimeActivityController  ✅ mince (~76 lignes)
+packages/vite-config/    ✅ Vite, Vitest, Stryker, oxlint, main, CSS, test setup
+apps/admin/App.tsx       ✅ QBO + employee business screen (~215 lines)
+apps/timesheet/App.tsx   ✅ timesheet form (~159 lines)
+backend/TimeActivityService  ✅ QBO CRUD + ownership
+backend/TimeActivityController  ✅ thin (~76 lines)
 ```
 
-| Zone | État DRY |
-|------|----------|
-| Client HTTP (`@ellr/api-client`) | Excellent |
-| UI auth/login/layout (`@ellr/ui`) | Excellent |
-| Tests composants (`@ellr/test-utils`) | Bon |
-| Config Vite/Vitest/Stryker (`@ellr/vite-config`) | Bon |
-| API métier QBO backend | Bon |
-| OAuth / tokens (`QuickBooksService`) | Bon |
+| Area | DRY status |
+|------|------------|
+| HTTP client (`@ellr/api-client`) | Excellent |
+| Auth/login/layout UI (`@ellr/ui`) | Excellent |
+| Component tests (`@ellr/test-utils`) | Good |
+| Vite/Vitest/Stryker config (`@ellr/vite-config`) | Good |
+| QBO business API backend | Good |
+| OAuth / tokens (`QuickBooksService`) | Good |
 
 ---
 
-## Inventaire : résolu vs restant
+## Inventory: resolved vs remaining
 
-### Frontend : résolu
+### Frontend: resolved
 
-| ID | Élément | Résolution |
-|----|---------|------------|
-| F1–F6 | Auth, login, layout, alertes | `@ellr/ui` |
-| F7–F8 | Mocks et actions test | `@ellr/test-utils` (`buildApiClientMock`, `fillLoginForm`) |
-| F9 | `apiFetch` dans apps | `quickbooks.ts`, `timesheet.ts`, `auth.ts` |
-| F10 | Config dupliquée | `@ellr/vite-config` (Vite, Vitest, Stryker, oxlint, `main`, CSS, setup) |
+| ID | Item | Resolution |
+|----|------|------------|
+| F1–F6 | Auth, login, layout, alerts | `@ellr/ui` |
+| F7–F8 | Mocks and test actions | `@ellr/test-utils` (`buildApiClientMock`, `fillLoginForm`) |
+| F9 | `apiFetch` in apps | `quickbooks.ts`, `timesheet.ts`, `auth.ts` |
+| F10 | Duplicated config | `@ellr/vite-config` (Vite, Vitest, Stryker, oxlint, `main`, CSS, setup) |
 
-### Frontend : restant (volontaire ou futur)
+### Frontend: remaining (intentional or future)
 
 | Item | Note |
 |------|------|
-| `timesheet.ts` n'expose que `createTimeActivity` | CRUD list/update/delete côté API sans client TS tant qu'aucun écran ne les consomme |
-| Tests UI dans `@ellr/ui` | Package sans tests composants dédiés (`--passWithNoTests`) |
-| `App.tsx` admin > 150 lignes | Logique métier QBO employé + OAuth, pas du copier-coller |
+| `timesheet.ts` only exposes `createTimeActivity` | API list/update/delete CRUD has no TS client until a screen consumes them |
+| UI tests in `@ellr/ui` | Package has no dedicated component tests (`--passWithNoTests`) |
+| Admin `App.tsx` > 150 lines | QBO employee + OAuth business logic, not copy-paste |
 
-### Backend : résolu
+### Backend: resolved
 
-| ID | Élément | Résolution |
-|----|---------|------------|
-| B1 | CRUD TimeActivity | `TimeActivityService` |
+| ID | Item | Resolution |
+|----|------|------------|
+| B1 | TimeActivity CRUD | `TimeActivityService` |
 | B2 | Token + refresh | `ResolvesQuickBooksToken` |
-| B3 | Ownership find | `findActivityForUser()` dans le service |
-| B4 | Validation max | `StoreTimeActivityRequest`, `UpdateTimeActivityRequest` |
-| B5 | Codes `error` | `ApiErrorCode` enum |
-| B6 | Setup tests | `actingAsWithQboEmployee()` dans `Pest.php` |
-| Erreurs API QBO dupliquées | `QuickBooksService::apiErrorJsonResponse()` |
+| B3 | Ownership find | `findActivityForUser()` in the service |
+| B4 | Max validation | `StoreTimeActivityRequest`, `UpdateTimeActivityRequest` |
+| B5 | `error` codes | `ApiErrorCode` enum |
+| B6 | Test setup | `actingAsWithQboEmployee()` in `Pest.php` |
+| Duplicated QBO API errors | `QuickBooksService::apiErrorJsonResponse()` |
 
-### Backend : restant (mineur)
+### Backend: remaining (minor)
 
 | Item | Note |
 |------|------|
-| B7 | Régénération session login/register dans `AuthController` (acceptable) |
-| `personal_access_tokens` | Migration Sanctum ; mode cookie SPA sans `createToken()` |
+| B7 | Session regeneration on login/register in `AuthController` (acceptable) |
+| `personal_access_tokens` | Sanctum migration; cookie SPA mode without `createToken()` |
 
 ---
 
-## Architecture cible (atteinte)
+## Target architecture (achieved)
 
 ```
 packages/
-  api-client/          # Réseau + domaine API
-  ui/                  # Composants + hooks partagés
-  test-utils/          # Mocks Vitest partagés
-  vite-config/         # createAppConfig, createVitestConfig, createStrykerConfig, assets partagés
+  api-client/          # Network + API domain
+  ui/                  # Shared components + hooks
+  test-utils/          # Shared Vitest mocks
+  vite-config/         # createAppConfig, createVitestConfig, createStrykerConfig, shared assets
 
-apps/admin/            # Écran QBO + employé
-apps/timesheet/        # Formulaire temps
+apps/admin/            # QBO + employee screen
+apps/timesheet/        # Time entry form
 
 backend/
   Services/
@@ -90,56 +90,56 @@ backend/
 
 ---
 
-## Phases d'exécution (terminées)
+## Execution phases (completed)
 
-| Phase | Livrable | Statut |
-|-------|----------|--------|
+| Phase | Deliverable | Status |
+|-------|-------------|--------|
 | 1 | `quickbooks.ts`, `timesheet.ts` | ✅ |
 | 2 | `@ellr/ui` | ✅ |
 | 3 | `@ellr/test-utils` | ✅ |
 | 4 | `TimeActivityService`, Form Requests, trait | ✅ |
-| 5 | `@ellr/vite-config` (+ assets partagés post-audit) | ✅ |
+| 5 | `@ellr/vite-config` (+ shared assets post-audit) | ✅ |
 
 ---
 
-## Ce qu'on ne refactorise pas (volontairement)
+## What we do not refactor (by design)
 
-| Élément | Raison |
-|---------|--------|
-| Deux apps admin/timesheet | Déploiements et ports distincts |
-| `App.tsx` par app | Écrans métier distincts, taille raisonnable |
-| Design system complet | ROI faible avec 2 écrans |
-| Client TS pour list/update/delete time activities | Pas d'UI consommatrice |
-
----
-
-## Checklist revue (chaque PR)
-
-- [ ] La logique existe-t-elle déjà dans `api-client`, `ui`, ou un service Laravel ?
-- [ ] Un nouveau `apiFetch` dans une app est-il justifié (sinon api-client) ?
-- [ ] Un bloc copié entre admin/timesheet doit-il aller dans `@ellr/ui` ou `@ellr/vite-config` ?
-- [ ] Un appel SDK QBO hors `*Service` est-il refusé ?
-- [ ] Tests : helper Pest / `buildApiClientMock` avant copier un setup mock ?
-- [ ] Code `error` backend aligné avec `getApiErrorMessage` ?
+| Item | Reason |
+|------|--------|
+| Two apps admin/timesheet | Separate deployments and ports |
+| `App.tsx` per app | Distinct business screens, reasonable size |
+| Full design system | Low ROI with 2 screens |
+| TS client for list/update/delete time activities | No consuming UI |
 
 ---
 
-## Métriques de succès (atteintes)
+## Review checklist (every PR)
 
-| Métrique | Cible | Actuel |
-|----------|-------|--------|
-| Lignes dupliquées login/auth (2 apps) | 0 dans `@ellr/ui` | ✅ |
-| `apiFetch` dans apps | 0 | ✅ |
-| Lignes `TimeActivityController` | < 100 | ~76 |
-| Packages partagés | 3–4 | 4 |
-| Config identique apps (Vite/Vitest/Stryker/oxlint/CSS/setup) | Centralisée | ✅ |
+- [ ] Does the logic already exist in `api-client`, `ui`, or a Laravel service?
+- [ ] Is a new `apiFetch` in an app justified (otherwise use api-client)?
+- [ ] Should a copied block between admin/timesheet move to `@ellr/ui` or `@ellr/vite-config`?
+- [ ] Is a QBO SDK call outside `*Service` rejected?
+- [ ] Tests: Pest helper / `buildApiClientMock` before copying a mock setup?
+- [ ] Backend `error` code aligned with `getApiErrorMessage`?
 
 ---
 
-## Ordre recommandé pour la suite
+## Success metrics (achieved)
 
-1. Ajouter `listTimeActivities` / `updateTimeActivity` / `deleteTimeActivity` dans api-client si un nouvel écran les consomme.
-2. Tests composants `@ellr/ui` si le package grossit.
-3. Hoister `tsconfig` apps si une 3e app React est ajoutée.
+| Metric | Target | Current |
+|--------|--------|---------|
+| Duplicated login/auth lines (2 apps) | 0 in `@ellr/ui` | ✅ |
+| `apiFetch` in apps | 0 | ✅ |
+| `TimeActivityController` lines | < 100 | ~76 |
+| Shared packages | 3–4 | 4 |
+| Identical app config (Vite/Vitest/Stryker/oxlint/CSS/setup) | Centralized | ✅ |
 
-Chaque changement = PR reviewable, tests verts, `npm run qa:finance` avant merge release.
+---
+
+## Recommended next steps
+
+1. Add `listTimeActivities` / `updateTimeActivity` / `deleteTimeActivity` in api-client when a new screen consumes them.
+2. Component tests for `@ellr/ui` if the package grows.
+3. Hoist app `tsconfig` if a third React app is added.
+
+Each change = reviewable PR, green tests, `npm run qa:finance` before a release merge.

@@ -1,19 +1,21 @@
 ---
-description: Copywriting UI et doc (pas de tiret cadratin)
+description: UI copy and documentation style (English, no em dash)
 alwaysApply: true
 ---
 
 # Copywriting
 
-Ne pas utiliser le **tiret cadratin** (U+2014) dans le texte utilisateur, les chaînes UI, le README, les messages d'erreur API exposés au front, ou la prose des PR/commits, sauf nécessité absolue.
+**Primary language: English** (see `.cursor/rules/language.mdc`).
 
-Préférer :
+Do not use the **em dash** (U+2014) in user-facing text, UI strings, README, API error messages exposed to the front, or PR/commit prose unless strictly necessary.
 
-- virgule ou point-virgule pour un contraste léger
-- deux-points pour un label ou un titre de section (`Phase 1 : …`)
-- parenthèses pour un exemple ou une précision
-- pipe `|` dans les titres SEO ou metadata
+Prefer:
 
-Avant de livrer une modification de copy, chercher `—` (U+2014) et reformuler si trouvé.
+- comma or semicolon for light contrast
+- colon for labels or section titles (`Phase 1: …`)
+- parentheses for examples or precision
+- pipe `|` in SEO or metadata titles
 
-Messages utilisateur du projet : **français** (`getApiErrorMessage`, notices admin/timesheet, réponses auth Laravel).
+Before shipping copy edits, search for `—` (U+2014) and rephrase if found.
+
+User-facing messages: **English** (`getApiErrorMessage`, admin/timesheet notices, Laravel auth JSON responses).

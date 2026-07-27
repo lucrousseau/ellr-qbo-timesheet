@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+/**
+ * Stable JSON error codes consumed by the frontend (`getApiErrorMessage`).
+ */
 enum ApiErrorCode: string
 {
     case RegistrationDisabled = 'registration_disabled';

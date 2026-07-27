@@ -1,5 +1,8 @@
 import { ApiError, apiFetch } from './api'
 
+/**
+ * Authenticated user with optional QuickBooks employee mapping.
+ */
 export type User = {
   id: number
   name: string
@@ -8,6 +11,12 @@ export type User = {
   qbo_employee_name?: string | null
 }
 
+/**
+ * Opens a Sanctum session with email and password.
+ * @param email Account email address.
+ * @param password Account password.
+ * @returns Signed-in user.
+ */
 export async function login(email: string, password: string): Promise<User> {
   const response = await apiFetch<{ user: User }>('/login', {
     method: 'POST',
@@ -17,10 +26,18 @@ export async function login(email: string, password: string): Promise<User> {
   return response.user
 }
 
+/**
+ * Ends the Sanctum session on the server.
+ * @returns Promise resolved after sign-out.
+ */
 export async function logout(): Promise<void> {
   await apiFetch('/logout', { method: 'POST' })
 }
 
+/**
+ * Loads the current user or `null` when no session exists.
+ * @returns Signed-in user, or `null` for a 401 response.
+ */
 export async function fetchCurrentUser(): Promise<User | null> {
   try {
     const response = await apiFetch<{ user: User }>('/user')
@@ -33,6 +50,12 @@ export async function fetchCurrentUser(): Promise<User | null> {
   }
 }
 
+/**
+ * Links a QuickBooks employee to the user account (admin).
+ * @param qboEmployeeRef QuickBooks employee ID.
+ * @param qboEmployeeName Optional display name.
+ * @returns Updated user.
+ */
 export async function updateQboEmployee(
   qboEmployeeRef: string,
   qboEmployeeName?: string,

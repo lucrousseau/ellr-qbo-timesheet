@@ -4,6 +4,11 @@ import type { UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
+/**
+ * Walks parent directories until the npm workspaces root is found.
+ * @param start Directory to search upward from (usually `import.meta.dirname`).
+ * @returns Absolute path to the monorepo root.
+ */
 function findMonorepoRoot(start: string): string {
   let dir = start
 
@@ -29,6 +34,11 @@ type CreateVitestConfigOptions = {
   packageDir: string
 }
 
+/**
+ * Shared Vitest config with monorepo package aliases and coverage thresholds.
+ * @param options Absolute path to the consuming package directory.
+ * @returns Vite config with `test` block for Vitest.
+ */
 export function createVitestConfig({ packageDir }: CreateVitestConfigOptions): UserConfig {
   const monorepoRoot = findMonorepoRoot(packageDir)
 

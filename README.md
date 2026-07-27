@@ -1,6 +1,8 @@
 # Ellr QBO Timesheet
 
-Timesheet minimaliste pour QuickBooks Online. Monorepo avec API Laravel, client HTTP partagé et deux interfaces React.
+Minimal QuickBooks Online timesheet. Monorepo with a Laravel API, shared HTTP client, and two React apps.
+
+**Project language: English** (UI copy, API messages, code comments, and agent rules).
 
 ## Architecture
 
@@ -24,11 +26,11 @@ Timesheet minimaliste pour QuickBooks Online. Monorepo avec API Laravel, client 
               └─────────────┘
 ```
 
-Les frontends communiquent uniquement avec l'API Laravel via le package `@ellr/api-client`. Seul le backend parle à QuickBooks Online via le SDK officiel.
+Frontends talk only to the Laravel API via `@ellr/api-client`. Only the backend talks to QuickBooks Online through the official SDK.
 
-## Stack (juillet 2026)
+## Stack (July 2026)
 
-| Composant | Version |
+| Component | Version |
 |-----------|---------|
 | PHP | 8.3+ |
 | Laravel | 13.22 |
@@ -39,14 +41,14 @@ Les frontends communiquent uniquement avec l'API Laravel via le package `@ellr/a
 | Tailwind CSS | 4.3 |
 | TypeScript | 6.0 |
 | Pest | 4 (tests + mutation) |
-| Stryker | 9.6 (mutation frontend) |
+| Stryker | 9.6 (frontend mutation) |
 
-## Prérequis
+## Prerequisites
 
 - PHP 8.3+
 - Composer 2.x
 - Node.js 22+
-- Compte [Intuit Developer](https://developer.intuit.com/) avec une app QBO
+- [Intuit Developer](https://developer.intuit.com/) account with a QBO app
 
 ## Installation
 
@@ -58,17 +60,17 @@ composer install
 php artisan key:generate
 php artisan migrate
 
-# Monorepo (depuis la racine)
+# Monorepo (from repo root)
 npm install
 cp apps/admin/.env.example apps/admin/.env
 cp apps/timesheet/.env.example apps/timesheet/.env
 ```
 
-Configurer dans `backend/.env` :
+Configure `backend/.env`:
 
 ```env
-QUICKBOOKS_CLIENT_ID=votre_client_id
-QUICKBOOKS_CLIENT_SECRET=votre_client_secret
+QUICKBOOKS_CLIENT_ID=your_client_id
+QUICKBOOKS_CLIENT_SECRET=your_client_secret
 QUICKBOOKS_REDIRECT_URI=http://localhost:8000/api/quickbooks/callback
 QUICKBOOKS_BASE_URL=development
 ALLOW_REGISTRATION=true
@@ -77,242 +79,244 @@ FRONTEND_TIMESHEET_URL=http://localhost:5174
 SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:5174
 ```
 
-## Démarrage
+## Development
 
 ```bash
-# Terminal 1 : API Laravel (port 8000)
+# Terminal 1: Laravel API (port 8000)
 npm run dev:api
 
-# Terminal 2 : Admin (port 5173)
+# Terminal 2: Admin (port 5173)
 npm run dev:admin
 
-# Terminal 3 : Timesheet (port 5174)
+# Terminal 3: Timesheet (port 5174)
 npm run dev:timesheet
 ```
 
-## Endpoints API
+## API endpoints
 
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| GET | `/api/health` | Santé de l'API |
-| POST | `/api/register` | Inscription (si `ALLOW_REGISTRATION=true`) |
-| POST | `/api/login` | Connexion Sanctum |
-| POST | `/api/logout` | Déconnexion (auth) |
-| GET | `/api/user` | Utilisateur courant (auth) |
-| PATCH | `/api/user/qbo-employee` | Associer un employé QBO au compte (auth) |
-| GET | `/api/quickbooks/connect` | URL d'autorisation OAuth2 (auth) |
-| GET | `/api/quickbooks/callback` | Callback OAuth2 Intuit |
-| GET | `/api/quickbooks/status` | Statut connexion QBO (auth) |
-| POST | `/api/quickbooks/disconnect` | Déconnexion QBO (auth) |
-| GET | `/api/time-activities` | Liste des TimeActivity (auth) |
-| POST | `/api/time-activities` | Créer une entrée de temps (auth) |
-| GET | `/api/time-activities/{id}` | Détail d'une TimeActivity (auth) |
-| PATCH | `/api/time-activities/{id}` | Modifier une entrée de temps (auth) |
-| DELETE | `/api/time-activities/{id}` | Supprimer une entrée de temps (auth) |
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/api/health` | API health check |
+| POST | `/api/register` | Register (if `ALLOW_REGISTRATION=true`) |
+| POST | `/api/login` | Sanctum sign-in |
+| POST | `/api/logout` | Sign out (auth) |
+| GET | `/api/user` | Current user (auth) |
+| PATCH | `/api/user/qbo-employee` | Link a QBO employee to the account (auth) |
+| GET | `/api/quickbooks/connect` | OAuth2 authorization URL (auth) |
+| GET | `/api/quickbooks/callback` | Intuit OAuth callback |
+| GET | `/api/quickbooks/status` | QBO connection status (auth) |
+| POST | `/api/quickbooks/disconnect` | Disconnect QBO (auth) |
+| GET | `/api/time-activities` | List TimeActivity records (auth) |
+| POST | `/api/time-activities` | Create a time entry (auth) |
+| GET | `/api/time-activities/{id}` | TimeActivity detail (auth) |
+| PATCH | `/api/time-activities/{id}` | Update a time entry (auth) |
+| DELETE | `/api/time-activities/{id}` | Delete a time entry (auth) |
 
 ## Production
 
-Checklist avant le premier déploiement (API Laravel + builds Vite statiques pour admin/timesheet).
+Checklist before the first deploy (Laravel API + static Vite builds for admin/timesheet).
 
 ### Laravel (`backend/.env`)
 
 ```env
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://api.votredomaine.com
+APP_URL=https://api.yourdomain.com
 
 ALLOW_REGISTRATION=false
 
 DB_CONNECTION=mysql
-# … credentials base de données
+# … database credentials
 
 SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SESSION_SAME_SITE=lax
 SESSION_ENCRYPT=true
-SESSION_DOMAIN=.votredomaine.com
+SESSION_DOMAIN=.yourdomain.com
 
 CACHE_STORE=redis
 QUEUE_CONNECTION=redis
 
 QUICKBOOKS_CLIENT_ID=…
 QUICKBOOKS_CLIENT_SECRET=…
-QUICKBOOKS_REDIRECT_URI=https://api.votredomaine.com/api/quickbooks/callback
+QUICKBOOKS_REDIRECT_URI=https://api.yourdomain.com/api/quickbooks/callback
 QUICKBOOKS_BASE_URL=production
 QUICKBOOKS_EXPOSE_API_ERRORS=false
 
-FRONTEND_ADMIN_URL=https://admin.votredomaine.com
-FRONTEND_TIMESHEET_URL=https://timesheet.votredomaine.com
-SANCTUM_STATEFUL_DOMAINS=admin.votredomaine.com,timesheet.votredomaine.com
+FRONTEND_ADMIN_URL=https://admin.yourdomain.com
+FRONTEND_TIMESHEET_URL=https://timesheet.yourdomain.com
+SANCTUM_STATEFUL_DOMAINS=admin.yourdomain.com,timesheet.yourdomain.com
 ```
 
 ### Intuit Developer Portal
 
-- Redirect URI : identique à `QUICKBOOKS_REDIRECT_URI`
-- App en mode **Production** quand vous connectez de vrais comptes QBO
-- Scopes : `com.intuit.quickbooks.accounting` (déjà configuré)
+- Redirect URI: must match `QUICKBOOKS_REDIRECT_URI`
+- Production mode when connecting real QBO companies
+- Scopes: `com.intuit.quickbooks.accounting` (already configured)
 
 ### Frontends
 
 ```bash
-# Variables build (ex. apps/admin/.env.production)
-VITE_API_URL=https://api.votredomaine.com/api
+# Build variables (e.g. apps/admin/.env.production)
+VITE_API_URL=https://api.yourdomain.com/api
 
 npm run build:admin
 npm run build:timesheet
 ```
 
-Servir `apps/admin/dist` et `apps/timesheet/dist` en HTTPS (CDN, nginx, etc.). Les apps n'appellent que l'API Laravel via `@ellr/api-client`.
+Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (CDN, nginx, etc.). Apps call only the Laravel API via `@ellr/api-client`.
 
-### Sécurité
+### Security
 
-- HTTPS obligatoire sur l'API et les deux frontends
-- `ALLOW_REGISTRATION=false` : pas d'inscription publique
-- `QUICKBOOKS_EXPOSE_API_ERRORS=false` : ne pas exposer les corps d'erreur Intuit
-- Tokens OAuth chiffrés en base (`quickbooks_tokens`), jamais loggés
-- CORS/Sanctum : domaines front listés dans `SANCTUM_STATEFUL_DOMAINS` ; `config/cors.php` avec `supports_credentials`
-- Cookies session : `SESSION_DOMAIN` parent (ex. `.votredomaine.com`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
-- Employé QBO lié par utilisateur (`qbo_employee_ref`) : configuré depuis l'admin, validé côté API
+- HTTPS required on the API and both frontends
+- `ALLOW_REGISTRATION=false`: no public registration
+- `QUICKBOOKS_EXPOSE_API_ERRORS=false`: do not expose Intuit error bodies
+- OAuth tokens encrypted in DB (`quickbooks_tokens`), never logged
+- CORS/Sanctum: front domains in `SANCTUM_STATEFUL_DOMAINS`; `config/cors.php` with `supports_credentials`
+- Session cookies: parent `SESSION_DOMAIN` (e.g. `.yourdomain.com`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
+- QBO employee per user (`qbo_employee_ref`): set from admin, validated by the API
 
-### Validation pré-release
+### Pre-release validation
 
 ```bash
 npm run qa:finance
 npm run prepush
-php artisan migrate --force   # sur l'environnement cible
+php artisan migrate --force   # on the target environment
 ```
 
-Le projet utilise le [SDK PHP officiel d'Intuit](https://github.com/intuit/QuickBooks-V3-PHP-SDK) pour :
+The project uses the [official Intuit PHP SDK](https://github.com/intuit/QuickBooks-V3-PHP-SDK) for:
 
-- OAuth 2.0 (connexion et refresh token)
-- Entité `TimeActivity` (CRUD feuille de temps)
-- Requêtes vers l'API Accounting v3
+- OAuth 2.0 (connect and refresh token)
+- `TimeActivity` entity (timesheet CRUD)
+- Accounting API v3 requests
 
-Documentation : https://developer.intuit.com/app/developer/qbo/docs/develop/sdks-and-samples-collections/php
+Docs: https://developer.intuit.com/app/developer/qbo/docs/develop/sdks-and-samples-collections/php
 
 ## Structure
 
 ```
 ellr-qbo-timesheet/
-├── backend/                 # API Laravel
+├── backend/                 # Laravel API
 │   ├── app/
 │   │   ├── Http/Controllers/Api/
 │   │   ├── Models/
 │   │   └── Services/QuickBooksService.php
 │   ├── config/quickbooks.php
-│   ├── features/api/        # Scénarios Behat
+│   ├── features/api/        # Behat scenarios
 │   └── routes/api.php
 ├── packages/
-│   └── api-client/          # Client HTTP partagé (@ellr/api-client)
+│   └── api-client/          # Shared HTTP client (@ellr/api-client)
 ├── apps/
-│   ├── admin/               # Interface admin (connexion QBO, config)
-│   └── timesheet/           # Interface saisie de temps
-├── .cursor/rules/           # Règles Cursor (PHP, React, monorepo)
-└── package.json             # Workspaces npm + scripts qualité
+│   ├── admin/               # Admin UI (QBO connect, config)
+│   └── timesheet/           # Time entry UI
+├── .cursor/rules/           # Cursor rules (PHP, React, language, monorepo)
+└── package.json             # npm workspaces + quality scripts
 ```
 
-## Qualité et garde-fous locaux
+## Quality and local guardrails
 
-Philosophie : ne pas relire le code généré, mais l'entourer de contraintes fortes (tests, métriques, mutation testing, hooks Git).
+Philosophy: do not manually re-read generated code; enforce strong constraints (tests, metrics, mutation testing, Git hooks).
 
 ### Husky (pre-commit / pre-push)
 
-Hooks au format Husky v9+ : une commande par fichier (ex. `npm run precommit`), sans `husky.sh`.
+Husky v9+ format: one command per hook file (e.g. `npm run precommit`), no `husky.sh`.
 
-| Hook | Commande | Vérifie |
-|------|----------|---------|
-| `pre-commit` | `npm run precommit` | oxlint (apps + api-client), Pint, TypeScript |
-| `pre-push` | `npm run prepush` | Lint + typecheck + couverture 85 % + arch + Behat + PHPStan + builds |
+| Hook | Command | Checks |
+|------|---------|--------|
+| `pre-commit` | `npm run precommit` | oxlint (JSDoc), Pint + PHPCS, TypeScript |
+| `pre-push` | `npm run prepush` | Lint + typecheck + 85 % coverage + arch + Behat + PHPStan + builds |
 
-Installation automatique via `npm install` (script `prepare`).
+Automatic install via `npm install` (`prepare` script).
 
-### Seuils de couverture
+### Coverage thresholds
 
-| Zone | Lignes / stmts / funcs | Branches |
+| Zone | Lines / stmts / funcs | Branches |
 |------|------------------------|----------|
-| Backend (Pest) | 85 % | inclus dans `--min=85` |
+| Backend (Pest) | 85 % | included in `--min=85` |
 | Frontend (Vitest) | 85 % | 75 % |
 | `packages/api-client` | 85 % | 75 % |
 
 ### Mutation testing
 
-| Zone | Outil | Commande | Seuil |
-|------|-------|----------|-------|
+| Zone | Tool | Command | Threshold |
+|------|------|---------|-----------|
 | Backend | Pest `--mutate` | `npm run test:mutation:backend` | score ≥ 80 % |
 | Frontend | Stryker | `npm run test:mutation:frontend` | break ≥ 55 %, low ≥ 65 %, high ≥ 80 % |
 
-`npm run test:mutation:frontend` passe sur **admin**, **timesheet** et **@ellr/api-client** (scores ~85 %, ~91 %, ~93 %). Seuils **low 65 %** et **high 80 %** validés.
+`npm run test:mutation:frontend` passes on **admin**, **timesheet**, and **@ellr/api-client** (~85 %, ~91 %, ~93 %). **low 65 %** and **high 80 %** validated.
 
-### Commandes locales
+### Local commands
 
-| Commande | Usage |
-|----------|-------|
-| `npm run qa` | Rapide : lint + types + couverture + Behat + builds (sans arch ni PHPStan) |
-| `npm run prepush` | Complet avant push : qa + arch + PHPStan (équivalent hook Husky) |
-| `npm run qa:finance` | Avant release : couverture + mutation back/front (~1–2 min) |
-| `cd backend && composer qa` | Backend seul : Pint + PHPStan + couverture + arch + Behat |
+| Command | Usage |
+|---------|-------|
+| `npm run qa` | Quick: lint + types + coverage + Behat + builds (no arch or PHPStan) |
+| `npm run prepush` | Full pre-push: qa + arch + PHPStan (Husky hook equivalent) |
+| `npm run qa:finance` | Before release: coverage + back/front mutation (~1–2 min) |
+| `cd backend && composer qa` | Backend only: Pint + PHPCS + PHPStan + coverage + arch + Behat |
 
 ```bash
 npm run qa
 npm run qa:finance
-# alias : npm run validate:thresholds
+# alias: npm run validate:thresholds
 
-# Backend seul
+# Backend only
 cd backend && composer qa
 
-# Tests unitaires + feature (Pest)
+# Unit + feature tests (Pest)
 cd backend && composer test
 
-# Tests Gherkin (Behat)
+# Gherkin (Behat)
 cd backend && composer test:behat
 
-# Couverture backend (min 85 %)
+# Backend coverage (min 85 %)
 cd backend && composer test:coverage
 
-# Mutation backend (min 80 %)
+# Backend mutation (min 80 %)
 cd backend && composer test:mutation
 
-# Frontend (admin, timesheet ou api-client)
+# Frontend (admin, timesheet, or api-client)
 npm run test --workspace=admin
 npm run test:coverage --workspace=timesheet
 npm run test:mutation --workspace=admin
 npm run test:coverage --workspace=@ellr/api-client
 ```
 
-### Cursor (agents et revue)
+### Cursor (agents and review)
 
-| Fichier | Rôle |
-|---------|------|
-| `AGENTS.md` | Instructions agent par zone du monorepo |
-| `backend/AGENTS.md`, `apps/*/AGENTS.md`, `packages/api-client/AGENTS.md` | Détails par package |
-| `.cursor/rules/monorepo-commands.mdc` | Commandes, hooks, seuils qualité (toujours actif) |
-| `.cursor/rules/git-and-pr-workflow.mdc` | Commits sur demande, PR via `gh` (toujours actif) |
-| `.cursor/rules/copywriting.mdc` | Pas de tiret cadratin, copy FR (toujours actif) |
-| `.cursor/rules/laravel-backend.mdc` | Conventions PHP / Pest |
-| `.cursor/rules/react-frontend.mdc` | Conventions React / Stryker |
-| `.cursor/BUGBOT.md` | Règles de revue (`/review-bugbot`) |
+| File | Role |
+|------|------|
+| `AGENTS.md` | Agent instructions per monorepo area |
+| `backend/AGENTS.md`, `apps/*/AGENTS.md`, `packages/api-client/AGENTS.md` | Per-package details |
+| `.cursor/rules/language.mdc` | **English** as primary language (always active) |
+| `.cursor/rules/monorepo-commands.mdc` | Commands, hooks, quality thresholds (always active) |
+| `.cursor/rules/git-and-pr-workflow.mdc` | Commits on request, PRs via `gh` (always active) |
+| `.cursor/rules/copywriting.mdc` | No em dash, English UI copy (always active) |
+| `.cursor/rules/jsdoc.mdc` / `phpdoc.mdc` | Required documentation on public exports |
+| `.cursor/rules/laravel-backend.mdc` | PHP / Pest conventions |
+| `.cursor/rules/react-frontend.mdc` | React / Stryker conventions |
+| `.cursor/BUGBOT.md` | Review rules (`/review-bugbot`) |
 
-### Structure des tests
+### Test layout
 
 ```
 backend/
-├── tests/Unit/              # Tests unitaires (Pest)
-├── tests/Feature/           # Tests d'intégration API (Pest)
-├── tests/Arch/              # Tests d'architecture (Pest)
-└── features/api/            # Scénarios Gherkin (Behat)
+├── tests/Unit/              # Unit tests (Pest)
+├── tests/Feature/           # API integration tests (Pest)
+├── tests/Arch/              # Architecture tests (Pest)
+└── features/api/            # Gherkin scenarios (Behat)
 
 packages/api-client/src/
 ├── api.ts                   # apiFetch, ApiError, getApiErrorMessage
 ├── auth.ts                  # login, logout, fetchCurrentUser
-└── api.test.ts              # Tests client HTTP
+└── api.test.ts              # HTTP client tests
 
 apps/admin/src/
-└── App.test.tsx             # Tests composants (mock @ellr/api-client)
+└── App.test.tsx             # Component tests (mock @ellr/api-client)
 
 apps/timesheet/src/
-└── App.test.tsx             # Tests composants (mock @ellr/api-client)
+└── App.test.tsx             # Component tests (mock @ellr/api-client)
 ```
 
-## Licence
+## License
 
-Propriétaire Ellr
+Proprietary Ellr

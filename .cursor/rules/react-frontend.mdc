@@ -1,5 +1,5 @@
 ---
-description: Conventions React, Tailwind et tests pour les apps frontend et api-client
+description: React, Tailwind, and test conventions for frontend apps and api-client
 globs: apps/**/*.{ts,tsx},packages/api-client/**/*.{ts,tsx}
 alwaysApply: false
 ---
@@ -8,48 +8,51 @@ alwaysApply: false
 
 ## Stack
 
-- React 19, TypeScript strict, Vite 8, Tailwind CSS 4.
-- `admin` : port 5173. `timesheet` : port 5174.
-- Client HTTP partagé : `packages/api-client` (`@ellr/api-client`).
+- React 19, strict TypeScript, Vite 8, Tailwind CSS 4.
+- `admin`: port 5173. `timesheet`: port 5174.
+- Shared HTTP client: `packages/api-client` (`@ellr/api-client`).
 
 ## API
 
-- Importer depuis `@ellr/api-client` : `apiFetch`, `getApiErrorMessage`, `login`, `logout`, `fetchCurrentUser`, `updateQboEmployee`, `ApiError`.
-- Ne pas dupliquer de client HTTP dans `apps/*/src/lib/` (DRY : une seule couche réseau).
-- `credentials: 'include'` et CSRF : gérés par `apiFetch` ; ne pas réimplémenter dans les apps.
-- Variable : `VITE_API_URL` (défaut `http://localhost:8000/api`).
-- SOLID : les apps dépendent du contrat `@ellr/api-client`, pas de fetch brut ni d'URL en dur.
+- Import from `@ellr/api-client`: `apiFetch`, `getApiErrorMessage`, `login`, `logout`, `fetchCurrentUser`, `updateQboEmployee`, `ApiError`.
+- Do not duplicate an HTTP client in `apps/*/src/lib/` (DRY: single network layer).
+- `credentials: 'include'` and CSRF: handled by `apiFetch`; do not reimplement in apps.
+- Variable: `VITE_API_URL` (default `http://localhost:8000/api`).
+- SOLID: apps depend on the `@ellr/api-client` contract, not raw fetch or hardcoded URLs.
 
 ## UI
 
-- Classes Tailwind utilitaires, design sobre (slate).
-- Pas de `App.css` : tout via Tailwind dans les composants.
+- Utility Tailwind classes, sober design (slate).
+- No `App.css`: everything via Tailwind in components.
+- **User-facing copy in English** (see `.cursor/rules/language.mdc`).
 
 ## Tests
 
 ```tsx
-// Mock API dans les tests composants
+// Mock API in component tests
 vi.mock('@ellr/api-client', async () => {
   const actual = await vi.importActual<typeof import('@ellr/api-client')>('@ellr/api-client')
   return { ...actual, apiFetch: vi.fn() }
 })
 
-// Cleanup obligatoire (déjà dans src/test/setup.ts des apps)
+// Cleanup required (already in apps src/test/setup.ts)
 ```
 
-- `packages/api-client/src/*.test.ts` : tests du client HTTP partagé.
-- `apps/*/src/*.test.tsx` : tests composants (mock `@ellr/api-client`).
-- Couverture min : **85 %** lignes/stmts/funcs, **75 %** branches (`vitest.config.ts`).
+- `packages/api-client/src/*.test.ts`: shared HTTP client tests.
+- `apps/*/src/*.test.tsx`: component tests (mock `@ellr/api-client`).
+- Minimum coverage: **85 %** lines/stmts/funcs, **75 %** branches (`vitest.config.ts`).
 
 ## Mutation (Stryker)
 
-- Config : `stryker.config.json` par workspace.
-- Seuils : break 55 %, low 65 %, high 80 %.
-- Commande : `npm run test:mutation --workspace=admin` (ou timesheet, `@ellr/api-client`).
-- `npm run test:mutation:frontend` : les 3 workspaces passent (low 65 % et high 80 % validés).
-- Assertions utiles : classes CSS (`bg-red-50`, `text-slate-600`), libellés exacts, états intermédiaires (`authLoading`, `connecting`), URLs et headers fetch.
+- Config: `stryker.config.json` per workspace.
+- Thresholds: break 55 %, low 65 %, high 80 %.
+- Command: `npm run test:mutation --workspace=admin` (or timesheet, `@ellr/api-client`).
+- `npm run test:mutation:frontend`: all 3 workspaces pass (low 65 % and high 80 % validated).
+- Useful assertions: CSS classes (`bg-red-50`, `text-slate-600`), exact labels, intermediate states (`authLoading`, `connecting`), URLs and fetch headers.
 
 ## Lint
 
-- `npm run lint --workspace=admin` ou `timesheet` (oxlint).
+- `npm run lint --workspace=admin` or `timesheet` (oxlint).
 - `npm run lint --workspace=@ellr/api-client` (oxlint).
+- Shared config: `@ellr/vite-config/oxlint.app.json` (apps) and `oxlint.base.json` (packages).
+- **JSDoc required** on public exports; see `.cursor/rules/jsdoc.mdc`.

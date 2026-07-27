@@ -10,6 +10,8 @@ use Illuminate\Support\Carbon;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2AccessToken;
 
 /**
+ * Encrypted QuickBooks OAuth token for a user and Intuit realm.
+ *
  * @property int $user_id
  * @property Carbon|null $access_token_expires_at
  * @property Carbon|null $refresh_token_expires_at
@@ -35,6 +37,11 @@ class QuickBooksToken extends Model
         'refresh_token',
     ];
 
+    /**
+     * Eloquent casts for dates and secret encryption.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -45,11 +52,21 @@ class QuickBooksToken extends Model
         ];
     }
 
+    /**
+     * Owner of the OAuth token.
+     *
+     * @return BelongsTo
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Converts the model to an OAuth2 token usable by the QuickBooks SDK.
+     *
+     * @return OAuth2AccessToken
+     */
     public function toOAuth2AccessToken(): OAuth2AccessToken
     {
         $token = new OAuth2AccessToken(
@@ -72,6 +89,11 @@ class QuickBooksToken extends Model
         return $token;
     }
 
+    /**
+     * Indicates whether the access token is expired based on the stored date.
+     *
+     * @return bool
+     */
     public function isAccessTokenExpired(): bool
     {
         if ($this->access_token_expires_at === null) {

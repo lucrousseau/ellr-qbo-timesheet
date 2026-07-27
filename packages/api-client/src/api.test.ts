@@ -239,35 +239,35 @@ describe('apiFetch', () => {
 describe('getApiErrorMessage', () => {
   it('maps unauthorized responses to a session message', () => {
     expect(getApiErrorMessage(new ApiError(401, 'API error: 401'), 'fallback')).toBe(
-      'Session expirée. Reconnectez-vous.',
+      'Session expired. Please sign in again.',
     )
   })
 
   it('maps forbidden responses to an access message', () => {
     expect(getApiErrorMessage(new ApiError(403, 'API error: 403'), 'fallback')).toBe(
-      'Accès refusé.',
+      'Access denied.',
     )
   })
 
   it('maps quickbooks error codes on forbidden responses', () => {
     expect(
       getApiErrorMessage(new ApiError(403, 'API error: 403', 'quickbooks_not_connected'), 'fallback'),
-    ).toBe('QuickBooks n\'est pas connecté. Connectez-le depuis l\'interface admin.')
+    ).toBe('QuickBooks is not connected. Connect it from the admin app.')
 
     expect(
       getApiErrorMessage(new ApiError(403, 'API error: 403', 'quickbooks_expired'), 'fallback'),
-    ).toBe('Connexion QuickBooks expirée. Reconnectez-la depuis l\'interface admin.')
+    ).toBe('QuickBooks connection expired. Reconnect it from the admin app.')
   })
 
   it('maps registration disabled responses', () => {
     expect(
       getApiErrorMessage(new ApiError(403, 'API error: 403', 'registration_disabled'), 'fallback'),
-    ).toBe('Inscription désactivée.')
+    ).toBe('Registration disabled.')
   })
 
   it('maps validation responses to a quickbooks message', () => {
     expect(getApiErrorMessage(new ApiError(422, 'API error: 422'), 'fallback')).toBe(
-      'Données invalides ou erreur QuickBooks.',
+      'Invalid data or QuickBooks error.',
     )
   })
 
@@ -277,13 +277,13 @@ describe('getApiErrorMessage', () => {
 
   it('maps service unavailable responses to a retry message', () => {
     expect(getApiErrorMessage(new ApiError(503, 'API error: 503'), 'fallback')).toBe(
-      'QuickBooks est occupé. Réessayez dans un instant.',
+      'QuickBooks is busy. Please try again shortly.',
     )
   })
 
   it('maps network failures to an api outage message', () => {
     expect(getApiErrorMessage(new TypeError('failed to fetch'), 'fallback')).toBe(
-      'Impossible de joindre l\'API Laravel.',
+      'Unable to reach the Laravel API.',
     )
   })
 })
@@ -343,7 +343,7 @@ describe('auth helpers', () => {
   it('maps qbo employee not configured responses', () => {
     expect(
       getApiErrorMessage(new ApiError(403, 'API error: 403', 'qbo_employee_not_configured'), 'fallback'),
-    ).toBe('Employé QuickBooks non configuré. Contactez un administrateur.')
+    ).toBe('QuickBooks employee not configured. Contact an administrator.')
   })
 
   it('logs in and returns the user', async () => {
@@ -475,10 +475,10 @@ describe('quickbooks api', () => {
     expect(parseQuickBooksOAuthCallback('')).toEqual({ result: null })
   })
 
-  it('maps oauth error reasons to french messages', () => {
-    expect(quickBooksOAuthErrorMessage('oauth')).toContain('refusée')
-    expect(quickBooksOAuthErrorMessage('missing_params')).toContain('Paramètres')
-    expect(quickBooksOAuthErrorMessage('other')).toContain('impossible')
+  it('maps oauth error reasons to english messages', () => {
+    expect(quickBooksOAuthErrorMessage('oauth')).toContain('denied')
+    expect(quickBooksOAuthErrorMessage('missing_params')).toContain('Missing')
+    expect(quickBooksOAuthErrorMessage('other')).toContain('Unable')
   })
 
   it('loads quickbooks status from the api', async () => {

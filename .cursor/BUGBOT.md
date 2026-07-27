@@ -1,42 +1,44 @@
-# Règles de revue (Bugbot / review locale)
+# Review rules (Bugbot / local review)
 
 ## Backend PHP
 
-- Tout fichier modifié dans `backend/app/` doit avoir un test Pest associé (Feature ou Unit).
-- Utiliser `covers(ClassName::class)` pour le mutation testing Pest.
-- Pas de logique métier dans les controllers : déléguer aux services (SRP, DIP).
-- Pas d'appel direct au SDK QBO hors de `QuickBooksService` (DRY).
-- Pas de duplication de validation métier ou mapping d'erreurs déjà centralisés.
-- Pas de secrets, tokens ou credentials en dur.
-- Pas de `eval()`, `exec()`, `shell_exec()`, ou `system()`.
+- Every modified file in `backend/app/` must have an associated Pest test (Feature or Unit).
+- Use `covers(ClassName::class)` for Pest mutation testing.
+- **PHPDoc** on public/protected classes and methods; `composer phpcs` enforces Squiz + Slevomat.
+- No business logic in controllers: delegate to services (SRP, DIP).
+- No direct QBO SDK calls outside `QuickBooksService` (DRY).
+- No duplicated business validation or error mapping already centralized.
+- No hardcoded secrets, tokens, or credentials.
+- No `eval()`, `exec()`, `shell_exec()`, or `system()`.
 
 ## Frontend React
 
-- Pas de `fetch` direct vers des domaines autres que `VITE_API_URL`.
-- Pas de client HTTP dupliqué dans les apps : utiliser `@ellr/api-client` (DRY).
-- Pas de messages d'erreur métier dupliqués : `getApiErrorMessage` + codes API.
-- Pas de `any` TypeScript sans justification en commentaire.
-- Changement dans `packages/api-client/` : mettre à jour `api.test.ts` (et `auth.ts` si applicable).
-- Changement UI visible dans une app : test composant requis (`App.test.tsx`).
-- Avant d'extraire un composant partagé admin/timesheet : vérifier que la logique n'appartient pas plutôt à `api-client` ou au backend.
+- No direct `fetch` to domains other than `VITE_API_URL`.
+- No duplicated HTTP client in apps: use `@ellr/api-client` (DRY).
+- No duplicated business error messages: `getApiErrorMessage` + API codes.
+- No TypeScript `any` without a comment justification.
+- **JSDoc** on every public export (`packages/*`, `App` in apps); `npm run lint` enforces `require-jsdoc`. User-facing copy in **English**.
+- Changes in `packages/api-client/`: update `api.test.ts` (and `auth.ts` if applicable).
+- Visible UI change in an app: component test required (`App.test.tsx`).
+- Before extracting a shared admin/timesheet component: confirm the logic belongs in `api-client` or the backend instead.
 
-## Sécurité QBO
+## QBO security
 
-- Tokens OAuth uniquement en base (`quickbooks_tokens`), jamais loggés.
-- Routes API sensibles protégées par `auth:sanctum`.
-- `ALLOW_REGISTRATION=false` en production pour désactiver l'inscription publique.
-- Ne pas exposer les corps d'erreur Intuit en prod (`QUICKBOOKS_EXPOSE_API_ERRORS`).
+- OAuth tokens only in the database (`quickbooks_tokens`), never logged.
+- Sensitive API routes protected by `auth:sanctum`.
+- `ALLOW_REGISTRATION=false` in production to disable public registration.
+- Do not expose Intuit error bodies in prod (`QUICKBOOKS_EXPOSE_API_ERRORS`).
 
 ## Architecture
 
-- Violation des tests d'architecture (`tests/Arch/`) : bloquant.
-- Nouveau endpoint sans entrée dans `routes/api.php` documentée : signaler.
-- Duplication admin/timesheet ou SDK hors service : voir `docs/dry-reusability-plan.md`.
+- Architecture test violations (`tests/Arch/`): blocking.
+- New endpoint without a documented entry in `routes/api.php`: flag it.
+- Admin/timesheet duplication or SDK outside services: see `docs/dry-reusability-plan.md`.
 
-## Qualité
+## Quality
 
-- Seuils couverture : 85 % backend/frontend, 75 % branches frontend.
-- Seuils mutation : backend ≥ 80 % (Pest, ~87 %), frontend low ≥ 65 % / high ≥ 80 % (Stryker).
-- Ne pas désactiver PHPStan, Pint, oxlint ou les tests pour faire passer une PR.
-- Ne pas committer sans demande explicite de l'auteur de la PR.
-- Ne pas suggérer `--no-verify` sur les hooks Husky.
+- Coverage thresholds: 85 % backend/frontend, 75 % frontend branches.
+- Mutation thresholds: backend ≥ 80 % (Pest, ~87 %), frontend low ≥ 65 % / high ≥ 80 % (Stryker).
+- Do not disable PHPStan, Pint, PHPCS, oxlint, or tests to pass a PR.
+- Do not commit without explicit author request.
+- Do not suggest `--no-verify` on Husky hooks.

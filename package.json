@@ -8,6 +8,7 @@
   ],
   "devDependencies": {
     "husky": "^9.1.7",
+    "eslint-plugin-jsdoc": "^50.8.0",
     "typescript": "~6.0.2"
   },
   "scripts": {
@@ -17,7 +18,7 @@
     "dev:timesheet": "npm run dev --workspace=timesheet",
     "build:admin": "npm run build --workspace=admin",
     "build:timesheet": "npm run build --workspace=timesheet",
-    "lint": "npm run lint --workspaces && cd backend && composer format:check",
+    "lint": "npm run lint --workspaces && cd backend && composer lint",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces",
     "test:coverage": "npm run test:coverage --workspaces && cd backend && composer test:coverage",

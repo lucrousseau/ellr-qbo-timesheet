@@ -1,3 +1,7 @@
+/**
+ * Default Stryker mutation-testing config for frontend workspaces.
+ * @returns Stryker options (Vitest runner, thresholds, mutate globs).
+ */
 export function createStrykerConfig() {
   return {
     packageManager: 'npm',

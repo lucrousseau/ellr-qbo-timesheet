@@ -1,59 +1,61 @@
 ---
-description: Principes DRY et SOLID pour tout le monorepo (architecture, revue, nouvelles features)
+description: DRY and SOLID principles for the whole monorepo (architecture, review, new features)
 alwaysApply: true
 ---
 
-# DRY et SOLID
+# DRY and SOLID
 
-Référence obligatoire avant toute nouvelle feature, refactor ou revue de code.
+Mandatory reference before any new feature, refactor, or code review.
+
+**Write all docs and rules in English** (see `.cursor/rules/language.mdc`).
 
 ## DRY (Don't Repeat Yourself)
 
-| Couche | Source unique | Ne pas dupliquer |
-|--------|---------------|------------------|
-| HTTP frontend | `packages/api-client` (`apiFetch`, `auth.ts`, `getApiErrorMessage`) | `fetch` dans `apps/*` |
-| Intuit / QBO | `backend/app/Services/QuickBooksService.php` | SDK QBO hors service |
-| Erreurs UI (FR) | `getApiErrorMessage()` + codes `error` API | Messages bruts du backend dans les apps |
-| Auth session | `apiFetch` (CSRF + cookies) | Logique Sanctum par app |
-| Config prod | `.env.example` + README Production | Valeurs magiques en dur |
+| Layer | Single source | Do not duplicate |
+|-------|---------------|------------------|
+| Frontend HTTP | `packages/api-client` (`apiFetch`, `auth.ts`, `getApiErrorMessage`) | `fetch` in `apps/*` |
+| Intuit / QBO | `backend/app/Services/QuickBooksService.php` | QBO SDK outside the service |
+| UI errors (EN) | `getApiErrorMessage()` + API `error` codes | Raw backend messages in apps |
+| Session auth | `apiFetch` (CSRF + cookies) | Per-app Sanctum logic |
+| Prod config | `.env.example` + README Production | Magic values in code |
 
-**Avant d'ajouter une fonction ou un composant :** chercher l'existant (`grep`, `@ellr/api-client`, `QuickBooksService`). Si la logique apparaît deux fois, extraire au bon niveau (api-client, service Laravel, ou helper partagé).
+**Before adding a function or component:** search for existing code (`grep`, `@ellr/api-client`, `QuickBooksService`). If logic appears twice, extract at the right level (api-client, Laravel service, or shared helper).
 
-**Exceptions acceptables :** UI très simple et locale (formulaire login) tant qu'elle reste mince et sans logique métier dupliquée.
+**Acceptable exceptions:** very simple local UI (login form) as long as it stays thin with no duplicated business logic.
 
-## SOLID (appliqué au monorepo)
+## SOLID (applied to the monorepo)
 
-| Principe | Règle concrète |
-|----------|------------------|
-| **S** Single Responsibility | Controllers : validation + orchestration JSON. Services : métier et QBO. Apps React : rendu + état UI. |
-| **O** Open/Closed | Étendre via services/config, pas en modifiant `QuickBooksService` pour un cas UI isolé. |
-| **L** Liskov | Respecter les contrats publics (`apiFetch`, réponses JSON documentées dans README). |
-| **I** Interface Segregation | Exports minimaux dans `packages/api-client/src/index.ts`. Pas d'API « fourre-tout ». |
-| **D** Dependency Inversion | Backend : injection `QuickBooksService` dans les controllers. Frontend : dépendre de `@ellr/api-client`, pas de l'URL API en dur. |
+| Principle | Concrete rule |
+|-----------|----------------|
+| **S** Single Responsibility | Controllers: validation + JSON orchestration. Services: business + QBO. React apps: render + UI state. |
+| **O** Open/Closed | Extend via services/config, not by editing `QuickBooksService` for an isolated UI case. |
+| **L** Liskov | Respect public contracts (`apiFetch`, JSON responses documented in README). |
+| **I** Interface Segregation | Minimal exports in `packages/api-client/src/index.ts`. No catch-all API. |
+| **D** Dependency Inversion | Backend: inject `QuickBooksService` in controllers. Frontend: depend on `@ellr/api-client`, not hardcoded API URLs. |
 
-## Signaux d'alarme (à corriger ou refuser en revue)
+## Red flags (fix or reject in review)
 
-- Deuxième client HTTP, deuxième mapping d'erreurs QBO, deuxième flux OAuth.
-- Logique métier (employé QBO, tokens, validation métier) dans un controller ou `App.tsx`.
-- Copier-coller de blocs > 10 lignes entre admin et timesheet sans extraction.
-- Nouveau endpoint sans test Pest ; changement `api-client` sans `api.test.ts`.
+- Second HTTP client, second QBO error mapping, second OAuth flow.
+- Business logic (QBO employee, tokens, validation) in a controller or `App.tsx`.
+- Copy-paste of > 10 lines between admin and timesheet without extraction.
+- New endpoint without a Pest test; `api-client` change without `api.test.ts`.
 
-## Routine agent (chaque tâche)
+## Agent routine (every task)
 
-1. Identifier la couche (api-client / `@ellr/ui` / backend service / app UI).
-2. Vérifier qu'une abstraction existe déjà ; l'étendre plutôt que dupliquer.
-3. Garder les controllers et `App.tsx` minces ; extraire si la responsabilité se multiplie.
-4. Mettre à jour tests + rules si un nouveau pattern devient la norme du projet.
-5. Consulter le plan détaillé : `docs/dry-reusability-plan.md` avant toute nouvelle feature UI ou endpoint QBO.
+1. Identify the layer (api-client / `@ellr/ui` / backend service / app UI).
+2. Check that an abstraction already exists; extend it rather than duplicate.
+3. Keep controllers and `App.tsx` thin; extract if responsibility grows.
+4. Update tests + rules if a new pattern becomes the project norm.
+5. Read the detailed plan: `docs/dry-reusability-plan.md` before any new UI feature or QBO endpoint.
 
-## Roadmap réutilisabilité (résumé)
+## Reusability roadmap (summary)
 
-| Phase | Contenu | Priorité |
+| Phase | Content | Priority |
 |-------|---------|----------|
-| 1 | `quickbooks.ts` + `timesheet.ts` dans api-client | P0 |
-| 2 | Package `@ellr/ui` (useAuth, LoginForm, Alert, AppShell) | P0 |
-| 3 | `@ellr/test-utils` (mocks, fixtures login) | P1 |
-| 4 | `TimeActivityService` + trait token + Form Requests | P0 backend |
-| 5 | Config Vite/Vitest partagée | P2 |
+| 1 | `quickbooks.ts` + `timesheet.ts` in api-client | P0 |
+| 2 | `@ellr/ui` package (useAuth, LoginForm, Alert, AppShell) | P0 |
+| 3 | `@ellr/test-utils` (mocks, login fixtures) | P1 |
+| 4 | `TimeActivityService` + token trait + Form Requests | P0 backend |
+| 5 | Shared Vite/Vitest config | P2 |
 
-Ne pas ajouter de logique dupliquée dans admin/timesheet en attendant la phase concernée ; préférer api-client ou un service Laravel.
+Do not add duplicated logic in admin/timesheet while waiting for the relevant phase; prefer api-client or a Laravel service.

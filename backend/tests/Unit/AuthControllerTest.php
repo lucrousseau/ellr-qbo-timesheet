@@ -24,7 +24,7 @@ it('logs out through the web guard and clears the session', function () {
     $response = (new AuthController)->logout($request);
 
     expect($response->getStatusCode())->toBe(200)
-        ->and($response->getData(true))->toBe(['message' => 'Déconnecté.']);
+        ->and($response->getData(true))->toBe(['message' => 'Logged out.']);
 });
 
 it('skips session cleanup when the request has no session', function () {
@@ -38,5 +38,5 @@ it('skips session cleanup when the request has no session', function () {
     $response = (new AuthController)->logout($request);
 
     expect($response->getStatusCode())->toBe(200)
-        ->and($response->getData(true))->toBe(['message' => 'Déconnecté.']);
+        ->and($response->getData(true))->toBe(['message' => 'Logged out.']);
 });

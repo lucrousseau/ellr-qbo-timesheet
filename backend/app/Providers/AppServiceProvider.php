@@ -4,21 +4,22 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * Registration of Laravel application services.
+ */
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Registers container IoC bindings.
+     *
+     * @return void
      */
-    public function register(): void
-    {
-        //
-    }
+    public function register(): void {}
 
     /**
-     * Bootstrap any application services.
+     * Bootstraps services after registration.
+     *
+     * @return void
      */
-    public function boot(): void
-    {
-        //
-    }
+    public function boot(): void {}
 }

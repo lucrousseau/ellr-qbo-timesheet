@@ -11,10 +11,19 @@ use Illuminate\Support\Str;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
 use QuickBooksOnline\API\DataService\DataService;
 
+/**
+ * Single entry point to the QuickBooks SDK: OAuth, tokens, and API errors.
+ */
 class QuickBooksService
 {
     private const OAUTH_STATE_TTL_MINUTES = 10;
 
+    /**
+     * Configures the Intuit DataService with an optional OAuth token.
+     *
+     * @param  QuickBooksToken|null  $token  Optional stored OAuth token.
+     * @return DataService
+     */
     public function dataService(?QuickBooksToken $token = null): DataService
     {
         $config = [
@@ -35,6 +44,12 @@ class QuickBooksService
         return $dataService;
     }
 
+    /**
+     * Instantiates the Intuit OAuth2 helper for the authorization flow.
+     *
+     * @param  string|null  $state  Optional OAuth CSRF state.
+     * @return OAuth2LoginHelper
+     */
     public function oauthHelper(?string $state = null): OAuth2LoginHelper
     {
         return new OAuth2LoginHelper(
@@ -46,6 +61,12 @@ class QuickBooksService
         );
     }
 
+    /**
+     * Generates and caches a CSRF state for the OAuth callback.
+     *
+     * @param  User  $user  User starting the OAuth flow.
+     * @return string
+     */
     public function createAuthorizationState(User $user): string
     {
         $state = Str::random(40);
@@ -59,12 +80,21 @@ class QuickBooksService
         return $state;
     }
 
+    /**
+     * Builds the Intuit authorization URL for a given state.
+     *
+     * @param  string  $state  OAuth CSRF state.
+     * @return string
+     */
     public function authorizationUrl(string $state): string
     {
         return $this->oauthHelper($state)->getAuthorizationCodeURL();
     }
 
     /**
+     * Consumes the cached OAuth state and returns the user identifier.
+     *
+     * @param  string  $state  OAuth CSRF state.
      * @return array{user_id: int}
      */
     public function consumeAuthorizationState(string $state): array
@@ -79,6 +109,14 @@ class QuickBooksService
         return $payload;
     }
 
+    /**
+     * Exchanges the OAuth code for tokens persisted in the database.
+     *
+     * @param  string  $code  OAuth authorization code.
+     * @param  string  $realmId  Intuit company realm identifier.
+     * @param  User  $user  User receiving the OAuth tokens.
+     * @return QuickBooksToken
+     */
     public function exchangeCode(string $code, string $realmId, User $user): QuickBooksToken
     {
         $oauthHelper = $this->oauthHelper();
@@ -112,6 +150,12 @@ class QuickBooksService
         return $token;
     }
 
+    /**
+     * Refreshes the access token if expired (cache lock to avoid races).
+     *
+     * @param  QuickBooksToken  $token  Token to refresh when expired.
+     * @return QuickBooksToken
+     */
     public function refreshToken(QuickBooksToken $token): QuickBooksToken
     {
         return Cache::lock("quickbooks_refresh:{$token->id}", 30)->block(10, function () use ($token) {
@@ -146,6 +190,12 @@ class QuickBooksService
         });
     }
 
+    /**
+     * Removes all QuickBooks tokens for a user.
+     *
+     * @param  User  $user  User whose tokens are removed.
+     * @return void
+     */
     public function disconnect(User $user): void
     {
         QuickBooksToken::query()
@@ -153,6 +203,12 @@ class QuickBooksService
             ->delete();
     }
 
+    /**
+     * Formats a QuickBooks SDK error as a 422 JSON response.
+     *
+     * @param  object  $error  QuickBooks SDK error object.
+     * @return JsonResponse
+     */
     public function apiErrorJsonResponse(object $error): JsonResponse
     {
         $payload = ['message' => 'QuickBooks API error'];
@@ -164,6 +220,12 @@ class QuickBooksService
         return response()->json($payload, 422);
     }
 
+    /**
+     * Cache key for the OAuth CSRF state.
+     *
+     * @param  string  $state  OAuth CSRF state.
+     * @return string
+     */
     private function oauthStateCacheKey(string $state): string
     {
         return "quickbooks_oauth_state:{$state}";

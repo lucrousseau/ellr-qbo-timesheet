@@ -1,5 +1,4 @@
 {
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "oxc"],
-  "ignorePatterns": [".stryker-tmp/**", "build/**", "dist/**", "coverage/**"]
+  "extends": ["../../packages/vite-config/oxlint.packages.json"],
+  "ignorePatterns": ["**/*.test.ts", "**/*.test.tsx"]
 }

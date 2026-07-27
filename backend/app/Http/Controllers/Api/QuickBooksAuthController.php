@@ -10,12 +10,26 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+/**
+ * QuickBooks Online OAuth connection and tenant link status.
+ */
 class QuickBooksAuthController extends Controller
 {
+    /**
+     * Injects the QuickBooks service.
+     *
+     * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
+     */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
     ) {}
 
+    /**
+     * Starts the OAuth flow and returns the Intuit authorization URL.
+     *
+     * @param  Request  $request  Incoming HTTP request.
+     * @return JsonResponse
+     */
     public function connect(Request $request): JsonResponse
     {
         $state = $this->quickBooks->createAuthorizationState($request->user());
@@ -25,6 +39,12 @@ class QuickBooksAuthController extends Controller
         ]);
     }
 
+    /**
+     * Intuit OAuth callback: exchanges the code and redirects to the admin frontend.
+     *
+     * @param  Request  $request  Incoming HTTP request.
+     * @return RedirectResponse
+     */
     public function callback(Request $request): RedirectResponse
     {
         $adminUrl = config('quickbooks.frontend_admin_url');
@@ -58,6 +78,12 @@ class QuickBooksAuthController extends Controller
         }
     }
 
+    /**
+     * Returns the QuickBooks connection status for the authenticated user.
+     *
+     * @param  Request  $request  Incoming HTTP request.
+     * @return JsonResponse
+     */
     public function status(Request $request): JsonResponse
     {
         $token = $request->user()->quickBooksToken;
@@ -69,6 +95,12 @@ class QuickBooksAuthController extends Controller
         ]);
     }
 
+    /**
+     * Removes stored QuickBooks tokens for the user.
+     *
+     * @param  Request  $request  Incoming HTTP request.
+     * @return JsonResponse
+     */
     public function disconnect(Request $request): JsonResponse
     {
         $this->quickBooks->disconnect($request->user());
@@ -76,6 +108,13 @@ class QuickBooksAuthController extends Controller
         return response()->json(['connected' => false]);
     }
 
+    /**
+     * Redirects to admin with an OAuth error code in the query string.
+     *
+     * @param  string  $adminUrl  Admin frontend base URL.
+     * @param  string  $reason  OAuth error reason code.
+     * @return RedirectResponse
+     */
     private function redirectOAuthError(string $adminUrl, string $reason): RedirectResponse
     {
         return redirect("{$adminUrl}?quickbooks=error&reason=".urlencode($reason));

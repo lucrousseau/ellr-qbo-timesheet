@@ -15,6 +15,20 @@ type LoginFormProps = {
   footer?: ReactNode
 }
 
+/**
+ * Reusable Sanctum sign-in form (admin and timesheet).
+ * @param props.title Page title.
+ * @param props.subtitle Optional intro text.
+ * @param props.email Controlled email field value.
+ * @param props.password Controlled password field value.
+ * @param props.onEmailChange Updates the email value.
+ * @param props.onPasswordChange Updates the password value.
+ * @param props.onSubmit Form submit handler (sign-in).
+ * @param props.error Error message above the form.
+ * @param props.heading Sign-in card heading.
+ * @param props.footer Optional content below the button (e.g. flash alert).
+ * @returns Complete sign-in page.
+ */
 export function LoginForm({
   title,
   subtitle,
@@ -24,7 +38,7 @@ export function LoginForm({
   onPasswordChange,
   onSubmit,
   error,
-  heading = 'Connexion',
+  heading = 'Sign in',
   footer,
 }: LoginFormProps) {
   return (
@@ -44,7 +58,7 @@ export function LoginForm({
 
         <form className="mt-4 space-y-4" onSubmit={onSubmit}>
           <label className="block text-sm font-medium text-slate-700">
-            Courriel
+            Email
             <input
               type="email"
               required
@@ -54,7 +68,7 @@ export function LoginForm({
             />
           </label>
           <label className="block text-sm font-medium text-slate-700">
-            Mot de passe
+            Password
             <input
               type="password"
               required
@@ -64,7 +78,7 @@ export function LoginForm({
             />
           </label>
           <button type="submit" className={primaryButtonClass}>
-            Se connecter
+            Sign in
           </button>
           {footer}
         </form>

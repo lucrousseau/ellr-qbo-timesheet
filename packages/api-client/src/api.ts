@@ -1,7 +1,16 @@
+/**
+ * HTTP error returned by the Laravel API with an optional business code.
+ */
 export class ApiError extends Error {
   readonly status: number
   readonly code?: string
 
+  /**
+   * Builds an API error with HTTP status and optional business code.
+   * @param status HTTP status code from the response.
+   * @param message Human-readable error message.
+   * @param code Optional API `error` code (e.g. `quickbooks_not_connected`).
+   */
   constructor(status: number, message: string, code?: string) {
     super(message)
     this.name = 'ApiError'
@@ -10,15 +19,23 @@ export class ApiError extends Error {
   }
 }
 
+/** Base URL for the Laravel API (`/api`). */
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api'
 
 let csrfPrimed = false
 
-/** @internal Test helper */
+/**
+ * Resets CSRF state between tests.
+ * @internal
+ */
 export function resetCsrfStateForTests(): void {
   csrfPrimed = false
 }
 
+/**
+ * Builds the Sanctum CSRF cookie URL from `API_URL`.
+ * @returns Absolute URL for `/sanctum/csrf-cookie`.
+ */
 function resolveCsrfUrl(): string {
   try {
     const apiUrl = new URL(API_URL)
@@ -30,6 +47,10 @@ function resolveCsrfUrl(): string {
   }
 }
 
+/**
+ * Reads the `XSRF-TOKEN` value from document cookies.
+ * @returns Decoded token or `null` when absent or in a non-DOM environment.
+ */
 function readXsrfToken(): string | null {
   if (typeof document === 'undefined') {
     return null
@@ -43,11 +64,20 @@ function readXsrfToken(): string | null {
   return decodeURIComponent(match[1])
 }
 
+/**
+ * Returns whether the HTTP method mutates server state (non-safe).
+ * @param method HTTP method name (defaults to `GET`).
+ * @returns `true` for POST, PUT, PATCH, DELETE, etc.
+ */
 function isMutatingMethod(method?: string): boolean {
   const normalized = (method ?? 'GET').toUpperCase()
   return normalized !== 'GET' && normalized !== 'HEAD' && normalized !== 'OPTIONS'
 }
 
+/**
+ * Fetches the Sanctum CSRF cookie before a mutating request.
+ * @returns Promise resolved once the cookie is primed.
+ */
 export async function ensureCsrfCookie(): Promise<void> {
   await fetch(resolveCsrfUrl(), {
     credentials: 'include',
@@ -56,6 +86,12 @@ export async function ensureCsrfCookie(): Promise<void> {
   csrfPrimed = true
 }
 
+/**
+ * JSON HTTP client for the Laravel API (session cookies + Sanctum CSRF).
+ * @param path Path relative to `API_URL` (e.g. `/user`).
+ * @param init `fetch` options (method, body, headers).
+ * @returns Typed JSON body or `undefined` for a 204 response.
+ */
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const { headers: initHeaders, credentials: initCredentials, method, ...rest } = init ?? {}
   const normalizedMethod = method ?? 'GET'
@@ -95,6 +131,11 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return response.json() as Promise<T>
 }
 
+/**
+ * Parses a failed `fetch` response into an `ApiError`.
+ * @param response Non-OK HTTP response from the API.
+ * @returns Rejected-error payload with status, message, and optional code.
+ */
 async function createApiError(response: Response): Promise<ApiError> {
   let message = `API error: ${response.status}`
   let code: string | undefined
@@ -117,6 +158,11 @@ async function createApiError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, message, code)
 }
 
+/**
+ * Normalizes `HeadersInit` into a plain string record for merging.
+ * @param headers Optional fetch headers in any supported shape.
+ * @returns Header map suitable for object spread.
+ */
 function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
   if (!headers) {
     return {}
@@ -133,36 +179,42 @@ function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
   return headers
 }
 
+/**
+ * Maps a network or API error to a user-facing English message.
+ * @param error Caught error (`ApiError`, `TypeError`, etc.).
+ * @param fallback Default message when no known case matches.
+ * @returns Label safe to display in the UI.
+ */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
     if (error.status === 401) {
-      return 'Session expirée. Reconnectez-vous.'
+      return 'Session expired. Please sign in again.'
     }
     if (error.status === 403) {
       if (error.code === 'quickbooks_not_connected') {
-        return 'QuickBooks n\'est pas connecté. Connectez-le depuis l\'interface admin.'
+        return 'QuickBooks is not connected. Connect it from the admin app.'
       }
       if (error.code === 'quickbooks_expired') {
-        return 'Connexion QuickBooks expirée. Reconnectez-la depuis l\'interface admin.'
+        return 'QuickBooks connection expired. Reconnect it from the admin app.'
       }
       if (error.code === 'registration_disabled') {
-        return 'Inscription désactivée.'
+        return 'Registration disabled.'
       }
       if (error.code === 'qbo_employee_not_configured') {
-        return 'Employé QuickBooks non configuré. Contactez un administrateur.'
+        return 'QuickBooks employee not configured. Contact an administrator.'
       }
-      return 'Accès refusé.'
+      return 'Access denied.'
     }
     if (error.status === 422) {
-      return 'Données invalides ou erreur QuickBooks.'
+      return 'Invalid data or QuickBooks error.'
     }
     if (error.status === 503) {
-      return 'QuickBooks est occupé. Réessayez dans un instant.'
+      return 'QuickBooks is busy. Please try again shortly.'
     }
   }
 
   if (error instanceof TypeError) {
-    return 'Impossible de joindre l\'API Laravel.'
+    return 'Unable to reach the Laravel API.'
   }
 
   return fallback

@@ -1,58 +1,61 @@
 # Backend Laravel (API)
 
-API REST pour QuickBooks Online. OAuth2 et entité `TimeActivity` via le SDK officiel `quickbooks/v3-php-sdk`.
+REST API for QuickBooks Online. OAuth2 and `TimeActivity` entity via the official `quickbooks/v3-php-sdk`.
 
-## Arborescence clé
+## Key layout
 
 ```
-app/Http/Controllers/Api/   # Endpoints REST
+app/Http/Controllers/Api/   # REST endpoints
 app/Services/               # QuickBooksService, TimeActivityService
 app/Http/Concerns/          # ResolvesQuickBooksToken
 app/Http/Requests/          # Store/UpdateTimeActivityRequest
 app/Models/                 # QuickBooksToken, User
-routes/api.php              # Routes API
-config/quickbooks.php       # Config OAuth QBO
-tests/Feature/              # Tests Pest (API)
-tests/Unit/                 # Tests unitaires
-tests/Arch/                 # Tests d'architecture
-features/api/               # Scénarios Gherkin (Behat)
+routes/api.php              # API routes
+config/quickbooks.php       # QBO OAuth config
+tests/Feature/              # Pest API tests
+tests/Unit/                 # Unit tests
+tests/Arch/                 # Architecture tests
+features/api/               # Gherkin scenarios (Behat)
 ```
 
-## Commandes
+## Commands
 
 ```bash
 composer test              # Pest (unit + feature + arch)
-composer test:arch         # Règles d'architecture seules
-composer test:behat        # Gherkin API
-composer test:coverage     # Couverture min 85% (finance QBO)
-composer analyse           # PHPStan niveau 5
+composer test:arch         # Architecture rules only
+composer test:behat        # API Gherkin
+composer test:coverage     # Min 85 % coverage (QBO finance standard)
+composer analyse           # PHPStan level 5
 composer format:check      # Pint (style)
-composer format            # Corriger le style
-composer test:mutation     # Pest mutate, score min 80%
-composer qa                # format + analyse + couverture + arch + behat
+composer phpcs             # PHPDoc (app/)
+composer lint              # Pint + PHPCS
+composer format            # Fix Pint style
+composer test:mutation     # Pest mutate, min 80 % score
+composer qa                # format + analyse + coverage + arch + behat
 ```
 
 ## Conventions
 
-- Controllers minces : validation, délégation au service, réponse JSON (SRP).
-- Logique QBO dans `QuickBooksService` et `TimeActivityService`, pas dans les controllers (DRY + DIP).
-- `TimeActivityController` délègue au service ; pas d'import direct de facades SDK dans le controller.
-- Modèle `QuickBooksToken` : table `quickbooks_tokens`.
-- Routes protégées : middleware `auth:sanctum`.
-- Mocker `QuickBooksService` dans les tests, jamais appeler l'API Intuit en test.
-- Éviter de grossir les controllers : extraire un service si auth métier, mapping QBO ou règles employé se multiplient.
+- Thin controllers: validation, service delegation, JSON response (SRP).
+- QBO logic in `QuickBooksService` and `TimeActivityService`, not in controllers (DRY + DIP).
+- `TimeActivityController` delegates to the service; no direct SDK facades in the controller.
+- `QuickBooksToken` model: `quickbooks_tokens` table.
+- Protected routes: `auth:sanctum` middleware.
+- Mock `QuickBooksService` in tests; never call the Intuit API in tests.
+- Avoid bloated controllers: extract a service if auth, QBO mapping, or employee rules grow.
+- **PHPDoc** on all code in `app/`; see `.cursor/rules/phpdoc.mdc` and `.cursor/rules/language.mdc`.
 
-## Tests obligatoires
+## Required tests
 
-| Changement | Test requis |
-|------------|-------------|
-| Nouveau endpoint | `tests/Feature/*Test.php` + scénario Behat si applicable |
-| Nouveau service / modèle | `tests/Unit/*` ou Feature avec mocks |
-| Règle structurelle | `tests/Arch/ArchitectureTest.php` |
+| Change | Required test |
+|--------|----------------|
+| New endpoint | `tests/Feature/*Test.php` + Behat scenario if applicable |
+| New service / model | `tests/Unit/*` or Feature with mocks |
+| Structural rule | `tests/Arch/ArchitectureTest.php` |
 
-Utiliser `covers(ClassName::class)` dans Pest pour le mutation testing.
+Use `covers(ClassName::class)` in Pest for mutation testing.
 
-## Variables d'environnement
+## Environment variables
 
 ```env
 ALLOW_REGISTRATION=true

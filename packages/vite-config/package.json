@@ -10,7 +10,9 @@
     "./shared/mountApp": "./src/shared/mountApp.tsx",
     "./shared/app.css": "./src/shared/app.css",
     "./shared/test-setup": "./src/shared/test/setup.ts",
-    "./oxlint.app.json": "./oxlint.app.json"
+    "./oxlint.app.json": "./oxlint.app.json",
+    "./oxlint.base.json": "./oxlint.base.json",
+    "./oxlint.packages.json": "./oxlint.packages.json"
   },
   "peerDependencies": {
     "react": "^19.2.7",
@@ -26,6 +28,7 @@
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "eslint-plugin-jsdoc": "^50.8.0",
     "oxlint": "^1.71.0",
     "typescript": "~6.0.2"
   },

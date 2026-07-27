@@ -6,8 +6,14 @@ type UseAuthOptions = {
   bootstrapErrorFallback?: string
 }
 
+/**
+ * Manages Sanctum session bootstrap, sign-in, and sign-out.
+ * @param options.onUserLoaded Callback after a successful load or sign-in.
+ * @param options.bootstrapErrorFallback Message when the API is unreachable at startup.
+ * @returns User state, login fields, and handlers.
+ */
 export function useAuth(options: UseAuthOptions = {}) {
-  const { onUserLoaded, bootstrapErrorFallback = 'Impossible de joindre l\'API Laravel.' } = options
+  const { onUserLoaded, bootstrapErrorFallback = 'Unable to reach the Laravel API.' } = options
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [email, setEmail] = useState('')
@@ -43,7 +49,7 @@ export function useAuth(options: UseAuthOptions = {}) {
       setPassword('')
       await onUserLoaded?.(loggedInUser)
     } catch (caught) {
-      setBootstrapError(getApiErrorMessage(caught, 'Connexion impossible.'))
+      setBootstrapError(getApiErrorMessage(caught, 'Sign-in failed.'))
     }
   }
 
@@ -52,7 +58,7 @@ export function useAuth(options: UseAuthOptions = {}) {
       await logout()
       setUser(null)
     } catch (caught) {
-      setBootstrapError(getApiErrorMessage(caught, 'Déconnexion impossible.'))
+      setBootstrapError(getApiErrorMessage(caught, 'Sign-out failed.'))
     }
   }
 

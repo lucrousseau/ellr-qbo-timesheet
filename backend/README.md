@@ -1,10 +1,10 @@
-# Backend Laravel (Ellr QBO Timesheet)
+# Laravel backend (Ellr QBO Timesheet)
 
-API REST pour QuickBooks Online. Seul composant du monorepo autorisé à communiquer avec Intuit.
+REST API for QuickBooks Online. The only monorepo component allowed to communicate with Intuit.
 
-Documentation détaillée : [AGENTS.md](./AGENTS.md) et [README racine](../README.md).
+Detailed documentation: [AGENTS.md](./AGENTS.md) and [root README](../README.md).
 
-## Commandes rapides
+## Quick commands
 
 ```bash
 composer install
@@ -13,13 +13,13 @@ php artisan key:generate
 php artisan migrate
 
 composer test              # Pest
-composer test:coverage     # Couverture min 85 %
-composer test:behat        # Scénarios Gherkin
-composer test:mutation     # Mutation min 80 %
-composer analyse           # PHPStan niveau 5
+composer test:coverage     # Min 85 % coverage
+composer test:behat        # Gherkin scenarios
+composer test:mutation     # Min 80 % mutation score
+composer analyse           # PHPStan level 5
 composer format:check      # Pint
 ```
 
 ## Stack
 
-PHP 8.3, Laravel 13, Sanctum, SDK `quickbooks/v3-php-sdk`, Pest 4, Behat, PHPStan.
+PHP 8.3, Laravel 13, Sanctum, `quickbooks/v3-php-sdk` SDK, Pest 4, Behat, PHPStan.

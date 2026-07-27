@@ -9,6 +9,11 @@ type CreateAppConfigOptions = {
   importMetaUrl: string
 }
 
+/**
+ * Shared Vite config for React apps (aliases, Tailwind, dev server port).
+ * @param options Dev server port and calling module `import.meta.url`.
+ * @returns Vite `UserConfig` for `defineConfig`.
+ */
 export function createAppConfig({ port, importMetaUrl }: CreateAppConfigOptions): UserConfig {
   const configDir = path.dirname(fileURLToPath(importMetaUrl))
   const monorepoRoot = path.join(configDir, '../..')

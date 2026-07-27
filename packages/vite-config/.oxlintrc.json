@@ -1,0 +1,4 @@
+{
+  "extends": ["./oxlint.packages.json"],
+  "ignorePatterns": ["**/*.test.ts", "**/*.test.tsx"]
+}

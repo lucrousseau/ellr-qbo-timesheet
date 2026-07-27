@@ -15,3 +15,15 @@ arch('services')
 arch('no debugging helpers')
     ->expect(['dd', 'dump', 'ray'])
     ->not->toBeUsed();
+
+arch('controllers do not import qbo sdk')
+    ->expect('App\Http\Controllers')
+    ->not->toUse([
+        'QuickBooksOnline\API\DataService\DataService',
+        'QuickBooksOnline\API\Facades\TimeActivity',
+        'QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper',
+    ]);
+
+arch('http layer delegates qbo data service to services')
+    ->expect('App\Http')
+    ->not->toUse('QuickBooksOnline\API\DataService\DataService');

@@ -1,8 +1,8 @@
 # API Client (`@ellr/api-client`)
 
-Client HTTP TypeScript partagé par `apps/admin` et `apps/timesheet`. Seul point d'accès réseau côté frontend vers l'API Laravel.
+Shared TypeScript HTTP client for `apps/admin` and `apps/timesheet`. Single frontend network entry point to the Laravel API.
 
-## Fichiers
+## Files
 
 ```
 src/
@@ -10,11 +10,11 @@ src/
 ├── auth.ts         # login, logout, fetchCurrentUser, updateQboEmployee, type User
 ├── quickbooks.ts   # fetchQuickBooksStatus, connect/disconnect, OAuth callback helpers
 ├── timesheet.ts    # createTimeActivity
-├── index.ts        # Ré-exports publics
-└── api.test.ts     # Tests unitaires (obligatoires si api.ts ou auth.ts change)
+├── index.ts        # Public re-exports
+└── api.test.ts     # Unit tests (required when api.ts or auth.ts changes)
 ```
 
-## Commandes
+## Commands
 
 ```bash
 npm run lint --workspace=@ellr/api-client
@@ -24,28 +24,29 @@ npm run test:coverage --workspace=@ellr/api-client
 npm run test:mutation --workspace=@ellr/api-client
 ```
 
-## Seuils
+## Thresholds
 
-| Métrique | Seuil |
-|----------|-------|
-| Couverture (Vitest) | 85 % lignes/stmts/funcs, 75 % branches |
-| Mutation (Stryker) | break ≥ 55 %, low ≥ 65 %, high ≥ 80 % (validé, score ~93 %) |
+| Metric | Threshold |
+|--------|-----------|
+| Coverage (Vitest) | 85 % lines/stmts/funcs, 75 % branches |
+| Mutation (Stryker) | break ≥ 55 %, low ≥ 65 %, high ≥ 80 % (validated, score ~93 %) |
 
 ## Conventions
 
-- `apiFetch` : `credentials: 'include'` par défaut (Sanctum stateful), CSRF sur mutations.
-- `getApiErrorMessage` : messages utilisateur en français, codes métier (`quickbooks_not_connected`, `registration_disabled`, `qbo_employee_not_configured`, etc.) : **seule** source de vérité côté UI (DRY).
-- `ApiError` : exposer `status` et `code` pour le mapping côté UI.
-- Pas d'appel vers Intuit/QBO : uniquement `VITE_API_URL`.
-- Exports publics limités via `index.ts` (interface segregation).
-- Modules domaine (`quickbooks.ts`, `timesheet.ts`) : les apps appellent ces fonctions, pas `apiFetch` directement.
+- `apiFetch`: `credentials: 'include'` by default (Sanctum stateful), CSRF on mutations.
+- `getApiErrorMessage`: user-facing messages in **English**, stable business codes (`quickbooks_not_connected`, `registration_disabled`, `qbo_employee_not_configured`, etc.): **single** source of truth for UI copy (DRY).
+- `ApiError`: expose `status` and `code` for UI mapping.
+- No calls to Intuit/QBO: only `VITE_API_URL`.
+- **JSDoc** required on every public export; enforced by oxlint (`oxlint.base.json`).
+- Public exports limited via `index.ts` (interface segregation).
+- Domain modules (`quickbooks.ts`, `timesheet.ts`): apps call these functions, not `apiFetch` directly.
 
-## Tests obligatoires
+## Required tests
 
-| Changement | Test requis |
-|------------|-------------|
-| `apiFetch` / headers / erreurs | `api.test.ts` |
-| Auth (login, logout, user) | `api.test.ts` (section auth helpers) |
-| Nouveau export public | `api.test.ts` + mise à jour `index.ts` |
+| Change | Required test |
+|--------|----------------|
+| `apiFetch` / headers / errors | `api.test.ts` |
+| Auth (login, logout, user) | `api.test.ts` (auth helpers section) |
+| New public export | `api.test.ts` + update `index.ts` |
 
-Les apps mockent `@ellr/api-client` dans leurs tests composants ; ne pas dupliquer la logique HTTP dans les apps.
+Apps mock `@ellr/api-client` in component tests; do not duplicate HTTP logic in apps.

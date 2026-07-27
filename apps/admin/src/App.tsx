@@ -11,6 +11,10 @@ import {
 } from '@ellr/api-client'
 import { Alert, AppShell, LoadingScreen, LoginForm, useAuth, cardClass, inputClass, primaryButtonClass, secondaryButtonClass } from '@ellr/ui'
 
+/**
+ * Admin app: QuickBooks OAuth and QBO employee mapping.
+ * @returns Loading screen, sign-in, or admin dashboard depending on session.
+ */
 function App() {
   const [status, setStatus] = useState<QuickBooksStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -44,14 +48,14 @@ function App() {
     handleLogout,
   } = useAuth({
     onUserLoaded: loadQuickBooksStatus,
-    bootstrapErrorFallback: 'Impossible de charger l\'application.',
+    bootstrapErrorFallback: 'Unable to load the application.',
   })
 
   useEffect(() => {
     const { result, reason } = parseQuickBooksOAuthCallback(window.location.search)
 
     if (result === 'connected') {
-      setNotice('QuickBooks connecté avec succès.')
+      setNotice('QuickBooks connected successfully.')
       window.history.replaceState({}, '', window.location.pathname)
     }
 
@@ -75,7 +79,7 @@ function App() {
       const response = await connectQuickBooks()
       window.location.href = response.authorization_url
     } catch (caught) {
-      setError(getApiErrorMessage(caught, 'Impossible de démarrer la connexion QuickBooks.'))
+      setError(getApiErrorMessage(caught, 'Unable to start QuickBooks connection.'))
       setConnecting(false)
     }
   }
@@ -88,9 +92,9 @@ function App() {
     try {
       const updatedUser = await updateQboEmployee(qboEmployeeRef, qboEmployeeName || undefined)
       setUser(updatedUser)
-      setNotice('Employé QuickBooks enregistré.')
+      setNotice('QuickBooks employee saved.')
     } catch (caught) {
-      setError(getApiErrorMessage(caught, 'Impossible d\'enregistrer l\'employé QuickBooks.'))
+      setError(getApiErrorMessage(caught, 'Unable to save the QuickBooks employee.'))
     } finally {
       setSavingEmployee(false)
     }
@@ -100,9 +104,9 @@ function App() {
     try {
       await disconnectQuickBooks()
       setStatus({ connected: false })
-      setNotice('QuickBooks déconnecté.')
+      setNotice('QuickBooks disconnected.')
     } catch (caught) {
-      setError(getApiErrorMessage(caught, 'Déconnexion QuickBooks impossible.'))
+      setError(getApiErrorMessage(caught, 'Unable to disconnect QuickBooks.'))
     }
   }
 
@@ -114,7 +118,7 @@ function App() {
     return (
       <LoginForm
         title="Ellr QBO Timesheet"
-        subtitle="Interface d'administration"
+        subtitle="Administration"
         email={email}
         password={password}
         onEmailChange={setEmail}
@@ -131,21 +135,21 @@ function App() {
   return (
     <AppShell
       title="Ellr QBO Timesheet"
-      subtitle="Interface d'administration"
+      subtitle="Administration"
       userEmail={user.email}
       onLogout={onLogout}
     >
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">Connexion QuickBooks Online</h2>
-        <p className="mt-2 text-sm text-slate-600">Connecté en tant que {user.email}</p>
+        <h2 className="text-xl font-medium text-slate-900">QuickBooks Online connection</h2>
+        <p className="mt-2 text-sm text-slate-600">Signed in as {user.email}</p>
 
         <form className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4" onSubmit={saveQboEmployee}>
-          <h3 className="text-sm font-medium text-slate-900">Employé QuickBooks</h3>
+          <h3 className="text-sm font-medium text-slate-900">QuickBooks employee</h3>
           <p className="text-sm text-slate-600">
-            Associez ce compte à un employé QBO pour la feuille de temps.
+            Link this account to a QBO employee for the timesheet app.
           </p>
           <label className="block text-sm font-medium text-slate-700">
-            ID employé QBO
+            QBO employee ID
             <input
               required
               className={inputClass}
@@ -154,7 +158,7 @@ function App() {
             />
           </label>
           <label className="block text-sm font-medium text-slate-700">
-            Nom employé (optionnel)
+            Employee name (optional)
             <input
               className={inputClass}
               value={qboEmployeeName}
@@ -166,7 +170,7 @@ function App() {
             disabled={savingEmployee}
             className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
           >
-            {savingEmployee ? 'Enregistrement...' : 'Enregistrer l\'employé'}
+            {savingEmployee ? 'Saving...' : 'Save employee'}
           </button>
         </form>
 
@@ -184,9 +188,9 @@ function App() {
 
         {status && (
           <p className="mt-4 text-sm text-slate-600">
-            Statut :{' '}
+            Status:{' '}
             <span className="font-medium text-slate-900">
-              {status.connected ? `Connecté (realm ${status.realm_id})` : 'Non connecté'}
+              {status.connected ? `Connected (realm ${status.realm_id})` : 'Not connected'}
             </span>
           </p>
         )}
@@ -198,11 +202,11 @@ function App() {
             disabled={connecting}
             className={primaryButtonClass}
           >
-            {connecting ? 'Redirection...' : 'Connecter QuickBooks'}
+            {connecting ? 'Redirecting...' : 'Connect QuickBooks'}
           </button>
           {status?.connected && (
             <button type="button" onClick={disconnectQuickBooksFlow} className={`${secondaryButtonClass} px-4 py-2.5`}>
-              Déconnecter QuickBooks
+              Disconnect QuickBooks
             </button>
           )}
         </div>
