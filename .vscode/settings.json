@@ -14,8 +14,8 @@
   },
 
   "laravel-pint.enable": true,
-  "laravel-pint.executablePath": "${workspaceFolder}/backend/vendor/bin/pint",
-  "laravel-pint.configPath": "${workspaceFolder}/backend/pint.json",
+  "laravel-pint.executablePath": "backend/vendor/bin/pint",
+  "laravel-pint.configPath": "backend/pint.json",
 
   "intelephense.files.maxSize": 5000000,
   "intelephense.format.enable": false,
