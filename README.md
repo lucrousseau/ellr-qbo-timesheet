@@ -164,6 +164,7 @@ APP_DEBUG=false
 APP_URL=https://api.yourdomain.com
 
 ALLOW_REGISTRATION=false
+REQUIRE_EMAIL_VERIFICATION=true
 
 DB_CONNECTION=mysql
 # … database credentials
@@ -185,7 +186,16 @@ QUICKBOOKS_EXPOSE_API_ERRORS=false
 
 FRONTEND_ADMIN_URL=https://admin.yourdomain.com
 FRONTEND_TIMESHEET_URL=https://timesheet.yourdomain.com
+FRONTEND_AUTH_URL=https://timesheet.yourdomain.com
 SANCTUM_STATEFUL_DOMAINS=admin.yourdomain.com,timesheet.yourdomain.com
+
+MAIL_MAILER=smtp
+MAIL_HOST=…
+MAIL_PORT=587
+MAIL_USERNAME=…
+MAIL_PASSWORD=…
+MAIL_FROM_ADDRESS=no-reply@yourdomain.com
+MAIL_FROM_NAME="${APP_NAME}"
 ```
 
 ### Intuit Developer Portal
@@ -215,6 +225,21 @@ Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (CDN, nginx, etc.).
 - CORS/Sanctum: front domains in `SANCTUM_STATEFUL_DOMAINS`; `config/cors.php` with `supports_credentials`
 - Session cookies: parent `SESSION_DOMAIN` (e.g. `.yourdomain.com`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
 - QBO employee per user (`qbo_employee_ref`): set from admin, validated by the API
+- `REQUIRE_EMAIL_VERIFICATION=true`: block sign-in and protected routes until the user confirms email
+- Password reset: `POST /api/forgot-password` and `POST /api/reset-password` (configure SMTP or another mail driver)
+- Promote at least one administrator (`users.is_admin = 1`) before connecting QuickBooks
+
+### Rotating `APP_KEY`
+
+`APP_KEY` encrypts QuickBooks OAuth tokens in `quickbooks_tokens`. Rotating it without preparation makes existing tokens unreadable.
+
+1. Schedule maintenance and disconnect QuickBooks for all users (or accept a forced reconnect).
+2. Set the previous key in `APP_PREVIOUS_KEYS` (comma-separated) before deploying the new `APP_KEY`.
+3. Deploy the new `APP_KEY`, run `php artisan config:cache`, and verify decrypt works for existing rows.
+4. Ask administrators to reconnect QuickBooks if tokens were not re-encrypted.
+5. Remove old keys from `APP_PREVIOUS_KEYS` after all tokens have been refreshed or replaced.
+
+For greenfield rotation with no live tokens, update `APP_KEY` and run `php artisan key:generate` on a fresh environment only.
 
 ### Pre-release validation
 

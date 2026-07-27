@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
+use App\Services\AuthSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,15 @@ use Illuminate\Support\Facades\Auth;
  */
 class AuthController extends Controller
 {
+    /**
+     * Injects the auth session helper.
+     *
+     * @param  AuthSessionService  $authSession  Login and registration session rules.
+     */
+    public function __construct(
+        private readonly AuthSessionService $authSession,
+    ) {}
+
     /**
      * Creates a user account if public registration is enabled.
      *
@@ -36,6 +46,7 @@ class AuthController extends Controller
         }
 
         $user = User::query()->create($request->validated());
+        $this->authSession->sendVerificationIfRequired($user);
         Auth::login($user);
 
         if ($request->hasSession()) {
@@ -57,6 +68,12 @@ class AuthController extends Controller
 
         if (! Auth::attempt($credentials)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
+        }
+
+        $user = $request->user();
+
+        if ($response = $this->authSession->rejectUnverifiedLogin($user, $request)) {
+            return $response;
         }
 
         if ($request->hasSession()) {

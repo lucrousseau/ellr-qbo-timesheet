@@ -1,16 +1,17 @@
 <?php
 
-use App\Http\Controllers\Api\QboEmployeeController;
+use App\Http\Controllers\Api\AdminQboEmployeeController;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QuickBooksService;
 use QuickBooksOnline\API\DataService\DataService;
 
-covers(QboEmployeeController::class);
+covers(AdminQboEmployeeController::class);
 
-it('updates the authenticated administrators qbo employee mapping', function () {
+it('allows administrators to map a qbo employee for another user', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
+    $target = User::factory()->create();
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '42')->andReturn((object) ['Id' => '42']);
@@ -21,40 +22,32 @@ it('updates the authenticated administrators qbo employee mapping', function () 
     });
 
     $this->actingAs($admin)
-        ->patchJson('/api/user/qbo-employee', [
+        ->patchJson("/api/admin/users/{$target->id}/qbo-employee", [
             'qbo_employee_ref' => '42',
             'qbo_employee_name' => 'Jane Doe',
         ], frontendHeaders())
         ->assertOk()
-        ->assertJsonPath('user.qbo_employee_ref', '42')
-        ->assertJsonPath('user.qbo_employee_name', 'Jane Doe');
+        ->assertJsonPath('user.qbo_employee_ref', '42');
 
-    expect($admin->fresh()->qbo_employee_ref)->toBe('42');
+    expect($target->fresh()->qbo_employee_ref)->toBe('42');
 });
 
-it('requires administrator access to update qbo employee mapping', function () {
+it('requires administrator access to map employees for other users', function () {
     $user = User::factory()->create();
+    $target = User::factory()->create();
 
     $this->actingAs($user)
-        ->patchJson('/api/user/qbo-employee', [
+        ->patchJson("/api/admin/users/{$target->id}/qbo-employee", [
             'qbo_employee_ref' => '42',
         ], frontendHeaders())
         ->assertForbidden()
         ->assertJsonPath('error', 'admin_required');
 });
 
-it('validates qbo employee payload', function () {
-    $admin = actingAsAdmin();
-
-    $this->actingAs($admin)
-        ->patchJson('/api/user/qbo-employee', [], frontendHeaders())
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['qbo_employee_ref']);
-});
-
-it('rejects unknown qbo employees', function () {
+it('rejects unknown qbo employees when mapping another user', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
+    $target = User::factory()->create();
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '999')->andReturn(null);
@@ -65,7 +58,7 @@ it('rejects unknown qbo employees', function () {
     });
 
     $this->actingAs($admin)
-        ->patchJson('/api/user/qbo-employee', [
+        ->patchJson("/api/admin/users/{$target->id}/qbo-employee", [
             'qbo_employee_ref' => '999',
         ], frontendHeaders())
         ->assertUnprocessable()

@@ -16,4 +16,7 @@ enum ApiErrorCode: string
     case QuickBooksExpired = 'quickbooks_expired';
     case QuickBooksBusy = 'quickbooks_busy';
     case QboEmployeeNotConfigured = 'qbo_employee_not_configured';
+    case QboEmployeeInvalid = 'qbo_employee_invalid';
+    case AdminRequired = 'admin_required';
+    case EmailNotVerified = 'email_not_verified';
 }

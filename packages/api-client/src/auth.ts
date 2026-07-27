@@ -11,6 +11,7 @@ export type User = {
   id: number
   name: string
   email: string
+  email_verified_at?: string | null
   qbo_employee_ref?: string | null
   qbo_employee_name?: string | null
 }
@@ -73,4 +74,69 @@ export async function updateQboEmployee(
   })
 
   return response.user
+}
+
+/**
+ * Links a QuickBooks employee to another user account (administrator only).
+ * @param userId Target application user ID.
+ * @param qboEmployeeRef QuickBooks employee ID.
+ * @param qboEmployeeName Optional display name.
+ * @returns Updated user.
+ */
+export async function updateUserQboEmployee(
+  userId: number,
+  qboEmployeeRef: string,
+  qboEmployeeName?: string,
+): Promise<User> {
+  const response = await apiFetch<{ user: User }>(`/admin/users/${userId}/qbo-employee`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      qbo_employee_ref: qboEmployeeRef,
+      qbo_employee_name: qboEmployeeName ?? null,
+    }),
+  })
+
+  return response.user
+}
+
+/**
+ * Sends a password reset link to the given email address.
+ * @param email Account email address.
+ * @returns Promise resolved after the API accepts the request.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await apiFetch('/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+/**
+ * Resets the account password using a token from email.
+ * @param payload Reset token, email, and new password fields.
+ * @returns Promise resolved after the password is updated.
+ */
+export async function resetPassword(payload: {
+  token: string
+  email: string
+  password: string
+  passwordConfirmation: string
+}): Promise<void> {
+  await apiFetch('/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({
+      token: payload.token,
+      email: payload.email,
+      password: payload.password,
+      password_confirmation: payload.passwordConfirmation,
+    }),
+  })
+}
+
+/**
+ * Queues a new email verification link for the signed-in user.
+ * @returns Promise resolved after the API accepts the request.
+ */
+export async function resendVerificationEmail(): Promise<void> {
+  await apiFetch('/email/verification-notification', { method: 'POST' })
 }

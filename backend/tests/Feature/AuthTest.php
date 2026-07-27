@@ -114,6 +114,24 @@ it('rate limits login attempts', function () {
     ], frontendHeaders())->assertStatus(429);
 });
 
+it('rate limits registration attempts', function () {
+    for ($i = 0; $i < 10; $i++) {
+        $this->postJson('/api/register', [
+            'name' => 'Jane Doe',
+            'email' => "user{$i}@example.com",
+            'password' => 'password',
+            'password_confirmation' => 'mismatch',
+        ], frontendHeaders())->assertUnprocessable();
+    }
+
+    $this->postJson('/api/register', [
+        'name' => 'Jane Doe',
+        'email' => 'blocked@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ], frontendHeaders())->assertStatus(429);
+});
+
 it('rejects registration when disabled', function () {
     config(['app.allow_registration' => false]);
 
@@ -228,12 +246,13 @@ it('requires a string password on login', function () {
 });
 
 it('returns the authenticated user', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->admin()->create();
 
     $this->actingAs($user)
         ->getJson('/api/user')
         ->assertOk()
-        ->assertJsonPath('user.id', $user->id);
+        ->assertJsonPath('user.id', $user->id)
+        ->assertJsonMissingPath('user.is_admin');
 });
 
 it('logs out the authenticated user', function () {

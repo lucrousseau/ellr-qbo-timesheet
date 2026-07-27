@@ -9,7 +9,6 @@ namespace App\Services;
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
@@ -21,6 +20,15 @@ use QuickBooksOnline\API\DataService\DataService;
 class QuickBooksService
 {
     private const OAUTH_STATE_TTL_MINUTES = 10;
+
+    /**
+     * Injects the token revocation service for disconnect flows.
+     *
+     * @param  QuickBooksTokenRevocationService  $tokenRevocation  Intuit token revocation.
+     */
+    public function __construct(
+        private readonly QuickBooksTokenRevocationService $tokenRevocation,
+    ) {}
 
     /**
      * Configures the Intuit DataService with an optional OAuth token.
@@ -195,33 +203,28 @@ class QuickBooksService
     }
 
     /**
-     * Removes all QuickBooks tokens for a user.
+     * Revokes and removes all QuickBooks tokens for a user.
      *
      * @param  User  $user  User whose tokens are removed.
      * @return void
      */
     public function disconnect(User $user): void
     {
+        $tokens = QuickBooksToken::query()
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($tokens as $token) {
+            try {
+                $this->tokenRevocation->revoke($token);
+            } catch (QuickBooksException) {
+                // Local disconnect must still succeed when Intuit revocation fails.
+            }
+        }
+
         QuickBooksToken::query()
             ->where('user_id', $user->id)
             ->delete();
-    }
-
-    /**
-     * Formats a QuickBooks SDK error as a 422 JSON response.
-     *
-     * @param  object  $error  QuickBooks SDK error object.
-     * @return JsonResponse
-     */
-    public function apiErrorJsonResponse(object $error): JsonResponse
-    {
-        $payload = ['message' => 'QuickBooks API error'];
-
-        if (config('quickbooks.expose_api_errors')) {
-            $payload['error'] = $error->getResponseBody();
-        }
-
-        return response()->json($payload, 422);
     }
 
     /**

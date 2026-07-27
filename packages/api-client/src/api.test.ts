@@ -9,6 +9,14 @@ import {
   quickBooksOAuthErrorMessage,
 } from './quickbooks'
 import { createTimeActivity } from './timesheet'
+import {
+  emailVerificationMessage,
+  isEmailUnverified,
+  isResetPasswordRoute,
+  parseEmailVerificationCallback,
+  parseResetPasswordParams,
+  shouldBlockUnverifiedUser,
+} from './authRecovery'
 
 describe('apiFetch', () => {
   afterEach(() => {
@@ -265,9 +273,30 @@ describe('getApiErrorMessage', () => {
     ).toBe('Registration disabled.')
   })
 
+  it('maps administrator required responses', () => {
+    expect(
+      getApiErrorMessage(new ApiError(403, 'API error: 403', 'admin_required'), 'fallback'),
+    ).toBe('Administrator access required.')
+  })
+
+  it('maps email not verified responses', () => {
+    expect(
+      getApiErrorMessage(new ApiError(403, 'API error: 403', 'email_not_verified'), 'fallback'),
+    ).toBe('Verify your email address before signing in.')
+  })
+
+  it('maps invalid qbo employee responses', () => {
+    expect(
+      getApiErrorMessage(new ApiError(422, 'API error: 422', 'qbo_employee_invalid'), 'fallback'),
+    ).toBe('QuickBooks employee not found.')
+  })
+
   it('maps validation responses to a quickbooks message', () => {
     expect(getApiErrorMessage(new ApiError(422, 'API error: 422'), 'fallback')).toBe(
       'Invalid data or QuickBooks error.',
+    )
+    expect(getApiErrorMessage(new ApiError(422, 'This password does not match our records.'), 'fallback')).toBe(
+      'This password does not match our records.',
     )
   })
 
@@ -557,5 +586,38 @@ describe('timesheet api', () => {
         end_time: '2026-07-27T17:00:00',
       }),
     ).resolves.toEqual({ Id: '99' })
+  })
+})
+
+describe('auth recovery helpers', () => {
+  it('parses email verification callbacks', () => {
+    expect(parseEmailVerificationCallback('?email=verified')).toEqual({ result: 'verified' })
+    expect(parseEmailVerificationCallback('?email=error&reason=expired')).toEqual({
+      result: 'error',
+      reason: 'expired',
+    })
+  })
+
+  it('maps email verification callbacks to english messages', () => {
+    expect(emailVerificationMessage({ result: 'verified' })).toContain('verified')
+    expect(emailVerificationMessage({ result: 'error', reason: 'expired' })).toContain('expired')
+  })
+
+  it('detects reset password routes and query params', () => {
+    expect(isResetPasswordRoute('/reset-password')).toBe(true)
+    expect(isResetPasswordRoute('/app/reset-password')).toBe(true)
+    expect(isResetPasswordRoute('/not-reset-password')).toBe(false)
+    expect(parseResetPasswordParams('?token=abc&email=user%40example.com')).toEqual({
+      token: 'abc',
+      email: 'user@example.com',
+    })
+  })
+
+  it('detects unverified users and blocking rules', () => {
+    expect(isEmailUnverified({ email_verified_at: null })).toBe(true)
+    expect(isEmailUnverified({ email_verified_at: '' })).toBe(true)
+    expect(isEmailUnverified({ email_verified_at: '2026-01-01T00:00:00Z' })).toBe(false)
+    expect(shouldBlockUnverifiedUser({ email_verified_at: null }, true)).toBe(true)
+    expect(shouldBlockUnverifiedUser({ email_verified_at: null }, false)).toBe(false)
   })
 })

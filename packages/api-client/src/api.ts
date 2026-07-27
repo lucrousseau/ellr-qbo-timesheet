@@ -207,9 +207,21 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
       if (error.code === 'qbo_employee_not_configured') {
         return 'QuickBooks employee not configured. Contact an administrator.'
       }
+      if (error.code === 'admin_required') {
+        return 'Administrator access required.'
+      }
+      if (error.code === 'email_not_verified') {
+        return 'Verify your email address before signing in.'
+      }
       return 'Access denied.'
     }
     if (error.status === 422) {
+      if (error.code === 'qbo_employee_invalid') {
+        return 'QuickBooks employee not found.'
+      }
+      if (error.message && !error.message.startsWith('API error:')) {
+        return error.message
+      }
       return 'Invalid data or QuickBooks error.'
     }
     if (error.status === 503) {

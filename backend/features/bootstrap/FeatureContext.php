@@ -52,7 +52,7 @@ class FeatureContext implements Context
      */
     public function anAuthenticatedApiUser(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
     }
 
     /**

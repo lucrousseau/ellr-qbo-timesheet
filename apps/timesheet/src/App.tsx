@@ -2,74 +2,57 @@
  * @file Timesheet UI for creating and reviewing QuickBooks time activities.
  */
 
-import { Alert, AppShell, LoadingScreen, LoginForm, useAuth } from '@ellr/ui'
+import { Alert, AppShell, LoadingScreen } from '@ellr/ui'
+import { EmailVerificationBanner } from './components/EmailVerificationBanner'
 import { QboEmployeeWarning } from './components/QboEmployeeWarning'
 import { TimeEntryForm } from './components/TimeEntryForm'
+import { TimesheetGuestAuth } from './components/TimesheetGuestAuth'
+import { useTimesheetAuth } from './hooks/useTimesheetAuth'
 import { useTimeEntry } from './hooks/useTimeEntry'
 
 /**
- * Timesheet app: Sanctum sign-in and QBO time activity entry.
- * @returns Loading screen, sign-in, or time form depending on session.
+ * Timesheet app: sign-in, password recovery, and QBO time activity entry.
+ * @returns Loading screen, auth flows, or time form depending on session.
  */
 function App() {
   const { form, setForm, submitting, message, clearMessage, submit } = useTimeEntry()
+  const auth = useTimesheetAuth()
 
-  const {
-    user,
-    authLoading,
-    email,
-    setEmail,
-    password,
-    setPassword,
-    bootstrapError,
-    handleLogin,
-    handleLogout,
-  } = useAuth()
-
-  const onLogout = async () => {
-    clearMessage()
-    await handleLogout()
-  }
-
-  if (authLoading) {
+  if (auth.authLoading) {
     return <LoadingScreen />
   }
 
-  if (!user) {
-    return (
-      <LoginForm
-        title="Timesheet"
-        subtitle="Sign in to record your time"
-        email={email}
-        password={password}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onSubmit={handleLogin}
-        error={bootstrapError}
-        heading="Sign in"
-        footer={
-          message ? (
-            <Alert variant={message.type === 'error' ? 'error' : 'success'}>{message.text}</Alert>
-          ) : undefined
-        }
-      />
-    )
+  if (!auth.user) {
+    return <TimesheetGuestAuth auth={auth} message={message} />
   }
 
-  const employeeLabel = user.qbo_employee_name
-    ? `${user.qbo_employee_name} (${user.qbo_employee_ref})`
-    : (user.qbo_employee_ref ?? '')
+  const employeeLabel = auth.user.qbo_employee_name
+    ? `${auth.user.qbo_employee_name} (${auth.user.qbo_employee_ref})`
+    : (auth.user.qbo_employee_ref ?? '')
+
+  const onLogout = async () => {
+    clearMessage()
+    await auth.handleLogout()
+  }
 
   return (
-    <AppShell title="Timesheet" userEmail={user.email} onLogout={onLogout}>
-      {bootstrapError && (
+    <AppShell title="Timesheet" userEmail={auth.user.email} onLogout={onLogout}>
+      {auth.bootstrapError && (
         <div className="mb-4">
-          <Alert variant="error">{bootstrapError}</Alert>
+          <Alert variant="error">{auth.bootstrapError}</Alert>
         </div>
       )}
-      {!user.qbo_employee_ref ? (
+      {auth.showEmailVerification(auth.user) && (
+        <EmailVerificationBanner
+          message={auth.verificationMessage}
+          messageVariant={auth.verificationMessageVariant}
+          sending={auth.verificationSending}
+          onResend={auth.handleResendVerification}
+        />
+      )}
+      {!auth.user.qbo_employee_ref ? (
         <QboEmployeeWarning />
-      ) : (
+      ) : auth.showEmailVerification(auth.user) ? null : (
         <TimeEntryForm
           employeeLabel={employeeLabel}
           form={form}

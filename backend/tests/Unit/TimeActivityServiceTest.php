@@ -5,6 +5,7 @@ use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QboEmployeeAuthorizationService;
+use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityService;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -16,7 +17,7 @@ function makeTimeActivityService(DataService $dataService): TimeActivityService
     $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
     $quickBooks->shouldReceive('dataService')->andReturn($dataService);
 
-    return new TimeActivityService($quickBooks, new QboEmployeeAuthorizationService);
+    return new TimeActivityService($quickBooks, new QboEmployeeAuthorizationService, new QuickBooksApiErrorFormatterService);
 }
 
 function makeUserWithEmployee(): User
@@ -59,6 +60,25 @@ it('lists time activities for a user', function () {
     $token = QuickBooksToken::factory()->make();
 
     expect($service->listForUser($user, $token))->toHaveCount(1);
+});
+
+it('escapes single quotes in employee refs for qbo queries', function () {
+    $maliciousRef = "7' OR '1'='1";
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '7\\' OR \\'1\\'=\\'1' MAXRESULTS 100")
+        ->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $service = makeTimeActivityService($dataService);
+    $user = User::factory()->make([
+        'qbo_employee_ref' => $maliciousRef,
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+    $token = QuickBooksToken::factory()->make();
+
+    expect($service->listForUser($user, $token))->toBe([]);
 });
 
 it('creates a time activity for a user', function () {

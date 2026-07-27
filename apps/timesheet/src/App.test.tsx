@@ -1,20 +1,30 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
-import { ApiError, createTimeActivity, fetchCurrentUser, login } from '@ellr/api-client'
+import { ApiError, createTimeActivity, fetchAppConfig, fetchCurrentUser, login, requestPasswordReset, resendVerificationEmail, resetPassword } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 vi.mock('@ellr/api-client', async () =>
   buildApiClientMock({
     createTimeActivity: vi.fn(),
+    fetchAppConfig: vi.fn().mockResolvedValue({ require_email_verification: false }),
+    requestPasswordReset: vi.fn(),
+    resetPassword: vi.fn(),
+    resendVerificationEmail: vi.fn(),
   }),
 )
 
 describe('Timesheet App', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/')
     vi.mocked(createTimeActivity).mockReset()
     vi.mocked(fetchCurrentUser).mockReset()
+    vi.mocked(fetchAppConfig).mockReset()
+    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: false })
+    vi.mocked(requestPasswordReset).mockReset()
+    vi.mocked(resetPassword).mockReset()
+    vi.mocked(resendVerificationEmail).mockReset()
   })
 
   it('shows an api outage message when session bootstrap fails', async () => {
@@ -384,6 +394,82 @@ describe('Timesheet App', () => {
         start_time: '2026-07-27T09:00',
         end_time: '2026-07-27T17:00',
       })
+    })
+  })
+
+  it('opens the forgot password screen', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+
+    expect(screen.getByRole('heading', { name: /forgot password/i })).toBeInTheDocument()
+  })
+
+  it('requests a password reset link', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+    vi.mocked(requestPasswordReset).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+    await user.type(screen.getByLabelText(/email/i), 'user@example.com')
+    await user.click(screen.getByRole('button', { name: /send reset link/i }))
+
+    await waitFor(() => {
+      expect(requestPasswordReset).toHaveBeenCalledWith('user@example.com')
+      expect(screen.getByText(/reset link has been sent/i)).toBeInTheDocument()
+    })
+  })
+
+  it('shows email verification banner for unverified users when verification is required', async () => {
+    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: true })
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      email_verified_at: null,
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/verify your email address/i)).toBeInTheDocument()
+    })
+  })
+
+  it('allows unverified users to record time when verification is not required', async () => {
+    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: false })
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      email_verified_at: null,
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/verify your email address/i)).not.toBeInTheDocument()
+  })
+
+  it('shows a verification success notice from the callback query', async () => {
+    window.history.replaceState({}, '', '/?email=verified')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/email verified/i)).toBeInTheDocument()
     })
   })
 })

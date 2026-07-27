@@ -24,6 +24,7 @@ class HealthController extends Controller
         return response()->json([
             'status' => 'ok',
             'service' => 'ellr-qbo-timesheet-api',
+            'require_email_verification' => (bool) config('app.require_email_verification'),
         ]);
     }
 }

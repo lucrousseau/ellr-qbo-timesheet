@@ -67,6 +67,15 @@ function actingAsWithQboEmployee(array $attributes = []): User
     return $user;
 }
 
+function actingAsAdmin(array $attributes = []): User
+{
+    $user = User::factory()->admin()->create($attributes);
+
+    Sanctum::actingAs($user);
+
+    return $user;
+}
+
 function frontendHeaders(): array
 {
     return [

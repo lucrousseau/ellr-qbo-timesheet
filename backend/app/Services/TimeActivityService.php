@@ -20,10 +20,12 @@ class TimeActivityService
      *
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
      * @param  QboEmployeeAuthorizationService  $employeeAuthorization  QBO employee ownership checks.
+     * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
         private readonly QboEmployeeAuthorizationService $employeeAuthorization,
+        private readonly QuickBooksApiErrorFormatterService $apiErrors,
     ) {}
 
     /**
@@ -43,7 +45,7 @@ class TimeActivityService
         );
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooks->apiErrorJsonResponse($error));
+            abort($this->apiErrors->jsonResponse($error));
         }
 
         return is_array($activities) ? $activities : [];
@@ -90,7 +92,7 @@ class TimeActivityService
         $result = $dataService->Add($timeActivity);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooks->apiErrorJsonResponse($error));
+            abort($this->apiErrors->jsonResponse($error));
         }
 
         return $result;
@@ -156,7 +158,7 @@ class TimeActivityService
         $result = $dataService->Update($timeActivity);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooks->apiErrorJsonResponse($error));
+            abort($this->apiErrors->jsonResponse($error));
         }
 
         return $result;
@@ -178,7 +180,7 @@ class TimeActivityService
         $dataService->Delete($existing);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooks->apiErrorJsonResponse($error));
+            abort($this->apiErrors->jsonResponse($error));
         }
     }
 
@@ -195,7 +197,7 @@ class TimeActivityService
         $activity = $dataService->FindById('TimeActivity', $id);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooks->apiErrorJsonResponse($error));
+            abort($this->apiErrors->jsonResponse($error));
         }
 
         if (! $activity) {

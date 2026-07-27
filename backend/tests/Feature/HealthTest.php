@@ -12,5 +12,6 @@ it('returns api health status', function () {
         ->assertJson([
             'status' => 'ok',
             'service' => 'ellr-qbo-timesheet-api',
+            'require_email_verification' => false,
         ]);
 });

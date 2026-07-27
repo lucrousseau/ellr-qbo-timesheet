@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Services\AuthSessionService;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
@@ -21,7 +22,9 @@ it('logs out through the web guard and clears the session', function () {
 
     Auth::shouldReceive('guard')->once()->with('web')->andReturn($guard);
 
-    $response = (new AuthController)->logout($request);
+    $authSession = Mockery::mock(AuthSessionService::class);
+
+    $response = (new AuthController($authSession))->logout($request);
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getData(true))->toBe(['message' => 'Logged out.']);
@@ -35,7 +38,9 @@ it('skips session cleanup when the request has no session', function () {
 
     $request = Request::create('/api/logout', 'POST');
 
-    $response = (new AuthController)->logout($request);
+    $authSession = Mockery::mock(AuthSessionService::class);
+
+    $response = (new AuthController($authSession))->logout($request);
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getData(true))->toBe(['message' => 'Logged out.']);

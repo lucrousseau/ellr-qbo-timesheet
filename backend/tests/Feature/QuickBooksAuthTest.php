@@ -6,6 +6,7 @@ use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QuickBooksService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 
 covers(QuickBooksAuthController::class);
@@ -14,8 +15,8 @@ it('requires authentication for quickbooks connect', function () {
     $this->getJson('/api/quickbooks/connect')->assertUnauthorized();
 });
 
-it('returns quickbooks authorization url for authenticated users', function () {
-    Sanctum::actingAs(User::factory()->create());
+it('returns quickbooks authorization url for authenticated administrators', function () {
+    actingAsAdmin();
 
     $this->mock(QuickBooksService::class, function ($mock) {
         $mock->shouldReceive('createAuthorizationState')->once()->andReturn('secure-state');
@@ -30,6 +31,14 @@ it('returns quickbooks authorization url for authenticated users', function () {
         ->assertJson([
             'authorization_url' => 'https://appcenter.intuit.com/connect/oauth2',
         ]);
+});
+
+it('rejects quickbooks connect for non-administrators', function () {
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->getJson('/api/quickbooks/connect')
+        ->assertForbidden()
+        ->assertJsonPath('error', 'admin_required');
 });
 
 it('redirects to admin after oauth callback', function () {
@@ -114,9 +123,8 @@ it('requires oauth callback parameters', function () {
         ->assertRedirectContains('reason=missing_params');
 });
 
-it('reports quickbooks connection status for authenticated users', function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+it('reports quickbooks connection status for authenticated administrators', function () {
+    $user = actingAsAdmin();
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-42']);
 
     $this->getJson('/api/quickbooks/status')
@@ -128,9 +136,16 @@ it('reports quickbooks connection status for authenticated users', function () {
         ->assertJsonStructure(['connected', 'realm_id', 'access_token_expires_at']);
 });
 
+it('rejects quickbooks status for non-administrators', function () {
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->getJson('/api/quickbooks/status')
+        ->assertForbidden()
+        ->assertJsonPath('error', 'admin_required');
+});
+
 it('reports the latest quickbooks connection for a user', function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    $user = actingAsAdmin();
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'old-realm']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'new-realm']);
 
@@ -140,9 +155,8 @@ it('reports the latest quickbooks connection for a user', function () {
 });
 
 it('scopes quickbooks status to the authenticated user', function () {
-    $user = User::factory()->create();
+    $user = actingAsAdmin();
     $otherUser = User::factory()->create();
-    Sanctum::actingAs($user);
     QuickBooksToken::factory()->forUser($otherUser)->create(['realm_id' => 'other-realm']);
 
     $this->getJson('/api/quickbooks/status')
@@ -152,9 +166,12 @@ it('scopes quickbooks status to the authenticated user', function () {
         ]);
 });
 
-it('disconnects quickbooks for authenticated users', function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+it('disconnects quickbooks for authenticated administrators', function () {
+    Http::fake([
+        'developer.api.intuit.com/*' => Http::response('', 200),
+    ]);
+
+    $user = actingAsAdmin();
     QuickBooksToken::factory()->forUser($user)->create();
 
     $this->postJson('/api/quickbooks/disconnect')
@@ -162,6 +179,14 @@ it('disconnects quickbooks for authenticated users', function () {
         ->assertJson(['connected' => false]);
 
     expect(QuickBooksToken::query()->count())->toBe(0);
+});
+
+it('rejects quickbooks disconnect for non-administrators', function () {
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->postJson('/api/quickbooks/disconnect')
+        ->assertForbidden()
+        ->assertJsonPath('error', 'admin_required');
 });
 
 it('requires authentication for quickbooks status', function () {
@@ -172,9 +197,16 @@ it('requires authentication for quickbooks disconnect', function () {
     $this->postJson('/api/quickbooks/disconnect')->assertUnauthorized();
 });
 
+it('rate limits oauth callback requests', function () {
+    for ($i = 0; $i < 30; $i++) {
+        $this->get('/api/quickbooks/callback');
+    }
+
+    $this->get('/api/quickbooks/callback')->assertStatus(429);
+});
+
 it('stores oauth state in cache during connect flow', function () {
-    $user = User::factory()->create();
-    Sanctum::actingAs($user);
+    $user = actingAsAdmin();
 
     $service = app(QuickBooksService::class);
     $state = $service->createAuthorizationState($user);

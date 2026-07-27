@@ -42,3 +42,11 @@ it('casts password and email verification datetime', function () {
     expect($user->password)->not->toBe('plain-password')
         ->and($user->email_verified_at)->toBeInstanceOf(Carbon::class);
 });
+
+it('identifies administrator accounts', function () {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create();
+
+    expect($admin->isAdmin())->toBeTrue()
+        ->and($user->isAdmin())->toBeFalse();
+});

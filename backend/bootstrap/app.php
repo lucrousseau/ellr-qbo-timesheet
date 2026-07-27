@@ -4,6 +4,8 @@
  * Laravel application bootstrap: API routing, stateful Sanctum middleware, and JSON errors for /api.
  */
 
+use App\Http\Middleware\EnsureEmailVerifiedIfRequired;
+use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->alias([
+            'admin' => EnsureUserIsAdmin::class,
+            'verified.email' => EnsureEmailVerifiedIfRequired::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

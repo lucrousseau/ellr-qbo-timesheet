@@ -39,5 +39,6 @@ export function createAppConfig({ port, importMetaUrl }: CreateAppConfigOptions)
         '@ellr/ui': path.join(monorepoRoot, 'packages/ui/src/index.ts'),
       },
     },
+    appType: 'spa',
   })
 }

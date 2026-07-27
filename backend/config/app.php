@@ -59,6 +59,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Email Verification
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, users must verify their email before using protected API
+    | routes or signing in after registration.
+    |
+    */
+
+    'require_email_verification' => (bool) env(
+        'REQUIRE_EMAIL_VERIFICATION',
+        env('APP_ENV', 'production') === 'production',
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Frontend Auth URL
+    |--------------------------------------------------------------------------
+    |
+    | Base URL used in verification and password reset emails. Defaults to the
+    | timesheet app where users sign in.
+    |
+    */
+
+    'frontend_auth_url' => env('FRONTEND_AUTH_URL', env('FRONTEND_TIMESHEET_URL', 'http://localhost:5174')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

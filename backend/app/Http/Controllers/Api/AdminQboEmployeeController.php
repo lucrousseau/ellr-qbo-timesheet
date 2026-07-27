@@ -1,20 +1,21 @@
 <?php
 
 /**
- * QuickBooks employee mapping for authenticated user accounts.
+ * Administrator endpoints for mapping QuickBooks employees to user accounts.
  */
 
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateQboEmployeeRequest;
+use App\Models\User;
 use App\Services\QboEmployeeService;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Updates the QBO employee reference stored on the user profile.
+ * Allows administrators to link a QBO employee to any application user.
  */
-class QboEmployeeController extends Controller
+class AdminQboEmployeeController extends Controller
 {
     /**
      * Injects the QBO employee mapping service.
@@ -26,15 +27,19 @@ class QboEmployeeController extends Controller
     ) {}
 
     /**
-     * Associates a QuickBooks employee with the authenticated administrator.
+     * Associates a QuickBooks employee with the given user account.
      *
      * @param  UpdateQboEmployeeRequest  $request  Validated employee mapping payload.
+     * @param  User  $user  Target user account.
      * @return JsonResponse
      */
-    public function update(UpdateQboEmployeeRequest $request): JsonResponse
+    public function update(UpdateQboEmployeeRequest $request, User $user): JsonResponse
     {
-        $user = $request->user();
-        $updated = $this->qboEmployee->updateMapping($user, $user, $request->validated());
+        $updated = $this->qboEmployee->updateMapping(
+            $request->user(),
+            $user,
+            $request->validated(),
+        );
 
         return response()->json(['user' => $updated]);
     }

@@ -3,7 +3,27 @@
  */
 
 export { ApiError, API_URL, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
-export { fetchCurrentUser, login, logout, updateQboEmployee, type User } from './auth'
+export { fetchAppConfig, type AppConfig } from './appConfig'
+export {
+  fetchCurrentUser,
+  login,
+  logout,
+  requestPasswordReset,
+  resendVerificationEmail,
+  resetPassword,
+  updateQboEmployee,
+  updateUserQboEmployee,
+  type User,
+} from './auth'
+export {
+  emailVerificationMessage,
+  isEmailUnverified,
+  isResetPasswordRoute,
+  parseEmailVerificationCallback,
+  parseResetPasswordParams,
+  shouldBlockUnverifiedUser,
+  type EmailVerificationCallback,
+} from './authRecovery'
 export {
   connectQuickBooks,
   disconnectQuickBooks,

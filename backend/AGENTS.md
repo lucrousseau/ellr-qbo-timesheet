@@ -59,6 +59,7 @@ Use `covers(ClassName::class)` in Pest for mutation testing.
 
 ```env
 ALLOW_REGISTRATION=true
+REQUIRE_EMAIL_VERIFICATION=false
 QUICKBOOKS_CLIENT_ID=
 QUICKBOOKS_CLIENT_SECRET=
 QUICKBOOKS_REDIRECT_URI=http://localhost:8000/api/quickbooks/callback
