@@ -6,7 +6,9 @@ API REST pour QuickBooks Online. OAuth2 et entité `TimeActivity` via le SDK off
 
 ```
 app/Http/Controllers/Api/   # Endpoints REST
-app/Services/               # QuickBooksService
+app/Services/               # QuickBooksService, TimeActivityService
+app/Http/Concerns/          # ResolvesQuickBooksToken
+app/Http/Requests/          # Store/UpdateTimeActivityRequest
 app/Models/                 # QuickBooksToken, User
 routes/api.php              # Routes API
 config/quickbooks.php       # Config OAuth QBO
@@ -33,12 +35,12 @@ composer qa                # format + analyse + couverture + arch + behat
 ## Conventions
 
 - Controllers minces : validation, délégation au service, réponse JSON (SRP).
-- Logique QBO dans `QuickBooksService`, pas dans les controllers (DRY + DIP).
+- Logique QBO dans `QuickBooksService` et `TimeActivityService`, pas dans les controllers (DRY + DIP).
+- `TimeActivityController` délègue au service ; pas d'import direct de facades SDK dans le controller.
 - Modèle `QuickBooksToken` : table `quickbooks_tokens`.
 - Routes protégées : middleware `auth:sanctum`.
 - Mocker `QuickBooksService` dans les tests, jamais appeler l'API Intuit en test.
 - Éviter de grossir les controllers : extraire un service si auth métier, mapping QBO ou règles employé se multiplient.
-- Dette connue : `TimeActivityController` utilise encore la facade SDK pour construire les payloads ; à migrer vers un service dédié si la logique grossit.
 
 ## Tests obligatoires
 

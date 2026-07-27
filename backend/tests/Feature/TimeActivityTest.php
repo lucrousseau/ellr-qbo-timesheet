@@ -36,7 +36,7 @@ describe('authenticated time activities', function () {
             ->andReturn([['Id' => '1']]);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -51,7 +51,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Query')->once()->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -69,7 +69,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Query')->once()->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn($error);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -88,7 +88,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Query')->once()->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn($error);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -131,7 +131,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->andReturn($existing);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -163,7 +163,7 @@ describe('authenticated time activities', function () {
             ->andReturn((object) ['Id' => '99']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -184,7 +184,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Add')->once()->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn($error);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -202,7 +202,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => '99']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -225,7 +225,7 @@ describe('authenticated time activities', function () {
             ->andReturn((object) ['Id' => '99']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -252,7 +252,7 @@ describe('authenticated time activities', function () {
             ->andReturn((object) ['Id' => '99']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -276,7 +276,7 @@ describe('authenticated time activities', function () {
             ->andReturn((object) ['Id' => '99']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -300,7 +300,7 @@ describe('authenticated time activities', function () {
             ->andReturn((object) ['Id' => '99']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -326,7 +326,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '1')->andReturn($activity);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -339,7 +339,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', 'missing')->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -357,7 +357,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '1')->andReturn($activity);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -372,7 +372,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', 'missing')->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -387,7 +387,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->with('TimeActivity', 'missing')->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -402,7 +402,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn($error);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -423,7 +423,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Update')->once()->andReturn((object) ['Id' => '12']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -447,7 +447,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->andReturn($existing);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -481,7 +481,7 @@ describe('authenticated time activities', function () {
             ->andReturn((object) ['Id' => '12']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -510,7 +510,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Update')->once()->andReturn(null);
         $dataService->shouldReceive('getLastError')->andReturn(null, $error);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -531,7 +531,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('FindById')->once()->andReturn($existing);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -552,7 +552,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Delete')->once()->with($existing);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -573,7 +573,7 @@ describe('authenticated time activities', function () {
         $dataService->shouldReceive('Delete')->once()->with($existing);
         $dataService->shouldReceive('getLastError')->andReturn(null, $error);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
@@ -595,7 +595,7 @@ describe('authenticated time activities', function () {
             ->andReturn([]);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService, $token, $refreshed) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService, $token, $refreshed) {
             $mock->shouldReceive('refreshToken')->once()->with(Mockery::on(fn ($arg) => $arg->is($token)))->andReturn($refreshed);
             $mock->shouldReceive('dataService')->once()->with(Mockery::on(fn ($arg) => $arg->is($refreshed)))->andReturn($dataService);
         });
@@ -606,7 +606,7 @@ describe('authenticated time activities', function () {
     it('returns forbidden when quickbooks token refresh fails', function () {
         QuickBooksToken::factory()->forUser(auth()->user())->expired()->create();
 
-        $this->mock(QuickBooksService::class, function ($mock) {
+        $this->partialMock(QuickBooksService::class, function ($mock) {
             $mock->shouldReceive('refreshToken')
                 ->once()
                 ->andThrow(new QuickBooksException('QuickBooks token refresh failed.'));
@@ -620,7 +620,7 @@ describe('authenticated time activities', function () {
     it('returns service unavailable when quickbooks token refresh is locked', function () {
         QuickBooksToken::factory()->forUser(auth()->user())->expired()->create();
 
-        $this->mock(QuickBooksService::class, function ($mock) {
+        $this->partialMock(QuickBooksService::class, function ($mock) {
             $mock->shouldReceive('refreshToken')
                 ->once()
                 ->andThrow(new LockTimeoutException);
@@ -643,7 +643,7 @@ describe('authenticated time activities', function () {
             ->andReturn([]);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
-        $this->mock(QuickBooksService::class, function ($mock) use ($dataService, $latest) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService, $latest) {
             $mock->shouldReceive('dataService')
                 ->once()
                 ->with(Mockery::on(fn ($arg) => $arg->is($latest)))

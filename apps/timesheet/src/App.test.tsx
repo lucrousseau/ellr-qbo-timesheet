@@ -1,20 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { authenticatedUser, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
+import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
 import { ApiError, createTimeActivity, fetchCurrentUser, login } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
-vi.mock('@ellr/api-client', async () => {
-  const actual = await vi.importActual<typeof import('@ellr/api-client')>('@ellr/api-client')
-  return {
-    ...actual,
-    fetchCurrentUser: vi.fn(),
-    login: vi.fn(),
-    logout: vi.fn().mockResolvedValue(undefined),
+vi.mock('@ellr/api-client', async () =>
+  buildApiClientMock({
     createTimeActivity: vi.fn(),
-  }
-})
+  }),
+)
 
 describe('Timesheet App', () => {
   beforeEach(() => {

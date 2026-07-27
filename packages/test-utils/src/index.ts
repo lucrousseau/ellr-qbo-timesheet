@@ -1,7 +1,6 @@
 import { screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
-import { expect } from 'vitest'
-import { vi } from 'vitest'
+import { expect, vi } from 'vitest'
 
 export const authenticatedUser = {
   id: 1,
@@ -11,15 +10,17 @@ export const authenticatedUser = {
   qbo_employee_name: 'Jane Doe',
 }
 
-export async function buildApiClientMock() {
+type ApiClientMockOverrides = Record<string, unknown>
+
+export async function buildApiClientMock(overrides: ApiClientMockOverrides = {}) {
   const actual = await vi.importActual<typeof import('@ellr/api-client')>('@ellr/api-client')
 
   return {
     ...actual,
-    apiFetch: vi.fn(),
     fetchCurrentUser: vi.fn(),
     login: vi.fn(),
     logout: vi.fn().mockResolvedValue(undefined),
+    ...overrides,
   }
 }
 

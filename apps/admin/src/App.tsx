@@ -9,8 +9,7 @@ import {
   updateQboEmployee,
   type QuickBooksStatus,
 } from '@ellr/api-client'
-import { Alert, AppShell, LoadingScreen, LoginForm, useAuth } from '@ellr/ui'
-import { cardClass, inputClass, primaryButtonClass, secondaryButtonClass } from '@ellr/ui'
+import { Alert, AppShell, LoadingScreen, LoginForm, useAuth, cardClass, inputClass, primaryButtonClass, secondaryButtonClass } from '@ellr/ui'
 
 function App() {
   const [status, setStatus] = useState<QuickBooksStatus | null>(null)

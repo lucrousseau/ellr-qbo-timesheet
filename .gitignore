@@ -37,7 +37,6 @@ yarn-error.log*
 
 # Testing
 coverage/
-build/
 .phpunit.cache
 backend/build/
 apps/*/build/

@@ -7,7 +7,6 @@ use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Services\QuickBooksService;
 use Illuminate\Contracts\Cache\LockTimeoutException;
-use Illuminate\Http\JsonResponse;
 
 trait ResolvesQuickBooksToken
 {
@@ -47,17 +46,6 @@ trait ResolvesQuickBooksToken
         }
 
         return $token;
-    }
-
-    protected function quickBooksApiError(object $error): JsonResponse
-    {
-        $payload = ['message' => 'QuickBooks API error'];
-
-        if (config('quickbooks.expose_api_errors')) {
-            $payload['error'] = $error->getResponseBody();
-        }
-
-        return response()->json($payload, 422);
     }
 
     protected function denyQuickBooks(ApiErrorCode $code, string $message): never

@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { fillLoginForm } from '@ellr/test-utils'
+import { fillLoginForm, buildApiClientMock } from '@ellr/test-utils'
 import {
   connectQuickBooks,
   disconnectQuickBooks,
@@ -13,19 +13,14 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
-vi.mock('@ellr/api-client', async () => {
-  const actual = await vi.importActual<typeof import('@ellr/api-client')>('@ellr/api-client')
-  return {
-    ...actual,
-    fetchCurrentUser: vi.fn(),
-    login: vi.fn(),
-    logout: vi.fn().mockResolvedValue(undefined),
+vi.mock('@ellr/api-client', async () =>
+  buildApiClientMock({
     fetchQuickBooksStatus: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
     updateQboEmployee: vi.fn(),
-  }
-})
+  }),
+)
 
 describe('Admin App', () => {
   const originalLocation = window.location

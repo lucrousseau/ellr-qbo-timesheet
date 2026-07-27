@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
@@ -150,6 +151,17 @@ class QuickBooksService
         QuickBooksToken::query()
             ->where('user_id', $user->id)
             ->delete();
+    }
+
+    public function apiErrorJsonResponse(object $error): JsonResponse
+    {
+        $payload = ['message' => 'QuickBooks API error'];
+
+        if (config('quickbooks.expose_api_errors')) {
+            $payload['error'] = $error->getResponseBody();
+        }
+
+        return response()->json($payload, 422);
     }
 
     private function oauthStateCacheKey(string $state): string

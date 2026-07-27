@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\ApiErrorCode;
 use App\Models\QuickBooksToken;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
 use QuickBooksOnline\API\Facades\TimeActivity;
 
 class TimeActivityService
@@ -27,7 +26,7 @@ class TimeActivityService
         );
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooksApiError($error));
+            abort($this->quickBooks->apiErrorJsonResponse($error));
         }
 
         return is_array($activities) ? $activities : [];
@@ -69,7 +68,7 @@ class TimeActivityService
         $result = $dataService->Add($timeActivity);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooksApiError($error));
+            abort($this->quickBooks->apiErrorJsonResponse($error));
         }
 
         return $result;
@@ -121,7 +120,7 @@ class TimeActivityService
         $result = $dataService->Update($timeActivity);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooksApiError($error));
+            abort($this->quickBooks->apiErrorJsonResponse($error));
         }
 
         return $result;
@@ -135,7 +134,7 @@ class TimeActivityService
         $dataService->Delete($existing);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooksApiError($error));
+            abort($this->quickBooks->apiErrorJsonResponse($error));
         }
     }
 
@@ -144,7 +143,7 @@ class TimeActivityService
         $activity = $dataService->FindById('TimeActivity', $id);
 
         if ($error = $dataService->getLastError()) {
-            abort($this->quickBooksApiError($error));
+            abort($this->quickBooks->apiErrorJsonResponse($error));
         }
 
         if (! $activity) {
@@ -198,16 +197,5 @@ class TimeActivityService
     private function escapeQueryValue(string $value): string
     {
         return str_replace("'", "\\'", $value);
-    }
-
-    private function quickBooksApiError(object $error): JsonResponse
-    {
-        $payload = ['message' => 'QuickBooks API error'];
-
-        if (config('quickbooks.expose_api_errors')) {
-            $payload['error'] = $error->getResponseBody();
-        }
-
-        return response()->json($payload, 422);
     }
 }

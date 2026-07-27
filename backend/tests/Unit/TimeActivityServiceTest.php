@@ -12,7 +12,7 @@ use QuickBooksOnline\API\DataService\DataService;
 
 function makeTimeActivityService(DataService $dataService): TimeActivityService
 {
-    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
     $quickBooks->shouldReceive('dataService')->andReturn($dataService);
 
     return new TimeActivityService($quickBooks);

@@ -44,7 +44,7 @@ export function createVitestConfig({ packageDir }: CreateVitestConfigOptions): U
     test: {
       include: ['src/**/*.{test,spec}.{ts,tsx}'],
       environment: 'jsdom',
-      setupFiles: './src/test/setup.ts',
+      setupFiles: [path.join(monorepoRoot, 'packages/vite-config/src/shared/test/setup.ts')],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'lcov', 'html'],
