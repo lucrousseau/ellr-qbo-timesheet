@@ -20,7 +20,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@ellr/ui": ["../../packages/ui/src/index.ts"],
+      "@ellr/vite-config/*": ["../../packages/vite-config/src/*"]
+    }
   },
   "include": ["src"]
 }

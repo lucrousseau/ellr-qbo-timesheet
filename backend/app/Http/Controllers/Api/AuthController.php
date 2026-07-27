@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ApiErrorCode;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +17,7 @@ class AuthController extends Controller
         if (! config('app.allow_registration')) {
             return response()->json([
                 'message' => 'Inscription désactivée.',
-                'error' => 'registration_disabled',
+                'error' => ApiErrorCode::RegistrationDisabled->value,
             ], 403);
         }
 

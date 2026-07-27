@@ -1,0 +1,26 @@
+{
+  "name": "@ellr/vite-config",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./app": "./src/createAppConfig.ts",
+    "./vitest": "./src/createVitestConfig.ts"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.2",
+    "oxlint": "^1.71.0",
+    "typescript": "~6.0.2"
+  },
+  "scripts": {
+    "lint": "oxlint src",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests\""
+  }
+}

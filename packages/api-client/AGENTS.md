@@ -6,10 +6,12 @@ Client HTTP TypeScript partagé par `apps/admin` et `apps/timesheet`. Seul point
 
 ```
 src/
-├── api.ts        # apiFetch, ApiError, getApiErrorMessage, ensureCsrfCookie
-├── auth.ts       # login, logout, fetchCurrentUser, type User
-├── index.ts      # Ré-exports publics
-└── api.test.ts   # Tests unitaires (obligatoires si api.ts ou auth.ts change)
+├── api.ts          # apiFetch, ApiError, getApiErrorMessage, ensureCsrfCookie
+├── auth.ts         # login, logout, fetchCurrentUser, updateQboEmployee, type User
+├── quickbooks.ts   # fetchQuickBooksStatus, connect/disconnect, OAuth callback helpers
+├── timesheet.ts    # createTimeActivity
+├── index.ts        # Ré-exports publics
+└── api.test.ts     # Tests unitaires (obligatoires si api.ts ou auth.ts change)
 ```
 
 ## Commandes
@@ -36,6 +38,7 @@ npm run test:mutation --workspace=@ellr/api-client
 - `ApiError` : exposer `status` et `code` pour le mapping côté UI.
 - Pas d'appel vers Intuit/QBO : uniquement `VITE_API_URL`.
 - Exports publics limités via `index.ts` (interface segregation).
+- Modules domaine (`quickbooks.ts`, `timesheet.ts`) : les apps appellent ces fonctions, pas `apiFetch` directement.
 
 ## Tests obligatoires
 

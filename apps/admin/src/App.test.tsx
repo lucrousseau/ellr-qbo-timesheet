@@ -1,17 +1,27 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { fillLoginForm } from '@ellr/test-utils'
+import {
+  connectQuickBooks,
+  disconnectQuickBooks,
+  fetchCurrentUser,
+  fetchQuickBooksStatus,
+  login,
+  logout,
+} from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
-import { apiFetch, fetchCurrentUser, login, logout } from '@ellr/api-client'
 
 vi.mock('@ellr/api-client', async () => {
   const actual = await vi.importActual<typeof import('@ellr/api-client')>('@ellr/api-client')
   return {
     ...actual,
-    apiFetch: vi.fn(),
     fetchCurrentUser: vi.fn(),
     login: vi.fn(),
     logout: vi.fn().mockResolvedValue(undefined),
+    fetchQuickBooksStatus: vi.fn(),
+    connectQuickBooks: vi.fn(),
+    disconnectQuickBooks: vi.fn(),
   }
 })
 
@@ -19,10 +29,12 @@ describe('Admin App', () => {
   const originalLocation = window.location
 
   beforeEach(() => {
-    vi.mocked(apiFetch).mockReset()
     vi.mocked(fetchCurrentUser).mockReset()
     vi.mocked(login).mockReset()
     vi.mocked(logout).mockReset()
+    vi.mocked(fetchQuickBooksStatus).mockReset()
+    vi.mocked(connectQuickBooks).mockReset()
+    vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(logout).mockResolvedValue(undefined)
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -67,7 +79,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockResolvedValue({
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
       connected: true,
       realm_id: 'realm-42',
     })
@@ -85,7 +97,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockResolvedValue({
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
       connected: false,
     })
 
@@ -103,12 +115,8 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockImplementation(async (path: string) => {
-      if (path === '/quickbooks/status') {
-        return { connected: false }
-      }
-      return { authorization_url: 'https://intuit.example/oauth' }
-    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(connectQuickBooks).mockResolvedValue({ authorization_url: 'https://intuit.example/oauth' })
 
     let redirectedTo = ''
     Object.defineProperty(window, 'location', {
@@ -144,12 +152,8 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockImplementation(async (path: string) => {
-      if (path === '/quickbooks/status') {
-        return { connected: false }
-      }
-      throw new Error('offline')
-    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(connectQuickBooks).mockRejectedValue(new Error('offline'))
 
     render(<App />)
 
@@ -172,7 +176,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockResolvedValue({ connected: false })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
 
     render(<App />)
 
@@ -180,9 +184,7 @@ describe('Admin App', () => {
       expect(screen.getByLabelText(/courriel/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/courriel/i), 'test@example.com')
-    await user.type(screen.getByLabelText(/mot de passe/i), 'password')
-    await user.click(screen.getByRole('button', { name: /se connecter/i }))
+    await fillLoginForm(user)
 
     await waitFor(() => {
       expect(login).toHaveBeenCalledWith('test@example.com', 'password')
@@ -197,7 +199,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
 
     render(<App />)
 
@@ -271,9 +273,7 @@ describe('Admin App', () => {
       expect(screen.getByLabelText(/courriel/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/courriel/i), 'test@example.com')
-    await user.type(screen.getByLabelText(/mot de passe/i), 'wrong-password')
-    await user.click(screen.getByRole('button', { name: /se connecter/i }))
+    await fillLoginForm(user, { password: 'wrong-password' })
 
     await waitFor(() => {
       expect(screen.getByText(/connexion impossible/i)).toBeInTheDocument()
@@ -287,7 +287,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockResolvedValue({ connected: false })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
     vi.mocked(logout).mockRejectedValue(new Error('logout failed'))
 
     render(<App />)
@@ -310,15 +310,8 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockImplementation(async (path: string) => {
-      if (path === '/quickbooks/status') {
-        return { connected: true, realm_id: 'realm-42' }
-      }
-      if (path === '/quickbooks/disconnect') {
-        throw new Error('disconnect failed')
-      }
-      return {}
-    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(disconnectQuickBooks).mockRejectedValue(new Error('disconnect failed'))
 
     render(<App />)
 
@@ -340,12 +333,8 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockImplementation(async (path: string) => {
-      if (path === '/quickbooks/status') {
-        return { connected: false }
-      }
-      return new Promise(() => {})
-    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(connectQuickBooks).mockImplementation(() => new Promise(() => {}))
 
     render(<App />)
 
@@ -360,22 +349,15 @@ describe('Admin App', () => {
     })
   })
 
-  it('calls quickbooks disconnect with post', async () => {
+  it('calls quickbooks disconnect', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       id: 1,
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/quickbooks/status') {
-        return { connected: true, realm_id: 'realm-42' }
-      }
-      if (path === '/quickbooks/disconnect' && init?.method === 'POST') {
-        return { connected: false }
-      }
-      return {}
-    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(disconnectQuickBooks).mockResolvedValue({ connected: false })
 
     render(<App />)
 
@@ -386,7 +368,7 @@ describe('Admin App', () => {
     await user.click(screen.getByRole('button', { name: /déconnecter quickbooks/i }))
 
     await waitFor(() => {
-      expect(apiFetch).toHaveBeenCalledWith('/quickbooks/disconnect', { method: 'POST' })
+      expect(disconnectQuickBooks).toHaveBeenCalled()
       expect(screen.getByText(/non connecté/i)).toBeInTheDocument()
     })
   })
@@ -397,7 +379,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockRejectedValue(new Error('status unavailable'))
+    vi.mocked(fetchQuickBooksStatus).mockRejectedValue(new Error('status unavailable'))
 
     render(<App />)
 
@@ -415,7 +397,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockResolvedValue({ connected: true, realm_id: 'realm-99' })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-99' })
 
     render(<App />)
 
@@ -423,12 +405,10 @@ describe('Admin App', () => {
       expect(screen.getByLabelText(/courriel/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/courriel/i), 'test@example.com')
-    await user.type(screen.getByLabelText(/mot de passe/i), 'password')
-    await user.click(screen.getByRole('button', { name: /se connecter/i }))
+    await fillLoginForm(user)
 
     await waitFor(() => {
-      expect(apiFetch).toHaveBeenCalledWith('/quickbooks/status')
+      expect(fetchQuickBooksStatus).toHaveBeenCalled()
       expect(screen.getByText(/connecté \(realm realm-99\)/i)).toBeInTheDocument()
     })
   })
@@ -440,7 +420,7 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockResolvedValue({ connected: false })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
 
     render(<App />)
 
@@ -463,15 +443,8 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(apiFetch).mockImplementation(async (path: string, init?: RequestInit) => {
-      if (path === '/quickbooks/status') {
-        return { connected: true, realm_id: 'realm-42' }
-      }
-      if (path === '/quickbooks/disconnect' && init?.method === 'POST') {
-        return { connected: false }
-      }
-      return {}
-    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(disconnectQuickBooks).mockResolvedValue({ connected: false })
 
     render(<App />)
 

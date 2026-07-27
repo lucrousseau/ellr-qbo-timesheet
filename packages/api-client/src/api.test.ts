@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
 import { fetchCurrentUser, login, logout } from './auth'
+import { parseQuickBooksOAuthCallback, quickBooksOAuthErrorMessage } from './quickbooks'
+import { createTimeActivity } from './timesheet'
 
 describe('apiFetch', () => {
   afterEach(() => {
@@ -420,5 +422,59 @@ describe('auth helpers', () => {
         }),
       }),
     )
+  })
+})
+
+describe('quickbooks api', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    resetCsrfStateForTests()
+  })
+
+  it('parses oauth callback search params', () => {
+    expect(parseQuickBooksOAuthCallback('?quickbooks=connected')).toEqual({ result: 'connected' })
+    expect(parseQuickBooksOAuthCallback('?quickbooks=error&reason=oauth')).toEqual({
+      result: 'error',
+      reason: 'oauth',
+    })
+    expect(parseQuickBooksOAuthCallback('')).toEqual({ result: null })
+  })
+
+  it('maps oauth error reasons to french messages', () => {
+    expect(quickBooksOAuthErrorMessage('oauth')).toContain('refusée')
+    expect(quickBooksOAuthErrorMessage('missing_params')).toContain('Paramètres')
+    expect(quickBooksOAuthErrorMessage('other')).toContain('impossible')
+  })
+})
+
+describe('timesheet api', () => {
+  function mockCsrfCookie(token = 'csrf-token-value') {
+    document.cookie = `XSRF-TOKEN=${encodeURIComponent(token)}`
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    document.cookie = ''
+    resetCsrfStateForTests()
+  })
+
+  it('creates a time activity through the api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({ data: { Id: '99' } }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      createTimeActivity({
+        start_time: '2026-07-27T09:00:00',
+        end_time: '2026-07-27T17:00:00',
+      }),
+    ).resolves.toEqual({ Id: '99' })
   })
 })

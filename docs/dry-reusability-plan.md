@@ -2,14 +2,19 @@
 
 Scan du dépôt (juillet 2026). Objectif : une source de vérité par responsabilité, composants et fonctions réutilisables entre admin et timesheet.
 
+**Statut (juillet 2026) :** phases 1 à 5 implémentées. Packages `@ellr/ui`, `@ellr/test-utils`, `@ellr/vite-config` ; domaine `quickbooks.ts` / `timesheet.ts` ; `TimeActivityService` backend ; apps admin/timesheet migrées.
+
 ## Carte actuelle
 
 ```
-packages/api-client/     ✅ HTTP, auth, erreurs FR (bien centralisé)
-apps/admin/App.tsx       ⚠️  auth + login UI dupliqués
-apps/timesheet/App.tsx   ⚠️  auth + login UI dupliqués
-backend/QuickBooksService   ✅ OAuth, tokens, DataService
-backend/TimeActivityController  ❌ CRUD QBO + token + ownership (~300 lignes)
+packages/api-client/     ✅ HTTP, auth, quickbooks, timesheet, erreurs FR
+packages/ui/             ✅ useAuth, LoginForm, Alert, AppShell
+packages/test-utils/     ✅ fixtures et helpers RTL
+packages/vite-config/    ✅ createAppConfig, createVitestConfig
+apps/admin/App.tsx       ✅ écran métier QBO + employé
+apps/timesheet/App.tsx   ✅ formulaire feuille de temps
+backend/TimeActivityService  ✅ CRUD QBO + ownership
+backend/TimeActivityController  ✅ mince (~80 lignes)
 ```
 
 | Zone | Fichiers | Lignes approx. | État DRY |

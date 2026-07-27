@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\QuickBooksOAuthException;
 use App\Http\Controllers\Controller;
-use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QuickBooksService;
 use Illuminate\Http\JsonResponse;
@@ -72,9 +71,7 @@ class QuickBooksAuthController extends Controller
 
     public function disconnect(Request $request): JsonResponse
     {
-        QuickBooksToken::query()
-            ->where('user_id', $request->user()->id)
-            ->delete();
+        $this->quickBooks->disconnect($request->user());
 
         return response()->json(['connected' => false]);
     }

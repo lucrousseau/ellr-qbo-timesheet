@@ -15,12 +15,15 @@
   },
   "dependencies": {
     "@ellr/api-client": "*",
+    "@ellr/ui": "*",
+    "@ellr/vite-config": "*",
     "@tailwindcss/vite": "^4.3.3",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@ellr/test-utils": "*",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@testing-library/jest-dom": "^7.0.0",

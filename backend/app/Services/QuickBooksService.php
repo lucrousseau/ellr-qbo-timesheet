@@ -145,6 +145,13 @@ class QuickBooksService
         });
     }
 
+    public function disconnect(User $user): void
+    {
+        QuickBooksToken::query()
+            ->where('user_id', $user->id)
+            ->delete();
+    }
+
     private function oauthStateCacheKey(string $state): string
     {
         return "quickbooks_oauth_state:{$state}";

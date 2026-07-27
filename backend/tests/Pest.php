@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /*
@@ -53,7 +55,14 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function actingAsWithQboEmployee(array $attributes = []): User
 {
-    // ..
+    $user = User::factory()->create(array_merge([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ], $attributes));
+
+    Sanctum::actingAs($user);
+
+    return $user;
 }

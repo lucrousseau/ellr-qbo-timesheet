@@ -18,10 +18,7 @@ it('requires authentication for time activities', function () {
 
 describe('authenticated time activities', function () {
     beforeEach(function () {
-        Sanctum::actingAs(User::factory()->create([
-            'qbo_employee_ref' => '7',
-            'qbo_employee_name' => 'Jane Doe',
-        ]));
+        actingAsWithQboEmployee();
     });
 
     it('requires quickbooks connection to list time activities', function () {
