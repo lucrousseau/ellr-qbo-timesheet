@@ -78,7 +78,7 @@ Reference: `TimeActivityController` (5 actions, inline user + token).
 
 | Tool | Command | When |
 |------|---------|------|
-| Pest Arch | `composer test:arch` | pre-push |
+| Pest Arch | `composer test:arch` (included in `composer test:coverage`) | pre-push (via coverage); run `composer test:arch` alone for a fast arch-only check |
 | PHPMD | `composer phpmd` (via `composer lint`) | pre-commit |
 | dependency-cruiser | `npm run lint:deps` | pre-push |
 | jscpd (source) | `npm run lint:dup` (max 5 % duplicated lines) | pre-push |

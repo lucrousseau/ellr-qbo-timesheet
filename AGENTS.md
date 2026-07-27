@@ -57,8 +57,8 @@ Husky v9+ format: `.husky/*` = npm command only (no `husky.sh`).
 
 | Hook | Command | Checks |
 |------|---------|--------|
-| `pre-commit` | `npm run precommit` | `lint:fast` (oxlint, Pint, PHPCS, PHPMD) + typecheck |
-| `pre-push` | `npm run prepush` | Full lint (deps + jscpd + `lint:dup:tests`) + typecheck + 85 % coverage + arch + Behat + PHPStan + Pest/Stryker mutation + Vite builds |
+| `pre-commit` | `npm run precommit` | `lint:fast` (oxlint, Pint, PHPCS, PHPMD) + typecheck (workspaces in parallel) |
+| `pre-push` | `npm run prepush` | Full lint (deps + jscpd + `lint:dup:tests`) + typecheck + 85 % coverage (Arch suite via Pest) + Behat + PHPStan + Pest/Stryker mutation + parallel Vite builds |
 
 ## Quality thresholds (finance)
 
