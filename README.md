@@ -45,9 +45,9 @@ Frontends talk only to the Laravel API via `@ellr/api-client`. Only the backend 
 
 ## Prerequisites
 
-- PHP 8.3+ (`backend/.php-version` for version managers)
-- Composer 2.x
-- Node.js 22+ (`.nvmrc`; run `nvm use` at repo root)
+- PHP 8.3+ (`backend/.php-version` for version managers) or **Docker Desktop** (see [Docker development](#docker-recommended-for-portability))
+- Composer 2.x (not required when using Docker)
+- Node.js 22+ (`.nvmrc`; run `nvm use` at repo root; not required when using Docker)
 - [Intuit Developer](https://developer.intuit.com/) account with a QBO app
 
 ## Installation
@@ -80,6 +80,46 @@ SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:5174
 ```
 
 ## Development
+
+### Docker (recommended for portability)
+
+Runs the Laravel API, MySQL, admin, and timesheet dev servers in containers. No local PHP, Composer, or Node required beyond Docker.
+
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2).
+
+```bash
+# One-time: copy env templates (skipped if files already exist)
+npm run docker:setup
+
+# Edit backend/.env with your QuickBooks credentials, then build and start the stack
+npm run docker:build
+npm run docker:up
+```
+
+| Service | URL |
+|---------|-----|
+| API | http://localhost:8000 |
+| Admin | http://localhost:5173 |
+| Timesheet | http://localhost:5174 |
+| MySQL | `127.0.0.1:3306` (user `ellr`, database `ellr`; localhost only) |
+
+Useful commands:
+
+```bash
+npm run docker:up:build  # rebuild images then start (after Dockerfile changes)
+npm run docker:smoke     # wait for API/admin/timesheet and verify /api/health
+npm run docker:logs      # follow all service logs
+npm run docker:down      # stop containers
+npm run docker:reset     # stop and remove volumes (fresh database)
+```
+
+Docker uses **MySQL 8** for the API (`DB_*` vars are overridden in `docker-compose.yml`). Local non-Docker dev keeps the default **SQLite** file (`backend/database/database.sqlite`). Tests always use in-memory SQLite.
+
+Configure MySQL credentials and ports in `docker/.env` (copy from `docker/.env.example`). If port `3306` is already used on your machine, set `MYSQL_PORT` to another value (for example `3307`). Published ports bind to `127.0.0.1` only (API, frontends, and MySQL). Frontend API URL stays `http://localhost:8000/api` because the browser talks to published host ports.
+
+`node-init` installs npm dependencies once before admin and timesheet start. Lock file changes (`package-lock.json`, `composer.lock`) trigger a fresh install on the next container start.
+
+### Local (without Docker)
 
 ```bash
 # Terminal 1: Laravel API (port 8000)
@@ -248,7 +288,7 @@ Shared workspace config is **committed** so every developer gets the same defaul
 
 Prettier is intentionally **not** used (oxlint + Pint are the formatters of record).
 
-**TypeScript:** use the workspace SDK when Cursor/VS Code asks (`typescript.enablePromptUseWorkspaceTsdk`).
+**TypeScript:** use the workspace SDK when Cursor/VS Code asks (`js/ts.tsdk.promptToUseWorkspaceVersion`).
 
 **oxlint / JSDoc in the IDE:** the **Oxc** extension (`oxc.oxc-vscode`) runs `node_modules/.bin/oxlint` on save. Each file needs a top-level `@file` sentence plus JSDoc on public exports (`jsdoc-js/require-file-overview` and `jsdoc-js/require-jsdoc`).
 
@@ -259,7 +299,7 @@ Prettier is intentionally **not** used (oxlint + Pint are the formatters of reco
 | JSDoc / oxlint in the IDE | **Oxc** (`oxc.*` in `.vscode/settings.json`) |
 | JSDoc / oxlint in CI and hooks | `npm run lint` or `npm run lint:frontend` |
 | Lint all frontend workspaces from Tasks | **Tasks: Run Task** → `lint:frontend` (oxlint problem matcher) |
-| TypeScript types in the IDE | Workspace TypeScript SDK (`typescript.tsdk`) |
+| TypeScript types in the IDE | Workspace TypeScript SDK (`js/ts.tsdk.path`) |
 | Typecheck in CI and hooks | `npm run typecheck` |
 | PHP format on save | **Laravel Pint** (recommended extension) |
 | PHPCS / PHPDoc in the IDE | **PHP_CodeSniffer Community** (`phpSniffer.*` in `.vscode/settings.json`) |

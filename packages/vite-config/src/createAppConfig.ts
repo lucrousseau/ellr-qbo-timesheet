@@ -21,12 +21,16 @@ type CreateAppConfigOptions = {
 export function createAppConfig({ port, importMetaUrl }: CreateAppConfigOptions): UserConfig {
   const configDir = path.dirname(fileURLToPath(importMetaUrl))
   const monorepoRoot = path.join(configDir, '../..')
+  const isDocker = process.env.VITE_DOCKER === 'true'
+  const usePolling = process.env.CHOKIDAR_USEPOLLING === 'true'
 
   return defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
       port,
       strictPort: true,
+      ...(isDocker ? { host: true } : {}),
+      ...(usePolling ? { watch: { usePolling: true, interval: 1000 } } : {}),
     },
     envPrefix: 'VITE_',
     resolve: {

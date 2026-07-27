@@ -16,7 +16,6 @@
   "laravel-pint.enable": true,
   "laravel-pint.executablePath": "${workspaceFolder}/backend/vendor/bin/pint",
   "laravel-pint.configPath": "${workspaceFolder}/backend/pint.json",
-  "laravel-pint.runOnSave": true,
 
   "intelephense.files.maxSize": 5000000,
   "intelephense.format.enable": false,
@@ -37,10 +36,9 @@
     "editor.formatOnSave": false
   },
 
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
 
-  "oxc.enable": true,
   "oxc.enable.oxlint": true,
   "oxc.enable.oxfmt": false,
   "oxc.path.oxlint": "${workspaceFolder}/node_modules/.bin/oxlint",

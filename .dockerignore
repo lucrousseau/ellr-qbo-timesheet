@@ -1,0 +1,43 @@
+# Dependencies and build artifacts
+node_modules
+**/node_modules
+vendor
+**/vendor
+dist
+**/dist
+build
+**/build
+coverage
+**/coverage
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+docker/.env
+
+# Git and IDE
+.git
+.gitignore
+.idea
+.DS_Store
+
+# Laravel runtime
+backend/storage/logs
+backend/storage/framework/cache
+backend/storage/framework/sessions
+backend/storage/framework/views
+backend/bootstrap/cache/*
+backend/database/*.sqlite
+backend/database/*.sqlite-journal
+backend/.phpunit.result.cache
+backend/.phpunit.cache
+
+# Testing and mutation
+**/.stryker-tmp
+.phpunit.cache
+
+# Docs (not needed in images)
+**/*.md
+!README.md
