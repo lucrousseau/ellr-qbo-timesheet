@@ -10,7 +10,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
-use PHPUnit\Framework\Assert;
+use RuntimeException;
 
 class FeatureContext implements Context
 {
@@ -23,6 +23,7 @@ class FeatureContext implements Context
     {
         $this->bootApplication();
         $this->migrateDatabase();
+        auth()->forgetGuards();
         $this->response = null;
     }
 
@@ -73,22 +74,39 @@ class FeatureContext implements Context
     /** @Then the response status should be :status */
     public function theResponseStatusShouldBe(int $status): void
     {
-        Assert::assertNotNull($this->response);
-        $this->response->assertStatus($status);
+        if ($this->response === null) {
+            throw new RuntimeException('No HTTP response was captured.');
+        }
+
+        $actual = $this->response->getStatusCode();
+
+        if ($actual !== $status) {
+            throw new RuntimeException(
+                "Expected HTTP status {$status}, received {$actual}. Body: ".$this->response->getContent(),
+            );
+        }
     }
 
     /** @Then the JSON field :field should be :value */
     public function theJsonFieldShouldBe(string $field, string $value): void
     {
-        Assert::assertNotNull($this->response);
+        if ($this->response === null) {
+            throw new RuntimeException('No HTTP response was captured.');
+        }
 
-        $decoded = match ($value) {
+        $expected = match ($value) {
             'true' => true,
             'false' => false,
             default => $value,
         };
 
-        $this->response->assertJsonPath($field, $decoded);
+        $actual = data_get($this->response->json(), $field);
+
+        if ($actual !== $expected) {
+            throw new RuntimeException(
+                'Expected JSON field '.$field.' to be '.json_encode($expected).', received '.json_encode($actual).'.',
+            );
+        }
     }
 
     private function bootApplication(): void
@@ -107,6 +125,8 @@ class FeatureContext implements Context
 
         self::$app['config']->set('database.default', 'sqlite');
         self::$app['config']->set('database.connections.sqlite.database', ':memory:');
+        self::$app['config']->set('cache.default', 'array');
+        self::$app['config']->set('session.driver', 'array');
 
         self::$app->make('db')->purge('sqlite');
         self::$app->make('db')->reconnect('sqlite');
