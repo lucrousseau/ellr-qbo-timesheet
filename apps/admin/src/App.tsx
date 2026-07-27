@@ -19,11 +19,12 @@ function App() {
     password,
     setPassword,
     bootstrapError,
-    handleLogin,
+    onLogin,
     onLogout,
     message,
     status,
     connecting,
+    disconnecting,
     qboEmployeeRef,
     setQboEmployeeRef,
     qboEmployeeName,
@@ -47,11 +48,11 @@ function App() {
         password={password}
         onEmailChange={setEmail}
         onPasswordChange={setPassword}
-        onSubmit={handleLogin}
+        onSubmit={onLogin}
         error={bootstrapError}
         footer={
           message ? (
-            <Alert variant={message.type === 'error' ? 'error' : 'success'}>{message.text}</Alert>
+            <Alert variant={message.type}>{message.text}</Alert>
           ) : undefined
         }
       />
@@ -71,6 +72,7 @@ function App() {
         message={message}
         status={status}
         connecting={connecting}
+        disconnecting={disconnecting}
         qboEmployeeRef={qboEmployeeRef}
         qboEmployeeName={qboEmployeeName}
         savingEmployee={savingEmployee}

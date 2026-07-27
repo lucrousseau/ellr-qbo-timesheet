@@ -373,7 +373,7 @@ describe('Admin App', () => {
     })
   })
 
-  it('hides disconnect button when quickbooks status is unavailable', async () => {
+  it('shows quickbooks status error when status loading fails', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       id: 1,
       name: 'Test User',
@@ -384,8 +384,57 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/unable to load the application/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to load quickbooks status/i)).toBeInTheDocument()
+      expect(screen.queryByText(/unable to load the application/i)).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /disconnect quickbooks/i })).not.toBeInTheDocument()
+    })
+  })
+
+  it('clears oauth flash messages after login', async () => {
+    const user = userEvent.setup()
+    mockLocation('?quickbooks=error&reason=oauth')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+    vi.mocked(login).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/quickbooks connection denied or expired/i)).toBeInTheDocument()
+    })
+
+    await fillLoginForm(user)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
+      expect(screen.queryByText(/quickbooks connection denied or expired/i)).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows disconnecting label while quickbooks disconnect is in progress', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(disconnectQuickBooks).mockImplementation(() => new Promise(() => {}))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /disconnecting/i })).toBeDisabled()
     })
   })
 

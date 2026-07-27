@@ -2,7 +2,7 @@
  * @file QuickBooks connection status, employee mapping, and OAuth actions.
  */
 
-import { Alert, cardClass, inputClass, primaryButtonClass, secondaryButtonClass } from '@ellr/ui'
+import { Alert, cardClass, inputClass, primaryButtonClass, secondaryButtonClass, type FlashMessage } from '@ellr/ui'
 
 type QuickBooksConnectionStatus = {
   connected: boolean
@@ -12,9 +12,10 @@ type QuickBooksConnectionStatus = {
 type QuickBooksAdminPanelProps = {
   userEmail: string
   bootstrapError: string | null
-  message: { text: string; type: 'success' | 'error' | 'warning' } | null
+  message: FlashMessage | null
   status: QuickBooksConnectionStatus | null
   connecting: boolean
+  disconnecting: boolean
   qboEmployeeRef: string
   qboEmployeeName: string
   savingEmployee: boolean
@@ -36,6 +37,7 @@ export function QuickBooksAdminPanel({
   message,
   status,
   connecting,
+  disconnecting,
   qboEmployeeRef,
   qboEmployeeName,
   savingEmployee,
@@ -83,7 +85,7 @@ export function QuickBooksAdminPanel({
 
       {message && (
         <div className="mt-4">
-          <Alert variant={message.type === 'error' ? 'error' : 'success'}>{message.text}</Alert>
+          <Alert variant={message.type}>{message.text}</Alert>
         </div>
       )}
 
@@ -112,8 +114,13 @@ export function QuickBooksAdminPanel({
           {connecting ? 'Redirecting...' : 'Connect QuickBooks'}
         </button>
         {status?.connected && (
-          <button type="button" onClick={onDisconnect} className={`${secondaryButtonClass} px-4 py-2.5`}>
-            Disconnect QuickBooks
+          <button
+            type="button"
+            onClick={onDisconnect}
+            disabled={disconnecting}
+            className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
+          >
+            {disconnecting ? 'Disconnecting...' : 'Disconnect QuickBooks'}
           </button>
         )}
       </div>

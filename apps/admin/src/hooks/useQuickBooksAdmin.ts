@@ -27,6 +27,7 @@ export function useQuickBooksAdmin() {
   const [qboEmployeeRef, setQboEmployeeRef] = useState('')
   const [qboEmployeeName, setQboEmployeeName] = useState('')
   const [savingEmployee, setSavingEmployee] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
 
   const loadQuickBooksStatus = useCallback(async (currentUser: User | null) => {
     if (!currentUser) {
@@ -36,8 +37,14 @@ export function useQuickBooksAdmin() {
 
     setQboEmployeeRef(currentUser.qbo_employee_ref ?? '')
     setQboEmployeeName(currentUser.qbo_employee_name ?? '')
-    setStatus(await fetchQuickBooksStatus())
-  }, [])
+
+    try {
+      setStatus(await fetchQuickBooksStatus())
+    } catch (caught) {
+      setStatus(null)
+      showError(getApiErrorMessage(caught, 'Unable to load QuickBooks status.'))
+    }
+  }, [showError])
 
   const {
     user,
@@ -68,6 +75,11 @@ export function useQuickBooksAdmin() {
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [showError, showSuccess])
+
+  const onLogin = async (event: React.FormEvent) => {
+    clearMessage()
+    await handleLogin(event)
+  }
 
   const onLogout = async () => {
     clearMessage()
@@ -103,12 +115,16 @@ export function useQuickBooksAdmin() {
   }
 
   const disconnectQuickBooksFlow = async () => {
+    setDisconnecting(true)
+
     try {
       await disconnectQuickBooks()
       setStatus(await fetchQuickBooksStatus())
       showSuccess('QuickBooks disconnected.')
     } catch (caught) {
       showError(getApiErrorMessage(caught, 'Unable to disconnect QuickBooks.'))
+    } finally {
+      setDisconnecting(false)
     }
   }
 
@@ -120,11 +136,12 @@ export function useQuickBooksAdmin() {
     password,
     setPassword,
     bootstrapError,
-    handleLogin,
+    onLogin,
     onLogout,
     message,
     status,
     connecting,
+    disconnecting,
     qboEmployeeRef,
     setQboEmployeeRef,
     qboEmployeeName,
