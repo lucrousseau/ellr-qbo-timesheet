@@ -169,3 +169,17 @@ it('rejects password reset with an invalid token', function () {
         'password_confirmation' => 'new-password',
     ], frontendHeaders())->assertUnprocessable();
 });
+
+it('validates forgot-password payload', function () {
+    $this->postJson('/api/forgot-password', [
+        'email' => 'not-an-email',
+    ], frontendHeaders())
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['email']);
+});
+
+it('validates reset-password payload', function () {
+    $this->postJson('/api/reset-password', [], frontendHeaders())
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['token', 'email', 'password']);
+});

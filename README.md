@@ -291,7 +291,7 @@ Husky v9+ format: one command per hook file (e.g. `npm run precommit`), no `husk
 | Hook | Command | Checks |
 |------|---------|--------|
 | `pre-commit` | `npm run precommit` | `lint:fast` (oxlint, Pint, PHPCS, PHPMD) + typecheck |
-| `pre-push` | `npm run prepush` | Full lint (deps + jscpd) + `lint:dup:tests` + typecheck + 85 % coverage + arch + Behat + PHPStan + builds |
+| `pre-push` | `npm run prepush` | Full lint (deps + jscpd) + `lint:dup:tests` + typecheck + 85 % coverage + arch + Behat + PHPStan + Pest/Stryker mutation + builds |
 
 Automatic install via `npm install` (`prepare` script).
 
@@ -356,8 +356,8 @@ PHPCS covers first-party backend PHP (`app/`, `routes/`, `bootstrap/`, `config/`
 | Command | Usage |
 |---------|-------|
 | `npm run qa` | Quick: lint + types + coverage + Behat + builds (no arch or PHPStan) |
-| `npm run prepush` | Full pre-push: qa + arch + PHPStan (Husky hook equivalent) |
-| `npm run qa:finance` | Before release: coverage + back/front mutation (~1–2 min) |
+| `npm run prepush` | Full pre-push: qa + arch + PHPStan + mutation (Husky hook equivalent) |
+| `npm run qa:finance` | Standalone coverage + back/front mutation (~1–2 min); rerun without full prepush |
 | `cd backend && composer qa` | Backend only: Pint + PHPCS + PHPStan + coverage + arch + Behat |
 
 ```bash

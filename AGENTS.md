@@ -49,7 +49,7 @@ cd backend && composer test:mutation
 8. Never commit `.env`, tokens, or Intuit secrets.
 9. Run Pint + PHPCS (backend) and oxlint (TS/TSX) before finishing a task.
 10. **JSDoc / PHPDoc** on public exports; project language is **English** (see `.cursor/rules/language.mdc`, `jsdoc.mdc`, `phpdoc.mdc`).
-11. Before release: `npm run qa:finance`. For daily work, `prepush` hooks are enough.
+11. `npm run prepush` (Husky pre-push) includes coverage and mutation thresholds. Use `npm run qa:finance` for a standalone coverage + mutation rerun without the full prepush pipeline.
 
 ## Git hooks (Husky)
 
@@ -58,9 +58,7 @@ Husky v9+ format: `.husky/*` = npm command only (no `husky.sh`).
 | Hook | Command | Checks |
 |------|---------|--------|
 | `pre-commit` | `npm run precommit` | `lint:fast` (oxlint, Pint, PHPCS, PHPMD) + typecheck |
-| `pre-push` | `npm run prepush` | Full lint (deps + jscpd + `lint:dup:tests`) + typecheck + 85 % coverage + arch + Behat + PHPStan + Vite builds |
-
-Mutation testing is not in hooks (too slow). Run `npm run qa:finance` before release.
+| `pre-push` | `npm run prepush` | Full lint (deps + jscpd + `lint:dup:tests`) + typecheck + 85 % coverage + arch + Behat + PHPStan + Pest/Stryker mutation + Vite builds |
 
 ## Quality thresholds (finance)
 

@@ -46,9 +46,10 @@
     "test:behat": "cd backend && composer test:behat",
     "test:mutation:backend": "cd backend && composer test:mutation",
     "test:mutation:frontend": "npm run test:mutation --workspaces --if-present",
+    "test:mutation": "npm run test:mutation:backend && npm run test:mutation:frontend",
     "analyse": "cd backend && composer analyse",
     "precommit": "npm run lint:fast && npm run typecheck",
-    "prepush": "npm run lint && npm run lint:dup:tests && npm run typecheck && npm run test:coverage --workspaces && (cd backend && composer test:behat && composer test:coverage && composer test:arch && composer analyse) && npm run build:admin && npm run build:timesheet",
+    "prepush": "npm run lint && npm run lint:dup:tests && npm run typecheck && npm run test:coverage --workspaces && (cd backend && composer test:behat && composer test:coverage && composer test:arch && composer analyse) && npm run test:mutation && npm run build:admin && npm run build:timesheet",
     "qa": "npm run lint && npm run typecheck && npm run test:coverage && npm run test:behat && npm run build:admin && npm run build:timesheet",
     "qa:finance": "npm run validate:thresholds",
     "validate:thresholds": "npm run test:coverage --workspaces && (cd backend && composer test:coverage && composer test:mutation) && npm run test:mutation:frontend"
