@@ -61,7 +61,7 @@ php artisan key:generate
 php artisan migrate
 
 # Monorepo (from repo root)
-npm install
+npm install   # requires Node 22+ (.nvmrc, engine-strict in .npmrc)
 cp apps/admin/.env.example apps/admin/.env
 cp apps/timesheet/.env.example apps/timesheet/.env
 ```
@@ -225,7 +225,7 @@ Husky v9+ format: one command per hook file (e.g. `npm run precommit`), no `husk
 
 | Hook | Command | Checks |
 |------|---------|--------|
-| `pre-commit` | `npm run precommit` | oxlint (JSDoc), Pint + PHPCS, TypeScript |
+| `pre-commit` | `npm run precommit` | oxlint (JSDoc: exports in apps, exports + helpers in packages), Pint + PHPCS, TypeScript |
 | `pre-push` | `npm run prepush` | Lint + typecheck + 85 % coverage + arch + Behat + PHPStan + builds |
 
 Automatic install via `npm install` (`prepare` script).
@@ -241,6 +241,7 @@ Shared workspace config is **committed** so every developer gets the same defaul
 | `.vscode/tasks.json` | `lint`, `qa`, `dev:*` npm tasks |
 | `.editorconfig` | 2 spaces (TS/JSON), 4 spaces (PHP), LF line endings |
 | `.nvmrc` | Node 22 (use `nvm use` or `fnm use`) |
+| `.npmrc` | `engine-strict=true` (npm install fails below Node 22) |
 | `backend/.php-version` | PHP 8.3 (asdf / phpbrew) |
 
 **First open:** accept the recommended extensions (EditorConfig, Laravel Pint, Intelephense, Oxc). Reload the window if prompted.
@@ -250,6 +251,8 @@ Shared workspace config is **committed** so every developer gets the same defaul
 **TypeScript:** use the workspace SDK when Cursor/VS Code asks (`typescript.enablePromptUseWorkspaceTsdk`).
 
 Prettier is intentionally **not** used (oxlint + Pint are the formatters of record).
+
+**oxlint in the IDE:** the Oxc extension may not resolve the same `.oxlintrc.json` as `npm run lint` in every workspace folder (apps use `oxlint.app.json`, packages use `oxlint.packages.json`). Treat editor diagnostics as hints; **`npm run lint` and Husky hooks remain the source of truth.**
 
 ### Coverage thresholds
 

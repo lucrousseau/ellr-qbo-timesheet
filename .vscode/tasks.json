@@ -20,21 +20,63 @@
       "type": "npm",
       "script": "dev:api",
       "isBackground": true,
-      "problemMatcher": []
+      "problemMatcher": {
+        "owner": "laravel-serve",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Server running on"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     },
     {
       "label": "dev:admin",
       "type": "npm",
       "script": "dev:admin",
       "isBackground": true,
-      "problemMatcher": []
+      "problemMatcher": {
+        "owner": "vite-dev",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Local:\\s+http"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     },
     {
       "label": "dev:timesheet",
       "type": "npm",
       "script": "dev:timesheet",
       "isBackground": true,
-      "problemMatcher": []
+      "problemMatcher": {
+        "owner": "vite-dev",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Local:\\s+http"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     }
   ]
 }
