@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Database seeder entry point for local and test environments.
+ */
+
 namespace Database\Seeders;
 
 use App\Models\User;

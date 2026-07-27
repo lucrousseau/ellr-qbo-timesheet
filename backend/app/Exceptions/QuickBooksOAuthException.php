@@ -1,8 +1,12 @@
 <?php
 
+/**
+ * Domain exception for QuickBooks OAuth flow failures.
+ */
+
 namespace App\Exceptions;
 
 /**
- * Error specific to the QuickBooks OAuth flow (state, session, callback).
+ * Thrown when OAuth state, redirect, or token exchange fails.
  */
 class QuickBooksOAuthException extends QuickBooksException {}

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Sanctum stateful domains, guards, and API token expiration settings.
+ */
+
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Laravel\Sanctum\Http\Middleware\AuthenticateSession;

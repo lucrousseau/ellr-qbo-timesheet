@@ -1,3 +1,7 @@
+/**
+ * @file Factory for Vite app configuration shared by admin and timesheet.
+ */
+
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'

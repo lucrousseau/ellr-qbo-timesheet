@@ -1,3 +1,7 @@
+/**
+ * @file Authentication helpers: login, logout, session user, and QBO employee mapping.
+ */
+
 import { ApiError, apiFetch } from './api'
 
 /**

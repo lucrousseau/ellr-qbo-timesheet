@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * QuickBooks OAuth connect, callback, status, and disconnect endpoints.
+ */
+
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\QuickBooksOAuthException;
@@ -11,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * QuickBooks Online OAuth connection and tenant link status.
+ * Builds OAuth URLs, handles Intuit callbacks, and reports connection state.
  */
 class QuickBooksAuthController extends Controller
 {

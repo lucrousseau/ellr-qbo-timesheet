@@ -1,9 +1,13 @@
 <?php
 
+/**
+ * Stable API error codes returned in JSON responses for frontend mapping.
+ */
+
 namespace App\Enums;
 
 /**
- * Stable JSON error codes consumed by the frontend (`getApiErrorMessage`).
+ * Backed enum of machine-readable API error identifiers.
  */
 enum ApiErrorCode: string
 {

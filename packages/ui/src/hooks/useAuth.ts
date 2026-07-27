@@ -1,3 +1,7 @@
+/**
+ * @file React hook managing session user state and sign-in/out actions.
+ */
+
 import { useCallback, useEffect, useState } from 'react'
 import { fetchCurrentUser, getApiErrorMessage, login, logout, type User } from '@ellr/api-client'
 

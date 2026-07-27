@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Controller trait resolving the authenticated user's QuickBooks token.
+ */
+
 namespace App\Http\Concerns;
 
 use App\Enums\ApiErrorCode;
@@ -9,7 +13,7 @@ use App\Services\QuickBooksService;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 
 /**
- * Resolves and refreshes the authenticated user's QuickBooks token.
+ * Loads the signed-in user's token and refreshes it when expired.
  */
 trait ResolvesQuickBooksToken
 {

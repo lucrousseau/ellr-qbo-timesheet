@@ -1,3 +1,7 @@
+/**
+ * @file QuickBooks connection status, OAuth helpers, and disconnect actions.
+ */
+
 import { apiFetch } from './api'
 
 /**

@@ -1,3 +1,7 @@
+/**
+ * @file React hook for transient success and error banner messages.
+ */
+
 import { useCallback, useState } from 'react'
 
 /**

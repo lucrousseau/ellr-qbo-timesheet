@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Filesystem disk definitions for local storage and optional cloud drivers.
+ */
+
 return [
 
     /*

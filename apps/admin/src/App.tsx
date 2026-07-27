@@ -1,3 +1,7 @@
+/**
+ * @file Admin UI for QuickBooks OAuth connection and QBO employee mapping.
+ */
+
 import { useCallback, useEffect, useState } from 'react'
 import {
   connectQuickBooks,

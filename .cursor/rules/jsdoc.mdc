@@ -10,19 +10,24 @@ alwaysApply: false
 
 | Area | JSDoc required |
 |------|----------------|
-| `packages/api-client`, `@ellr/ui`, `@ellr/test-utils`, `@ellr/vite-config` | All **public exports** and **module-level helpers** (see `oxlint.packages.json`) |
-| `apps/admin`, `apps/timesheet` | Public exports only (`oxlint.app.json`; React handlers stay undocumented) |
-| `*.test.ts`, `*.spec.ts` | No (excluded from package lint) |
+| `packages/api-client`, `@ellr/ui`, `@ellr/test-utils`, `@ellr/vite-config` | **`@file` header** on every linted source file + all **public exports** and **module-level helpers** (see `oxlint.packages.json`) |
+| `apps/admin`, `apps/timesheet` | **`@file` header** on every linted source file + public exports only (`oxlint.app.json`; React handlers stay undocumented) |
+| `*.test.ts`, `*.spec.ts`, `*.test.tsx`, `*.spec.tsx`, `vite-env.d.ts` | No file header or export JSDoc (excluded from app/package lint) |
 | Internal class methods | No (except **public methods on exported classes** in `packages/*`) |
 
 ## Content
 
-- **Description** in **English**, one clear sentence.
+- **`@file`** at the top of each source file: one English sentence after the tag (a bare `@file` line fails lint). Enforced by `jsdoc-js/require-file-overview`.
+- **Description** in **English**, one clear sentence on exports and components.
 - **`@param`** for each parameter (no `@param {type}`: TypeScript is enough).
 - **`@returns`** for functions that return a value (including `Promise<void>`).
 - **`@internal`** on its own line for exported test helpers (e.g. `resetCsrfStateForTests`).
 
 ```typescript
+/**
+ * @file Low-level HTTP helpers, CSRF cookies, and API error mapping.
+ */
+
 /**
  * Creates a time activity for the signed-in user's QBO employee.
  * @param payload Time range and optional description.
@@ -37,8 +42,14 @@ Exported React components: document important props via `@param props.xxx` or a 
 
 Shared configs: `packages/vite-config/oxlint.base.json` (tag rules), `oxlint.app.json` (apps), `oxlint.packages.json` (packages).
 
+| Tool | Role | Command / extension |
+|------|------|---------------------|
+| **Oxc** (IDE) | Real-time oxlint + JSDoc on save | Extension `oxc.oxc-vscode` |
+| **oxlint** (CLI / hooks) | Same rules as CI | `npm run lint` / `npm run lint:frontend` |
+
 Active rules:
 
+- `jsdoc-js/require-file-overview`: `@file` header on every linted source file
 - `jsdoc-js/require-jsdoc`: public exports only
 - `jsdoc/require-param-description`, `jsdoc/require-returns-description`
 - `jsdoc/check-tag-names`, `jsdoc/empty-tags`

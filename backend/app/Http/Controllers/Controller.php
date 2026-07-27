@@ -1,8 +1,12 @@
 <?php
 
+/**
+ * Base controller shared by API controllers.
+ */
+
 namespace App\Http\Controllers;
 
 /**
- * Base controller for JSON API endpoints.
+ * Shared JSON API controller base (no cross-cutting behavior yet).
  */
 abstract class Controller {}

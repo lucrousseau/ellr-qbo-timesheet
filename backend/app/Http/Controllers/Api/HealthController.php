@@ -1,12 +1,16 @@
 <?php
 
+/**
+ * Health check endpoint for uptime monitoring.
+ */
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Laravel API availability probe.
+ * Reports API availability for load balancers and uptime monitors.
  */
 class HealthController extends Controller
 {

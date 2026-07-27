@@ -1,3 +1,7 @@
+/**
+ * @file Shared application shell with header, sign-out, and layout chrome.
+ */
+
 import type { ReactNode } from 'react'
 import { pageMainClass, pageTitleClass, secondaryButtonClass } from '../styles/tokens'
 

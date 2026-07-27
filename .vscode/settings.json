@@ -21,6 +21,14 @@
   "intelephense.files.maxSize": 5000000,
   "intelephense.format.enable": false,
 
+  "phpSniffer.autoDetect": true,
+  "phpSniffer.executablesFolder": "backend/vendor/bin",
+  "phpSniffer.standard": "backend/phpcs.xml",
+  "phpSniffer.run": "onSave",
+  "phpSniffer.fixOnSave": false,
+  "phpSniffer.workingDirectory": "workspaceRoot",
+  "phpSniffer.logLevel": "error",
+
   "[typescript]": {
     "editor.formatOnSave": false
   },
@@ -32,9 +40,11 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
 
   "oxc.enable": true,
-  "oxc.flags": {
-    "type_check": false
-  },
+  "oxc.enable.oxlint": true,
+  "oxc.enable.oxfmt": false,
+  "oxc.path.oxlint": "${workspaceFolder}/node_modules/.bin/oxlint",
+  "oxc.disableNestedConfig": false,
+  "oxc.lint.run": "onSave",
 
   "files.associations": {
     "*.mdc": "markdown"

@@ -1,3 +1,4 @@
 {
-  "extends": ["../../packages/vite-config/oxlint.app.json"]
+  "extends": ["../../packages/vite-config/oxlint.app.json"],
+  "ignorePatterns": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"]
 }

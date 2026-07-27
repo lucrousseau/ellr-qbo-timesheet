@@ -1,4 +1,8 @@
 /**
+ * @file Low-level HTTP helpers, CSRF cookies, and API error mapping.
+ */
+
+/**
  * HTTP error returned by the Laravel API with an optional business code.
  */
 export class ApiError extends Error {

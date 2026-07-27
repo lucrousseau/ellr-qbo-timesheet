@@ -10,19 +10,31 @@ alwaysApply: false
 
 | Area | PHPDoc required |
 |------|-----------------|
-| `app/Http/Controllers`, `app/Services`, `app/Models` | Class + public/protected/**private** methods |
-| `app/Http/Requests`, `app/Enums`, `app/Exceptions` | Class (+ methods when non-trivial) |
-| `features/bootstrap/` (Behat context) | Class + methods (including private helpers) |
-| `routes/`, `bootstrap/`, `config/`, `database/factories/`, `database/seeders/`, `public/` | Named classes and methods; route/console closures are scanned too (add a docblock if PHPCS flags one) |
+| `app/Http/Controllers`, `app/Services`, `app/Models` | **File header** + class + public/protected/**private** methods |
+| `app/Http/Requests`, `app/Enums`, `app/Exceptions` | **File header** + class (+ methods when non-trivial) |
+| `features/bootstrap/` (Behat context) | **File header** + class + methods (including private helpers) |
+| `routes/`, `bootstrap/`, `config/`, `database/factories/`, `database/seeders/`, `public/` | **File header** (one-sentence role of the file); named classes and methods when present |
 | `tests/`, `database/migrations/` | No (Pest/Gherkin steps and schema files stay lean) |
 
 ## Content
 
-- Description in **English**, one sentence (business or technical role).
+- **File header** (top of file, after `<?php`): one English sentence describing what the file owns (routes, config keys, bootstrap wiring, etc.). Enforced by `Squiz.Commenting.FileComment` in PHPCS; empty blocks are rejected by `SlevomatCodingStandard.Commenting.EmptyComment`. Compatible with Laravel Pint blank line after `<?php`.
+- **Class/trait/enum doc**: implementation-focused summary; avoid repeating the file header verbatim.
+- Description in **English**, one sentence (business or technical role) on classes and methods.
 - **`@param`** for every parameter (short description after the name, per Squiz).
 - **`@return`** on every method (use `void` when applicable).
 - `@property` on Eloquent models when useful for PHPStan.
 - No empty `//` placeholders in methods: use `{}` instead.
+
+```php
+<?php
+
+/**
+ * REST API route definitions for health, auth, QuickBooks OAuth, and time activities.
+ */
+
+use Illuminate\Support\Facades\Route;
+```
 
 ```php
 /**
@@ -37,6 +49,7 @@ public function createForUser(User $user, QuickBooksToken $token, array $validat
 |------|------|---------|
 | **Pint** | Laravel style | `composer format:check` |
 | **PHPCS** + Slevomat | Required PHPDoc | `composer phpcs` |
+| **PHP_CodeSniffer Community** (IDE) | Real-time PHPCS on save | Extension `phpcscommunity.php-codesniffer` |
 | **PHPStan 5** + Larastan | Static analysis | `composer analyse` |
 | **Pest Arch** | Structure (QBO SDK only in services) | `composer test:arch` |
 

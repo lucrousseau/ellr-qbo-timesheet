@@ -1,3 +1,7 @@
+/**
+ * @file Mounts a React root with strict mode and shared global styles.
+ */
+
 import { StrictMode, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 

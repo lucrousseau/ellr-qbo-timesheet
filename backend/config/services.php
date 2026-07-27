@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Third-party service credentials such as mail providers and AWS.
+ */
+
 return [
 
     /*

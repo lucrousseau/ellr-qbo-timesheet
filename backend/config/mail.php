@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Mail transport drivers and default sender identity configuration.
+ */
+
 return [
 
     /*

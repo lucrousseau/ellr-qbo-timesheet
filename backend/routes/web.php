@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Root URL JSON response pointing API clients to health and the React frontends.
+ */
+
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {

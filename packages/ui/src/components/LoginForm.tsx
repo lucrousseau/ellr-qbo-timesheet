@@ -1,3 +1,7 @@
+/**
+ * @file Email and password sign-in form for Sanctum session auth.
+ */
+
 import type { FormEvent, ReactNode } from 'react'
 import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 import { Alert } from './Alert'

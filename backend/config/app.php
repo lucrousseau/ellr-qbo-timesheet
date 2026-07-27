@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Core application settings: name, environment, debug, locale, and registration toggle.
+ */
+
 return [
 
     /*

@@ -1,4 +1,8 @@
 /**
+ * @file Factory for Stryker mutation testing configuration.
+ */
+
+/**
  * Default Stryker mutation-testing config for frontend workspaces.
  * @returns Stryker options (Vitest runner, thresholds, mutate globs).
  */

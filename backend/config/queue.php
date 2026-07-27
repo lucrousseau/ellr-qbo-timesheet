@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Queue connections and failed-job storage configuration.
+ */
+
 return [
 
     /*

@@ -1,3 +1,7 @@
+/**
+ * @file Shared Vitest helpers and auth fixtures for frontend tests.
+ */
+
 import { screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
 import { expect, vi } from 'vitest'

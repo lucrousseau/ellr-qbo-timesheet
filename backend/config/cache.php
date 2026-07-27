@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Cache store drivers, prefixes, and default cache connection settings.
+ */
+
 use Illuminate\Support\Str;
 
 return [

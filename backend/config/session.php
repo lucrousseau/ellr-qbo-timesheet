@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Session driver, lifetime, cookie security, and storage configuration.
+ */
+
 use Illuminate\Support\Str;
 
 return [

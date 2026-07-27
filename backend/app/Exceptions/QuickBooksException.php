@@ -1,11 +1,15 @@
 <?php
 
+/**
+ * Domain exception for QuickBooks API failures surfaced to controllers.
+ */
+
 namespace App\Exceptions;
 
 use Exception;
 
 /**
- * QuickBooks business error (API or tokens) with optional Intuit response body.
+ * Carries an HTTP status, optional Intuit body, and stable ApiErrorCode.
  */
 class QuickBooksException extends Exception
 {

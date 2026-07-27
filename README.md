@@ -244,29 +244,30 @@ Shared workspace config is **committed** so every developer gets the same defaul
 | `.npmrc` | `engine-strict=true` (npm install fails below Node 22) |
 | `backend/.php-version` | PHP 8.3 (asdf / phpbrew) |
 
-**First open:** accept the recommended extensions (EditorConfig, Laravel Pint, Intelephense, Oxc). Reload the window if prompted.
-
-**PHP on save:** requires `composer install` in `backend/` so `vendor/bin/pint` exists.
-
-**TypeScript:** use the workspace SDK when Cursor/VS Code asks (`typescript.enablePromptUseWorkspaceTsdk`).
+**First open:** accept the recommended extensions (EditorConfig, Laravel Pint, Intelephense, Oxc, PHP_CodeSniffer Community). Run `npm install` at the repo root and `composer install` in `backend/`, then **Developer: Reload Window**.
 
 Prettier is intentionally **not** used (oxlint + Pint are the formatters of record).
 
-**oxlint in the IDE:** the Oxc extension may not resolve the same `.oxlintrc.json` as `npm run lint` in every workspace folder (apps use `oxlint.app.json`, packages use `oxlint.packages.json`). Treat editor diagnostics as hints; **`npm run lint` and Husky hooks remain the source of truth.**
+**TypeScript:** use the workspace SDK when Cursor/VS Code asks (`typescript.enablePromptUseWorkspaceTsdk`).
 
-**PHP lint (PHPCS):** this monorepo uses **PHPCS 4** (required by Slevomat). Do **not** use the **PHP Sniffer & Beautifier** extension (`valeryanm.vscode-phpsab`): it only supports PHPCS 3.x and falls back to your **global** `phpcs` (without Slevomat), which triggers false `Referenced sniff ... does not exist` errors and `SyntaxError: Unexpected token 'E'` in the editor. The extension is listed in `.vscode/extensions.json` as unwanted.
+**oxlint / JSDoc in the IDE:** the **Oxc** extension (`oxc.oxc-vscode`) runs `node_modules/.bin/oxlint` on save. Each file needs a top-level `@file` sentence plus JSDoc on public exports (`jsdoc-js/require-file-overview` and `jsdoc-js/require-jsdoc`).
 
-**Required on first clone:** open **Extensions**, then **Disable (Workspace)** or **Uninstall** `PHP Sniffer & Beautifier`, and run **Developer: Reload Window**. Workspace settings cannot reliably block this extension in Cursor.
+**PHP in the IDE:** **Laravel Pint** formats on save (`backend/vendor/bin/pint`). **PHP_CodeSniffer Community** (`phpcscommunity.php-codesniffer`) runs `backend/vendor/bin/phpcs` on save. Every linted PHP file needs a one-line file header after `<?php`; classes and methods keep `@param` / `@return` PHPDoc. Do **not** use legacy PHPCS 3.x extensions (`valeryanm.vscode-phpsab`, `wongjn.vscode-php-sniffer`, `shevaua.phpcs`, `ikappas.phpcs`).
 
 | Need | Tool |
 |------|------|
+| JSDoc / oxlint in the IDE | **Oxc** (`oxc.*` in `.vscode/settings.json`) |
+| JSDoc / oxlint in CI and hooks | `npm run lint` or `npm run lint:frontend` |
+| Lint all frontend workspaces from Tasks | **Tasks: Run Task** → `lint:frontend` (oxlint problem matcher) |
+| TypeScript types in the IDE | Workspace TypeScript SDK (`typescript.tsdk`) |
+| Typecheck in CI and hooks | `npm run typecheck` |
 | PHP format on save | **Laravel Pint** (recommended extension) |
+| PHPCS / PHPDoc in the IDE | **PHP_CodeSniffer Community** (`phpSniffer.*` in `.vscode/settings.json`) |
 | PHPCS / PHPDoc in CI and hooks | `npm run lint` or `cd backend && composer phpcs` |
-| Smoke test from monorepo root | `npm run lint:phpcs` |
+| Lint whole backend from Tasks | **Tasks: Run Task** → `lint:phpcs` |
+| Smoke test PHPCS from monorepo root | `npm run lint:phpcs` |
 
 PHPCS covers first-party backend PHP (`app/`, `routes/`, `bootstrap/`, `config/`, factories, seeders, Behat bootstrap, `public/`). It excludes `tests/` and `database/migrations/`. Route and console closures are included: add a docblock if `composer phpcs` reports a missing function comment.
-
-Run `composer install` in `backend/` before relying on any PHP tooling in the IDE.
 
 ### Coverage thresholds
 

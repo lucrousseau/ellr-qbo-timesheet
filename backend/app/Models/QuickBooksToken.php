@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Persisted QuickBooks OAuth tokens linked to an application user.
+ */
+
 namespace App\Models;
 
 use Database\Factories\QuickBooksTokenFactory;
@@ -10,7 +14,7 @@ use Illuminate\Support\Carbon;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2AccessToken;
 
 /**
- * Encrypted QuickBooks OAuth token for a user and Intuit realm.
+ * Encrypted OAuth tokens for a user and Intuit realm pair.
  *
  * @property int $user_id
  * @property Carbon|null $access_token_expires_at

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Database connections, migration settings, and Redis configuration.
+ */
+
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 

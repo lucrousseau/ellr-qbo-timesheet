@@ -1,3 +1,7 @@
+/**
+ * @file Factory for Vitest configuration shared by apps and packages.
+ */
+
 import fs from 'node:fs'
 import path from 'node:path'
 import type { UserConfig } from 'vite'

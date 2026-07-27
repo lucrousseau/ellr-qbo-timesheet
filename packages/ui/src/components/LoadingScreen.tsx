@@ -1,3 +1,7 @@
+/**
+ * @file Full-page loading placeholder while auth state resolves.
+ */
+
 import { pageMainClass } from '../styles/tokens'
 
 /**

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Authentication guards, user providers, and password reset configuration.
+ */
+
 use App\Models\User;
 
 return [

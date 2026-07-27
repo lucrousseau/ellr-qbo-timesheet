@@ -4,7 +4,7 @@
 
 - Every modified file in `backend/app/` must have an associated Pest test (Feature or Unit).
 - Use `covers(ClassName::class)` for Pest mutation testing.
-- **PHPDoc** on public/protected classes and methods; `composer phpcs` enforces Squiz + Slevomat.
+- **PHPDoc** on file headers, classes, and methods; `composer phpcs` enforces Squiz + Slevomat (`FileComment` + `EmptyComment`).
 - No business logic in controllers: delegate to services (SRP, DIP).
 - No direct QBO SDK calls outside `QuickBooksService` (DRY).
 - No duplicated business validation or error mapping already centralized.
@@ -17,7 +17,7 @@
 - No duplicated HTTP client in apps: use `@ellr/api-client` (DRY).
 - No duplicated business error messages: `getApiErrorMessage` + API codes.
 - No TypeScript `any` without a comment justification.
-- **JSDoc** on every public export (`packages/*`, `App` in apps); `npm run lint` enforces `require-jsdoc`. User-facing copy in **English**.
+- **JSDoc** on `@file` headers and every public export (`packages/*`, `App` in apps); `npm run lint` enforces `require-file-overview` and `require-jsdoc`. User-facing copy in **English**.
 - Changes in `packages/api-client/`: update `api.test.ts` (and `auth.ts` if applicable).
 - Visible UI change in an app: component test required (`App.test.tsx`).
 - Before extracting a shared admin/timesheet component: confirm the logic belongs in `api-client` or the backend instead.

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Business logic for creating and managing QuickBooks time activities.
+ */
+
 namespace App\Services;
 
 use App\Enums\ApiErrorCode;
@@ -8,7 +12,7 @@ use App\Models\User;
 use QuickBooksOnline\API\Facades\TimeActivity;
 
 /**
- * Business operations on QuickBooks time activities for a user's employee.
+ * Maps validated input to QBO TimeActivity entities for the linked employee.
  */
 class TimeActivityService
 {

@@ -9,6 +9,32 @@
       "problemMatcher": []
     },
     {
+      "label": "lint:phpcs",
+      "type": "shell",
+      "command": "npm run lint:phpcs",
+      "group": "test",
+      "problemMatcher": "$phpcs"
+    },
+    {
+      "label": "lint:frontend",
+      "type": "shell",
+      "command": "npm run lint:frontend",
+      "group": "test",
+      "problemMatcher": {
+        "owner": "oxlint",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(\\S+):(\\d+):(\\d+):\\s+(error|warning)\\s+([^:]+):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "code": 5,
+          "message": 6
+        }
+      }
+    },
+    {
       "label": "qa",
       "type": "npm",
       "script": "qa",

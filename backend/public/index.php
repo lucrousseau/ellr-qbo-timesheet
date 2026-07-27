@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * HTTP front controller that boots Laravel and handles the incoming request.
+ */
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 

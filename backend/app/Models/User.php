@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Authenticated application user with optional QuickBooks employee mapping.
+ */
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -15,7 +19,7 @@ use Laravel\Sanctum\HasApiTokens;
 #[Fillable(['name', 'email', 'password', 'qbo_employee_ref', 'qbo_employee_name'])]
 #[Hidden(['password', 'remember_token'])]
 /**
- * Application user with optional QuickBooks employee association.
+ * Eloquent user with Sanctum auth and optional QBO employee fields.
  */
 class User extends Authenticatable
 {

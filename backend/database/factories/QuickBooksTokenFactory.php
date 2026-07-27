@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Model factory for QuickBooks OAuth token rows in tests.
+ */
+
 namespace Database\Factories;
 
 use App\Models\QuickBooksToken;

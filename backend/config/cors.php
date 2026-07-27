@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Cross-origin rules allowing the React admin and timesheet dev servers.
+ */
+
 return [
 
     /*

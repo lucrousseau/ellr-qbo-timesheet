@@ -3,10 +3,15 @@
     "editorconfig.editorconfig",
     "open-southeners.laravel-pint",
     "bmewburn.vscode-intelephense-client",
+    "phpcscommunity.php-codesniffer",
     "oxc.oxc-vscode"
   ],
   "unwantedRecommendations": [
     "esbenp.prettier-vscode",
-    "valeryanm.vscode-phpsab"
+    "dbaeumer.vscode-eslint",
+    "valeryanm.vscode-phpsab",
+    "wongjn.vscode-php-sniffer",
+    "shevaua.phpcs",
+    "ikappas.phpcs"
   ]
 }

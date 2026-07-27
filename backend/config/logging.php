@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Log channels, levels, and default logging stack configuration.
+ */
+
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;

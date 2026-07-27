@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * QuickBooks Online SDK integration: OAuth, tokens, and entity API calls.
+ */
+
 namespace App\Services;
 
 use App\Exceptions\QuickBooksException;
@@ -12,7 +16,7 @@ use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
 use QuickBooksOnline\API\DataService\DataService;
 
 /**
- * Single entry point to the QuickBooks SDK: OAuth, tokens, and API errors.
+ * Wraps the Intuit SDK for token refresh, queries, and entity mutations.
  */
 class QuickBooksService
 {

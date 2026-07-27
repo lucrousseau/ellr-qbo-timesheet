@@ -1,3 +1,7 @@
+/**
+ * @file Inline alert banner for errors and success notices.
+ */
+
 import type { ReactNode } from 'react'
 import { alertClasses } from '../styles/tokens'
 

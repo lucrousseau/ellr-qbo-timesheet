@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Sanctum authentication endpoints: register, login, logout, and user profile.
+ */
+
 namespace App\Http\Controllers\Api;
 
 use App\Enums\ApiErrorCode;
@@ -11,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 
 /**
- * Sanctum authentication: registration, login, session, and user profile.
+ * Validates credentials, manages Sanctum sessions, and returns JSON auth responses.
  */
 class AuthController extends Controller
 {

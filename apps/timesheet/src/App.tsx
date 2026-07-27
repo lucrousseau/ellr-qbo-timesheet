@@ -1,3 +1,7 @@
+/**
+ * @file Timesheet UI for creating and reviewing QuickBooks time activities.
+ */
+
 import { useState } from 'react'
 import { createTimeActivity, getApiErrorMessage } from '@ellr/api-client'
 import {

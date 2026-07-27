@@ -1,11 +1,15 @@
 <?php
 
+/**
+ * Application service provider for container bindings and boot logic.
+ */
+
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
 /**
- * Registration of Laravel application services.
+ * Registers application-level container bindings on boot.
  */
 class AppServiceProvider extends ServiceProvider
 {

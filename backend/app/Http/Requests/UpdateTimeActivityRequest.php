@@ -1,11 +1,15 @@
 <?php
 
+/**
+ * Validates payloads for updating QuickBooks time activities.
+ */
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Validation for partial update of a QuickBooks time activity.
+ * Form request rules for PATCH /api/time-activities/{id} payloads.
  */
 class UpdateTimeActivityRequest extends FormRequest
 {

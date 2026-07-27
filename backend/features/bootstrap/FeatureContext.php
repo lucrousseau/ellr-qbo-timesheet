@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Behat context that boots Laravel in memory and drives API HTTP scenarios.
+ */
+
 namespace Features\Bootstrap;
 
 use App\Models\User;

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * REST endpoints for listing and mutating QuickBooks time activities.
+ */
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Concerns\ResolvesQuickBooksToken;
@@ -11,7 +15,7 @@ use App\Services\TimeActivityService;
 use Illuminate\Http\JsonResponse;
 
 /**
- * CRUD for QuickBooks time activities for the employee linked to the user.
+ * Authorizes requests and delegates time activity CRUD to TimeActivityService.
  */
 class TimeActivityController extends Controller
 {

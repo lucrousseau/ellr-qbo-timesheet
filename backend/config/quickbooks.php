@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * QuickBooks OAuth credentials, scopes, frontend redirect URLs, and error exposure.
+ */
+
 return [
 
     /*

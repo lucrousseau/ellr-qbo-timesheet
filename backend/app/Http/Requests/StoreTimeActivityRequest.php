@@ -1,11 +1,15 @@
 <?php
 
+/**
+ * Validates payloads for creating QuickBooks time activities.
+ */
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Validation for creating a QuickBooks time activity.
+ * Form request rules for POST /api/time-activities payloads.
  */
 class StoreTimeActivityRequest extends FormRequest
 {

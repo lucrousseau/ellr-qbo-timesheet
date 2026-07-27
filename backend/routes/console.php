@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Artisan console route registering the inspire demo command.
+ */
+
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 

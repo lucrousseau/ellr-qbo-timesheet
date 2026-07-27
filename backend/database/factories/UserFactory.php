@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * Model factory for generating User records in tests and seeders.
+ */
+
 namespace Database\Factories;
 
 use App\Models\User;

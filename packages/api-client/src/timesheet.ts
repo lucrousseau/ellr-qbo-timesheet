@@ -1,3 +1,7 @@
+/**
+ * @file Time activity API helpers for the timesheet app.
+ */
+
 import { apiFetch } from './api'
 
 /**
