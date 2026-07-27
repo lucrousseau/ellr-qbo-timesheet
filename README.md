@@ -254,6 +254,20 @@ Prettier is intentionally **not** used (oxlint + Pint are the formatters of reco
 
 **oxlint in the IDE:** the Oxc extension may not resolve the same `.oxlintrc.json` as `npm run lint` in every workspace folder (apps use `oxlint.app.json`, packages use `oxlint.packages.json`). Treat editor diagnostics as hints; **`npm run lint` and Husky hooks remain the source of truth.**
 
+**PHP lint (PHPCS):** this monorepo uses **PHPCS 4** (required by Slevomat). Do **not** use the **PHP Sniffer & Beautifier** extension (`valeryanm.vscode-phpsab`): it only supports PHPCS 3.x and falls back to your **global** `phpcs` (without Slevomat), which triggers false `Referenced sniff ... does not exist` errors and `SyntaxError: Unexpected token 'E'` in the editor. The extension is listed in `.vscode/extensions.json` as unwanted.
+
+**Required on first clone:** open **Extensions**, then **Disable (Workspace)** or **Uninstall** `PHP Sniffer & Beautifier`, and run **Developer: Reload Window**. Workspace settings cannot reliably block this extension in Cursor.
+
+| Need | Tool |
+|------|------|
+| PHP format on save | **Laravel Pint** (recommended extension) |
+| PHPCS / PHPDoc in CI and hooks | `npm run lint` or `cd backend && composer phpcs` |
+| Smoke test from monorepo root | `npm run lint:phpcs` |
+
+PHPCS covers first-party backend PHP (`app/`, `routes/`, `bootstrap/`, `config/`, factories, seeders, Behat bootstrap, `public/`). It excludes `tests/` and `database/migrations/`. Route and console closures are included: add a docblock if `composer phpcs` reports a missing function comment.
+
+Run `composer install` in `backend/` before relying on any PHP tooling in the IDE.
+
 ### Coverage thresholds
 
 | Zone | Lines / stmts / funcs | Branches |

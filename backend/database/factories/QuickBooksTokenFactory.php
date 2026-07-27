@@ -13,6 +13,11 @@ class QuickBooksTokenFactory extends Factory
 {
     protected $model = QuickBooksToken::class;
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         return [
@@ -25,6 +30,11 @@ class QuickBooksTokenFactory extends Factory
         ];
     }
 
+    /**
+     * Mark the token access credentials as expired.
+     *
+     * @return static
+     */
     public function expired(): static
     {
         return $this->state(fn () => [
@@ -32,6 +42,12 @@ class QuickBooksTokenFactory extends Factory
         ]);
     }
 
+    /**
+     * Associate the token with the given user.
+     *
+     * @param  User  $user  The owner of the QuickBooks token.
+     * @return static
+     */
     public function forUser(User $user): static
     {
         return $this->state(fn () => [

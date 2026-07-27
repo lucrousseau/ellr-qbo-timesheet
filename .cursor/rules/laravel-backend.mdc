@@ -42,6 +42,6 @@ covers(TimeActivityController::class);
 ## Style
 
 - `composer format` (Laravel Pint preset) before commit.
-- `composer phpcs`: required PHPDoc on `app/` (see `.cursor/rules/phpdoc.mdc`).
+- `composer phpcs`: required PHPDoc on first-party backend PHP (see `.cursor/rules/phpdoc.mdc`, `backend/phpcs.xml`).
 - `composer lint`: Pint + PHPCS (called by root `npm run lint`).
 - PHPStan level 5: `composer analyse`.

@@ -1,6 +1,6 @@
 ---
-description: Required PHPDoc on Laravel application code (app/)
-globs: backend/app/**/*.php
+description: Required PHPDoc on Laravel application code (backend first-party PHP)
+globs: backend/app/**/*.php,backend/bootstrap/**/*.php,backend/config/**/*.php,backend/database/factories/**/*.php,backend/database/seeders/**/*.php,backend/features/bootstrap/**/*.php,backend/public/**/*.php,backend/routes/**/*.php
 alwaysApply: false
 ---
 
@@ -13,6 +13,7 @@ alwaysApply: false
 | `app/Http/Controllers`, `app/Services`, `app/Models` | Class + public/protected/**private** methods |
 | `app/Http/Requests`, `app/Enums`, `app/Exceptions` | Class (+ methods when non-trivial) |
 | `features/bootstrap/` (Behat context) | Class + methods (including private helpers) |
+| `routes/`, `bootstrap/`, `config/`, `database/factories/`, `database/seeders/`, `public/` | Named classes and methods; route/console closures are scanned too (add a docblock if PHPCS flags one) |
 | `tests/`, `database/migrations/` | No (Pest/Gherkin steps and schema files stay lean) |
 
 ## Content
@@ -43,6 +44,6 @@ PHPCS config: `backend/phpcs.xml`. Aggregate: `composer lint` (= Pint + PHPCS).
 
 ## Agent routine
 
-1. New public class/method in `app/`: PHPDoc before finishing.
+1. New class or method in PHPCS scope (`backend/phpcs.xml`): PHPDoc before finishing.
 2. `cd backend && composer lint && composer analyse && composer test`.
 3. QuickBooks SDK: only in `app/Services/` (plus token conversion on the model).

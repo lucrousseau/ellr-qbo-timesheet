@@ -27,7 +27,7 @@ composer test:behat        # API Gherkin
 composer test:coverage     # Min 85 % coverage (QBO finance standard)
 composer analyse           # PHPStan level 5
 composer format:check      # Pint (style)
-composer phpcs             # PHPDoc (app/)
+composer phpcs             # PHPDoc (first-party backend PHP; see phpcs.xml)
 composer lint              # Pint + PHPCS
 composer format            # Fix Pint style
 composer test:mutation     # Pest mutate, min 80 % score
