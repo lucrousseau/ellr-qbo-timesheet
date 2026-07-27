@@ -31,10 +31,11 @@ npm run test:mutation --workspace=@ellr/api-client
 
 ## Conventions
 
-- `apiFetch` : `credentials: 'include'` par défaut (Sanctum stateful).
-- `getApiErrorMessage` : messages utilisateur en français, codes métier (`quickbooks_not_connected`, `registration_disabled`, etc.).
+- `apiFetch` : `credentials: 'include'` par défaut (Sanctum stateful), CSRF sur mutations.
+- `getApiErrorMessage` : messages utilisateur en français, codes métier (`quickbooks_not_connected`, `registration_disabled`, `qbo_employee_not_configured`, etc.) : **seule** source de vérité côté UI (DRY).
 - `ApiError` : exposer `status` et `code` pour le mapping côté UI.
 - Pas d'appel vers Intuit/QBO : uniquement `VITE_API_URL`.
+- Exports publics limités via `index.ts` (interface segregation).
 
 ## Tests obligatoires
 

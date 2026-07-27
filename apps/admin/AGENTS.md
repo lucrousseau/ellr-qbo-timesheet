@@ -24,8 +24,9 @@ npm run build --workspace=admin
 
 ## Conventions
 
-- Appels API via `@ellr/api-client`, jamais de fetch direct vers QBO.
-- Composants fonctionnels ; logique réseau dans le package partagé.
+- Appels API via `@ellr/api-client`, jamais de fetch direct vers QBO (DRY).
+- Composants fonctionnels ; logique réseau et erreurs dans le package partagé (SRP).
+- Configuration employé QBO : `updateQboEmployee` ; pas de duplication de validation métier côté UI.
 - Classes Tailwind utilitaires, pas de CSS custom sauf `index.css`.
 - Tests : `*.test.tsx` à côté du code testé.
 

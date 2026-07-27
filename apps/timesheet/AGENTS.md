@@ -25,7 +25,9 @@ npm run build --workspace=timesheet
 ## Conventions
 
 - Formulaire de saisie via `POST /api/time-activities` (auth Sanctum requise côté API).
-- Appels API via `@ellr/api-client`, jamais de fetch direct vers QBO.
+- Appels API via `@ellr/api-client`, jamais de fetch direct vers QBO (DRY).
+- Employé QBO : assigné au compte (admin), pas saisi dans le formulaire (règle métier côté API).
+- Erreurs : `getApiErrorMessage` uniquement ; pas de messages dupliqués.
 - Validation côté backend ; le frontend envoie les champs documentés dans l'API.
 - Tests avec Testing Library + Vitest.
 

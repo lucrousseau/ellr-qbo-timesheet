@@ -14,10 +14,11 @@ alwaysApply: false
 
 ## API
 
-- Importer depuis `@ellr/api-client` : `apiFetch`, `getApiErrorMessage`, `login`, `logout`, `fetchCurrentUser`, `ApiError`.
-- Ne pas dupliquer de client HTTP dans `apps/*/src/lib/`.
-- `credentials: 'include'` géré par `apiFetch` pour Sanctum stateful.
+- Importer depuis `@ellr/api-client` : `apiFetch`, `getApiErrorMessage`, `login`, `logout`, `fetchCurrentUser`, `updateQboEmployee`, `ApiError`.
+- Ne pas dupliquer de client HTTP dans `apps/*/src/lib/` (DRY : une seule couche réseau).
+- `credentials: 'include'` et CSRF : gérés par `apiFetch` ; ne pas réimplémenter dans les apps.
 - Variable : `VITE_API_URL` (défaut `http://localhost:8000/api`).
+- SOLID : les apps dépendent du contrat `@ellr/api-client`, pas de fetch brut ni d'URL en dur.
 
 ## UI
 

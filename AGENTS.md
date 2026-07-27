@@ -39,13 +39,14 @@ cd backend && composer test:mutation
 
 1. **Ne pas lire le code pour valider** : faire passer les tests et les hooks Husky.
 2. **Ne pas committer** sauf demande explicite de l'utilisateur.
-3. Toute modification backend dans `app/` doit avoir un test Pest associé (`covers(ClassName::class)` pour la mutation).
-4. Toute route API dont le comportement change doit avoir un scénario Behat si applicable.
-5. Toute modification HTTP partagée : `packages/api-client/` + `api.test.ts`.
-6. Pas de communication directe frontend → QBO : tout passe par `backend/`.
-7. Ne jamais committer `.env`, tokens, ou secrets Intuit.
-8. Respecter Pint (PHP) et oxlint (TS/TSX) avant de conclure une tâche.
-9. Avant release : `npm run qa:finance` (couverture + mutation). Avant push : les hooks `prepush` suffisent pour le quotidien.
+3. **DRY / SOLID** : respecter `.cursor/rules/dry-solid.mdc` ; une responsabilité par couche, pas de duplication HTTP/QBO/erreurs.
+4. Toute modification backend dans `app/` doit avoir un test Pest associé (`covers(ClassName::class)` pour la mutation).
+5. Toute route API dont le comportement change doit avoir un scénario Behat si applicable.
+6. Toute modification HTTP partagée : `packages/api-client/` + `api.test.ts`.
+7. Pas de communication directe frontend → QBO : tout passe par `backend/`.
+8. Ne jamais committer `.env`, tokens, ou secrets Intuit.
+9. Respecter Pint (PHP) et oxlint (TS/TSX) avant de conclure une tâche.
+10. Avant release : `npm run qa:finance` (couverture + mutation). Avant push : les hooks `prepush` suffisent pour le quotidien.
 
 ## Hooks Git (Husky)
 
@@ -69,6 +70,7 @@ Scores Stryker mesurés : admin ~85 %, timesheet ~91 %, api-client ~93 %.
 
 ## Cursor
 
-- Rules : `.cursor/rules/` (`monorepo-commands.mdc` toujours actif ; `git-and-pr-workflow.mdc`, `copywriting.mdc`)
-- Revue PR : `.cursor/BUGBOT.md`
+- Rules : `.cursor/rules/` (`monorepo-commands.mdc`, `dry-solid.mdc` toujours actifs ; `git-and-pr-workflow.mdc`, `copywriting.mdc`)
+- Revue PR : `.cursor/BUGBOT.md` (inclut checklist DRY/SOLID)
+- Plan réutilisabilité : `docs/dry-reusability-plan.md`
 - Détails par zone : `backend/AGENTS.md`, `packages/api-client/AGENTS.md`, `apps/*/AGENTS.md`

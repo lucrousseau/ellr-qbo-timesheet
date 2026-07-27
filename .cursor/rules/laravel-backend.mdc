@@ -8,9 +8,10 @@ alwaysApply: false
 
 ## Structure
 
-- Controllers dans `app/Http/Controllers/Api/` : minces, JSON only.
-- Services dans `app/Services/` : suffixe `Service`, logique métier et QBO.
+- Controllers dans `app/Http/Controllers/Api/` : minces, JSON only (SRP : pas de SDK QBO, pas de règles métier lourdes).
+- Services dans `app/Services/` : suffixe `Service`, logique métier et QBO (seul point d'accès SDK).
 - Routes dans `routes/api.php`, préfixe `/api`.
+- DRY : toute logique QBO/OAuth/tokens vit dans `QuickBooksService` ; codes `error` JSON réutilisables côté frontend via `getApiErrorMessage`.
 
 ## QuickBooks
 

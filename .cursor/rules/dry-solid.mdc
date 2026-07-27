@@ -1,0 +1,59 @@
+---
+description: Principes DRY et SOLID pour tout le monorepo (architecture, revue, nouvelles features)
+alwaysApply: true
+---
+
+# DRY et SOLID
+
+Référence obligatoire avant toute nouvelle feature, refactor ou revue de code.
+
+## DRY (Don't Repeat Yourself)
+
+| Couche | Source unique | Ne pas dupliquer |
+|--------|---------------|------------------|
+| HTTP frontend | `packages/api-client` (`apiFetch`, `auth.ts`, `getApiErrorMessage`) | `fetch` dans `apps/*` |
+| Intuit / QBO | `backend/app/Services/QuickBooksService.php` | SDK QBO hors service |
+| Erreurs UI (FR) | `getApiErrorMessage()` + codes `error` API | Messages bruts du backend dans les apps |
+| Auth session | `apiFetch` (CSRF + cookies) | Logique Sanctum par app |
+| Config prod | `.env.example` + README Production | Valeurs magiques en dur |
+
+**Avant d'ajouter une fonction ou un composant :** chercher l'existant (`grep`, `@ellr/api-client`, `QuickBooksService`). Si la logique apparaît deux fois, extraire au bon niveau (api-client, service Laravel, ou helper partagé).
+
+**Exceptions acceptables :** UI très simple et locale (formulaire login) tant qu'elle reste mince et sans logique métier dupliquée.
+
+## SOLID (appliqué au monorepo)
+
+| Principe | Règle concrète |
+|----------|------------------|
+| **S** Single Responsibility | Controllers : validation + orchestration JSON. Services : métier et QBO. Apps React : rendu + état UI. |
+| **O** Open/Closed | Étendre via services/config, pas en modifiant `QuickBooksService` pour un cas UI isolé. |
+| **L** Liskov | Respecter les contrats publics (`apiFetch`, réponses JSON documentées dans README). |
+| **I** Interface Segregation | Exports minimaux dans `packages/api-client/src/index.ts`. Pas d'API « fourre-tout ». |
+| **D** Dependency Inversion | Backend : injection `QuickBooksService` dans les controllers. Frontend : dépendre de `@ellr/api-client`, pas de l'URL API en dur. |
+
+## Signaux d'alarme (à corriger ou refuser en revue)
+
+- Deuxième client HTTP, deuxième mapping d'erreurs QBO, deuxième flux OAuth.
+- Logique métier (employé QBO, tokens, validation métier) dans un controller ou `App.tsx`.
+- Copier-coller de blocs > 10 lignes entre admin et timesheet sans extraction.
+- Nouveau endpoint sans test Pest ; changement `api-client` sans `api.test.ts`.
+
+## Routine agent (chaque tâche)
+
+1. Identifier la couche (api-client / `@ellr/ui` / backend service / app UI).
+2. Vérifier qu'une abstraction existe déjà ; l'étendre plutôt que dupliquer.
+3. Garder les controllers et `App.tsx` minces ; extraire si la responsabilité se multiplie.
+4. Mettre à jour tests + rules si un nouveau pattern devient la norme du projet.
+5. Consulter le plan détaillé : `docs/dry-reusability-plan.md` avant toute nouvelle feature UI ou endpoint QBO.
+
+## Roadmap réutilisabilité (résumé)
+
+| Phase | Contenu | Priorité |
+|-------|---------|----------|
+| 1 | `quickbooks.ts` + `timesheet.ts` dans api-client | P0 |
+| 2 | Package `@ellr/ui` (useAuth, LoginForm, Alert, AppShell) | P0 |
+| 3 | `@ellr/test-utils` (mocks, fixtures login) | P1 |
+| 4 | `TimeActivityService` + trait token + Form Requests | P0 backend |
+| 5 | Config Vite/Vitest partagée | P2 |
+
+Ne pas ajouter de logique dupliquée dans admin/timesheet en attendant la phase concernée ; préférer api-client ou un service Laravel.

@@ -32,11 +32,13 @@ composer qa                # format + analyse + couverture + arch + behat
 
 ## Conventions
 
-- Controllers minces : validation, délégation au service, réponse JSON.
-- Logique QBO dans `QuickBooksService`, pas dans les controllers.
+- Controllers minces : validation, délégation au service, réponse JSON (SRP).
+- Logique QBO dans `QuickBooksService`, pas dans les controllers (DRY + DIP).
 - Modèle `QuickBooksToken` : table `quickbooks_tokens`.
 - Routes protégées : middleware `auth:sanctum`.
 - Mocker `QuickBooksService` dans les tests, jamais appeler l'API Intuit en test.
+- Éviter de grossir les controllers : extraire un service si auth métier, mapping QBO ou règles employé se multiplient.
+- Dette connue : `TimeActivityController` utilise encore la facade SDK pour construire les payloads ; à migrer vers un service dédié si la logique grossit.
 
 ## Tests obligatoires
 

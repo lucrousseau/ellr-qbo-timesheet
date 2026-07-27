@@ -10,6 +10,8 @@ alwaysApply: true
 - `backend/` : API Laravel, seul point de contact avec QuickBooks Online.
 - `packages/api-client/` : client HTTP partagé (`@ellr/api-client`), utilisé par admin et timesheet.
 - `apps/admin/` et `apps/timesheet/` : React, communiquent uniquement avec `/api/*` via `@ellr/api-client`.
+- Principes DRY/SOLID : voir `.cursor/rules/dry-solid.mdc` (toujours actif).
+- Plan de refactor et réutilisabilité : `docs/dry-reusability-plan.md`.
 
 ## Hooks Husky
 
