@@ -5,10 +5,9 @@ REST API for QuickBooks Online. OAuth2 and `TimeActivity` entity via the officia
 ## Key layout
 
 ```
-app/Http/Controllers/Api/   # REST endpoints
-app/Services/               # QuickBooksService, TimeActivityService
-app/Http/Concerns/          # ResolvesQuickBooksToken
-app/Http/Requests/          # Store/UpdateTimeActivityRequest
+app/Http/Controllers/Api/   # REST endpoints (thin, one domain each)
+app/Http/Requests/          # Store/UpdateTimeActivityRequest, UpdateQboEmployeeRequest
+app/Services/               # QuickBooksService, TimeActivityService, QboEmployeeAuthorizationService, QuickBooksTokenResolverService
 app/Models/                 # QuickBooksToken, User
 routes/api.php              # API routes
 config/quickbooks.php       # QBO OAuth config
@@ -28,7 +27,8 @@ composer test:coverage     # Min 85 % coverage (QBO finance standard)
 composer analyse           # PHPStan level 5
 composer format:check      # Pint (style)
 composer phpcs             # PHPDoc (first-party backend PHP; see phpcs.xml)
-composer lint              # Pint + PHPCS
+composer phpmd             # Class size and complexity (phpmd.xml)
+composer lint              # Pint + PHPCS + PHPMD
 composer format            # Fix Pint style
 composer test:mutation     # Pest mutate, min 80 % score
 composer qa                # format + analyse + coverage + arch + behat

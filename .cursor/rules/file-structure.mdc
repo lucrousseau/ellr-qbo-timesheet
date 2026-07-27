@@ -1,0 +1,74 @@
+---
+description: Pragmatic file size limits and extraction patterns (SOLID without over-engineering)
+alwaysApply: true
+---
+
+# File structure and size
+
+Keep files focused. Prefer extraction when a file grows past soft limits; do not split tiny modules for purity.
+
+## Soft limits (source, not tests)
+
+| Layer | Target | Extract when |
+|-------|--------|--------------|
+| `apps/*/src/App.tsx` | **≤ 80 lines** | Screen logic → `hooks/`, JSX blocks → `components/` |
+| `apps/*/src/components/*.tsx` | **≤ 120 lines** | Sub-sections or repeated markup |
+| `apps/*/src/hooks/*.ts` | **≤ 150 lines** | Split by domain (auth vs feature) |
+| `packages/api-client/src/*.ts` | **≤ 150 lines** | One module per domain (`auth`, `quickbooks`, `errors`) |
+| `packages/ui/src/**` | **≤ 120 lines** | Already shared; keep components small |
+| `backend/app/Http/Controllers/**` | **≤ 112 lines** | Move logic to services (Pest Arch enforces `< 113`) |
+| `backend/app/Services/**` | **≤ 250 lines** | Split only when mixing unrelated domains (OAuth vs CRUD) |
+
+Test files may exceed these limits; split test suites by feature when navigation becomes painful (~400+ lines).
+
+## Extraction patterns (React apps)
+
+```
+apps/<app>/src/
+  App.tsx              # Composition root only: auth gate + layout + one feature import
+  hooks/               # Feature state and API orchestration (no JSX)
+  components/          # Presentational UI for this app (props in, events out)
+```
+
+- **`App.tsx`**: loading → login → dashboard routing; no business handlers beyond wiring.
+- **Hooks**: call `@ellr/api-client`, own local state, return data + handlers.
+- **Components**: receive props; no direct `apiFetch` or `@ellr/api-client` imports unless the component is a dedicated data container (avoid by default).
+
+Reuse `@ellr/ui` for cross-app pieces (auth, layout, alerts). Keep app-specific screens in `apps/*/src/components/`.
+
+## Extraction patterns (backend)
+
+```
+app/Http/Controllers/Api/   # Thin JSON orchestration (≤ 112 lines; Pest Arch < 113)
+app/Http/Requests/          # Validation rules per endpoint or resource
+app/Services/               # Business logic and QBO SDK access (≤ ~250 lines)
+```
+
+- **Controllers**: one resource or domain per class (`AuthController`, `QboEmployeeController`, `QuickBooksAuthController`, `TimeActivityController`). Validate via Form Requests; delegate to services.
+- **Services**: one primary domain per class. Extract when mixing unrelated concerns (e.g. employee authorization vs time-activity CRUD).
+- **Token resolution**: `QuickBooksTokenResolverService` (not controller traits) for DIP and testability.
+- Extract a new service only when responsibilities are clearly separate, not for every private method.
+
+## When NOT to extract
+
+- A helper used once in the same file (< 10 lines).
+- A third React app does not exist yet: do not premature-split `api.ts` unless it crosses 200 lines or mixes unrelated domains.
+- "One function per file" micro-modules.
+
+## PR checklist
+
+- [ ] `App.tsx` and new controllers stay under soft limits (Pest Arch + PHPMD where applicable).
+- [ ] New feature logic lives in a hook or service, not copied into `App.tsx`.
+- [ ] Shared behavior moved to `packages/*`, not duplicated between admin and timesheet.
+- [ ] `composer test:arch`, `npm run lint:deps`, and `npm run lint:dup` pass.
+- [ ] Tests updated; behavior unchanged unless intentionally fixed.
+
+## Automated enforcement
+
+| Tool | Command | When |
+|------|---------|------|
+| Pest Arch | `composer test:arch` | pre-push |
+| PHPMD | `composer phpmd` (via `composer lint`) | pre-commit |
+| dependency-cruiser | `npm run lint:deps` | pre-push |
+| jscpd (source) | `npm run lint:dup` (max 5 % duplicated lines) | pre-push |
+| jscpd (tests) | `npm run lint:dup:tests` (max 12 %; higher min block size) | pre-push |

@@ -5,14 +5,6 @@ use App\Models\User;
 
 covers(AuthController::class);
 
-function frontendHeaders(): array
-{
-    return [
-        'Origin' => 'http://localhost:5173',
-        'Referer' => 'http://localhost:5173',
-    ];
-}
-
 it('registers a new user', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
@@ -242,30 +234,6 @@ it('returns the authenticated user', function () {
         ->getJson('/api/user')
         ->assertOk()
         ->assertJsonPath('user.id', $user->id);
-});
-
-it('updates the authenticated users qbo employee mapping', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user)
-        ->patchJson('/api/user/qbo-employee', [
-            'qbo_employee_ref' => '42',
-            'qbo_employee_name' => 'Jane Doe',
-        ], frontendHeaders())
-        ->assertOk()
-        ->assertJsonPath('user.qbo_employee_ref', '42')
-        ->assertJsonPath('user.qbo_employee_name', 'Jane Doe');
-
-    expect($user->fresh()->qbo_employee_ref)->toBe('42');
-});
-
-it('validates qbo employee payload', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user)
-        ->patchJson('/api/user/qbo-employee', [], frontendHeaders())
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors(['qbo_employee_ref']);
 });
 
 it('logs out the authenticated user', function () {

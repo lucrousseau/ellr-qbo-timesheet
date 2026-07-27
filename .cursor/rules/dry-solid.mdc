@@ -44,9 +44,13 @@ Mandatory reference before any new feature, refactor, or code review.
 
 1. Identify the layer (api-client / `@ellr/ui` / backend service / app UI).
 2. Check that an abstraction already exists; extend it rather than duplicate.
-3. Keep controllers and `App.tsx` thin; extract if responsibility grows.
+3. Keep controllers and `App.tsx` thin; extract when past soft limits (see `.cursor/rules/file-structure.mdc`).
 4. Update tests + rules if a new pattern becomes the project norm.
 5. Read the detailed plan: `docs/dry-reusability-plan.md` before any new UI feature or QBO endpoint.
+
+## File size (pragmatic SRP)
+
+See `.cursor/rules/file-structure.mdc` for targets. Summary: `App.tsx` ≤ ~80 lines (composition root), feature hooks in `hooks/`, screen sections in `components/`, Laravel controllers thin, services ≤ ~250 lines unless splitting a real domain boundary.
 
 ## Reusability roadmap (summary)
 
@@ -55,7 +59,7 @@ Mandatory reference before any new feature, refactor, or code review.
 | 1 | `quickbooks.ts` + `timesheet.ts` in api-client | P0 |
 | 2 | `@ellr/ui` package (useAuth, LoginForm, Alert, AppShell) | P0 |
 | 3 | `@ellr/test-utils` (mocks, login fixtures) | P1 |
-| 4 | `TimeActivityService` + token trait + Form Requests | P0 backend |
+| 4 | `TimeActivityService` + Form Requests + `QuickBooksTokenResolverService` | P0 backend |
 | 5 | Shared Vite/Vitest config | P2 |
 
 Do not add duplicated logic in admin/timesheet while waiting for the relevant phase; prefer api-client or a Laravel service.

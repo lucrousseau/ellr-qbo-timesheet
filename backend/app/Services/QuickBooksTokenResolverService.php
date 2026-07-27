@@ -1,35 +1,36 @@
 <?php
 
 /**
- * Controller trait resolving the authenticated user's QuickBooks token.
+ * Resolves a valid QuickBooks OAuth token for the authenticated user.
  */
 
-namespace App\Http\Concerns;
+namespace App\Services;
 
 use App\Enums\ApiErrorCode;
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
-use App\Services\QuickBooksService;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 
 /**
  * Loads the signed-in user's token and refreshes it when expired.
  */
-trait ResolvesQuickBooksToken
+class QuickBooksTokenResolverService
 {
     /**
-     * Provides the QuickBooks service to the trait (implemented by the host controller).
+     * Injects the QuickBooks service for token refresh.
      *
-     * @return QuickBooksService
+     * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
      */
-    abstract protected function quickBooksService(): QuickBooksService;
+    public function __construct(
+        private readonly QuickBooksService $quickBooks,
+    ) {}
 
     /**
      * Returns a valid QuickBooks token or aborts with a JSON 403/503 response.
      *
      * @return QuickBooksToken
      */
-    protected function resolveQuickBooksToken(): QuickBooksToken
+    public function resolve(): QuickBooksToken
     {
         $user = auth()->user();
 
@@ -48,7 +49,7 @@ trait ResolvesQuickBooksToken
 
         try {
             if ($token->isAccessTokenExpired()) {
-                $token = $this->quickBooksService()->refreshToken($token);
+                $token = $this->quickBooks->refreshToken($token);
             }
         } catch (LockTimeoutException) {
             abort(response()->json([
@@ -72,7 +73,7 @@ trait ResolvesQuickBooksToken
      * @param  string  $message  User-facing error message.
      * @return never
      */
-    protected function denyQuickBooks(ApiErrorCode $code, string $message): never
+    private function denyQuickBooks(ApiErrorCode $code, string $message): never
     {
         abort(response()->json([
             'message' => $message,

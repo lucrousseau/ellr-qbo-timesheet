@@ -21,8 +21,8 @@ Format **v9+**: `.husky/pre-commit` and `.husky/pre-push` contain only the npm c
 
 | Hook | Command | Checks |
 |------|---------|--------|
-| `pre-commit` | `npm run precommit` | oxlint (JSDoc: exports in apps, exports + helpers in packages), Pint + PHPCS, TypeScript |
-| `pre-push` | `npm run prepush` | Lint + typecheck + coverage + arch + Behat + PHPStan + Vite builds |
+| `pre-commit` | `npm run precommit` | oxlint, Pint, PHPCS, PHPMD, TypeScript |
+| `pre-push` | `npm run prepush` | Full lint (deps + jscpd) + typecheck + 85 % coverage + arch + Behat + PHPStan + Vite builds |
 
 Shared IDE config: `.vscode/`, `.editorconfig`, `.nvmrc`, `backend/.php-version` (committed for consistent dev setup).
 
@@ -66,8 +66,8 @@ Mutation testing is not in hooks. Use `npm run qa:finance` before release.
 
 | Command | When to use | Includes |
 |---------|---------------|----------|
-| `npm run precommit` | pre-commit hook | oxlint, Pint, PHPCS, TypeScript |
-| `npm run prepush` | pre-push hook | precommit + 85 % coverage + arch + Behat + PHPStan + Vite builds |
+| `npm run precommit` | pre-commit hook | `lint:fast` (oxlint + Pint + PHPCS + PHPMD) + typecheck |
+| `npm run prepush` | pre-push hook | full `lint` + `lint:dup:tests` + typecheck + 85 % coverage + arch + Behat + PHPStan + Vite builds |
 | `npm run qa` | Quick local check | lint + types + coverage + Behat + builds (**no** arch or PHPStan) |
 | `npm run qa:finance` | Before release | front/back coverage + Pest mutation + Stryker |
 | `cd backend && composer qa` | Backend only | Pint + PHPCS + PHPStan + coverage + arch + Behat |

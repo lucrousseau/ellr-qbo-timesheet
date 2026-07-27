@@ -20,6 +20,13 @@ alwaysApply: false
 - Variable: `VITE_API_URL` (default `http://localhost:8000/api`).
 - SOLID: apps depend on the `@ellr/api-client` contract, not raw fetch or hardcoded URLs.
 
+## File layout
+
+- `App.tsx` is a **composition root** (auth gate + layout); target **≤ ~80 lines** (see `.cursor/rules/file-structure.mdc`).
+- Feature state and API calls: `src/hooks/`.
+- App-specific presentational UI: `src/components/`.
+- Cross-app UI: `@ellr/ui` (do not duplicate login, shell, or alerts).
+
 ## UI
 
 - Utility Tailwind classes, sober design (slate).
@@ -40,6 +47,8 @@ vi.mock('@ellr/api-client', async () => {
 
 - `packages/api-client/src/*.test.ts`: shared HTTP client tests.
 - `apps/*/src/*.test.tsx`: component tests (mock `@ellr/api-client`).
+- **dependency-cruiser**: import boundaries (`npm run lint:deps`, pre-push via `npm run lint`).
+- **jscpd**: copy-paste detection (`npm run lint:dup` for source, `npm run lint:dup:tests` for tests; pre-push).
 - Minimum coverage: **85 %** lines/stmts/funcs, **75 %** branches (`vitest.config.ts`).
 
 ## Mutation (Stryker)

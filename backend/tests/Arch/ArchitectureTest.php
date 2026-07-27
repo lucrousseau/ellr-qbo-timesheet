@@ -4,6 +4,10 @@ arch('controllers')
     ->expect('App\Http\Controllers')
     ->toExtend('App\Http\Controllers\Controller');
 
+arch('api controllers stay thin')
+    ->expect('App\Http\Controllers\Api')
+    ->toHaveLineCountLessThan(113);
+
 arch('models')
     ->expect('App\Models')
     ->toExtend('Illuminate\Database\Eloquent\Model');
@@ -11,6 +15,18 @@ arch('models')
 arch('services')
     ->expect('App\Services')
     ->toHaveSuffix('Service');
+
+arch('services stay focused')
+    ->expect('App\Services')
+    ->toHaveLineCountLessThan(251);
+
+arch('form requests')
+    ->expect('App\Http\Requests')
+    ->toHaveSuffix('Request');
+
+arch('services do not depend on controllers')
+    ->expect('App\Services')
+    ->not->toUse('App\Http\Controllers');
 
 arch('no debugging helpers')
     ->expect(['dd', 'dump', 'ray'])
@@ -27,3 +43,7 @@ arch('controllers do not import qbo sdk')
 arch('http layer delegates qbo data service to services')
     ->expect('App\Http')
     ->not->toUse('QuickBooksOnline\API\DataService\DataService');
+
+arch('qbo sdk only in services')
+    ->expect('QuickBooksOnline')
+    ->toOnlyBeUsedIn('App\Services');

@@ -225,8 +225,8 @@ Husky v9+ format: one command per hook file (e.g. `npm run precommit`), no `husk
 
 | Hook | Command | Checks |
 |------|---------|--------|
-| `pre-commit` | `npm run precommit` | oxlint (JSDoc: exports in apps, exports + helpers in packages), Pint + PHPCS, TypeScript |
-| `pre-push` | `npm run prepush` | Lint + typecheck + 85 % coverage + arch + Behat + PHPStan + builds |
+| `pre-commit` | `npm run precommit` | `lint:fast` (oxlint, Pint, PHPCS, PHPMD) + typecheck |
+| `pre-push` | `npm run prepush` | Full lint (deps + jscpd) + `lint:dup:tests` + typecheck + 85 % coverage + arch + Behat + PHPStan + builds |
 
 Automatic install via `npm install` (`prepare` script).
 

@@ -4,6 +4,7 @@ use App\Http\Requests\StoreTimeActivityRequest;
 use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Services\QboEmployeeAuthorizationService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityService;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -15,7 +16,7 @@ function makeTimeActivityService(DataService $dataService): TimeActivityService
     $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
     $quickBooks->shouldReceive('dataService')->andReturn($dataService);
 
-    return new TimeActivityService($quickBooks);
+    return new TimeActivityService($quickBooks, new QboEmployeeAuthorizationService);
 }
 
 function makeUserWithEmployee(): User

@@ -354,8 +354,10 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
     vi.mocked(disconnectQuickBooks).mockResolvedValue({ connected: false })
+    vi.mocked(fetchQuickBooksStatus)
+      .mockResolvedValueOnce({ connected: true, realm_id: 'realm-42' })
+      .mockResolvedValueOnce({ connected: false })
 
     render(<App />)
 
@@ -434,6 +436,42 @@ describe('Admin App', () => {
     })
   })
 
+  it('clears flash messages when logging out', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      qbo_employee_ref: '42',
+    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(updateQboEmployee).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      qbo_employee_ref: '42',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save employee/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /save employee/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/quickbooks employee saved/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /sign out/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
+      expect(screen.queryByText(/quickbooks employee saved/i)).not.toBeInTheDocument()
+    })
+  })
+
   it('saves the qbo employee mapping', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue({
@@ -497,8 +535,10 @@ describe('Admin App', () => {
       name: 'Test User',
       email: 'test@example.com',
     })
-    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
     vi.mocked(disconnectQuickBooks).mockResolvedValue({ connected: false })
+    vi.mocked(fetchQuickBooksStatus)
+      .mockResolvedValueOnce({ connected: true, realm_id: 'realm-42' })
+      .mockResolvedValueOnce({ connected: false })
 
     render(<App />)
 

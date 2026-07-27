@@ -30,14 +30,18 @@ npm run build --workspace=timesheet
 - Errors: `getApiErrorMessage` only; no duplicated messages.
 - **JSDoc** on the `App` component and every new export; see `.cursor/rules/jsdoc.mdc` and `.cursor/rules/language.mdc`.
 - Validation on the backend; the frontend sends fields documented in the API.
+- **File layout**: thin `App.tsx`, feature logic in `hooks/` when needed, presentational UI in `components/` (see `.cursor/rules/file-structure.mdc`).
 - Tests with Testing Library + Vitest.
 
 ## Key files
 
 ```
-src/App.tsx          # Time entry form
-src/App.test.tsx     # Component tests (mock @ellr/api-client)
-src/test/setup.ts    # Vitest setup + cleanup
+src/App.tsx                    # Composition root
+src/hooks/useTimeEntry.ts
+src/components/TimeEntryForm.tsx
+src/components/QboEmployeeWarning.tsx
+src/App.test.tsx               # Component tests (mock @ellr/api-client)
+src/test/setup.ts
 ```
 
 ## Required tests

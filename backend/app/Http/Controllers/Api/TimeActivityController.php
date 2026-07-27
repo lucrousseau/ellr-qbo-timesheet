@@ -6,11 +6,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Concerns\ResolvesQuickBooksToken;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTimeActivityRequest;
 use App\Http\Requests\UpdateTimeActivityRequest;
-use App\Services\QuickBooksService;
+use App\Services\QuickBooksTokenResolverService;
 use App\Services\TimeActivityService;
 use Illuminate\Http\JsonResponse;
 
@@ -19,28 +18,16 @@ use Illuminate\Http\JsonResponse;
  */
 class TimeActivityController extends Controller
 {
-    use ResolvesQuickBooksToken;
-
     /**
-     * Injects QuickBooks and TimeActivity services.
+     * Injects token resolution and time activity services.
      *
-     * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
+     * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves the user's QBO token.
      * @param  TimeActivityService  $timeActivities  Time activity service instance.
      */
     public function __construct(
-        private readonly QuickBooksService $quickBooks,
+        private readonly QuickBooksTokenResolverService $tokenResolver,
         private readonly TimeActivityService $timeActivities,
     ) {}
-
-    /**
-     * Injected QuickBooks service for the token resolution trait.
-     *
-     * @return QuickBooksService
-     */
-    protected function quickBooksService(): QuickBooksService
-    {
-        return $this->quickBooks;
-    }
 
     /**
      * Lists time activities for the configured QBO employee.
@@ -50,7 +37,7 @@ class TimeActivityController extends Controller
     public function index(): JsonResponse
     {
         $user = auth()->user();
-        $token = $this->resolveQuickBooksToken();
+        $token = $this->tokenResolver->resolve();
 
         return response()->json([
             'data' => $this->timeActivities->listForUser($user, $token),
@@ -66,7 +53,7 @@ class TimeActivityController extends Controller
     public function store(StoreTimeActivityRequest $request): JsonResponse
     {
         $user = auth()->user();
-        $token = $this->resolveQuickBooksToken();
+        $token = $this->tokenResolver->resolve();
 
         $result = $this->timeActivities->createForUser($user, $token, $request->validated());
 
@@ -82,7 +69,7 @@ class TimeActivityController extends Controller
     public function show(string $id): JsonResponse
     {
         $user = auth()->user();
-        $token = $this->resolveQuickBooksToken();
+        $token = $this->tokenResolver->resolve();
 
         return response()->json([
             'data' => $this->timeActivities->findForUser($user, $token, $id),
@@ -99,7 +86,7 @@ class TimeActivityController extends Controller
     public function update(UpdateTimeActivityRequest $request, string $id): JsonResponse
     {
         $user = auth()->user();
-        $token = $this->resolveQuickBooksToken();
+        $token = $this->tokenResolver->resolve();
 
         $result = $this->timeActivities->updateForUser($user, $token, $id, $request->validated());
 
@@ -115,7 +102,7 @@ class TimeActivityController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $user = auth()->user();
-        $token = $this->resolveQuickBooksToken();
+        $token = $this->tokenResolver->resolve();
 
         $this->timeActivities->deleteForUser($user, $token, $id);
 

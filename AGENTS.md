@@ -41,7 +41,7 @@ cd backend && composer test:mutation
 
 1. **Do not validate by reading code only**: run tests and Husky hooks.
 2. **Do not commit** unless the user explicitly asks.
-3. **DRY / SOLID**: follow `.cursor/rules/dry-solid.mdc`; one responsibility per layer, no duplicated HTTP/QBO/errors.
+3. **DRY / SOLID**: follow `.cursor/rules/dry-solid.mdc` and `.cursor/rules/file-structure.mdc`; one responsibility per layer, no duplicated HTTP/QBO/errors.
 4. Any backend change in `app/` must have an associated Pest test (`covers(ClassName::class)` for mutation).
 5. Any API route behavior change should have a Behat scenario when applicable.
 6. Any shared HTTP change: `packages/api-client/` + `api.test.ts`.
@@ -57,8 +57,8 @@ Husky v9+ format: `.husky/*` = npm command only (no `husky.sh`).
 
 | Hook | Command | Checks |
 |------|---------|--------|
-| `pre-commit` | `npm run precommit` | Lint + format (Pint + PHPCS) + typecheck |
-| `pre-push` | `npm run prepush` | Lint + typecheck + 85 % coverage + arch + Behat + PHPStan + Vite builds |
+| `pre-commit` | `npm run precommit` | `lint:fast` (oxlint, Pint, PHPCS, PHPMD) + typecheck |
+| `pre-push` | `npm run prepush` | Full lint (deps + jscpd + `lint:dup:tests`) + typecheck + 85 % coverage + arch + Behat + PHPStan + Vite builds |
 
 Mutation testing is not in hooks (too slow). Run `npm run qa:finance` before release.
 

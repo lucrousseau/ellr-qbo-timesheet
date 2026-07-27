@@ -23,6 +23,7 @@
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "*",
         "pestphp/pest-plugin-laravel": "*",
+        "phpmd/phpmd": "^2.15",
         "phpunit/phpunit": "^12.5.12",
         "slevomat/coding-standard": "^8.31",
         "squizlabs/php_codesniffer": "^4.0"
@@ -67,9 +68,11 @@
         "format:check": "vendor/bin/pint --test",
         "phpcs": "vendor/bin/phpcs",
         "phpcs:fix": "vendor/bin/phpcbf",
+        "phpmd": "vendor/bin/phpmd app text phpmd.xml",
         "lint": [
             "@format:check",
-            "@phpcs"
+            "@phpcs",
+            "@phpmd"
         ],
         "qa": [
             "@lint",

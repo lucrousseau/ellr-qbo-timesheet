@@ -8,7 +8,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\QuickBooksOAuthException;
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\QuickBooksOAuthCallbackService;
 use App\Services\QuickBooksService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,12 +20,14 @@ use Illuminate\Http\Request;
 class QuickBooksAuthController extends Controller
 {
     /**
-     * Injects the QuickBooks service.
+     * Injects QuickBooks services.
      *
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
+     * @param  QuickBooksOAuthCallbackService  $oauthCallback  OAuth callback handler.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
+        private readonly QuickBooksOAuthCallbackService $oauthCallback,
     ) {}
 
     /**
@@ -54,31 +56,22 @@ class QuickBooksAuthController extends Controller
         $adminUrl = config('quickbooks.frontend_admin_url');
 
         if (! $request->filled(['code', 'realmId', 'state'])) {
-            return $this->redirectOAuthError($adminUrl, 'missing_params');
+            return $this->oauthCallback->redirectError($adminUrl, 'missing_params');
         }
 
         try {
-            $statePayload = $this->quickBooks->consumeAuthorizationState(
-                $request->string('state')->toString(),
-            );
-
-            $user = User::query()->findOrFail($statePayload['user_id']);
-
-            if ($request->user() !== null && $request->user()->id !== $user->id) {
-                throw new QuickBooksOAuthException('OAuth session mismatch.');
-            }
-
-            $this->quickBooks->exchangeCode(
+            $this->oauthCallback->exchangeFromCallback(
                 $request->string('code')->toString(),
                 $request->string('realmId')->toString(),
-                $user,
+                $request->string('state')->toString(),
+                $request->user(),
             );
 
             return redirect("{$adminUrl}?quickbooks=connected");
         } catch (QuickBooksOAuthException) {
-            return $this->redirectOAuthError($adminUrl, 'oauth');
+            return $this->oauthCallback->redirectError($adminUrl, 'oauth');
         } catch (\Throwable) {
-            return $this->redirectOAuthError($adminUrl, 'connection');
+            return $this->oauthCallback->redirectError($adminUrl, 'connection');
         }
     }
 
@@ -110,17 +103,5 @@ class QuickBooksAuthController extends Controller
         $this->quickBooks->disconnect($request->user());
 
         return response()->json(['connected' => false]);
-    }
-
-    /**
-     * Redirects to admin with an OAuth error code in the query string.
-     *
-     * @param  string  $adminUrl  Admin frontend base URL.
-     * @param  string  $reason  OAuth error reason code.
-     * @return RedirectResponse
-     */
-    private function redirectOAuthError(string $adminUrl, string $reason): RedirectResponse
-    {
-        return redirect("{$adminUrl}?quickbooks=error&reason=".urlencode($reason));
     }
 }

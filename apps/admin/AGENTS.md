@@ -29,14 +29,18 @@ npm run build --workspace=admin
 - QBO employee config: `updateQboEmployee`; no duplicated business validation in the UI.
 - **JSDoc** on the `App` component and every new export; see `.cursor/rules/jsdoc.mdc` and `.cursor/rules/language.mdc`.
 - Utility Tailwind classes, no custom CSS except `index.css`.
+- **File layout**: thin `App.tsx`, feature logic in `hooks/`, presentational UI in `components/` (see `.cursor/rules/file-structure.mdc`).
 - Tests: `*.test.tsx` next to the code under test.
 
 ## Key files
 
 ```
-src/App.tsx          # Main admin page
-src/App.test.tsx     # Component tests (mock @ellr/api-client)
-src/test/setup.ts    # Vitest setup + cleanup
+apps/admin/src/
+  App.tsx                    # Composition root (auth gate + layout)
+  hooks/useQuickBooksAdmin.ts
+  components/QuickBooksAdminPanel.tsx
+  App.test.tsx               # Component tests (mock @ellr/api-client)
+  test/setup.ts
 ```
 
 ## Required tests

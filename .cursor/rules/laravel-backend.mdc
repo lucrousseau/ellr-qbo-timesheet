@@ -8,8 +8,10 @@ alwaysApply: false
 
 ## Structure
 
-- Controllers in `app/Http/Controllers/Api/`: thin, JSON only (SRP: no QBO SDK, no heavy business rules).
+- Controllers in `app/Http/Controllers/Api/`: thin, JSON only, **one domain per class** (SRP).
+- Form requests in `app/Http/Requests/`: validation rules per endpoint.
 - Services in `app/Services/`: `Service` suffix, business logic and QBO (sole SDK access point).
+- Target sizes: controllers **≤ 112 lines**, services **≤ ~250 lines** (see `.cursor/rules/file-structure.mdc`).
 - Routes in `routes/api.php`, `/api` prefix.
 - DRY: all QBO/OAuth/token logic lives in `QuickBooksService`; JSON `error` codes reused by the frontend via `getApiErrorMessage`.
 
@@ -33,15 +35,17 @@ covers(TimeActivityController::class);
 
 - Feature: `tests/Feature/`
 - Unit: `tests/Unit/` (e.g. mock session/Auth for `AuthController::logout`)
-- Arch: `tests/Arch/`
+- Arch: `tests/Arch/` (layers, line counts, QBO SDK boundaries; `composer test:arch`)
 - Gherkin: `features/api/*.feature`
 - Minimum coverage: **85 %** (`composer test:coverage`, QBO finance standard)
 - Mutation: **Pest `--mutate`** score ≥ 80 % (`composer test:mutation`)
 - `app/Services/QuickBooksService.php`: aim for **100 %** (OAuth + tokens core)
+- **PHPMD**: class length (250+ lines), complexity (`composer phpmd`, included in `composer lint`)
 
 ## Style
 
 - `composer format` (Laravel Pint preset) before commit.
 - `composer phpcs`: required PHPDoc on first-party backend PHP (see `.cursor/rules/phpdoc.mdc`, `backend/phpcs.xml`).
-- `composer lint`: Pint + PHPCS (called by root `npm run lint`).
+- `composer phpmd`: structure rules in `backend/phpmd.xml`.
+- `composer lint`: Pint + PHPCS + PHPMD (called by root `npm run lint`).
 - PHPStan level 5: `composer analyse`.

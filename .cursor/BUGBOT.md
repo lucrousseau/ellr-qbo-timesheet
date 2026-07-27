@@ -32,7 +32,10 @@
 ## Architecture
 
 - Architecture test violations (`tests/Arch/`): blocking.
+- PHPMD (`composer phpmd`): blocking on pre-commit via `lint:fast`.
+- dependency-cruiser / jscpd (`npm run lint:deps`, `npm run lint:dup`, `npm run lint:dup:tests`): blocking on pre-push.
 - New endpoint without a documented entry in `routes/api.php`: flag it.
+- `App.tsx` or API controllers growing past soft limits (see `file-structure.mdc`): flag it.
 - Admin/timesheet duplication or SDK outside services: see `docs/dry-reusability-plan.md`.
 
 ## Quality

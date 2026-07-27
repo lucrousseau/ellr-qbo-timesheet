@@ -1,0 +1,14 @@
+{
+  "absolute": true,
+  "format": ["typescript", "tsx", "php"],
+  "minLines": 15,
+  "minTokens": 100,
+  "mode": "strict",
+  "reporters": ["console"],
+  "threshold": 12,
+  "ignore": [
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/coverage/**"
+  ]
+}

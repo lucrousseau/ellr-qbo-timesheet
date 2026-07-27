@@ -66,3 +66,11 @@ function actingAsWithQboEmployee(array $attributes = []): User
 
     return $user;
 }
+
+function frontendHeaders(): array
+{
+    return [
+        'Origin' => 'http://localhost:5173',
+        'Referer' => 'http://localhost:5173',
+    ];
+}

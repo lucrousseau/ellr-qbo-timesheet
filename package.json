@@ -7,8 +7,10 @@
     "packages/*"
   ],
   "devDependencies": {
-    "husky": "^9.1.7",
+    "dependency-cruiser": "^16.10.4",
     "eslint-plugin-jsdoc": "^50.8.0",
+    "husky": "^9.1.7",
+    "jscpd": "^5.0.14",
     "typescript": "~6.0.2"
   },
   "engines": {
@@ -22,7 +24,12 @@
     "dev:timesheet": "npm run dev --workspace=timesheet",
     "build:admin": "npm run build --workspace=admin",
     "build:timesheet": "npm run build --workspace=timesheet",
-    "lint": "npm run lint --workspaces && cd backend && composer lint",
+    "lint": "npm run lint:fast && npm run lint:structure",
+    "lint:fast": "npm run lint --workspaces && cd backend && composer lint",
+    "lint:structure": "npm run lint:deps && npm run lint:dup",
+    "lint:deps": "depcruise --config .dependency-cruiser.cjs \"apps/admin/src/**/*.{ts,tsx}\" \"apps/timesheet/src/**/*.{ts,tsx}\" \"packages/ui/src/**/*.{ts,tsx}\" \"packages/api-client/src/**/*.{ts,tsx}\" \"packages/test-utils/src/**/*.{ts,tsx}\"",
+    "lint:dup": "jscpd --config .jscpd.json apps/admin/src apps/timesheet/src packages/api-client/src packages/ui/src packages/test-utils/src backend/app",
+    "lint:dup:tests": "jscpd --config .jscpd.tests.json \"apps/admin/src/**/*.test.tsx\" \"apps/timesheet/src/**/*.test.tsx\" \"packages/api-client/src/**/*.test.ts\" \"packages/ui/src/**/*.test.tsx\" \"packages/test-utils/src/**/*.test.ts\" \"backend/tests\"",
     "lint:frontend": "node_modules/.bin/oxlint apps/admin/src apps/timesheet/src packages/api-client/src packages/ui/src packages/test-utils/src packages/vite-config/src",
     "lint:phpcs": "scripts/phpcs --standard=backend/phpcs.xml",
     "typecheck": "npm run typecheck --workspaces",
@@ -32,8 +39,8 @@
     "test:mutation:backend": "cd backend && composer test:mutation",
     "test:mutation:frontend": "npm run test:mutation --workspaces --if-present",
     "analyse": "cd backend && composer analyse",
-    "precommit": "npm run lint && npm run typecheck",
-    "prepush": "npm run lint && npm run typecheck && npm run test:coverage --workspaces && (cd backend && composer test:behat && composer test:coverage && composer test:arch && composer analyse) && npm run build:admin && npm run build:timesheet",
+    "precommit": "npm run lint:fast && npm run typecheck",
+    "prepush": "npm run lint && npm run lint:dup:tests && npm run typecheck && npm run test:coverage --workspaces && (cd backend && composer test:behat && composer test:coverage && composer test:arch && composer analyse) && npm run build:admin && npm run build:timesheet",
     "qa": "npm run lint && npm run typecheck && npm run test:coverage && npm run test:behat && npm run build:admin && npm run build:timesheet",
     "qa:finance": "npm run validate:thresholds",
     "validate:thresholds": "npm run test:coverage --workspaces && (cd backend && composer test:coverage && composer test:mutation) && npm run test:mutation:frontend"

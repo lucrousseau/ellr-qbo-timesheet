@@ -1,0 +1,16 @@
+{
+  "absolute": true,
+  "format": ["typescript", "javascript", "tsx", "php"],
+  "minLines": 10,
+  "minTokens": 70,
+  "mode": "strict",
+  "reporters": ["console"],
+  "threshold": 5,
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/coverage/**"
+  ]
+}

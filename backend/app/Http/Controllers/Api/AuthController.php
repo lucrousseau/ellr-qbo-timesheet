@@ -8,11 +8,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\ApiErrorCode;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * Validates credentials, manages Sanctum sessions, and returns JSON auth responses.
@@ -22,10 +23,10 @@ class AuthController extends Controller
     /**
      * Creates a user account if public registration is enabled.
      *
-     * @param  Request  $request  Incoming HTTP request.
+     * @param  RegisterRequest  $request  Validated registration payload.
      * @return JsonResponse
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
         if (! config('app.allow_registration')) {
             return response()->json([
@@ -34,18 +35,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
-
-        $user = User::query()->create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-        ]);
-
+        $user = User::query()->create($request->validated());
         Auth::login($user);
 
         if ($request->hasSession()) {
@@ -58,15 +48,12 @@ class AuthController extends Controller
     /**
      * Authenticates a user and regenerates the session.
      *
-     * @param  Request  $request  Incoming HTTP request.
+     * @param  LoginRequest  $request  Validated login payload.
      * @return JsonResponse
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $credentials = $request->validated();
 
         if (! Auth::attempt($credentials)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
@@ -106,24 +93,5 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json(['user' => $request->user()]);
-    }
-
-    /**
-     * Associates a QuickBooks employee with the user account.
-     *
-     * @param  Request  $request  Incoming HTTP request.
-     * @return JsonResponse
-     */
-    public function updateQboEmployee(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'qbo_employee_ref' => ['required', 'string', 'max:255'],
-            'qbo_employee_name' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $user = $request->user();
-        $user->update($validated);
-
-        return response()->json(['user' => $user->fresh()]);
     }
 }
