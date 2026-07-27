@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Models\User;
+use App\Notifications\VerifyEmailNotification;
+use Illuminate\Support\Facades\Notification;
 
 covers(AuthController::class);
 
@@ -16,6 +18,22 @@ it('registers a new user', function () {
         ->assertJsonPath('user.email', 'jane@example.com');
 
     $this->assertAuthenticated();
+});
+
+it('sends a verification email when registration requires verification', function () {
+    Notification::fake();
+    config(['app.require_email_verification' => true]);
+
+    $this->postJson('/api/register', [
+        'name' => 'Jane Doe',
+        'email' => 'jane@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ], frontendHeaders())->assertCreated();
+
+    $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
+
+    Notification::assertSentTo($user, VerifyEmailNotification::class);
 });
 
 it('logs in with valid credentials', function () {

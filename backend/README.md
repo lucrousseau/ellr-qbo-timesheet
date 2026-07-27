@@ -15,7 +15,7 @@ php artisan migrate
 composer test              # Pest
 composer test:coverage     # Min 85 % coverage
 composer test:behat        # Gherkin scenarios
-composer test:mutation     # Min 80 % mutation score
+composer test:mutation     # Min 90 % mutation score
 composer analyse           # PHPStan level 5
 composer format:check      # Pint
 ```

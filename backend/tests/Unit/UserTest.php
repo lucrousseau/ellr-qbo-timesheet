@@ -25,12 +25,19 @@ it('returns null when the user has no quickbooks token', function () {
 });
 
 it('hides sensitive attributes from array conversion', function () {
-    $user = User::factory()->create(['password' => 'secret-password']);
+    $user = User::factory()->admin()->create(['password' => 'secret-password']);
 
     $array = $user->toArray();
 
     expect($array)->not->toHaveKey('password')
-        ->and($array)->not->toHaveKey('remember_token');
+        ->and($array)->not->toHaveKey('remember_token')
+        ->and($array)->not->toHaveKey('is_admin');
+});
+
+it('casts is_admin to a boolean', function () {
+    $admin = User::factory()->admin()->create();
+
+    expect($admin->is_admin)->toBeBool()->and($admin->is_admin)->toBeTrue();
 });
 
 it('casts password and email verification datetime', function () {

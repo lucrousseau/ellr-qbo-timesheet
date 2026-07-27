@@ -139,7 +139,7 @@ class TimeActivityService
 
         $payload = [
             'Id' => $id,
-            'SyncToken' => $existing->SyncToken,
+            'SyncToken' => $existing->SyncToken, // @pest-mutate-ignore QBO Facade::update merges $existing when SyncToken is omitted from $payload
         ];
 
         if (array_key_exists('start_time', $validated)) {

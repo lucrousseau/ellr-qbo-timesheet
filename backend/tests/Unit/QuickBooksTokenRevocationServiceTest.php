@@ -9,8 +9,8 @@ covers(QuickBooksTokenRevocationService::class);
 
 it('revokes a refresh token at intuit', function () {
     config([
-        'quickbooks.client_id' => 'client-id',
-        'quickbooks.client_secret' => 'client-secret',
+        'quickbooks.client_id' => 12345,
+        'quickbooks.client_secret' => 67890,
     ]);
 
     Http::fake([
@@ -25,7 +25,8 @@ it('revokes a refresh token at intuit', function () {
 
     Http::assertSent(function ($request) {
         return $request->url() === 'https://developer.api.intuit.com/v2/oauth2/tokens/revoke'
-            && $request['token'] === 'refresh-token-value';
+            && $request['token'] === 'refresh-token-value'
+            && $request->hasHeader('Authorization', 'Basic '.base64_encode('12345:67890'));
     });
 });
 

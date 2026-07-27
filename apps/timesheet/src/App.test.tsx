@@ -172,6 +172,22 @@ describe('Timesheet App', () => {
       expect(screen.getByText('Signed in as test@example.com')).toBeInTheDocument()
       expect(screen.getByText(/Jane Doe \(7\)/i)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(document.querySelector('.bg-red-50')).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows the employee ref when only the ref is configured', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      qbo_employee_name: null,
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/QBO employee:/i)).toBeInTheDocument()
+      expect(screen.getByText('7')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
     })
   })
 

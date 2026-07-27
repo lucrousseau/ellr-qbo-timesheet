@@ -346,7 +346,7 @@ PHPCS covers first-party backend PHP (`app/`, `routes/`, `bootstrap/`, `config/`
 
 | Zone | Tool | Command | Threshold |
 |------|------|---------|-----------|
-| Backend | Pest `--mutate` | `npm run test:mutation:backend` | score ≥ 80 % |
+| Backend | Pest `--mutate` | `npm run test:mutation:backend` | score ≥ 90 % |
 | Frontend | Stryker | `npm run test:mutation:frontend` | break ≥ 55 %, low ≥ 65 %, high ≥ 80 % |
 
 `npm run test:mutation:frontend` passes on **admin**, **timesheet**, and **@ellr/api-client** (~85 %, ~91 %, ~93 %). **low 65 %** and **high 80 %** validated.
@@ -377,7 +377,7 @@ cd backend && composer test:behat
 # Backend coverage (min 85 %)
 cd backend && composer test:coverage
 
-# Backend mutation (min 80 %)
+# Backend mutation (min 90 %)
 cd backend && composer test:mutation
 
 # Frontend (admin, timesheet, or api-client)

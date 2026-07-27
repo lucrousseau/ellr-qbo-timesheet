@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\QuickBooksService;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Mockery\MockInterface;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2AccessToken;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
@@ -47,7 +48,27 @@ it('configures a quickbooks data service without a token', function () {
 
     $dataService = app(QuickBooksService::class)->dataService();
 
-    expect($dataService)->toBeInstanceOf(DataService::class);
+    expect($dataService)->toBeInstanceOf(DataService::class)
+        ->and($dataService->getServiceContext()->baseserviceURL)
+        ->toBe('https://sandbox-quickbooks.api.intuit.com/v3/');
+});
+
+it('applies quickbooks oauth configuration to the oauth helper', function () {
+    config([
+        'quickbooks.client_id' => 'configured-client-id',
+        'quickbooks.client_secret' => 'client-secret',
+        'quickbooks.redirect_uri' => 'http://localhost/oauth/callback',
+        'quickbooks.scope' => 'com.intuit.quickbooks.accounting',
+        'quickbooks.base_url' => 'development',
+    ]);
+
+    $url = app(QuickBooksService::class)->oauthHelper('state-abc')->getAuthorizationCodeURL();
+
+    expect($url)
+        ->toContain('client_id=configured-client-id')
+        ->and($url)->toContain('scope=com.intuit.quickbooks.accounting')
+        ->and($url)->toContain('redirect_uri='.urlencode('http://localhost/oauth/callback'))
+        ->and($url)->toContain('state=state-abc');
 });
 
 it('configures a quickbooks data service with a token', function () {
@@ -60,9 +81,15 @@ it('configures a quickbooks data service with a token', function () {
     ]);
 
     $token = QuickBooksToken::factory()->forUser(User::factory()->create())->create();
-    $dataService = app(QuickBooksService::class)->dataService($token);
+    $oauthToken = Mockery::mock(OAuth2AccessToken::class);
+    $oauthToken->shouldReceive('getRealmID')->andReturn($token->realm_id);
+    $tokenSpy = Mockery::mock($token)->makePartial();
+    $tokenSpy->shouldReceive('toOAuth2AccessToken')->once()->andReturn($oauthToken);
 
-    expect($dataService)->toBeInstanceOf(DataService::class);
+    $dataService = app(QuickBooksService::class)->dataService($tokenSpy);
+
+    expect($dataService)->toBeInstanceOf(DataService::class)
+        ->and($dataService->getOAuth2LoginHelper())->toBeInstanceOf(OAuth2LoginHelper::class);
 });
 
 it('consumes oauth state only once', function () {
@@ -318,6 +345,64 @@ it('throws when quickbooks token refresh fails with sdk error', function () {
 
     expect(fn () => $service->refreshToken($token))
         ->toThrow(QuickBooksException::class, 'QuickBooks token refresh failed.');
+});
+
+it('disconnects quickbooks and deletes local tokens', function () {
+    config([
+        'quickbooks.client_id' => 'client-id',
+        'quickbooks.client_secret' => 'client-secret',
+    ]);
+
+    Http::fake([
+        'developer.api.intuit.com/*' => Http::response('', 200),
+    ]);
+
+    $user = User::factory()->create();
+    QuickBooksToken::factory()->forUser($user)->create([
+        'refresh_token' => 'refresh-token-value',
+    ]);
+
+    app(QuickBooksService::class)->disconnect($user);
+
+    expect(QuickBooksToken::query()->where('user_id', $user->id)->count())->toBe(0);
+
+    Http::assertSentCount(1);
+});
+
+it('disconnects when the user has no quickbooks tokens', function () {
+    config([
+        'quickbooks.client_id' => 'client-id',
+        'quickbooks.client_secret' => 'client-secret',
+    ]);
+
+    Http::fake();
+
+    $user = User::factory()->create();
+
+    app(QuickBooksService::class)->disconnect($user);
+
+    Http::assertNothingSent();
+    expect(QuickBooksToken::query()->where('user_id', $user->id)->count())->toBe(0);
+});
+
+it('still deletes local tokens when intuit revocation fails', function () {
+    config([
+        'quickbooks.client_id' => 'client-id',
+        'quickbooks.client_secret' => 'client-secret',
+    ]);
+
+    Http::fake([
+        'developer.api.intuit.com/*' => Http::response('error', 400),
+    ]);
+
+    $user = User::factory()->create();
+    QuickBooksToken::factory()->forUser($user)->create([
+        'refresh_token' => 'refresh-token-value',
+    ]);
+
+    app(QuickBooksService::class)->disconnect($user);
+
+    expect(QuickBooksToken::query()->where('user_id', $user->id)->count())->toBe(0);
 });
 
 afterEach(function () {

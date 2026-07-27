@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureEmailVerifiedIfRequired;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Models\User;
+use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 use Illuminate\Support\Facades\Route;
 
 covers(EnsureUserIsAdmin::class);
@@ -16,7 +17,10 @@ beforeEach(function () {
 it('rejects unauthenticated users for admin routes', function () {
     $this->getJson('/_test/admin')
         ->assertForbidden()
-        ->assertJsonPath('error', 'admin_required');
+        ->assertJson([
+            'message' => 'Administrator access required.',
+            'error' => 'admin_required',
+        ]);
 });
 
 it('rejects non-admin users for admin routes', function () {
@@ -46,13 +50,32 @@ it('rejects unverified users when email verification is required', function () {
     $this->actingAs(User::factory()->unverified()->create())
         ->getJson('/_test/verified')
         ->assertForbidden()
-        ->assertJsonPath('error', 'email_not_verified');
+        ->assertJson([
+            'message' => 'Email address is not verified.',
+            'error' => 'email_not_verified',
+        ]);
 });
 
 it('allows verified users when email verification is required', function () {
     config(['app.require_email_verification' => true]);
 
     $this->actingAs(User::factory()->create())
+        ->getJson('/_test/verified')
+        ->assertOk();
+});
+
+it('allows users that do not implement MustVerifyEmail through verified middleware', function () {
+    config(['app.require_email_verification' => true]);
+
+    $user = new class extends AuthenticatableUser
+    {
+        public function hasVerifiedEmail(): bool
+        {
+            return false;
+        }
+    };
+
+    $this->actingAs($user)
         ->getJson('/_test/verified')
         ->assertOk();
 });

@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
 use App\Services\AuthSessionService;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +27,41 @@ it('rejects unverified logins when verification is required', function () {
 
     expect($response)->not->toBeNull()
         ->and($response->getStatusCode())->toBe(403)
-        ->and($response->getData(true)['error'])->toBe('email_not_verified');
+        ->and($response->getData(true))->toBe([
+            'message' => 'Email address is not verified.',
+            'error' => 'email_not_verified',
+        ])
+        ->and(Auth::check())->toBeFalse();
+});
+
+it('invalidates the session when rejecting an unverified login', function () {
+    config(['app.require_email_verification' => true]);
+
+    $session = Mockery::mock(Session::class);
+    $session->shouldReceive('invalidate')->once();
+    $session->shouldReceive('regenerateToken')->once();
+
+    $user = User::factory()->unverified()->create();
+    $request = Request::create('/api/login', 'POST');
+    $request->setLaravelSession($session);
+
+    Auth::login($user);
+
+    app(AuthSessionService::class)->rejectUnverifiedLogin($user, $request);
+});
+
+it('rejects unverified logins without touching the session when none is present', function () {
+    config(['app.require_email_verification' => true]);
+
+    $user = User::factory()->unverified()->create();
+    $request = Request::create('/api/login', 'POST');
+
+    Auth::login($user);
+
+    $response = app(AuthSessionService::class)->rejectUnverifiedLogin($user, $request);
+
+    expect($response)->not->toBeNull()
+        ->and(Auth::check())->toBeFalse();
 });
 
 it('allows verified logins when verification is required', function () {

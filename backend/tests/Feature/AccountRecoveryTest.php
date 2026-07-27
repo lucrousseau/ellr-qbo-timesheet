@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
+use Illuminate\Routing\Middleware\ValidateSignature;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
@@ -33,8 +35,69 @@ it('verifies an email from a signed link', function () {
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
 });
 
-it('rejects invalid email verification links', function () {
+it('rejects expired email verification links', function () {
     config(['app.frontend_auth_url' => 'http://localhost:5174']);
+
+    $user = User::factory()->unverified()->create();
+    $now = now();
+
+    Carbon::setTestNow($now);
+
+    $verificationUrl = URL::temporarySignedRoute(
+        'verification.verify',
+        $now->copy()->addHour(),
+        [
+            'id' => $user->id,
+            'hash' => sha1($user->email),
+        ],
+    );
+
+    Carbon::setTestNow($now->copy()->addHours(2));
+
+    $this->withoutMiddleware(ValidateSignature::class)
+        ->get($verificationUrl)
+        ->assertRedirect('http://localhost:5174?email=error&reason=expired');
+
+    expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+
+    Carbon::setTestNow();
+});
+
+it('redirects already verified users without changing verification state', function () {
+    config(['app.frontend_auth_url' => 'http://localhost:5174']);
+
+    $user = User::factory()->create();
+
+    $verificationUrl = URL::temporarySignedRoute(
+        'verification.verify',
+        now()->addHour(),
+        [
+            'id' => $user->id,
+            'hash' => sha1($user->email),
+        ],
+    );
+
+    $this->get($verificationUrl)
+        ->assertRedirect('http://localhost:5174?email=already_verified');
+
+    expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
+});
+
+it('returns a message when a verified user requests another verification email', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->postJson('/api/email/verification-notification', [], frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('message', 'Email already verified.');
+
+    Notification::assertNothingSent();
+});
+
+it('rejects invalid email verification links', function () {
+    config(['app.frontend_auth_url' => 'http://localhost:5174/']);
 
     $user = User::factory()->unverified()->create();
 
@@ -118,6 +181,7 @@ it('returns the same forgot-password response for unknown emails', function () {
 
 it('resets a password with a valid token', function () {
     $user = User::factory()->create(['password' => 'old-password']);
+    $previousRememberToken = $user->remember_token;
     $token = Password::createToken($user);
 
     $this->postJson('/api/reset-password', [
@@ -128,6 +192,11 @@ it('resets a password with a valid token', function () {
     ], frontendHeaders())
         ->assertOk()
         ->assertJsonPath('message', 'Password reset successfully.');
+
+    $user->refresh();
+
+    expect($user->remember_token)->not->toBe($previousRememberToken)
+        ->and(strlen((string) $user->remember_token))->toBe(60);
 
     $this->postJson('/api/login', [
         'email' => $user->email,
@@ -167,7 +236,9 @@ it('rejects password reset with an invalid token', function () {
         'email' => $user->email,
         'password' => 'new-password',
         'password_confirmation' => 'new-password',
-    ], frontendHeaders())->assertUnprocessable();
+    ], frontendHeaders())
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'This password reset token is invalid.');
 });
 
 it('validates forgot-password payload', function () {

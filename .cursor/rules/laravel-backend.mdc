@@ -39,7 +39,7 @@ covers(TimeActivityController::class);
 - Arch: `tests/Arch/` (layers, line counts, QBO SDK boundaries; `composer test:arch`)
 - Gherkin: `features/api/*.feature`
 - Minimum coverage: **85 %** (`composer test:coverage`, QBO finance standard)
-- Mutation: **Pest `--mutate`** score ≥ 80 % (`composer test:mutation`)
+- Mutation: **Pest `--mutate`** score ≥ 90 % (`composer test:mutation`)
 - `app/Services/QuickBooksService.php`: aim for **100 %** (OAuth + tokens core)
 - **PHPMD**: class length (250+ lines), complexity (`composer phpmd`, included in `composer lint`)
 

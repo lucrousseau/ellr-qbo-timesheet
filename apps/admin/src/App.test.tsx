@@ -61,6 +61,16 @@ describe('Admin App', () => {
     return replaceState
   }
 
+  it('shows loading state while session is bootstrapping', async () => {
+    vi.mocked(fetchCurrentUser).mockImplementation(() => new Promise(() => {}))
+
+    render(<App />)
+
+    const loading = screen.getByText('Loading...')
+    expect(loading).toHaveClass('text-slate-600')
+    expect(screen.queryByRole('button', { name: /sign in/i })).not.toBeInTheDocument()
+  })
+
   it('renders login form when user is not authenticated', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue(null)
 

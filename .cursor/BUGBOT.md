@@ -41,7 +41,7 @@
 ## Quality
 
 - Coverage thresholds: 85 % backend/frontend, 75 % frontend branches.
-- Mutation thresholds: backend ≥ 80 % (Pest, ~87 %), frontend low ≥ 65 % / high ≥ 80 % (Stryker).
+- Mutation thresholds: backend ≥ 90 % (Pest), frontend low ≥ 65 % / high ≥ 80 % (Stryker).
 - Do not disable PHPStan, Pint, PHPCS, oxlint, or tests to pass a PR.
 - Do not commit without explicit author request.
 - Do not suggest `--no-verify` on Husky hooks.

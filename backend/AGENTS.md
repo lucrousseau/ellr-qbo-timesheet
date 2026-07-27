@@ -30,7 +30,7 @@ composer phpcs             # PHPDoc (first-party backend PHP; see phpcs.xml)
 composer phpmd             # Class size and complexity (phpmd.xml)
 composer lint              # Pint + PHPCS + PHPMD
 composer format            # Fix Pint style
-composer test:mutation     # Pest mutate, min 80 % score
+composer test:mutation     # Pest mutate, min 90 % score
 composer qa                # format + analyse + coverage + arch + behat
 ```
 

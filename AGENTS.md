@@ -65,7 +65,7 @@ Husky v9+ format: `.husky/*` = npm command only (no `husky.sh`).
 | Metric | Backend | Frontend |
 |--------|---------|----------|
 | Coverage | 85 % (Pest) | 85 % lines, 75 % branches (Vitest) |
-| Mutation | ≥ 80 % (Pest `--mutate`, ~87 %) | break ≥ 55 %, **low ≥ 65 %**, high ≥ 80 % (Stryker) |
+| Mutation | ≥ 90 % (Pest `--mutate`) | break ≥ 55 %, **low ≥ 65 %**, high ≥ 80 % (Stryker) |
 
 Measured Stryker scores: admin ~85 %, timesheet ~91 %, api-client ~93 %.
 

@@ -26,10 +26,6 @@ function App() {
     return <TimesheetGuestAuth auth={auth} message={message} />
   }
 
-  const employeeLabel = auth.user.qbo_employee_name
-    ? `${auth.user.qbo_employee_name} (${auth.user.qbo_employee_ref})`
-    : (auth.user.qbo_employee_ref ?? '')
-
   const onLogout = async () => {
     clearMessage()
     await auth.handleLogout()
@@ -54,7 +50,11 @@ function App() {
         <QboEmployeeWarning />
       ) : auth.showEmailVerification(auth.user) ? null : (
         <TimeEntryForm
-          employeeLabel={employeeLabel}
+          employeeLabel={
+            auth.user.qbo_employee_name
+              ? `${auth.user.qbo_employee_name} (${auth.user.qbo_employee_ref})`
+              : String(auth.user.qbo_employee_ref)
+          }
           form={form}
           submitting={submitting}
           message={message}

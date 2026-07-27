@@ -55,7 +55,7 @@ Shared IDE config: `.vscode/`, `.editorconfig`, `.nvmrc`, `backend/.php-version`
 
 | Zone | Tool | Command | Finance thresholds |
 |------|------|---------|-------------------|
-| Backend PHP | Pest `--mutate` (Pest 4 native) | `npm run test:mutation:backend` | score ≥ 80 % |
+| Backend PHP | Pest `--mutate` (Pest 4 native) | `npm run test:mutation:backend` | score ≥ 90 % |
 | Frontend TS | [Stryker](https://stryker-mutator.io/) | `npm run test:mutation:frontend` | break ≥ 55 %, low ≥ 65 %, high ≥ 80 % |
 
 `test:mutation:frontend`: admin ~85 %, timesheet ~91 %, api-client ~93 % (low 65 % and high 80 % validated).

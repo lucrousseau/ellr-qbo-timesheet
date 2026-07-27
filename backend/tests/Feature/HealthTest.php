@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\HealthController;
 covers(HealthController::class);
 
 it('returns api health status', function () {
+    config(['app.require_email_verification' => true]);
+
     $response = $this->getJson('/api/health');
 
     $response
@@ -12,6 +14,20 @@ it('returns api health status', function () {
         ->assertJson([
             'status' => 'ok',
             'service' => 'ellr-qbo-timesheet-api',
-            'require_email_verification' => false,
+            'require_email_verification' => true,
         ]);
+
+    expect($response->json('require_email_verification'))->toBeBool();
+});
+
+it('returns require_email_verification as false when disabled', function () {
+    config(['app.require_email_verification' => false]);
+
+    $response = $this->getJson('/api/health');
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('require_email_verification', false);
+
+    expect($response->json('require_email_verification'))->toBeBool();
 });

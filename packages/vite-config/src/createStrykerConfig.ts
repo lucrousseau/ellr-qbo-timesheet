@@ -18,7 +18,7 @@ export function createStrykerConfig() {
     jsonReporter: {
       fileName: 'build/mutation/report.json',
     },
-    mutate: ['src/App.tsx', '!src/**/*.test.ts', '!src/**/*.test.tsx'],
+    mutate: ['src/App.tsx', '!src/**/*.test.tsx'],
     thresholds: {
       high: 80,
       low: 65,

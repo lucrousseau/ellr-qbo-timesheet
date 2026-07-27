@@ -44,8 +44,17 @@ it('refreshes an expired quickbooks token', function () {
 it('aborts when quickbooks is not connected', function () {
     $user = User::factory()->create();
 
-    (new QuickBooksTokenResolverService(Mockery::mock(QuickBooksService::class)))->resolve($user);
-})->throws(HttpResponseException::class);
+    try {
+        (new QuickBooksTokenResolverService(Mockery::mock(QuickBooksService::class)))->resolve($user);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(403)
+            ->and($exception->getResponse()->getData(true))->toBe([
+                'message' => 'QuickBooks is not connected.',
+                'error' => 'quickbooks_not_connected',
+            ]);
+    }
+});
 
 it('aborts when quickbooks token refresh fails', function () {
     $user = User::factory()->create();
@@ -56,8 +65,17 @@ it('aborts when quickbooks token refresh fails', function () {
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('refreshToken')->once()->andThrow(new QuickBooksException('expired'));
 
-    (new QuickBooksTokenResolverService($quickBooks))->resolve($user);
-})->throws(HttpResponseException::class);
+    try {
+        (new QuickBooksTokenResolverService($quickBooks))->resolve($user);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(403)
+            ->and($exception->getResponse()->getData(true))->toBe([
+                'message' => 'QuickBooks connection expired. Please reconnect from the admin app.',
+                'error' => 'quickbooks_expired',
+            ]);
+    }
+});
 
 it('aborts when quickbooks refresh lock times out', function () {
     $user = User::factory()->create();
@@ -68,5 +86,14 @@ it('aborts when quickbooks refresh lock times out', function () {
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('refreshToken')->once()->andThrow(new LockTimeoutException);
 
-    (new QuickBooksTokenResolverService($quickBooks))->resolve($user);
-})->throws(HttpResponseException::class);
+    try {
+        (new QuickBooksTokenResolverService($quickBooks))->resolve($user);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(503)
+            ->and($exception->getResponse()->getData(true))->toBe([
+                'message' => 'QuickBooks is busy. Please retry.',
+                'error' => 'quickbooks_busy',
+            ]);
+    }
+});
