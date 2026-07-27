@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Laravel
+backend/storage/*.key
+backend/storage/pail
+backend/public/storage
+backend/public/hot
+backend/.phpunit.result.cache
+backend/.phpactor.json
+backend/auth.json
+backend/database/*.sqlite
+backend/database/*.sqlite-journal
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+build/
+.phpunit.cache
+backend/build/
+apps/*/build/
+apps/*/coverage/
+**/.stryker-tmp/
+packages/*/coverage/

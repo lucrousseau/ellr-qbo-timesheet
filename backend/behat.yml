@@ -1,0 +1,7 @@
+default:
+  suites:
+    api:
+      paths:
+        - '%paths.base%/features/api'
+      contexts:
+        - Features\Bootstrap\FeatureContext

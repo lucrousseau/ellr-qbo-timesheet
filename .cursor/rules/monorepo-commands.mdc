@@ -1,0 +1,71 @@
+---
+description: Commandes et garde-fous qualité du monorepo ellr-qbo-timesheet
+alwaysApply: true
+---
+
+# Monorepo ellr-qbo-timesheet
+
+## Architecture
+
+- `backend/` : API Laravel, seul point de contact avec QuickBooks Online.
+- `packages/api-client/` : client HTTP partagé (`@ellr/api-client`), utilisé par admin et timesheet.
+- `apps/admin/` et `apps/timesheet/` : React, communiquent uniquement avec `/api/*` via `@ellr/api-client`.
+
+## Hooks Husky
+
+| Hook | Commande | Vérifie |
+|------|----------|---------|
+| `pre-commit` | `npm run precommit` | oxlint (apps + api-client), Pint (backend), TypeScript |
+| `pre-push` | `npm run prepush` | Lint + typecheck + couverture + arch + Behat + PHPStan + builds Vite |
+
+La mutation testing n'est pas dans les hooks. Utiliser `npm run qa:finance` avant release.
+
+## Avant de terminer une tâche
+
+1. Lancer les vérifications pertinentes :
+   - `npm run lint`
+   - `npm run typecheck` (si TS touché)
+   - `npm run test` ou `npm run test:coverage` (si code applicatif touché)
+   - `cd backend && composer test` (si PHP touché)
+2. Ne pas committer sans que les hooks Husky passent.
+3. Ajouter ou mettre à jour les tests pour tout changement de comportement.
+
+## Interdits
+
+- Secrets dans le code (`.env`, tokens QBO).
+- Appels directs frontend → Intuit/QBO.
+- `dd()`, `dump()`, `console.log` de debug laissés en place.
+- Contourner les hooks avec `--no-verify` sauf demande explicite de l'utilisateur.
+
+## Couverture
+
+| Zone | Seuil |
+|------|-------|
+| Backend Pest | 85 % (`composer test:coverage`) |
+| Frontend Vitest | 85 % lignes/stmts/funcs, 75 % branches |
+| `packages/api-client` | 85 % lignes/stmts/funcs, 75 % branches |
+
+## Mutation testing
+
+| Zone | Outil | Commande | Seuils finance |
+|------|-------|----------|----------------|
+| Backend PHP | Pest `--mutate` (plugin natif Pest 4) | `npm run test:mutation:backend` | score ≥ 80 % |
+| Frontend TS | [Stryker](https://stryker-mutator.io/) | `npm run test:mutation:frontend` | break ≥ 55 %, low ≥ 65 %, high ≥ 80 % |
+
+`test:mutation:frontend` : admin ~85 %, timesheet ~91 %, api-client ~93 % (low 65 % et high 80 % validés).
+
+## Pipelines qualité
+
+| Commande | Quand l'utiliser | Inclut |
+|----------|------------------|--------|
+| `npm run precommit` | Hook pre-commit | oxlint, Pint, TypeScript |
+| `npm run prepush` | Hook pre-push | precommit + couverture 85 % + arch + Behat + PHPStan + builds Vite |
+| `npm run qa` | Vérif rapide locale | lint + types + couverture + Behat + builds (**sans** arch ni PHPStan) |
+| `npm run qa:finance` | Avant release | couverture front/back + mutation Pest + Stryker |
+| `cd backend && composer qa` | Backend seul | Pint + PHPStan + couverture + arch + Behat |
+
+```bash
+npm run qa
+npm run qa:finance       # alias de validate:thresholds
+npm run validate:thresholds
+```

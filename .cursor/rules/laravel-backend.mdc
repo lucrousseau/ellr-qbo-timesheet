@@ -1,0 +1,44 @@
+---
+description: Conventions Laravel et tests pour le backend API
+globs: backend/**/*.php
+alwaysApply: false
+---
+
+# Backend Laravel
+
+## Structure
+
+- Controllers dans `app/Http/Controllers/Api/` : minces, JSON only.
+- Services dans `app/Services/` : suffixe `Service`, logique métier et QBO.
+- Routes dans `routes/api.php`, préfixe `/api`.
+
+## QuickBooks
+
+- SDK : `quickbooks/v3-php-sdk` via `QuickBooksService`.
+- Tokens OAuth : modèle `QuickBooksToken`, table `quickbooks_tokens`.
+- Ne pas passer `null` aux refs QBO (ex. `CustomerRef` omis si absent).
+- Codes erreur JSON : `error` (ex. `quickbooks_not_connected`, `registration_disabled`).
+- `ALLOW_REGISTRATION` contrôle l'inscription publique ; `QUICKBOOKS_EXPOSE_API_ERRORS` filtre les détails Intuit.
+
+## Tests (obligatoire)
+
+```php
+// Feature test avec mock
+$this->mock(QuickBooksService::class, function ($mock) { ... });
+
+// Scoper pour mutation testing
+covers(TimeActivityController::class);
+```
+
+- Feature : `tests/Feature/`
+- Unit : `tests/Unit/` (ex. mock session/Auth pour `AuthController::logout`)
+- Arch : `tests/Arch/`
+- Gherkin : `features/api/*.feature`
+- Couverture minimale : **85 %** (`composer test:coverage`, standard finance QBO)
+- Mutation : **Pest `--mutate`** score ≥ 80 % (`composer test:mutation`)
+- `app/Services/QuickBooksService.php` : viser **100 %** (cœur métier OAuth + tokens)
+
+## Style
+
+- `composer format` (Pint preset Laravel) avant commit.
+- PHPStan niveau 5 : `composer analyse`.

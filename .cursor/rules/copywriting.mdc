@@ -1,0 +1,19 @@
+---
+description: Copywriting UI et doc (pas de tiret cadratin)
+alwaysApply: true
+---
+
+# Copywriting
+
+Ne pas utiliser le **tiret cadratin** (U+2014) dans le texte utilisateur, les chaînes UI, le README, les messages d'erreur API exposés au front, ou la prose des PR/commits, sauf nécessité absolue.
+
+Préférer :
+
+- virgule ou point-virgule pour un contraste léger
+- deux-points pour un label ou un titre de section (`Phase 1 : …`)
+- parenthèses pour un exemple ou une précision
+- pipe `|` dans les titres SEO ou metadata
+
+Avant de livrer une modification de copy, chercher `—` (U+2014) et reformuler si trouvé.
+
+Messages utilisateur du projet : **français** (`getApiErrorMessage`, notices admin/timesheet, réponses auth Laravel).

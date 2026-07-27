@@ -1,0 +1,54 @@
+---
+description: Conventions React, Tailwind et tests pour les apps frontend et api-client
+globs: apps/**/*.{ts,tsx},packages/api-client/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend React
+
+## Stack
+
+- React 19, TypeScript strict, Vite 8, Tailwind CSS 4.
+- `admin` : port 5173. `timesheet` : port 5174.
+- Client HTTP partagé : `packages/api-client` (`@ellr/api-client`).
+
+## API
+
+- Importer depuis `@ellr/api-client` : `apiFetch`, `getApiErrorMessage`, `login`, `logout`, `fetchCurrentUser`, `ApiError`.
+- Ne pas dupliquer de client HTTP dans `apps/*/src/lib/`.
+- `credentials: 'include'` géré par `apiFetch` pour Sanctum stateful.
+- Variable : `VITE_API_URL` (défaut `http://localhost:8000/api`).
+
+## UI
+
+- Classes Tailwind utilitaires, design sobre (slate).
+- Pas de `App.css` : tout via Tailwind dans les composants.
+
+## Tests
+
+```tsx
+// Mock API dans les tests composants
+vi.mock('@ellr/api-client', async () => {
+  const actual = await vi.importActual<typeof import('@ellr/api-client')>('@ellr/api-client')
+  return { ...actual, apiFetch: vi.fn() }
+})
+
+// Cleanup obligatoire (déjà dans src/test/setup.ts des apps)
+```
+
+- `packages/api-client/src/*.test.ts` : tests du client HTTP partagé.
+- `apps/*/src/*.test.tsx` : tests composants (mock `@ellr/api-client`).
+- Couverture min : **85 %** lignes/stmts/funcs, **75 %** branches (`vitest.config.ts`).
+
+## Mutation (Stryker)
+
+- Config : `stryker.config.json` par workspace.
+- Seuils : break 55 %, low 65 %, high 80 %.
+- Commande : `npm run test:mutation --workspace=admin` (ou timesheet, `@ellr/api-client`).
+- `npm run test:mutation:frontend` : les 3 workspaces passent (low 65 % et high 80 % validés).
+- Assertions utiles : classes CSS (`bg-red-50`, `text-slate-600`), libellés exacts, états intermédiaires (`authLoading`, `connecting`), URLs et headers fetch.
+
+## Lint
+
+- `npm run lint --workspace=admin` ou `timesheet` (oxlint).
+- `npm run lint --workspace=@ellr/api-client` (oxlint).

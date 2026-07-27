@@ -1,0 +1,24 @@
+---
+description: Git, commits et pull requests (gh) pour le monorepo
+alwaysApply: true
+---
+
+# Git et pull requests
+
+## Commits
+
+- Ne **jamais** créer de commit sauf demande **explicite** de l'utilisateur.
+- Ne pas committer `.env`, tokens QBO ou secrets Intuit.
+- Avant un commit demandé : `git status`, `git diff`, `git log` (style des messages).
+- Message en 1 à 2 phrases, orienté « pourquoi ». Passer le message via HEREDOC.
+- Ne pas utiliser `--no-verify` sauf demande explicite.
+- Ne pas `push --force` sur `main`/`master`. Éviter `git commit --amend` sauf cas prévus (hook post-commit, HEAD local non poussé).
+
+## Pull requests
+
+- Utiliser **`gh`** pour tout ce qui touche GitHub (issues, PR, checks, releases).
+- Avant `gh pr create` : `git status`, `git diff`, suivi remote, `git log` et `git diff [base]...HEAD`.
+- Pousser avec `git push -u origin HEAD` si la branche n'est pas sur le remote.
+- Corps de PR : résumé (1 à 3 points) + plan de test en checklist. HEREDOC pour le body.
+- Retourner l'URL de la PR à l'utilisateur.
+- Ne pas modifier `git config`.
