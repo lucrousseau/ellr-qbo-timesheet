@@ -11,6 +11,7 @@
     "dbaeumer.vscode-eslint",
     "valeryanm.vscode-phpsab",
     "wongjn.vscode-php-sniffer",
+    "obliviousharmony.vscode-php-codesniffer",
     "shevaua.phpcs",
     "ikappas.phpcs"
   ]

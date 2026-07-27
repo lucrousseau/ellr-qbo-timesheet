@@ -252,7 +252,7 @@ Prettier is intentionally **not** used (oxlint + Pint are the formatters of reco
 
 **oxlint / JSDoc in the IDE:** the **Oxc** extension (`oxc.oxc-vscode`) runs `node_modules/.bin/oxlint` on save. Each file needs a top-level `@file` sentence plus JSDoc on public exports (`jsdoc-js/require-file-overview` and `jsdoc-js/require-jsdoc`).
 
-**PHP in the IDE:** **Laravel Pint** formats on save (`backend/vendor/bin/pint`). **PHP_CodeSniffer Community** (`phpcscommunity.php-codesniffer`) runs `backend/vendor/bin/phpcs` on save. Every linted PHP file needs a one-line file header after `<?php`; classes and methods keep `@param` / `@return` PHPDoc. Do **not** use legacy PHPCS 3.x extensions (`valeryanm.vscode-phpsab`, `wongjn.vscode-php-sniffer`, `shevaua.phpcs`, `ikappas.phpcs`).
+**PHP in the IDE:** use **only** `phpcscommunity.php-codesniffer` (`phpSniffer.*` in `.vscode/settings.json`). The wrapper `scripts/phpcs` always runs **PHPCS 4** from `backend/vendor/bin` (never the global `~/.composer/vendor/bin/phpcs` 3.x). If you see `Referenced sniff ... does not exist` **or** `SyntaxError: Unexpected token 'E'`, disable **`obliviousharmony.vscode-php-codesniffer`** (and any other PHPCS extension): it conflicts with `phpcscommunity` and parses PHPCS errors as JSON. Reload the window after `composer install` in `backend/`.
 
 | Need | Tool |
 |------|------|

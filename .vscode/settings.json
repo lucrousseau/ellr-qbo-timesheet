@@ -21,13 +21,14 @@
   "intelephense.files.maxSize": 5000000,
   "intelephense.format.enable": false,
 
-  "phpSniffer.autoDetect": true,
-  "phpSniffer.executablesFolder": "backend/vendor/bin",
+  "phpSniffer.autoDetect": false,
+  "phpSniffer.executablesFolder": "scripts",
   "phpSniffer.standard": "backend/phpcs.xml",
   "phpSniffer.run": "onSave",
   "phpSniffer.fixOnSave": false,
   "phpSniffer.workingDirectory": "workspaceRoot",
   "phpSniffer.logLevel": "error",
+  "phpSniffer.showOutputOnError": true,
 
   "[typescript]": {
     "editor.formatOnSave": false
