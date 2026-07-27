@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
-import { fetchCurrentUser, login, logout } from './auth'
-import { parseQuickBooksOAuthCallback, quickBooksOAuthErrorMessage } from './quickbooks'
+import { fetchCurrentUser, login, logout, updateQboEmployee } from './auth'
+import {
+  connectQuickBooks,
+  disconnectQuickBooks,
+  fetchQuickBooksStatus,
+  parseQuickBooksOAuthCallback,
+  quickBooksOAuthErrorMessage,
+} from './quickbooks'
 import { createTimeActivity } from './timesheet'
 
 describe('apiFetch', () => {
@@ -423,6 +429,35 @@ describe('auth helpers', () => {
       }),
     )
   })
+
+  it('updates the qbo employee mapping', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          user: {
+            id: 1,
+            name: 'Jane',
+            email: 'jane@example.com',
+            qbo_employee_ref: '7',
+            qbo_employee_name: 'Jane Doe',
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(updateQboEmployee('7', 'Jane Doe')).resolves.toEqual({
+      id: 1,
+      name: 'Jane',
+      email: 'jane@example.com',
+      qbo_employee_ref: '7',
+      qbo_employee_name: 'Jane Doe',
+    })
+  })
 })
 
 describe('quickbooks api', () => {
@@ -445,6 +480,52 @@ describe('quickbooks api', () => {
     expect(quickBooksOAuthErrorMessage('missing_params')).toContain('Paramètres')
     expect(quickBooksOAuthErrorMessage('other')).toContain('impossible')
   })
+
+  it('loads quickbooks status from the api', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ connected: true, realm_id: 'realm-1' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchQuickBooksStatus()).resolves.toEqual({
+      connected: true,
+      realm_id: 'realm-1',
+    })
+  })
+
+  it('starts quickbooks connect flow', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ authorization_url: 'https://intuit.example/oauth' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(connectQuickBooks()).resolves.toEqual({
+      authorization_url: 'https://intuit.example/oauth',
+    })
+  })
+
+  it('disconnects quickbooks through the api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ connected: false }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(disconnectQuickBooks()).resolves.toEqual({ connected: false })
+  })
+
+  function mockCsrfCookie(token = 'csrf-token-value') {
+    document.cookie = `XSRF-TOKEN=${encodeURIComponent(token)}`
+  }
 })
 
 describe('timesheet api', () => {

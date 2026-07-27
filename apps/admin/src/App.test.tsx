@@ -8,6 +8,7 @@ import {
   fetchQuickBooksStatus,
   login,
   logout,
+  updateQboEmployee,
 } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -22,6 +23,7 @@ vi.mock('@ellr/api-client', async () => {
     fetchQuickBooksStatus: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
+    updateQboEmployee: vi.fn(),
   }
 })
 
@@ -35,6 +37,7 @@ describe('Admin App', () => {
     vi.mocked(fetchQuickBooksStatus).mockReset()
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
+    vi.mocked(updateQboEmployee).mockReset()
     vi.mocked(logout).mockResolvedValue(undefined)
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -433,6 +436,62 @@ describe('Admin App', () => {
     await waitFor(() => {
       expect(logout).toHaveBeenCalled()
       expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument()
+    })
+  })
+
+  it('saves the qbo employee mapping', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(updateQboEmployee).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      qbo_employee_ref: '7',
+      qbo_employee_name: 'Jane Doe',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/id employé qbo/i)).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
+    await user.type(screen.getByLabelText(/nom employé/i), 'Jane Doe')
+    await user.click(screen.getByRole('button', { name: /enregistrer l'employé/i }))
+
+    await waitFor(() => {
+      expect(updateQboEmployee).toHaveBeenCalledWith('7', 'Jane Doe')
+      expect(screen.getByText(/employé quickbooks enregistré/i)).toBeInTheDocument()
+    })
+  })
+
+  it('shows an error when qbo employee save fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(updateQboEmployee).mockRejectedValue(new Error('save failed'))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/id employé qbo/i)).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/id employé qbo/i), '7')
+    await user.click(screen.getByRole('button', { name: /enregistrer l'employé/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/impossible d'enregistrer l'employé quickbooks/i)).toBeInTheDocument()
     })
   })
 

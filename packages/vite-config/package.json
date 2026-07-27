@@ -21,6 +21,7 @@
   "scripts": {
     "lint": "oxlint src",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests\""
+    "test": "echo \"No tests\"",
+    "test:coverage": "echo \"No tests\""
   }
 }
