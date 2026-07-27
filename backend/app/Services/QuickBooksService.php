@@ -178,7 +178,13 @@ class QuickBooksService
             }
 
             $dataService = $this->dataService($token);
-            $accessToken = $dataService->getOAuth2LoginHelper()->refreshToken();
+            $oauthHelper = $dataService->getOAuth2LoginHelper();
+
+            if (! $oauthHelper instanceof OAuth2LoginHelper) {
+                throw new QuickBooksException('QuickBooks token refresh failed.');
+            }
+
+            $accessToken = $oauthHelper->refreshToken();
 
             if ($accessToken === null) {
                 throw new QuickBooksException('QuickBooks token refresh failed.');
