@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "open-southeners.laravel-pint",
+    "bmewburn.vscode-intelephense-client",
+    "oxc.oxc-vscode"
+  ],
+  "unwantedRecommendations": [
+    "esbenp.prettier-vscode"
+  ]
+}

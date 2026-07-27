@@ -1,0 +1,42 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "never",
+    "source.organizeImports": "explicit"
+  },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+
+  "[php]": {
+    "editor.defaultFormatter": "open-southeners.laravel-pint",
+    "editor.formatOnSave": true
+  },
+
+  "laravel-pint.enable": true,
+  "laravel-pint.executablePath": "${workspaceFolder}/backend/vendor/bin/pint",
+  "laravel-pint.configPath": "${workspaceFolder}/backend/pint.json",
+  "laravel-pint.runOnSave": true,
+
+  "intelephense.files.maxSize": 5000000,
+  "intelephense.format.enable": false,
+
+  "[typescript]": {
+    "editor.formatOnSave": false
+  },
+  "[typescriptreact]": {
+    "editor.formatOnSave": false
+  },
+
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  "oxc.enable": true,
+  "oxc.flags": {
+    "type_check": false
+  },
+
+  "files.associations": {
+    "*.mdc": "markdown"
+  }
+}

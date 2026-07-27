@@ -45,9 +45,9 @@ Frontends talk only to the Laravel API via `@ellr/api-client`. Only the backend 
 
 ## Prerequisites
 
-- PHP 8.3+
+- PHP 8.3+ (`backend/.php-version` for version managers)
 - Composer 2.x
-- Node.js 22+
+- Node.js 22+ (`.nvmrc`; run `nvm use` at repo root)
 - [Intuit Developer](https://developer.intuit.com/) account with a QBO app
 
 ## Installation
@@ -210,6 +210,8 @@ ellr-qbo-timesheet/
 │   ├── admin/               # Admin UI (QBO connect, config)
 │   └── timesheet/           # Time entry UI
 ├── .cursor/rules/           # Cursor rules (PHP, React, language, monorepo)
+├── .vscode/                 # Shared VS Code / Cursor settings (committed)
+├── .editorconfig            # Indentation and EOL for all editors
 └── package.json             # npm workspaces + quality scripts
 ```
 
@@ -227,6 +229,27 @@ Husky v9+ format: one command per hook file (e.g. `npm run precommit`), no `husk
 | `pre-push` | `npm run prepush` | Lint + typecheck + 85 % coverage + arch + Behat + PHPStan + builds |
 
 Automatic install via `npm install` (`prepare` script).
+
+### IDE setup (VS Code / Cursor)
+
+Shared workspace config is **committed** so every developer gets the same defaults.
+
+| File | Purpose |
+|------|---------|
+| `.vscode/settings.json` | Pint on save (PHP), workspace TypeScript, oxlint diagnostics |
+| `.vscode/extensions.json` | Recommended extensions (install prompt on open) |
+| `.vscode/tasks.json` | `lint`, `qa`, `dev:*` npm tasks |
+| `.editorconfig` | 2 spaces (TS/JSON), 4 spaces (PHP), LF line endings |
+| `.nvmrc` | Node 22 (use `nvm use` or `fnm use`) |
+| `backend/.php-version` | PHP 8.3 (asdf / phpbrew) |
+
+**First open:** accept the recommended extensions (EditorConfig, Laravel Pint, Intelephense, Oxc). Reload the window if prompted.
+
+**PHP on save:** requires `composer install` in `backend/` so `vendor/bin/pint` exists.
+
+**TypeScript:** use the workspace SDK when Cursor/VS Code asks (`typescript.enablePromptUseWorkspaceTsdk`).
+
+Prettier is intentionally **not** used (oxlint + Pint are the formatters of record).
 
 ### Coverage thresholds
 

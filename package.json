@@ -11,6 +11,10 @@
     "eslint-plugin-jsdoc": "^50.8.0",
     "typescript": "~6.0.2"
   },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "prepare": "husky",
     "dev:api": "cd backend && php artisan serve",

@@ -25,7 +25,11 @@ backend/database/*.sqlite-journal
 
 # IDE / OS
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
 .DS_Store
 Thumbs.db
 

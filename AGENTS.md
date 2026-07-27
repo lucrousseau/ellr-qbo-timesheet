@@ -74,6 +74,7 @@ Measured Stryker scores: admin ~85 %, timesheet ~91 %, api-client ~93 %.
 ## Cursor
 
 - Rules: `.cursor/rules/` (`language.mdc`, `monorepo-commands.mdc`, `dry-solid.mdc` always active; `git-and-pr-workflow.mdc`, `copywriting.mdc`)
+- Shared IDE: `.vscode/` (also used by Cursor), `.editorconfig`, `.nvmrc`
 - PR review: `.cursor/BUGBOT.md` (includes DRY/SOLID checklist)
 - Reusability plan: `docs/dry-reusability-plan.md`
 - Per-area details: `backend/AGENTS.md`, `packages/api-client/AGENTS.md`, `apps/*/AGENTS.md`
