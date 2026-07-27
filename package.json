@@ -23,6 +23,7 @@
     "build:admin": "npm run build --workspace=admin",
     "build:timesheet": "npm run build --workspace=timesheet",
     "lint": "npm run lint --workspaces && cd backend && composer lint",
+    "lint:phpcs": "backend/vendor/bin/phpcs --standard=backend/phpcs.xml",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces",
     "test:coverage": "npm run test:coverage --workspaces && cd backend && composer test:coverage",

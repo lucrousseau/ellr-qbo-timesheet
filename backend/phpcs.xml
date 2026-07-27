@@ -9,7 +9,8 @@
     <arg name="colors"/>
     <arg name="extensions" value="php"/>
 
-    <config name="installed_paths" value="vendor/slevomat/coding-standard"/>
+    <!-- Relative to the PHPCS install dir (vendor/squizlabs/php_codesniffer) -->
+    <config name="installed_paths" value="./../../slevomat/coding-standard"/>
 
     <!-- Classes and methods: PHPDoc required with @param / @return -->
     <rule ref="Squiz.Commenting.ClassComment">
