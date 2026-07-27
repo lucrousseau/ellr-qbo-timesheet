@@ -97,3 +97,21 @@ it('aborts when quickbooks refresh lock times out', function () {
             ]);
     }
 });
+
+it('resolves an administrator quickbooks token for non-admin users without a token', function () {
+    $admin = User::factory()->admin()->create();
+    $adminToken = QuickBooksToken::factory()->forUser($admin)->create([
+        'access_token_expires_at' => now()->addHour(),
+    ]);
+    $employee = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldNotReceive('refreshToken');
+
+    $resolved = (new QuickBooksTokenResolverService($quickBooks))->resolve($employee);
+
+    expect($resolved->id)->toBe($adminToken->id);
+});

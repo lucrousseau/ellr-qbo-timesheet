@@ -64,9 +64,9 @@ Shared IDE config: `.vscode/`, `.editorconfig`, `.nvmrc`, `backend/.php-version`
 
 | Command | When to use | Includes |
 |---------|---------------|----------|
-| `npm run precommit` | pre-commit hook | `lint:fast` (oxlint + Pint + PHPCS + PHPMD) + typecheck (parallel workspaces) |
-| `npm run prepush` | pre-push hook | full `lint` + `lint:dup:tests` + typecheck + coverage (parallel frontend + Behat, then backend coverage + PHPStan) + Pest/Stryker mutation + parallel Vite builds |
-| `npm run qa` | Quick local check | lint + types + coverage + Behat + parallel builds (**no** PHPStan or mutation) |
+| `npm run precommit` | pre-commit hook | `precommit:qa` (lint:fast + typecheck + Pest Arch + Unit + time-activity Feature) |
+| `npm run prepush` | pre-push hook | `qa` + `lint:dup:tests` + Pest/Stryker mutation |
+| `npm run qa` | Quick local check | lint + types + coverage + Behat + PHPStan + parallel builds |
 | `npm run qa:finance` | Standalone finance gates | front/back coverage + Pest mutation + Stryker (subset already in `prepush`; use to rerun without full prepush) |
 | `cd backend && composer qa` | Backend only | Pint + PHPCS + PHPStan + coverage + arch + Behat |
 

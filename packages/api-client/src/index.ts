@@ -33,4 +33,12 @@ export {
   type QuickBooksConnectResponse,
   type QuickBooksStatus,
 } from './quickbooks'
-export { createTimeActivity, type TimeActivity, type TimeActivityPayload } from './timesheet'
+export {
+  createTimeActivity,
+  listTimeActivities,
+  type ListTimeActivitiesParams,
+  type TimeActivity,
+  type TimeActivityListMeta,
+  type TimeActivityListResponse,
+  type TimeActivityPayload,
+} from './timesheet'

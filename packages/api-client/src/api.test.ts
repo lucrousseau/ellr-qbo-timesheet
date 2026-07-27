@@ -18,7 +18,7 @@ import {
   parseQuickBooksOAuthCallback,
   quickBooksOAuthErrorMessage,
 } from './quickbooks'
-import { createTimeActivity } from './timesheet'
+import { createTimeActivity, listTimeActivities } from './timesheet'
 import {
   emailVerificationMessage,
   isEmailUnverified,
@@ -1109,6 +1109,37 @@ describe('timesheet api', () => {
           end_time: '2026-07-27T17:00:00',
         }),
       }),
+    )
+  })
+
+  it('lists time activities with optional pagination query params', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: [{ Id: '1' }],
+        meta: {
+          count: 1,
+          max_results: 10,
+          start_position: 3,
+          truncated: false,
+        },
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(listTimeActivities({ start_position: 3, max_results: 10 })).resolves.toEqual({
+      data: [{ Id: '1' }],
+      meta: {
+        count: 1,
+        max_results: 10,
+        start_position: 3,
+        truncated: false,
+      },
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8000/api/time-activities?start_position=3&max_results=10',
+      expect.objectContaining({ method: 'GET' }),
     )
   })
 })

@@ -1,4 +1,6 @@
 #!/bin/sh
+# Optional parallel coverage + Behat (faster than sequential npm run test:coverage for local reruns).
+# Full gate: npm run prepush (qa + lint:dup:tests + mutation).
 set -e
 
 npm run test:coverage --workspaces --parallel &

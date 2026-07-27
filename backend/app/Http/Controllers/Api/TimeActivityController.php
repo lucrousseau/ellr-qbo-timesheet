@@ -7,9 +7,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ListTimeActivityRequest;
 use App\Http\Requests\StoreTimeActivityRequest;
 use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Services\QuickBooksTokenResolverService;
+use App\Services\TimeActivityListService;
 use App\Services\TimeActivityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,27 +25,27 @@ class TimeActivityController extends Controller
      * Injects token resolution and time activity services.
      *
      * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves the user's QBO token.
-     * @param  TimeActivityService  $timeActivities  Time activity service instance.
+     * @param  TimeActivityListService  $timeActivityList  Paginated list queries for time activities.
+     * @param  TimeActivityService  $timeActivities  Time activity CRUD service instance.
      */
     public function __construct(
         private readonly QuickBooksTokenResolverService $tokenResolver,
+        private readonly TimeActivityListService $timeActivityList,
         private readonly TimeActivityService $timeActivities,
     ) {}
 
     /**
      * Lists time activities for the configured QBO employee.
      *
-     * @param  Request  $request  Incoming HTTP request.
+     * @param  ListTimeActivityRequest  $request  Validated list query parameters.
      * @return JsonResponse
      */
-    public function index(Request $request): JsonResponse
+    public function index(ListTimeActivityRequest $request): JsonResponse
     {
         $user = $request->user();
         $token = $this->tokenResolver->resolve($user);
 
-        return response()->json([
-            'data' => $this->timeActivities->listForUser($user, $token),
-        ]);
+        return response()->json($this->timeActivityList->listForUser($user, $token, $request->listStartPosition(), $request->listMaxResults()));
     }
 
     /**

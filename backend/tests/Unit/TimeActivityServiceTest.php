@@ -8,6 +8,7 @@ use App\Services\QboEmployeeAuthorizationService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityService;
+use App\Support\TimeActivityTimeValidation;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Validator;
 use QuickBooksOnline\API\Data\IPPTimeActivity;
@@ -19,8 +20,10 @@ function makeTimeActivityService(DataService $dataService): TimeActivityService
 {
     $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
     $quickBooks->shouldReceive('dataService')->andReturn($dataService);
+    $employeeAuth = new QboEmployeeAuthorizationService;
+    $apiErrors = new QuickBooksApiErrorFormatterService;
 
-    return new TimeActivityService($quickBooks, new QboEmployeeAuthorizationService, new QuickBooksApiErrorFormatterService);
+    return new TimeActivityService($quickBooks, $employeeAuth, $apiErrors);
 }
 
 function makeUserWithEmployee(): User
@@ -53,35 +56,49 @@ it('validates update time activity rules', function () {
     expect($request->authorize())->toBeTrue();
 });
 
-it('lists time activities for a user', function () {
+it('rejects update payloads when end time is not after start time', function () {
+    $request = UpdateTimeActivityRequest::create('/', 'PATCH', [
+        'start_time' => '2026-07-27T17:00:00',
+        'end_time' => '2026-07-27T09:00:00',
+    ]);
+    $request->setContainer(app());
+    $validator = Validator::make($request->all(), $request->rules());
+
+    expect($validator->fails())->toBeTrue()
+        ->and($validator->errors()->has('end_time'))->toBeTrue();
+});
+
+it('rejects partial time updates when existing end time is missing', function () {
+    $existing = new IPPTimeActivity;
+    $existing->Id = '10';
+    $existing->SyncToken = '0';
+    $existing->StartTime = '2026-07-27T09:00:00';
+    $existing->EmployeeRef = (object) ['value' => '7'];
+
     $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn([(object) ['Id' => '1']]);
+    $dataService->shouldReceive('FindById')->once()->andReturn($existing);
+    $dataService->shouldNotReceive('Update');
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
     $service = makeTimeActivityService($dataService);
     $user = makeUserWithEmployee();
     $token = QuickBooksToken::factory()->make();
 
-    expect($service->listForUser($user, $token))->toHaveCount(1);
-});
-
-it('escapes single quotes in employee refs for qbo queries', function () {
-    $maliciousRef = "7' OR '1'='1";
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '7\\' OR \\'1\\'=\\'1' MAXRESULTS 100")
-        ->andReturn([]);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
-
-    $service = makeTimeActivityService($dataService);
-    $user = User::factory()->make([
-        'qbo_employee_ref' => $maliciousRef,
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
-    $token = QuickBooksToken::factory()->make();
-
-    expect($service->listForUser($user, $token))->toBe([]);
+    try {
+        $service->updateForUser($user, $token, '10', [
+            'start_time' => '2026-07-27T10:00:00',
+        ]);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(422)
+            ->and($exception->getResponse()->getData(true))->toBe([
+                'message' => TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE,
+                'errors' => [
+                    'start_time' => [TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE],
+                    'end_time' => [TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE],
+                ],
+            ]);
+    }
 });
 
 it('creates a time activity for a user', function () {
@@ -182,8 +199,8 @@ it('rejects invalid end time on update', function () {
     } catch (HttpResponseException $exception) {
         expect($exception->getResponse()->getStatusCode())->toBe(422)
             ->and($exception->getResponse()->getData(true))->toBe([
-                'message' => 'The end time field must be a date after start time.',
-                'errors' => ['end_time' => ['The end time field must be a date after start time.']],
+                'message' => TimeActivityTimeValidation::END_AFTER_START_MESSAGE,
+                'errors' => ['end_time' => [TimeActivityTimeValidation::END_AFTER_START_MESSAGE]],
             ]);
     }
 });
@@ -212,8 +229,8 @@ it('rejects invalid start time on update using the existing end time', function 
     } catch (HttpResponseException $exception) {
         expect($exception->getResponse()->getStatusCode())->toBe(422)
             ->and($exception->getResponse()->getData(true))->toBe([
-                'message' => 'The end time field must be a date after start time.',
-                'errors' => ['end_time' => ['The end time field must be a date after start time.']],
+                'message' => TimeActivityTimeValidation::END_AFTER_START_MESSAGE,
+                'errors' => ['end_time' => [TimeActivityTimeValidation::END_AFTER_START_MESSAGE]],
             ]);
     }
 });
@@ -316,41 +333,6 @@ it('deletes a time activity for a user', function () {
 
     expect(true)->toBeTrue();
 });
-
-it('aborts when the qbo employee is missing', function () {
-    $service = makeTimeActivityService(Mockery::mock(DataService::class));
-    $user = User::factory()->make(['qbo_employee_ref' => null]);
-    $token = QuickBooksToken::factory()->make();
-
-    $service->listForUser($user, $token);
-})->throws(HttpResponseException::class);
-
-it('returns an empty list when quickbooks returns a non-array result', function () {
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn(null);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
-
-    $service = makeTimeActivityService($dataService);
-    $user = makeUserWithEmployee();
-    $token = QuickBooksToken::factory()->make();
-
-    expect($service->listForUser($user, $token))->toBe([]);
-});
-
-it('aborts when listing time activities fails in quickbooks', function () {
-    $error = Mockery::mock();
-    $error->shouldReceive('getResponseBody')->andReturn('query failed');
-
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn([]);
-    $dataService->shouldReceive('getLastError')->andReturn($error);
-
-    $service = makeTimeActivityService($dataService);
-    $user = makeUserWithEmployee();
-    $token = QuickBooksToken::factory()->make();
-
-    $service->listForUser($user, $token);
-})->throws(HttpResponseException::class);
 
 it('creates a time activity without optional fields', function () {
     $dataService = Mockery::mock(DataService::class);

@@ -6,22 +6,18 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Concerns\AllowsAuthenticatedApiUser;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Form request rules for PATCH /api/time-activities/{id} payloads.
+ *
+ * Partial time updates also validate resolved start/end pairs in TimeActivityService.
  */
 class UpdateTimeActivityRequest extends FormRequest
 {
-    /**
-     * Allows any authenticated user (Sanctum check runs upstream).
-     *
-     * @return bool
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+    use AllowsAuthenticatedApiUser;
 
     /**
      * Validation rules for time activity updates.
@@ -32,7 +28,11 @@ class UpdateTimeActivityRequest extends FormRequest
     {
         return [
             'start_time' => ['sometimes', 'date'],
-            'end_time' => ['sometimes', 'date'],
+            'end_time' => [
+                'sometimes',
+                'date',
+                Rule::when($this->filled('start_time'), 'after:start_time'),
+            ],
             'description' => ['nullable', 'string', 'max:4000'],
         ];
     }

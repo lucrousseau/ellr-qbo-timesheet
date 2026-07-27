@@ -71,3 +71,15 @@ it('rejects unknown qbo employees', function () {
         ->assertUnprocessable()
         ->assertJsonPath('error', 'qbo_employee_invalid');
 });
+
+it('rejects duplicate qbo employee mappings', function () {
+    $admin = actingAsAdmin();
+    User::factory()->create(['qbo_employee_ref' => '42']);
+
+    $this->actingAs($admin)
+        ->patchJson('/api/user/qbo-employee', [
+            'qbo_employee_ref' => '42',
+        ], frontendHeaders())
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['qbo_employee_ref']);
+});

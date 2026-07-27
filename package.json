@@ -50,10 +50,11 @@
     "test:mutation:frontend": "npm run test:mutation --workspaces --if-present",
     "test:mutation": "npm run test:mutation:backend && npm run test:mutation:frontend",
     "analyse": "cd backend && composer analyse",
-    "precommit": "npm run lint:fast && npm run typecheck",
+    "precommit:qa": "npm run lint:fast && npm run typecheck && cd backend && composer test:arch && composer test:unit && composer test:feature:time-activities",
+    "precommit": "npm run precommit:qa",
     "prepush:tests": "sh scripts/prepush-tests.sh",
-    "prepush": "npm run lint && npm run lint:dup:tests && npm run typecheck && npm run prepush:tests && npm run test:mutation && npm run build:apps",
-    "qa": "npm run lint && npm run typecheck && npm run test:coverage && npm run test:behat && npm run build:apps",
+    "prepush": "npm run qa && npm run lint:dup:tests && npm run test:mutation",
+    "qa": "npm run lint && npm run typecheck && npm run test:coverage && npm run test:behat && npm run analyse && npm run build:apps",
     "qa:finance": "npm run validate:thresholds",
     "validate:thresholds": "npm run test:coverage:workspaces && (cd backend && composer test:coverage && composer test:mutation) && npm run test:mutation:frontend"
   }

@@ -5,12 +5,16 @@ use App\Http\Controllers\Api\TimeActivityController;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QuickBooksService;
+use App\Support\TimeActivityTimeValidation;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Laravel\Sanctum\Sanctum;
 use QuickBooksOnline\API\Data\IPPTimeActivity;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(TimeActivityController::class);
+
+const TIME_ACTIVITY_LIST_QUERY = "SELECT * FROM TimeActivity WHERE EmployeeRef = '7' STARTPOSITION 1 MAXRESULTS 100";
+const TIME_ACTIVITY_LIST_PROBE_QUERY = "SELECT * FROM TimeActivity WHERE EmployeeRef = '7' STARTPOSITION 101 MAXRESULTS 1";
 
 it('requires authentication for time activities', function () {
     $this->getJson('/api/time-activities')->assertUnauthorized();
@@ -27,12 +31,20 @@ describe('authenticated time activities', function () {
             ->assertJsonPath('error', 'quickbooks_not_connected');
     });
 
-    it('lists time activities from quickbooks', function () {
-        QuickBooksToken::factory()->forUser(auth()->user())->create();
+    it('lists time activities for non-admin users using the administrator quickbooks token', function () {
+        $admin = User::factory()->admin()->create();
+        QuickBooksToken::factory()->forUser($admin)->create();
+
+        $employee = User::factory()->create([
+            'qbo_employee_ref' => '8',
+            'qbo_employee_name' => 'Jane Doe',
+        ]);
+        Sanctum::actingAs($employee);
+
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Query')
             ->once()
-            ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '7' MAXRESULTS 100")
+            ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '8' STARTPOSITION 1 MAXRESULTS 100")
             ->andReturn([['Id' => '1']]);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
@@ -43,6 +55,104 @@ describe('authenticated time activities', function () {
         $this->getJson('/api/time-activities')
             ->assertOk()
             ->assertJsonPath('data.0.Id', '1');
+    });
+
+    it('lists time activities from quickbooks', function () {
+        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        $dataService = Mockery::mock(DataService::class);
+        $dataService->shouldReceive('Query')
+            ->once()
+            ->with(TIME_ACTIVITY_LIST_QUERY)
+            ->andReturn([['Id' => '1']]);
+        $dataService->shouldReceive('getLastError')->andReturn(null);
+
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
+            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
+        });
+
+        $this->getJson('/api/time-activities')
+            ->assertOk()
+            ->assertJsonPath('data.0.Id', '1')
+            ->assertJsonPath('meta.count', 1)
+            ->assertJsonPath('meta.max_results', 100)
+            ->assertJsonPath('meta.start_position', 1)
+            ->assertJsonPath('meta.truncated', false);
+    });
+
+    it('paginates time activities with start position and max results', function () {
+        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        $dataService = Mockery::mock(DataService::class);
+        $dataService->shouldReceive('Query')
+            ->once()
+            ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '7' STARTPOSITION 11 MAXRESULTS 10")
+            ->andReturn([['Id' => '11']]);
+        $dataService->shouldReceive('getLastError')->andReturn(null);
+
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
+            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
+        });
+
+        $this->getJson('/api/time-activities?start_position=11&max_results=10')
+            ->assertOk()
+            ->assertJsonPath('data.0.Id', '11')
+            ->assertJsonPath('meta.start_position', 11)
+            ->assertJsonPath('meta.max_results', 10);
+    });
+
+    it('marks list responses as truncated when the quickbooks cap is reached', function () {
+        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        $dataService = Mockery::mock(DataService::class);
+        $rows = array_map(fn (int $id) => ['Id' => (string) $id], range(1, 100));
+        $dataService->shouldReceive('Query')
+            ->once()
+            ->with(TIME_ACTIVITY_LIST_QUERY)
+            ->andReturn($rows);
+        $dataService->shouldReceive('Query')
+            ->once()
+            ->with(TIME_ACTIVITY_LIST_PROBE_QUERY)
+            ->andReturn([['Id' => '101']]);
+        $dataService->shouldReceive('getLastError')->andReturn(null);
+
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
+            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
+        });
+
+        $this->getJson('/api/time-activities')
+            ->assertOk()
+            ->assertJsonPath('meta.count', 100)
+            ->assertJsonPath('meta.truncated', true);
+    });
+
+    it('does not mark list as truncated when the cap is reached but no probe row exists', function () {
+        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        $dataService = Mockery::mock(DataService::class);
+        $rows = array_map(fn (int $id) => ['Id' => (string) $id], range(1, 100));
+        $dataService->shouldReceive('Query')
+            ->once()
+            ->with(TIME_ACTIVITY_LIST_QUERY)
+            ->andReturn($rows);
+        $dataService->shouldReceive('Query')
+            ->once()
+            ->with(TIME_ACTIVITY_LIST_PROBE_QUERY)
+            ->andReturn([]);
+        $dataService->shouldReceive('getLastError')->andReturn(null);
+
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
+            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
+        });
+
+        $this->getJson('/api/time-activities')
+            ->assertOk()
+            ->assertJsonPath('meta.count', 100)
+            ->assertJsonPath('meta.truncated', false);
+    });
+
+    it('rejects list max results above the configured cap', function () {
+        QuickBooksToken::factory()->forUser(auth()->user())->create();
+
+        $this->getJson('/api/time-activities?max_results=101')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['max_results']);
     });
 
     it('returns an empty list when quickbooks query result is not an array', function () {
@@ -57,7 +167,9 @@ describe('authenticated time activities', function () {
 
         $this->getJson('/api/time-activities')
             ->assertOk()
-            ->assertJsonPath('data', []);
+            ->assertJsonPath('data', [])
+            ->assertJsonPath('meta.count', 0)
+            ->assertJsonPath('meta.truncated', false);
     });
 
     it('returns quickbooks errors when listing time activities fails', function () {
@@ -118,7 +230,7 @@ describe('authenticated time activities', function () {
             ->assertJsonValidationErrors(['start_time', 'end_time']);
     });
 
-    it('rejects equal start and end times on update', function () {
+    it('rejects end time before existing start time on update', function () {
         QuickBooksToken::factory()->forUser(auth()->user())->create();
         $existing = (object) [
             'Id' => '12',
@@ -540,6 +652,52 @@ describe('authenticated time activities', function () {
         ])->assertUnprocessable();
     });
 
+    it('rejects partial time updates when existing end time is missing', function () {
+        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        $existing = (object) [
+            'Id' => '12',
+            'SyncToken' => '1',
+            'StartTime' => '2026-07-27T09:00:00',
+            'EmployeeRef' => (object) ['value' => '7'],
+        ];
+        $dataService = Mockery::mock(DataService::class);
+        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
+        $dataService->shouldReceive('getLastError')->andReturn(null);
+
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
+            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
+        });
+
+        $this->patchJson('/api/time-activities/12', [
+            'start_time' => '2026-07-27T10:00:00',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE);
+    });
+
+    it('rejects partial time updates when existing start time is missing', function () {
+        QuickBooksToken::factory()->forUser(auth()->user())->create();
+        $existing = (object) [
+            'Id' => '12',
+            'SyncToken' => '1',
+            'EndTime' => '2026-07-27T17:00:00',
+            'EmployeeRef' => (object) ['value' => '7'],
+        ];
+        $dataService = Mockery::mock(DataService::class);
+        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
+        $dataService->shouldReceive('getLastError')->andReturn(null);
+
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
+            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
+        });
+
+        $this->patchJson('/api/time-activities/12', [
+            'end_time' => '2026-07-27T16:00:00',
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE);
+    });
+
     it('deletes a time activity in quickbooks', function () {
         QuickBooksToken::factory()->forUser(auth()->user())->create();
         $existing = (object) [
@@ -591,7 +749,7 @@ describe('authenticated time activities', function () {
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Query')
             ->once()
-            ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '7' MAXRESULTS 100")
+            ->with(TIME_ACTIVITY_LIST_QUERY)
             ->andReturn([]);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
@@ -639,7 +797,7 @@ describe('authenticated time activities', function () {
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Query')
             ->once()
-            ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '7' MAXRESULTS 100")
+            ->with(TIME_ACTIVITY_LIST_QUERY)
             ->andReturn([]);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 

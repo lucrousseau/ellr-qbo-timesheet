@@ -36,4 +36,29 @@ return [
 
     'expose_api_errors' => (bool) env('QUICKBOOKS_EXPOSE_API_ERRORS', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Time activity list cap
+    |--------------------------------------------------------------------------
+    |
+    | Maximum rows per QuickBooks query when listing time activities. Clients may
+    | request fewer via max_results and paginate with start_position.
+    |
+    */
+
+    'time_activities_max_results' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_MAX_RESULTS', 100),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Time activity truncated probe
+    |--------------------------------------------------------------------------
+    |
+    | When true, list responses probe QuickBooks for one more row to set
+    | meta.truncated accurately. When false, truncated is true whenever the
+    | page is full (faster, but may over-report additional pages).
+    |
+    */
+
+    'time_activities_probe_truncated' => (bool) env('QUICKBOOKS_TIME_ACTIVITIES_PROBE_TRUNCATED', true),
+
 ];

@@ -8,6 +8,8 @@ namespace App\Services;
 
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Support\TimeActivityTimeValidation;
+use App\Support\UsesQuickBooksEmployeeScope;
 use QuickBooksOnline\API\Facades\TimeActivity;
 
 /**
@@ -15,41 +17,7 @@ use QuickBooksOnline\API\Facades\TimeActivity;
  */
 class TimeActivityService
 {
-    /**
-     * Injects QuickBooks and employee authorization services.
-     *
-     * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
-     * @param  QboEmployeeAuthorizationService  $employeeAuthorization  QBO employee ownership checks.
-     * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
-     */
-    public function __construct(
-        private readonly QuickBooksService $quickBooks,
-        private readonly QboEmployeeAuthorizationService $employeeAuthorization,
-        private readonly QuickBooksApiErrorFormatterService $apiErrors,
-    ) {}
-
-    /**
-     * Lists time activities for the QBO employee linked to the user.
-     *
-     * @param  User  $user  Authenticated application user.
-     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
-     * @return array<int, mixed>
-     */
-    public function listForUser(User $user, QuickBooksToken $token): array
-    {
-        $employeeRef = $this->employeeAuthorization->resolveEmployeeRef($user);
-        $dataService = $this->quickBooks->dataService($token);
-
-        $activities = $dataService->Query(
-            "SELECT * FROM TimeActivity WHERE EmployeeRef = '{$this->escapeQueryValue($employeeRef)}' MAXRESULTS 100",
-        );
-
-        if ($error = $dataService->getLastError()) {
-            abort($this->apiErrors->jsonResponse($error));
-        }
-
-        return is_array($activities) ? $activities : [];
-    }
+    use UsesQuickBooksEmployeeScope;
 
     /**
      * Creates a time activity in QuickBooks for the user's employee.
@@ -129,13 +97,18 @@ class TimeActivityService
 
         $startTime = $validated['start_time'] ?? $existing->StartTime ?? null;
         $endTime = $validated['end_time'] ?? $existing->EndTime ?? null;
+        $updatingTimeFields = array_key_exists('start_time', $validated) || array_key_exists('end_time', $validated);
 
-        if ($endTime !== null && $startTime !== null && strtotime((string) $endTime) <= strtotime((string) $startTime)) {
-            abort(response()->json([
-                'message' => 'The end time field must be a date after start time.',
-                'errors' => ['end_time' => ['The end time field must be a date after start time.']],
-            ], 422));
-        }
+        TimeActivityTimeValidation::abortWhenUpdateTimesIncomplete(
+            $updatingTimeFields,
+            TimeActivityTimeValidation::normalizeTime($startTime),
+            TimeActivityTimeValidation::normalizeTime($endTime),
+        );
+
+        TimeActivityTimeValidation::abortUnlessEndAfterStart(
+            TimeActivityTimeValidation::normalizeTime($startTime),
+            TimeActivityTimeValidation::normalizeTime($endTime),
+        );
 
         $payload = [
             'Id' => $id,
@@ -207,16 +180,5 @@ class TimeActivityService
         $this->employeeAuthorization->assertActivityBelongsToUser($user, $activity);
 
         return $activity;
-    }
-
-    /**
-     * Escapes a value for a single-quoted QBO query.
-     *
-     * @param  string  $value  Raw value to escape for a QBO query.
-     * @return string
-     */
-    private function escapeQueryValue(string $value): string
-    {
-        return str_replace("'", "\\'", $value);
     }
 }

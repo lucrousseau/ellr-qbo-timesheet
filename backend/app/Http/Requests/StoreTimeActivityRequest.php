@@ -6,6 +6,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Concerns\AllowsAuthenticatedApiUser;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -13,15 +14,7 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class StoreTimeActivityRequest extends FormRequest
 {
-    /**
-     * Allows any authenticated user (Sanctum check runs upstream).
-     *
-     * @return bool
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+    use AllowsAuthenticatedApiUser;
 
     /**
      * Validation rules for time activity creation.

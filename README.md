@@ -152,6 +152,33 @@ npm run dev:timesheet
 | PATCH | `/api/time-activities/{id}` | Update a time entry (auth) |
 | DELETE | `/api/time-activities/{id}` | Delete a time entry (auth) |
 
+### List time activities (`GET /api/time-activities`)
+
+Optional query parameters:
+
+| Parameter | Description |
+|-----------|-------------|
+| `start_position` | QuickBooks `STARTPOSITION` (1-based, default `1`) |
+| `max_results` | Page size (default config cap, max `QUICKBOOKS_TIME_ACTIVITIES_MAX_RESULTS`) |
+
+Response includes pagination metadata:
+
+```json
+{
+  "data": [ /* TimeActivity rows */ ],
+  "meta": {
+    "count": 25,
+    "max_results": 100,
+    "start_position": 1,
+    "truncated": false
+  }
+}
+```
+
+`meta.truncated` is `true` when the page is full and either a probe query finds another row (`QUICKBOOKS_TIME_ACTIVITIES_PROBE_TRUNCATED=true`) or probing is disabled and `count` equals `max_results`.
+
+Use `@ellr/api-client` `listTimeActivities()` for the `{ data, meta }` response shape.
+
 ## Production
 
 Checklist before the first deploy (Laravel API + static Vite builds for admin/timesheet).
@@ -224,7 +251,8 @@ Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (CDN, nginx, etc.).
 - OAuth tokens encrypted in DB (`quickbooks_tokens`), never logged
 - CORS/Sanctum: front domains in `SANCTUM_STATEFUL_DOMAINS`; `config/cors.php` with `supports_credentials`
 - Session cookies: parent `SESSION_DOMAIN` (e.g. `.yourdomain.com`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
-- QBO employee per user (`qbo_employee_ref`): set from admin, validated by the API
+- QBO employee per user (`qbo_employee_ref`): unique per account, set from admin, validated by the API
+- QuickBooks OAuth: administrators connect in the admin app; timesheet users reuse the latest administrator token when they have no token of their own
 - `REQUIRE_EMAIL_VERIFICATION=true`: block sign-in and protected routes until the user confirms email
 - Password reset: `POST /api/forgot-password` and `POST /api/reset-password` (configure SMTP or another mail driver)
 - Promote at least one administrator (`users.is_admin = 1`) before connecting QuickBooks

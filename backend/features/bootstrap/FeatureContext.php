@@ -65,6 +65,16 @@ class FeatureContext implements Context
     }
 
     /**
+     * @Given another user is mapped to quickbooks employee :ref
+     * @param  string  $ref  QuickBooks employee reference.
+     * @return void
+     */
+    public function anotherUserIsMappedToQuickbooksEmployee(string $ref): void
+    {
+        User::factory()->create(['qbo_employee_ref' => $ref]);
+    }
+
+    /**
      * @When I request :method :path with JSON:
      * @param  string  $method  HTTP method.
      * @param  string  $path  Request path.

@@ -13,7 +13,7 @@ use App\Models\User;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 
 /**
- * Loads the signed-in user's token and refreshes it when expired.
+ * Loads a valid QuickBooks token for the user or falls back to an administrator token.
  */
 class QuickBooksTokenResolverService
 {
@@ -34,9 +34,9 @@ class QuickBooksTokenResolverService
      */
     public function resolve(User $user): QuickBooksToken
     {
-        $token = $user->quickBooksToken;
+        $token = $this->findTokenForUser($user);
 
-        if (! $token) {
+        if ($token === null) {
             $this->denyQuickBooks(
                 ApiErrorCode::QuickBooksNotConnected,
                 'QuickBooks is not connected.',
@@ -60,6 +60,26 @@ class QuickBooksTokenResolverService
         }
 
         return $token;
+    }
+
+    /**
+     * Returns the user's token or the latest administrator token for the organization.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @return QuickBooksToken|null
+     */
+    private function findTokenForUser(User $user): ?QuickBooksToken
+    {
+        $token = $user->quickBooksToken;
+
+        if ($token !== null) {
+            return $token;
+        }
+
+        return QuickBooksToken::query()
+            ->whereRelation('user', 'is_admin', true)
+            ->latest('id')
+            ->first();
     }
 
     /**
