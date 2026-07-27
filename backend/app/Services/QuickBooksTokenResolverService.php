@@ -9,6 +9,7 @@ namespace App\Services;
 use App\Enums\ApiErrorCode;
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
+use App\Models\User;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 
 /**
@@ -28,16 +29,11 @@ class QuickBooksTokenResolverService
     /**
      * Returns a valid QuickBooks token or aborts with a JSON 403/503 response.
      *
+     * @param  User  $user  Authenticated application user.
      * @return QuickBooksToken
      */
-    public function resolve(): QuickBooksToken
+    public function resolve(User $user): QuickBooksToken
     {
-        $user = auth()->user();
-
-        if ($user === null) {
-            abort(401);
-        }
-
         $token = $user->quickBooksToken;
 
         if (! $token) {

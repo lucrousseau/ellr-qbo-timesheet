@@ -6,7 +6,7 @@ arch('controllers')
 
 arch('api controllers stay thin')
     ->expect('App\Http\Controllers\Api')
-    ->toHaveLineCountLessThan(113);
+    ->toHaveLineCountLessThan(116);
 
 arch('models')
     ->expect('App\Models')

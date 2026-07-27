@@ -16,7 +16,7 @@ Keep files focused. Prefer extraction when a file grows past soft limits; do not
 | `apps/*/src/hooks/*.ts` | **≤ 150 lines** | Split by domain (auth vs feature) |
 | `packages/api-client/src/*.ts` | **≤ 150 lines** | One module per domain (`auth`, `quickbooks`, `errors`) |
 | `packages/ui/src/**` | **≤ 120 lines** | Already shared; keep components small |
-| `backend/app/Http/Controllers/**` | **≤ 112 lines** | Move logic to services (Pest Arch enforces `< 113`) |
+| `backend/app/Http/Controllers/**` | **≤ 115 lines** | Move logic to services (Pest Arch enforces `< 116`) |
 | `backend/app/Services/**` | **≤ 250 lines** | Split only when mixing unrelated domains (OAuth vs CRUD) |
 
 Test files may exceed these limits; split test suites by feature when navigation becomes painful (~400+ lines).
@@ -39,18 +39,29 @@ Reuse `@ellr/ui` for cross-app pieces (auth, layout, alerts). Keep app-specific 
 ## Extraction patterns (backend)
 
 ```
-app/Http/Controllers/Api/   # Thin JSON orchestration (≤ 112 lines; Pest Arch < 113)
+app/Http/Controllers/Api/   # Thin JSON orchestration (≤ 115 lines; Pest Arch < 116)
 app/Http/Requests/          # Validation rules per endpoint or resource
 app/Services/               # Business logic and QBO SDK access (≤ ~250 lines)
 ```
 
 - **Controllers**: one resource or domain per class (`AuthController`, `QboEmployeeController`, `QuickBooksAuthController`, `TimeActivityController`). Validate via Form Requests; delegate to services.
 - **Services**: one primary domain per class. Extract when mixing unrelated concerns (e.g. employee authorization vs time-activity CRUD).
-- **Token resolution**: `QuickBooksTokenResolverService` (not controller traits) for DIP and testability.
+- **Token resolution**: `QuickBooksTokenResolverService::resolve(User $user)`; controllers pass `$request->user()` (not `auth()->user()`, for static analysis). Inject `Request` on actions that do not already use a Form Request.
 - Extract a new service only when responsibilities are clearly separate, not for every private method.
+
+## API controllers at the Pest Arch line limit
+
+Pest Arch enforces **`< 116` lines** per `App\Http\Controllers\Api` class (see `tests/Arch/ArchitectureTest.php`). PHPDoc on every public method counts toward that budget.
+
+A **full CRUD** controller (5 actions) with Form Requests and QBO token resolution often lands at **~115 lines** with no room for a private `userAndToken()` helper (~+10 lines). **Option A (project default):** keep inline `$user = $request->user();` + `$token = $this->tokenResolver->resolve($user);` in each action. Do **not** add a private helper just to dedupe those two lines if it would fail `composer test:arch`.
+
+To regain headroom (private helper or more actions), **raise the Pest Arch limit and `file-structure.mdc` together** in one change; do not ping-pong between helper and inline across PRs.
+
+Reference: `TimeActivityController` (5 actions, inline user + token).
 
 ## When NOT to extract
 
+- A private controller helper whose only job is `$request->user()` + `tokenResolver->resolve($user)` on a **5-action CRUD** class already at ~115 lines (see **API controllers at the Pest Arch line limit** in `file-structure.mdc`).
 - A helper used once in the same file (< 10 lines).
 - A third React app does not exist yet: do not premature-split `api.ts` unless it crosses 200 lines or mixes unrelated domains.
 - "One function per file" micro-modules.

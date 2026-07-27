@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Services\QuickBooksTokenResolverService;
 use App\Services\TimeActivityService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Authorizes requests and delegates time activity CRUD to TimeActivityService.
@@ -32,12 +33,13 @@ class TimeActivityController extends Controller
     /**
      * Lists time activities for the configured QBO employee.
      *
+     * @param  Request  $request  Incoming HTTP request.
      * @return JsonResponse
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $user = auth()->user();
-        $token = $this->tokenResolver->resolve();
+        $user = $request->user();
+        $token = $this->tokenResolver->resolve($user);
 
         return response()->json([
             'data' => $this->timeActivities->listForUser($user, $token),
@@ -52,8 +54,8 @@ class TimeActivityController extends Controller
      */
     public function store(StoreTimeActivityRequest $request): JsonResponse
     {
-        $user = auth()->user();
-        $token = $this->tokenResolver->resolve();
+        $user = $request->user();
+        $token = $this->tokenResolver->resolve($user);
 
         $result = $this->timeActivities->createForUser($user, $token, $request->validated());
 
@@ -63,13 +65,14 @@ class TimeActivityController extends Controller
     /**
      * Displays a time activity by QBO identifier.
      *
+     * @param  Request  $request  Incoming HTTP request.
      * @param  string  $id  QuickBooks time activity identifier.
      * @return JsonResponse
      */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
-        $user = auth()->user();
-        $token = $this->tokenResolver->resolve();
+        $user = $request->user();
+        $token = $this->tokenResolver->resolve($user);
 
         return response()->json([
             'data' => $this->timeActivities->findForUser($user, $token, $id),
@@ -85,8 +88,8 @@ class TimeActivityController extends Controller
      */
     public function update(UpdateTimeActivityRequest $request, string $id): JsonResponse
     {
-        $user = auth()->user();
-        $token = $this->tokenResolver->resolve();
+        $user = $request->user();
+        $token = $this->tokenResolver->resolve($user);
 
         $result = $this->timeActivities->updateForUser($user, $token, $id, $request->validated());
 
@@ -96,13 +99,14 @@ class TimeActivityController extends Controller
     /**
      * Deletes a time activity in QuickBooks.
      *
+     * @param  Request  $request  Incoming HTTP request.
      * @param  string  $id  QuickBooks time activity identifier.
      * @return JsonResponse
      */
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
-        $user = auth()->user();
-        $token = $this->tokenResolver->resolve();
+        $user = $request->user();
+        $token = $this->tokenResolver->resolve($user);
 
         $this->timeActivities->deleteForUser($user, $token, $id);
 
