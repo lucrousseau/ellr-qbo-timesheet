@@ -21,7 +21,7 @@ class QuickBooksApiErrorFormatterService
      */
     public function jsonResponse(object $error): JsonResponse
     {
-        $payload = ['message' => 'QuickBooks API error'];
+        $payload = ['message' => __('api.quickbooks_api_error')];
 
         if (config('quickbooks.expose_api_errors')) {
             $payload['error'] = $error->getResponseBody();

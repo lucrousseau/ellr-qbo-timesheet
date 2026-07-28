@@ -2,8 +2,7 @@
  * @file Sign-in, forgot password, and reset password screens for guests.
  */
 
-import { Alert, ForgotPasswordForm, LoginForm, ResetPasswordForm } from '@ellr/ui'
-import type { FlashMessage } from '@ellr/ui'
+import { Alert, ForgotPasswordForm, LoginForm, ResetPasswordForm, useLocale, type FlashMessage } from '@ellr/ui'
 import type { useTimesheetAuth } from '../hooks/useTimesheetAuth'
 
 type TimesheetGuestAuthProps = {
@@ -17,10 +16,12 @@ type TimesheetGuestAuthProps = {
  * @returns Login, forgot-password, or reset-password UI.
  */
 export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
+  const { t } = useLocale()
+
   if (auth.authScreen === 'forgot-password') {
     return (
       <ForgotPasswordForm
-        title="Timesheet"
+        title={t('timesheet.appTitle')}
         email={auth.forgotEmail}
         submitting={auth.forgotSubmitting}
         error={auth.forgotError}
@@ -35,7 +36,7 @@ export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
   if (auth.authScreen === 'reset-password') {
     return (
       <ResetPasswordForm
-        title="Timesheet"
+        title={t('timesheet.appTitle')}
         email={auth.resetParams.email ?? ''}
         password={auth.resetPasswordValue}
         passwordConfirmation={auth.resetPasswordConfirmation}
@@ -53,15 +54,14 @@ export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
 
   return (
     <LoginForm
-      title="Timesheet"
-      subtitle="Sign in to record your time"
+      title={t('timesheet.appTitle')}
+      subtitle={t('timesheet.signInSubtitle')}
       email={auth.email}
       password={auth.password}
       onEmailChange={auth.setEmail}
       onPasswordChange={auth.setPassword}
       onSubmit={auth.handleLogin}
       error={auth.bootstrapError}
-      heading="Sign in"
       footer={
         <>
           {auth.loginNotice && (
@@ -79,7 +79,7 @@ export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
             className="mt-4 text-sm text-slate-600 underline"
             onClick={() => auth.setAuthScreen('forgot-password')}
           >
-            Forgot password?
+            {t('auth.forgotPassword')}
           </button>
         </>
       }

@@ -174,7 +174,7 @@ class TimeActivityService
         }
 
         if (! $activity) {
-            abort(response()->json(['message' => 'Time activity not found'], 404));
+            abort(response()->json(['message' => __('api.time_activity_not_found')], 404));
         }
 
         $this->employeeAuthorization->assertActivityBelongsToUser($user, $activity);

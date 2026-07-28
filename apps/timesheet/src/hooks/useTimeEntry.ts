@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { createTimeActivity, getApiErrorMessage } from '@ellr/api-client'
-import { useFlashMessage } from '@ellr/ui'
+import { useFlashMessage, useLocale } from '@ellr/ui'
 
 type TimeActivityForm = {
   start_time: string
@@ -17,6 +17,7 @@ type TimeActivityForm = {
  * @returns Form state, flash messages, and submit handler.
  */
 export function useTimeEntry() {
+  const { locale, t } = useLocale()
   const { message, clearMessage, showError, showSuccess } = useFlashMessage()
   const [form, setForm] = useState<TimeActivityForm>({
     start_time: '',
@@ -41,9 +42,9 @@ export function useTimeEntry() {
 
     try {
       await createTimeActivity(payload)
-      showSuccess('Time saved to QuickBooks Online.')
+      showSuccess(t('timesheet.savedSuccess'))
     } catch (caught) {
-      showError(getApiErrorMessage(caught, 'Error while saving.'))
+      showError(getApiErrorMessage(caught, t('timesheet.saveFailed'), locale))
     } finally {
       setSubmitting(false)
     }

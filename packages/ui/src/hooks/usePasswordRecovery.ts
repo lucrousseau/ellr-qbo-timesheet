@@ -11,6 +11,7 @@ import {
   requestPasswordReset,
   resetPassword,
 } from '@ellr/api-client'
+import { useLocale } from '../i18n/LocaleProvider'
 
 /**
  * Frontend app that initiates password recovery.
@@ -49,6 +50,7 @@ type UsePasswordRecoveryOptions = {
  * @returns Recovery UI state and submit handlers.
  */
 export function usePasswordRecovery(options: UsePasswordRecoveryOptions) {
+  const { locale, t } = useLocale()
   const [authScreen, setAuthScreen] = useState<AuthScreen>(() =>
     isResetPasswordRoute(window.location.pathname) ? 'reset-password' : 'login',
   )
@@ -87,9 +89,9 @@ export function usePasswordRecovery(options: UsePasswordRecoveryOptions) {
 
     try {
       await requestPasswordReset(forgotEmail, { client: options.client })
-      setForgotSuccess('If that email exists, a reset link has been sent.')
+      setForgotSuccess(t('auth.resetLinkSent'))
     } catch (caught) {
-      setForgotError(getApiErrorMessage(caught, 'Unable to send the reset link.'))
+      setForgotError(getApiErrorMessage(caught, t('auth.resetLinkSendFailed'), locale))
     } finally {
       setForgotSubmitting(false)
     }
@@ -112,11 +114,11 @@ export function usePasswordRecovery(options: UsePasswordRecoveryOptions) {
         password: resetPasswordValue,
         passwordConfirmation: resetPasswordConfirmation,
       })
-      setResetSuccess('Password updated. You can sign in now.')
+      setResetSuccess(t('auth.passwordUpdated'))
       setResetPasswordValue('')
       setResetPasswordConfirmation('')
     } catch (caught) {
-      setResetError(getApiErrorMessage(caught, 'Unable to reset the password.'))
+      setResetError(getApiErrorMessage(caught, t('auth.resetFailed'), locale))
     } finally {
       setResetSubmitting(false)
     }

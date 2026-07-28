@@ -6,6 +6,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserLocale;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
 use App\Services\PasswordResetLinkService;
@@ -19,7 +20,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'qbo_employee_ref', 'qbo_employee_name'])]
+#[Fillable(['name', 'email', 'password', 'locale', 'qbo_employee_ref', 'qbo_employee_name'])]
 #[Hidden(['password', 'remember_token', 'is_admin'])]
 /**
  * Eloquent user with Sanctum auth and optional QBO employee fields.
@@ -54,6 +55,20 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Returns the supported locale stored on the user, defaulting to English.
+     *
+     * @return string
+     */
+    public function preferredLocale(): string
+    {
+        $locale = $this->locale ?? UserLocale::En->value;
+
+        return in_array($locale, UserLocale::values(), true)
+            ? $locale
+            : UserLocale::En->value;
+    }
+
+    /**
      * Relationship to the most recent QuickBooks OAuth token.
      *
      * @return HasOne<QuickBooksToken, $this>
@@ -70,7 +85,9 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new VerifyEmailNotification);
+        $this->notify(
+            (new VerifyEmailNotification)->locale($this->preferredLocale()),
+        );
     }
 
     /**
@@ -83,9 +100,11 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new ResetPasswordNotification(
-            $token,
-            app(PasswordResetLinkService::class)->resolveFrontendUrl(null),
-        ));
+        $this->notify(
+            (new ResetPasswordNotification(
+                $token,
+                app(PasswordResetLinkService::class)->resolveFrontendUrl(null),
+            ))->locale($this->preferredLocale()),
+        );
     }
 }

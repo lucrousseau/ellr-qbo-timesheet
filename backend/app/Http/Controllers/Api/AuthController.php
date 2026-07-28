@@ -12,6 +12,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Services\AuthSessionService;
+use App\Support\UserLocaleApplicator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,7 +41,7 @@ class AuthController extends Controller
     {
         if (! config('app.allow_registration')) {
             return response()->json([
-                'message' => 'Registration disabled.',
+                'message' => __('api.registration_disabled'),
                 'error' => ApiErrorCode::RegistrationDisabled->value,
             ], 403);
         }
@@ -67,8 +68,10 @@ class AuthController extends Controller
         $credentials = $request->validated();
 
         if (! Auth::attempt($credentials)) {
+            UserLocaleApplicator::applyForEmail($credentials['email'] ?? null);
+
             return response()->json([
-                'message' => 'Invalid credentials.',
+                'message' => __('api.invalid_credentials'),
                 'error' => ApiErrorCode::InvalidCredentials->value,
             ], 401);
         }
@@ -101,7 +104,7 @@ class AuthController extends Controller
             $request->session()->regenerateToken();
         }
 
-        return response()->json(['message' => 'Logged out.']);
+        return response()->json(['message' => __('api.logged_out')]);
     }
 
     /**

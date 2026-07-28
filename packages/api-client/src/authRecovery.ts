@@ -35,31 +35,6 @@ export function parseEmailVerificationCallback(search: string): EmailVerificatio
 }
 
 /**
- * User-facing message for an email verification redirect.
- * @param callback Parsed callback from `parseEmailVerificationCallback`.
- * @returns English label for the timesheet UI.
- */
-export function emailVerificationMessage(callback: EmailVerificationCallback): string {
-  if (callback.result === 'verified') {
-    return 'Email verified. You can sign in now.'
-  }
-
-  if (callback.result === 'already_verified') {
-    return 'Email was already verified. You can sign in.'
-  }
-
-  if (callback.result === 'error') {
-    if (callback.reason === 'expired') {
-      return 'Verification link expired. Request a new one after signing in.'
-    }
-
-    return 'Unable to verify your email. Request a new link after signing in.'
-  }
-
-  return 'Unable to verify your email.'
-}
-
-/**
  * Returns whether the pathname targets the password reset screen.
  * @param pathname `location.pathname` value.
  * @returns `true` when the reset form should render.

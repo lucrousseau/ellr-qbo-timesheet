@@ -44,9 +44,9 @@ class VerifyEmailNotification extends VerifyEmail
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Verify your email address')
-            ->line('Click the button below to verify your email address.')
-            ->action('Verify email', $this->verificationUrl($notifiable))
-            ->line('If you did not create an account, no further action is required.');
+            ->subject(__('mail.verify.subject'))
+            ->line(__('mail.verify.line'))
+            ->action(__('mail.verify.action'), $this->verificationUrl($notifiable))
+            ->line(__('mail.verify.footer'));
     }
 }

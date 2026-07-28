@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
-import { ApiError, createTimeActivity, fetchAppConfig, fetchCurrentUser, login, requestPasswordReset, resendVerificationEmail, resetPassword } from '@ellr/api-client'
+import { ApiError, createTimeActivity, fetchAppConfig, fetchCurrentUser, login, requestPasswordReset, resendVerificationEmail, resetPassword, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -12,6 +12,7 @@ vi.mock('@ellr/api-client', async () =>
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
     resendVerificationEmail: vi.fn(),
+    updateUserLocale: vi.fn(),
   }),
 )
 
@@ -93,13 +94,13 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
     await user.type(screen.getByLabelText(/description/i), 'Support client')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     await waitFor(() => {
       expect(createTimeActivity).toHaveBeenCalledWith(
@@ -138,12 +139,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks is busy/i)).toBeInTheDocument()
@@ -171,7 +172,7 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('heading', { name: /timesheet/i })).toBeInTheDocument()
       expect(screen.getByText('Signed in as test@example.com')).toBeInTheDocument()
       expect(screen.getByText(/Jane Doe \(7\)/i)).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
       expect(document.querySelector('.bg-red-50')).not.toBeInTheDocument()
     })
   })
@@ -185,9 +186,8 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/QBO employee:/i)).toBeInTheDocument()
-      expect(screen.getByText('7')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByText(/QBO employee:\s*7/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
   })
 
@@ -202,7 +202,7 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks employee not configured/i)).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /save time/i })).not.toBeInTheDocument()
     })
   })
 
@@ -214,12 +214,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     await waitFor(() => {
       expect(createTimeActivity).toHaveBeenCalledWith({
@@ -239,12 +239,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks is not connected/i)).toBeInTheDocument()
@@ -259,12 +259,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks connection expired/i)).toBeInTheDocument()
@@ -279,12 +279,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/error while saving/i)).toBeInTheDocument()
@@ -307,7 +307,7 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(login).toHaveBeenCalledWith('test@example.com', 'password')
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
   })
 
@@ -374,12 +374,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     const savingButton = screen.getByRole('button', { name: 'Saving...' })
     expect(savingButton).toBeDisabled()
@@ -398,12 +398,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
 
     await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
     await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save time/i }))
 
     await waitFor(() => {
       expect(createTimeActivity).toHaveBeenCalledWith({
@@ -473,7 +473,7 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
     })
     expect(screen.queryByText(/verify your email address/i)).not.toBeInTheDocument()
   })
@@ -638,6 +638,46 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/unable to send the verification email/i)).toBeInTheDocument()
+    })
+  })
+
+  it('renders french copy when the user locale is french', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      locale: 'fr',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /feuille de temps/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /enregistrer le temps/i })).toBeInTheDocument()
+    })
+  })
+
+  it('saves locale preferences from the timesheet app', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      locale: 'en',
+    })
+    vi.mocked(updateUserLocale).mockResolvedValue({
+      ...authenticatedUser,
+      locale: 'fr',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /preferences/i })).toBeInTheDocument()
+    })
+
+    await user.selectOptions(screen.getByLabelText(/language/i), 'fr')
+    await user.click(screen.getByRole('button', { name: /^save$/i }))
+
+    await waitFor(() => {
+      expect(updateUserLocale).toHaveBeenCalledWith('fr')
+      expect(screen.getByText(/preferences saved/i)).toBeInTheDocument()
     })
   })
 })

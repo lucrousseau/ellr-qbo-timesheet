@@ -61,10 +61,10 @@ it('aborts when partial time updates cannot resolve both fields', function () {
     } catch (HttpResponseException $exception) {
         expect($exception->getResponse()->getStatusCode())->toBe(422)
             ->and($exception->getResponse()->getData(true))->toBe([
-                'message' => TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE,
+                'message' => TimeActivityTimeValidation::incompleteTimeFieldsMessage(),
                 'errors' => [
-                    'start_time' => [TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE],
-                    'end_time' => [TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE],
+                    'start_time' => [TimeActivityTimeValidation::incompleteTimeFieldsMessage()],
+                    'end_time' => [TimeActivityTimeValidation::incompleteTimeFieldsMessage()],
                 ],
             ]);
     }
@@ -86,9 +86,9 @@ it('aborts with a validation response when end time is invalid', function () {
     } catch (HttpResponseException $exception) {
         expect($exception->getResponse()->getStatusCode())->toBe(422)
             ->and($exception->getResponse()->getData(true))->toBe([
-                'message' => TimeActivityTimeValidation::END_AFTER_START_MESSAGE,
+                'message' => TimeActivityTimeValidation::endAfterStartMessage(),
                 'errors' => [
-                    'end_time' => [TimeActivityTimeValidation::END_AFTER_START_MESSAGE],
+                    'end_time' => [TimeActivityTimeValidation::endAfterStartMessage()],
                 ],
             ]);
     }

@@ -1,29 +1,36 @@
 ---
-description: English as the primary project language (code, docs, UI, API messages)
+description: Multilingual UI (English default, French supported) and English code/docs
 alwaysApply: true
 ---
 
-# Language (English)
+# Language
 
-**English is the primary language** for this monorepo. Write and maintain everything in English unless a file explicitly documents another locale.
+**English is the default locale** for user-facing UI. **French (`fr`)** is supported when the user selects it in admin preferences.
 
 | Layer | Language |
 |-------|----------|
 | Code comments (JSDoc, PHPDoc) | English |
-| User-facing UI (`apps/*`, `@ellr/ui`) | English |
-| API messages consumed by the frontend | English |
-| `getApiErrorMessage` mappings | English |
+| User-facing UI (`apps/*`, `@ellr/ui`) | `en` (default) or `fr` via `LocaleProvider` / `useLocale` |
+| API business `error` codes | Stable English snake_case values (`registration_disabled`, etc.) |
+| API human `message` fields | English (debug); UI translates known codes via `getApiErrorMessage` |
+| Laravel validation (`422`) | Localized via `lang/{locale}` when user locale middleware is active |
 | All documentation (`*.md`, `*.mdc`, `README`, `AGENTS.md`, `.cursor/`) | English |
 | Cursor rules, PR/commit prose | English |
-| Tests (assertions on visible copy) | English |
+| Tests (default locale assertions) | English unless testing French copy |
 
-## Exceptions
+## i18n architecture
 
-- Third-party SDK or framework docs quoted verbatim
-- `backend/features/*.feature` Gherkin: English (align with API copy)
+- **User preference**: `users.locale` (`en` | `fr`), default `en`, updated via `PATCH /api/user/locale`.
+- **Frontend**: `@ellr/ui` `LocaleProvider`, `useLocale`, message catalogs in `packages/ui/src/i18n/messages/`.
+- **API errors (business codes)**: translate in `getApiErrorMessage` (`@ellr/api-client`) using the active locale.
+- **Laravel framework strings**: `laravel-lang/lang` (`lang/fr/validation.php`, etc.).
+- **Custom API and mail copy**: `lang/{locale}/api.php` and `lang/{locale}/mail.php` via `__()`.
+- **Validation / emails**: `SetLocaleFromUser` middleware and `->locale()` on notifications.
+- **No browser locale detection** in phase 1.
 
 ## Agent routine
 
-1. Do not add French strings to new code, comments, or rules.
-2. When touching a file that still has French copy, translate it in the same change.
-3. Keep error `code` values stable (`registration_disabled`, etc.); only translate human `message` fields.
+1. Add new UI strings to both `en.ts` and `fr.ts` message catalogs.
+2. Do not hardcode user-facing copy in apps when a catalog key exists.
+3. Keep error `code` values stable; only translate human-facing output.
+4. When touching legacy English-only copy, migrate it to the i18n catalogs in the same change when practical.

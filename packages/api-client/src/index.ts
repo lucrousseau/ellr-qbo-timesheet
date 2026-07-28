@@ -4,6 +4,8 @@
 
 export { ApiError, API_URL, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
 export { fetchAppConfig, type AppConfig } from './appConfig'
+export { getLocalizedApiErrorMessage } from './errorMessages'
+export { normalizeUserLocale, SUPPORTED_LOCALES, type UserLocale } from './locale'
 export {
   fetchCurrentUser,
   login,
@@ -12,11 +14,11 @@ export {
   resendVerificationEmail,
   resetPassword,
   updateQboEmployee,
+  updateUserLocale,
   updateUserQboEmployee,
   type User,
 } from './auth'
 export {
-  emailVerificationMessage,
   isEmailUnverified,
   isResetPasswordRoute,
   parseEmailVerificationCallback,

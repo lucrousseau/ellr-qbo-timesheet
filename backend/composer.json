@@ -17,6 +17,8 @@
         "dealerdirect/phpcodesniffer-composer-installer": "^1.2",
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "*",
+        "laravel-lang/common": "^6.8",
+        "laravel-lang/lang": "^15.33",
         "laravel/pail": "^1.2.5",
         "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6",

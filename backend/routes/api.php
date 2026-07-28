@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\QboEmployeeController;
 use App\Http\Controllers\Api\QuickBooksAuthController;
 use App\Http\Controllers\Api\TimeActivityController;
+use App\Http\Controllers\Api\UserLocaleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthController::class, 'show']);
@@ -37,6 +38,7 @@ Route::middleware('throttle:30,1')->group(function () {
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'me']);
+    Route::patch('/user/locale', [UserLocaleController::class, 'update']);
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
         ->middleware('throttle:6,1');
 

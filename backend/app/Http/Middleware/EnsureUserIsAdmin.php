@@ -29,7 +29,7 @@ class EnsureUserIsAdmin
 
         if ($user === null || ! $user->isAdmin()) {
             abort(response()->json([
-                'message' => 'Administrator access required.',
+                'message' => __('api.admin_required'),
                 'error' => ApiErrorCode::AdminRequired->value,
             ], 403));
         }

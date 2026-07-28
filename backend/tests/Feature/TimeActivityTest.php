@@ -573,9 +573,9 @@ describe('authenticated time activities', function () {
         ])
             ->assertUnprocessable()
             ->assertJson([
-                'message' => 'The end time field must be a date after start time.',
+                'message' => TimeActivityTimeValidation::endAfterStartMessage(),
                 'errors' => [
-                    'end_time' => ['The end time field must be a date after start time.'],
+                    'end_time' => [TimeActivityTimeValidation::endAfterStartMessage()],
                 ],
             ]);
     });
@@ -676,7 +676,7 @@ describe('authenticated time activities', function () {
             'start_time' => '2026-07-27T10:00:00',
         ])
             ->assertUnprocessable()
-            ->assertJsonPath('message', TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE);
+            ->assertJsonPath('message', TimeActivityTimeValidation::incompleteTimeFieldsMessage());
     });
 
     it('rejects partial time updates when existing start time is missing', function () {
@@ -699,7 +699,7 @@ describe('authenticated time activities', function () {
             'end_time' => '2026-07-27T16:00:00',
         ])
             ->assertUnprocessable()
-            ->assertJsonPath('message', TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE);
+            ->assertJsonPath('message', TimeActivityTimeValidation::incompleteTimeFieldsMessage());
     });
 
     it('deletes a time activity in quickbooks', function () {

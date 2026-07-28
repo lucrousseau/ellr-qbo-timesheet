@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Notification;
 
 covers(VerifyEmailNotification::class);
@@ -65,4 +66,24 @@ it('sends custom password reset notifications from the user model', function () 
     $user->sendPasswordResetNotification('token-value');
 
     Notification::assertSentTo($user, ResetPasswordNotification::class);
+});
+
+it('builds a french verification email when the app locale is french', function () {
+    App::setLocale('fr');
+
+    $user = User::factory()->unverified()->create();
+    $message = (new VerifyEmailNotification)->toMail($user);
+
+    expect($message->subject)->toBe(__('mail.verify.subject', [], 'fr'))
+        ->and($message->introLines[0])->toBe(__('mail.verify.line', [], 'fr'));
+});
+
+it('builds a french password reset email when the app locale is french', function () {
+    App::setLocale('fr');
+
+    $user = User::factory()->create();
+    $message = (new ResetPasswordNotification('reset-token'))->toMail($user);
+
+    expect($message->subject)->toBe(__('mail.reset.subject', [], 'fr'))
+        ->and($message->introLines[0])->toBe(__('mail.reset.line', [], 'fr'));
 });

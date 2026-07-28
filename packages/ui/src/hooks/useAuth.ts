@@ -3,11 +3,35 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { fetchCurrentUser, getApiErrorMessage, login, logout, type User } from '@ellr/api-client'
+import {
+  fetchCurrentUser,
+  getApiErrorMessage,
+  login,
+  logout,
+  normalizeUserLocale,
+  type User,
+  type UserLocale,
+} from '@ellr/api-client'
+import { useLocale } from '../i18n/LocaleProvider'
 
 type UseAuthOptions = {
   onUserLoaded?: (user: User | null) => void | Promise<void>
   bootstrapErrorFallback?: string
+}
+
+/**
+ * Synchronizes the locale provider with the signed-in user (or English when signed out).
+ * @param setLocale Locale setter from LocaleProvider.
+ * @param user Authenticated user, or null when signed out.
+ */
+function applyUserLocale(
+  setLocale: (locale: UserLocale) => void,
+  user: User | null,
+): UserLocale {
+  const nextLocale = user ? normalizeUserLocale(user.locale) : 'en'
+  setLocale(nextLocale)
+
+  return nextLocale
 }
 
 /**
@@ -17,7 +41,9 @@ type UseAuthOptions = {
  * @returns User state, login fields, and handlers.
  */
 export function useAuth(options: UseAuthOptions = {}) {
-  const { onUserLoaded, bootstrapErrorFallback = 'Unable to reach the Laravel API.' } = options
+  const { locale, setLocale, t } = useLocale()
+  const { onUserLoaded, bootstrapErrorFallback } = options
+  const resolvedBootstrapFallback = bootstrapErrorFallback ?? t('admin.bootstrapFailed')
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [email, setEmail] = useState('')
@@ -30,14 +56,15 @@ export function useAuth(options: UseAuthOptions = {}) {
 
     try {
       const currentUser = await fetchCurrentUser()
+      applyUserLocale(setLocale, currentUser)
       setUser(currentUser)
       await onUserLoaded?.(currentUser)
     } catch (caught) {
-      setBootstrapError(getApiErrorMessage(caught, bootstrapErrorFallback))
+      setBootstrapError(getApiErrorMessage(caught, resolvedBootstrapFallback, locale))
     } finally {
       setAuthLoading(false)
     }
-  }, [bootstrapErrorFallback, onUserLoaded])
+  }, [locale, onUserLoaded, resolvedBootstrapFallback, setLocale])
 
   useEffect(() => {
     void bootstrap()
@@ -49,20 +76,22 @@ export function useAuth(options: UseAuthOptions = {}) {
 
     try {
       const loggedInUser = await login(email, password)
+      applyUserLocale(setLocale, loggedInUser)
       setUser(loggedInUser)
       setPassword('')
       await onUserLoaded?.(loggedInUser)
     } catch (caught) {
-      setBootstrapError(getApiErrorMessage(caught, 'Sign-in failed.'))
+      setBootstrapError(getApiErrorMessage(caught, t('common.signInFailed'), locale))
     }
   }
 
   const handleLogout = async () => {
     try {
       await logout()
+      applyUserLocale(setLocale, null)
       setUser(null)
     } catch (caught) {
-      setBootstrapError(getApiErrorMessage(caught, 'Sign-out failed.'))
+      setBootstrapError(getApiErrorMessage(caught, t('common.signOutFailed'), locale))
     }
   }
 

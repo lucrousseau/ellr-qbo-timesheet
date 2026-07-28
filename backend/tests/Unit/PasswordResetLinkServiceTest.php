@@ -57,3 +57,16 @@ it('throttles repeat reset links for the same email', function () {
 
     Notification::assertSentTimes(ResetPasswordNotification::class, 1);
 });
+
+it('sends reset notifications in the user locale', function () {
+    Notification::fake();
+
+    $user = User::factory()->create(['locale' => 'fr']);
+
+    app(PasswordResetLinkService::class)->send($user->email);
+
+    Notification::assertSentTo(
+        $user,
+        fn (ResetPasswordNotification $notification): bool => $notification->locale === 'fr',
+    );
+});

@@ -3,6 +3,7 @@
  */
 
 import type { FormEvent } from 'react'
+import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
 import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 
@@ -25,7 +26,7 @@ type ForgotPasswordFormProps = {
  */
 export function ForgotPasswordForm({
   title,
-  subtitle = 'Reset your password',
+  subtitle,
   email,
   submitting,
   error,
@@ -34,14 +35,16 @@ export function ForgotPasswordForm({
   onSubmit,
   onBackToLogin,
 }: ForgotPasswordFormProps) {
+  const { t } = useLocale()
+
   return (
     <main className={pageMainClass}>
       <header className="mb-8">
         <h1 className={pageTitleClass}>{title}</h1>
-        <p className="mt-2 text-slate-600">{subtitle}</p>
+        <p className="mt-2 text-slate-600">{subtitle ?? t('auth.forgotPasswordSubtitle')}</p>
       </header>
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">Forgot password</h2>
+        <h2 className="text-xl font-medium text-slate-900">{t('auth.forgotPasswordTitle')}</h2>
 
         {error ? (
           <div className="mt-4">
@@ -57,7 +60,7 @@ export function ForgotPasswordForm({
 
         <form className="mt-4 space-y-4" onSubmit={onSubmit}>
           <label className="block text-sm font-medium text-slate-700">
-            Email
+            {t('common.email')}
             <input
               type="email"
               required
@@ -67,7 +70,7 @@ export function ForgotPasswordForm({
             />
           </label>
           <button type="submit" className={primaryButtonClass} disabled={submitting}>
-            {submitting ? 'Sending…' : 'Send reset link'}
+            {submitting ? t('auth.sending') : t('auth.sendResetLink')}
           </button>
         </form>
 
@@ -76,7 +79,7 @@ export function ForgotPasswordForm({
           className="mt-4 text-sm text-slate-600 underline"
           onClick={onBackToLogin}
         >
-          Back to sign in
+          {t('auth.backToSignIn')}
         </button>
       </section>
     </main>

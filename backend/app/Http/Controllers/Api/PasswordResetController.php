@@ -12,6 +12,7 @@ use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
 use App\Services\AuthSessionService;
 use App\Services\PasswordResetLinkService;
+use App\Support\UserLocaleApplicator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -41,13 +42,14 @@ class PasswordResetController extends Controller
     public function forgot(ForgotPasswordRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        UserLocaleApplicator::applyForEmail($validated['email']);
 
         $this->resetLinks->send(
             $validated['email'],
             $validated['client'] ?? null,
         );
 
-        return response()->json(['message' => 'If that email exists, a reset link has been sent.']);
+        return response()->json(['message' => __('api.password_reset_sent')]);
     }
 
     /**
@@ -58,8 +60,11 @@ class PasswordResetController extends Controller
      */
     public function reset(ResetPasswordRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+        UserLocaleApplicator::applyForEmail($validated['email'] ?? null);
+
         $status = Password::reset(
-            $request->validated(),
+            $validated,
             function (User $user, string $password): void {
                 $user->forceFill([
                     'password' => $password,
@@ -74,6 +79,6 @@ class PasswordResetController extends Controller
             return response()->json(['message' => __($status)], 422);
         }
 
-        return response()->json(['message' => 'Password reset successfully.']);
+        return response()->json(['message' => __('api.password_reset_success')]);
     }
 }

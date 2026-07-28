@@ -3,6 +3,7 @@
  */
 
 import { ApiError, apiFetch } from './api'
+import type { UserLocale } from './locale'
 
 /**
  * Authenticated user with optional QuickBooks employee mapping.
@@ -12,6 +13,7 @@ export type User = {
   name: string
   email: string
   email_verified_at?: string | null
+  locale?: UserLocale | null
   qbo_employee_ref?: string | null
   qbo_employee_name?: string | null
 }
@@ -71,6 +73,20 @@ export async function updateQboEmployee(
       qbo_employee_ref: qboEmployeeRef,
       qbo_employee_name: qboEmployeeName ?? null,
     }),
+  })
+
+  return response.user
+}
+
+/**
+ * Updates the signed-in user locale preference.
+ * @param locale Supported locale code.
+ * @returns Updated user.
+ */
+export async function updateUserLocale(locale: UserLocale): Promise<User> {
+  const response = await apiFetch<{ user: User }>('/user/locale', {
+    method: 'PATCH',
+    body: JSON.stringify({ locale }),
   })
 
   return response.user

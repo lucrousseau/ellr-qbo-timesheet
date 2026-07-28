@@ -2,6 +2,9 @@
  * @file Low-level HTTP helpers, CSRF cookies, and API error mapping.
  */
 
+import { getLocalizedApiErrorMessage } from './errorMessages'
+import { normalizeUserLocale, type UserLocale } from './locale'
+
 /**
  * HTTP error returned by the Laravel API with an optional business code.
  */
@@ -184,59 +187,66 @@ function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
 }
 
 /**
- * Maps a network or API error to a user-facing English message.
+ * Maps a network or API error to a user-facing localized message.
  * @param error Caught error (`ApiError`, `TypeError`, etc.).
  * @param fallback Default message when no known case matches.
+ * @param locale Active user locale (defaults to English).
  * @returns Label safe to display in the UI.
  */
-export function getApiErrorMessage(error: unknown, fallback: string): string {
+export function getApiErrorMessage(
+  error: unknown,
+  fallback: string,
+  locale: UserLocale = 'en',
+): string {
+  const activeLocale = normalizeUserLocale(locale)
+
   if (error instanceof ApiError) {
     if (error.status === 401) {
-      if (error.code === 'invalid_credentials' || error.message === 'Invalid credentials.') {
-        return 'Invalid email or password.'
+      if (error.code === 'invalid_credentials') {
+        return error.message
       }
-      return 'Session expired. Please sign in again.'
+      return getLocalizedApiErrorMessage(activeLocale, 'session_expired')
     }
     if (error.status === 419) {
-      return 'Session expired. Please sign in again.'
+      return getLocalizedApiErrorMessage(activeLocale, 'session_expired')
     }
     if (error.status === 403) {
       if (error.code === 'quickbooks_not_connected') {
-        return 'QuickBooks is not connected. Connect it from the admin app.'
+        return getLocalizedApiErrorMessage(activeLocale, 'quickbooks_not_connected')
       }
       if (error.code === 'quickbooks_expired') {
-        return 'QuickBooks connection expired. Reconnect it from the admin app.'
+        return getLocalizedApiErrorMessage(activeLocale, 'quickbooks_expired')
       }
       if (error.code === 'registration_disabled') {
-        return 'Registration disabled.'
+        return getLocalizedApiErrorMessage(activeLocale, 'registration_disabled')
       }
       if (error.code === 'qbo_employee_not_configured') {
-        return 'QuickBooks employee not configured. Contact an administrator.'
+        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_not_configured')
       }
       if (error.code === 'admin_required') {
-        return 'Administrator access required.'
+        return getLocalizedApiErrorMessage(activeLocale, 'admin_required')
       }
       if (error.code === 'email_not_verified') {
-        return 'Verify your email address before signing in.'
+        return getLocalizedApiErrorMessage(activeLocale, 'email_not_verified')
       }
-      return 'Access denied.'
+      return getLocalizedApiErrorMessage(activeLocale, 'access_denied')
     }
     if (error.status === 422) {
       if (error.code === 'qbo_employee_invalid') {
-        return 'QuickBooks employee not found.'
+        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_invalid')
       }
       if (error.message && !error.message.startsWith('API error:')) {
         return error.message
       }
-      return 'Invalid data or QuickBooks error.'
+      return getLocalizedApiErrorMessage(activeLocale, 'invalid_data')
     }
     if (error.status === 503) {
-      return 'QuickBooks is busy. Please try again shortly.'
+      return getLocalizedApiErrorMessage(activeLocale, 'quickbooks_busy')
     }
   }
 
   if (error instanceof TypeError) {
-    return 'Unable to reach the Laravel API.'
+    return getLocalizedApiErrorMessage(activeLocale, 'network_unreachable')
   }
 
   return fallback

@@ -3,6 +3,7 @@
  */
 
 import { apiFetch } from './api'
+import type { UserLocale } from './locale'
 
 /**
  * OAuth QuickBooks connection state for the tenant.
@@ -70,16 +71,47 @@ export function parseQuickBooksOAuthCallback(search: string): {
 /**
  * User-facing message for a QuickBooks OAuth callback error.
  * @param reason Code returned by the API (`oauth`, `missing_params`, etc.).
- * @returns English label for the admin UI.
+ * @param locale Active UI locale.
+ * @returns Localized label for the admin UI.
+ * @deprecated Use `admin.oauth*` message keys with `useLocale().t()` instead.
  */
-export function quickBooksOAuthErrorMessage(reason?: string | null): string {
+export function quickBooksOAuthErrorMessage(
+  reason?: string | null,
+  locale: UserLocale = 'en',
+): string {
   if (reason === 'oauth') {
-    return 'QuickBooks connection denied or expired.'
+    return getLocalizedAdminOAuthMessage(locale, 'oauthDenied')
   }
 
   if (reason === 'missing_params') {
-    return 'Missing OAuth parameters.'
+    return getLocalizedAdminOAuthMessage(locale, 'oauthMissingParams')
   }
 
-  return 'Unable to connect QuickBooks.'
+  return getLocalizedAdminOAuthMessage(locale, 'oauthFailed')
+}
+
+/**
+ * Resolves a localized QuickBooks OAuth callback label.
+ * @param locale Active UI locale.
+ * @param key OAuth error message key.
+ * @returns Localized OAuth error label.
+ */
+function getLocalizedAdminOAuthMessage(
+  locale: UserLocale,
+  key: 'oauthDenied' | 'oauthMissingParams' | 'oauthFailed',
+): string {
+  const messages: Record<UserLocale, Record<typeof key, string>> = {
+    en: {
+      oauthDenied: 'QuickBooks connection denied or expired.',
+      oauthMissingParams: 'Missing OAuth parameters.',
+      oauthFailed: 'Unable to connect QuickBooks.',
+    },
+    fr: {
+      oauthDenied: 'Connexion QuickBooks refusée ou expirée.',
+      oauthMissingParams: 'Paramètres OAuth manquants.',
+      oauthFailed: 'Impossible de connecter QuickBooks.',
+    },
+  }
+
+  return messages[locale][key]
 }

@@ -42,7 +42,7 @@ class QboEmployeeService
 
         if (! $this->employeeExists($token, $employeeRef)) {
             abort(response()->json([
-                'message' => 'QuickBooks employee not found.',
+                'message' => __('api.qbo_employee_not_found'),
                 'error' => ApiErrorCode::QboEmployeeInvalid->value,
             ], 422));
         }

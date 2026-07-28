@@ -9,6 +9,7 @@ import {
   resendVerificationEmail,
   resetPassword,
   updateQboEmployee,
+  updateUserLocale,
   updateUserQboEmployee,
 } from './auth'
 import {
@@ -20,7 +21,6 @@ import {
 } from './quickbooks'
 import { createTimeActivity, listTimeActivities } from './timesheet'
 import {
-  emailVerificationMessage,
   isEmailUnverified,
   isResetPasswordRoute,
   parseEmailVerificationCallback,
@@ -614,10 +614,17 @@ describe('getApiErrorMessage', () => {
     )
   })
 
-  it('maps invalid login credentials to a password message', () => {
+  it('maps invalid login credentials to the server message', () => {
     expect(
       getApiErrorMessage(new ApiError(401, 'Invalid credentials.', 'invalid_credentials'), 'fallback'),
-    ).toBe('Invalid email or password.')
+    ).toBe('Invalid credentials.')
+    expect(
+      getApiErrorMessage(
+        new ApiError(401, 'Identifiants invalides.', 'invalid_credentials'),
+        'fallback',
+        'en',
+      ),
+    ).toBe('Identifiants invalides.')
   })
 
   it('maps csrf mismatch responses to a session message', () => {
@@ -754,6 +761,48 @@ describe('auth helpers', () => {
     expect(
       getApiErrorMessage(new ApiError(403, 'API error: 403', 'qbo_employee_not_configured'), 'fallback'),
     ).toBe('QuickBooks employee not configured. Contact an administrator.')
+  })
+
+  it('maps business error codes to french copy when locale is fr', () => {
+    expect(
+      getApiErrorMessage(new ApiError(403, 'API error: 403', 'admin_required'), 'fallback', 'fr'),
+    ).toBe('Accès administrateur requis.')
+  })
+
+  it('updates the user locale preference', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          user: {
+            id: 1,
+            name: 'Jane',
+            email: 'jane@example.com',
+            locale: 'fr',
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(updateUserLocale('fr')).resolves.toEqual({
+      id: 1,
+      name: 'Jane',
+      email: 'jane@example.com',
+      locale: 'fr',
+    })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/user/locale',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ locale: 'fr' }),
+      }),
+    )
   })
 
   it('logs in and returns the user', async () => {
@@ -1072,10 +1121,11 @@ describe('quickbooks api', () => {
     expect(parseQuickBooksOAuthCallback('')).toEqual({ result: null })
   })
 
-  it('maps oauth error reasons to english messages', () => {
+  it('maps oauth error reasons to localized messages', () => {
     expect(quickBooksOAuthErrorMessage('oauth')).toContain('denied')
     expect(quickBooksOAuthErrorMessage('missing_params')).toContain('Missing')
     expect(quickBooksOAuthErrorMessage('other')).toContain('Unable')
+    expect(quickBooksOAuthErrorMessage('oauth', 'fr')).toContain('refusée')
   })
 
   it('loads quickbooks status from the api', async () => {
@@ -1233,16 +1283,6 @@ describe('auth recovery helpers', () => {
       reason: 'expired',
     })
     expect(parseEmailVerificationCallback('?email=unknown')).toEqual({ result: null })
-  })
-
-  it('maps email verification callbacks to english messages', () => {
-    expect(emailVerificationMessage({ result: 'verified' })).toContain('verified')
-    expect(emailVerificationMessage({ result: 'already_verified' })).toContain('already verified')
-    expect(emailVerificationMessage({ result: 'error', reason: 'expired' })).toContain('expired')
-    expect(emailVerificationMessage({ result: 'error', reason: 'invalid' })).toContain(
-      'Unable to verify your email',
-    )
-    expect(emailVerificationMessage({ result: null })).toBe('Unable to verify your email.')
   })
 
   it('detects reset password routes and query params', () => {

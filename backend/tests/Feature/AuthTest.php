@@ -92,6 +92,22 @@ it('rejects invalid login credentials', function () {
         ->assertJsonPath('error', 'invalid_credentials');
 });
 
+it('returns french invalid credentials for a french user email', function () {
+    User::factory()->create([
+        'email' => 'jane@example.com',
+        'password' => 'password',
+        'locale' => 'fr',
+    ]);
+
+    $this->postJson('/api/login', [
+        'email' => 'jane@example.com',
+        'password' => 'wrong-password',
+    ], frontendHeaders())
+        ->assertUnauthorized()
+        ->assertJsonPath('message', __('api.invalid_credentials', [], 'fr'))
+        ->assertJsonPath('error', 'invalid_credentials');
+});
+
 it('requires email on login', function () {
     $this->postJson('/api/login', [
         'password' => 'password',

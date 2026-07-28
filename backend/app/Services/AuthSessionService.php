@@ -39,7 +39,7 @@ class AuthSessionService
         }
 
         return response()->json([
-            'message' => 'Email address is not verified.',
+            'message' => __('api.email_not_verified'),
             'error' => ApiErrorCode::EmailNotVerified->value,
         ], 403);
     }

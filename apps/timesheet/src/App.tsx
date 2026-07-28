@@ -2,7 +2,7 @@
  * @file Timesheet UI for creating and reviewing QuickBooks time activities.
  */
 
-import { Alert, AppShell, LoadingScreen } from '@ellr/ui'
+import { Alert, AppShell, LoadingScreen, LocaleProvider, UserPreferencesPanel, useLocale, useSyncUserLocale } from '@ellr/ui'
 import { EmailVerificationBanner } from './components/EmailVerificationBanner'
 import { QboEmployeeWarning } from './components/QboEmployeeWarning'
 import { TimeEntryForm } from './components/TimeEntryForm'
@@ -11,12 +11,15 @@ import { useTimesheetAuth } from './hooks/useTimesheetAuth'
 import { useTimeEntry } from './hooks/useTimeEntry'
 
 /**
- * Timesheet app: sign-in, password recovery, and QBO time activity entry.
- * @returns Loading screen, auth flows, or time form depending on session.
+ * Authenticated timesheet experience with locale sync from the user profile.
+ * @returns Timesheet shell content when the session is ready.
  */
-function App() {
+function TimesheetDashboard() {
   const { form, setForm, submitting, message, clearMessage, submit } = useTimeEntry()
   const auth = useTimesheetAuth()
+  const { t } = useLocale()
+
+  useSyncUserLocale(auth.user)
 
   if (auth.authLoading) {
     return <LoadingScreen />
@@ -32,12 +35,27 @@ function App() {
   }
 
   return (
-    <AppShell title="Timesheet" userEmail={auth.user.email} onLogout={onLogout}>
+    <AppShell title={t('timesheet.appTitle')} userEmail={auth.user.email} onLogout={onLogout}>
       {auth.bootstrapError && (
         <div className="mb-4">
           <Alert variant="error">{auth.bootstrapError}</Alert>
         </div>
       )}
+      {auth.preferenceNotice && (
+        <div className="mb-4">
+          <Alert variant={auth.preferenceNoticeVariant === 'error' ? 'error' : 'success'}>
+            {auth.preferenceNotice}
+          </Alert>
+        </div>
+      )}
+      <div className="mb-6">
+        <UserPreferencesPanel
+          locale={auth.preferenceLocale}
+          saving={auth.savingLocale}
+          onLocaleChange={auth.setPreferenceLocale}
+          onSave={auth.saveLocale}
+        />
+      </div>
       {auth.showEmailVerification(auth.user) && (
         <EmailVerificationBanner
           message={auth.verificationMessage}
@@ -63,6 +81,18 @@ function App() {
         />
       )}
     </AppShell>
+  )
+}
+
+/**
+ * Timesheet app: sign-in, password recovery, and QBO time activity entry.
+ * @returns Locale-aware timesheet experience.
+ */
+function App() {
+  return (
+    <LocaleProvider>
+      <TimesheetDashboard />
+    </LocaleProvider>
   )
 }
 

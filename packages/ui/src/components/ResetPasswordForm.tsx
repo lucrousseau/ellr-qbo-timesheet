@@ -3,6 +3,7 @@
  */
 
 import type { FormEvent } from 'react'
+import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
 import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 
@@ -29,7 +30,7 @@ type ResetPasswordFormProps = {
  */
 export function ResetPasswordForm({
   title,
-  subtitle = 'Choose a new password',
+  subtitle,
   email,
   password,
   passwordConfirmation,
@@ -42,18 +43,20 @@ export function ResetPasswordForm({
   onSubmit,
   onBackToLogin,
 }: ResetPasswordFormProps) {
+  const { t } = useLocale()
+
   return (
     <main className={pageMainClass}>
       <header className="mb-8">
         <h1 className={pageTitleClass}>{title}</h1>
-        <p className="mt-2 text-slate-600">{subtitle}</p>
+        <p className="mt-2 text-slate-600">{subtitle ?? t('auth.resetPasswordSubtitle')}</p>
       </header>
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">Reset password</h2>
+        <h2 className="text-xl font-medium text-slate-900">{t('auth.resetPasswordTitle')}</h2>
 
         {invalidLink && (
           <div className="mt-4">
-            <Alert variant="error">This reset link is invalid or incomplete.</Alert>
+            <Alert variant="error">{t('auth.invalidResetLink')}</Alert>
           </div>
         )}
 
@@ -71,9 +74,9 @@ export function ResetPasswordForm({
 
         {!invalidLink && !success && (
           <form className="mt-4 space-y-4" onSubmit={onSubmit}>
-            <p className="text-sm text-slate-600">Resetting password for {email}</p>
+            <p className="text-sm text-slate-600">{t('auth.resettingFor', { email })}</p>
             <label className="block text-sm font-medium text-slate-700">
-              New password
+              {t('auth.newPassword')}
               <input
                 type="password"
                 required
@@ -83,7 +86,7 @@ export function ResetPasswordForm({
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Confirm password
+              {t('auth.confirmPassword')}
               <input
                 type="password"
                 required
@@ -93,7 +96,7 @@ export function ResetPasswordForm({
               />
             </label>
             <button type="submit" className={primaryButtonClass} disabled={submitting}>
-              {submitting ? 'Saving…' : 'Update password'}
+              {submitting ? t('common.saving') : t('auth.updatePassword')}
             </button>
           </form>
         )}
@@ -103,7 +106,7 @@ export function ResetPasswordForm({
           className="mt-4 text-sm text-slate-600 underline"
           onClick={onBackToLogin}
         >
-          Back to sign in
+          {t('auth.backToSignIn')}
         </button>
       </section>
     </main>

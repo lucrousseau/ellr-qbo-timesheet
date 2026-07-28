@@ -3,6 +3,7 @@
  */
 
 import type { ReactNode } from 'react'
+import { useLocale } from '../i18n/LocaleProvider'
 import { pageMainClass, pageTitleClass, secondaryButtonClass } from '../styles/tokens'
 
 type AppShellProps = {
@@ -23,6 +24,8 @@ type AppShellProps = {
  * @returns Centered layout with header.
  */
 export function AppShell({ title, subtitle, userEmail, onLogout, children }: AppShellProps) {
+  const { t } = useLocale()
+
   return (
     <main className={pageMainClass}>
       <header className="mb-8 flex items-start justify-between gap-4">
@@ -30,12 +33,12 @@ export function AppShell({ title, subtitle, userEmail, onLogout, children }: App
           <h1 className={pageTitleClass}>{title}</h1>
           {subtitle && <p className="mt-2 text-slate-600">{subtitle}</p>}
           {userEmail && !subtitle && (
-            <p className="mt-2 text-slate-600">Signed in as {userEmail}</p>
+            <p className="mt-2 text-slate-600">{t('common.signedInAs', { email: userEmail })}</p>
           )}
         </div>
         {userEmail && onLogout && (
           <button type="button" onClick={onLogout} className={secondaryButtonClass}>
-            Sign out
+            {t('common.signOut')}
           </button>
         )}
       </header>

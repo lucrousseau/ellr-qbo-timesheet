@@ -12,6 +12,7 @@ export const authenticatedUser = {
   name: 'Test User',
   email: 'test@example.com',
   email_verified_at: '2026-01-01T00:00:00.000000Z',
+  locale: 'en' as const,
   qbo_employee_ref: '7',
   qbo_employee_name: 'Jane Doe',
 }

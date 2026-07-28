@@ -93,10 +93,10 @@ it('rejects partial time updates when existing end time is missing', function ()
     } catch (HttpResponseException $exception) {
         expect($exception->getResponse()->getStatusCode())->toBe(422)
             ->and($exception->getResponse()->getData(true))->toBe([
-                'message' => TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE,
+                'message' => TimeActivityTimeValidation::incompleteTimeFieldsMessage(),
                 'errors' => [
-                    'start_time' => [TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE],
-                    'end_time' => [TimeActivityTimeValidation::INCOMPLETE_TIME_FIELDS_MESSAGE],
+                    'start_time' => [TimeActivityTimeValidation::incompleteTimeFieldsMessage()],
+                    'end_time' => [TimeActivityTimeValidation::incompleteTimeFieldsMessage()],
                 ],
             ]);
     }
@@ -204,8 +204,8 @@ it('rejects invalid end time on update', function () {
     } catch (HttpResponseException $exception) {
         expect($exception->getResponse()->getStatusCode())->toBe(422)
             ->and($exception->getResponse()->getData(true))->toBe([
-                'message' => TimeActivityTimeValidation::END_AFTER_START_MESSAGE,
-                'errors' => ['end_time' => [TimeActivityTimeValidation::END_AFTER_START_MESSAGE]],
+                'message' => TimeActivityTimeValidation::endAfterStartMessage(),
+                'errors' => ['end_time' => [TimeActivityTimeValidation::endAfterStartMessage()]],
             ]);
     }
 });
@@ -234,8 +234,8 @@ it('rejects invalid start time on update using the existing end time', function 
     } catch (HttpResponseException $exception) {
         expect($exception->getResponse()->getStatusCode())->toBe(422)
             ->and($exception->getResponse()->getData(true))->toBe([
-                'message' => TimeActivityTimeValidation::END_AFTER_START_MESSAGE,
-                'errors' => ['end_time' => [TimeActivityTimeValidation::END_AFTER_START_MESSAGE]],
+                'message' => TimeActivityTimeValidation::endAfterStartMessage(),
+                'errors' => ['end_time' => [TimeActivityTimeValidation::endAfterStartMessage()]],
             ]);
     }
 });

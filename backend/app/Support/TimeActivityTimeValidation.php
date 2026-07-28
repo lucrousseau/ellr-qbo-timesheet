@@ -15,14 +15,24 @@ use Illuminate\Support\Carbon;
 final class TimeActivityTimeValidation
 {
     /**
-     * User-facing message when end time is not after start time.
+     * Returns the localized message when end time is not after start time.
+     *
+     * @return string
      */
-    public const END_AFTER_START_MESSAGE = 'The end time field must be a date after start time.';
+    public static function endAfterStartMessage(): string
+    {
+        return __('api.time.end_after_start');
+    }
 
     /**
-     * User-facing message when a partial time update cannot resolve both fields.
+     * Returns the localized message when a partial time update cannot resolve both fields.
+     *
+     * @return string
      */
-    public const INCOMPLETE_TIME_FIELDS_MESSAGE = 'Start and end times are both required when updating time fields.';
+    public static function incompleteTimeFieldsMessage(): string
+    {
+        return __('api.time.incomplete_fields');
+    }
 
     /**
      * Returns a normalized datetime string for validation and QBO payloads.
@@ -72,11 +82,13 @@ final class TimeActivityTimeValidation
             return;
         }
 
+        $message = self::incompleteTimeFieldsMessage();
+
         throw new HttpResponseException(response()->json([
-            'message' => self::INCOMPLETE_TIME_FIELDS_MESSAGE,
+            'message' => $message,
             'errors' => [
-                'start_time' => [self::INCOMPLETE_TIME_FIELDS_MESSAGE],
-                'end_time' => [self::INCOMPLETE_TIME_FIELDS_MESSAGE],
+                'start_time' => [$message],
+                'end_time' => [$message],
             ],
         ], 422));
     }
@@ -91,10 +103,12 @@ final class TimeActivityTimeValidation
     public static function abortUnlessEndAfterStart(?string $startTime, ?string $endTime): void
     {
         if (! self::isEndAfterStart($startTime, $endTime)) {
+            $message = self::endAfterStartMessage();
+
             throw new HttpResponseException(response()->json([
-                'message' => self::END_AFTER_START_MESSAGE,
+                'message' => $message,
                 'errors' => [
-                    'end_time' => [self::END_AFTER_START_MESSAGE],
+                    'end_time' => [$message],
                 ],
             ], 422));
         }

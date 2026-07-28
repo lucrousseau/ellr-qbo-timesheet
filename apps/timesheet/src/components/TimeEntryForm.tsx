@@ -3,7 +3,7 @@
  */
 
 import type { FlashMessage } from '@ellr/ui'
-import { Alert, cardClass, inputClass, primaryButtonClass } from '@ellr/ui'
+import { Alert, cardClass, inputClass, primaryButtonClass, useLocale } from '@ellr/ui'
 
 type TimeActivityForm = {
   start_time: string
@@ -33,14 +33,16 @@ export function TimeEntryForm({
   onFormChange,
   onSubmit,
 }: TimeEntryFormProps) {
+  const { t } = useLocale()
+
   return (
     <form className={`space-y-5 ${cardClass}`} onSubmit={onSubmit}>
       <p className="text-sm text-slate-600">
-        QBO employee: <span className="font-medium text-slate-900">{employeeLabel}</span>
+        {t('timesheet.qboEmployeeLabel', { label: employeeLabel })}
       </p>
 
       <label className="block text-sm font-medium text-slate-700">
-        Start
+        {t('timesheet.start')}
         <input
           type="datetime-local"
           required
@@ -51,7 +53,7 @@ export function TimeEntryForm({
       </label>
 
       <label className="block text-sm font-medium text-slate-700">
-        End
+        {t('timesheet.end')}
         <input
           type="datetime-local"
           required
@@ -62,7 +64,7 @@ export function TimeEntryForm({
       </label>
 
       <label className="block text-sm font-medium text-slate-700">
-        Description
+        {t('timesheet.description')}
         <textarea
           rows={4}
           className={inputClass}
@@ -72,7 +74,7 @@ export function TimeEntryForm({
       </label>
 
       <button type="submit" disabled={submitting} className={primaryButtonClass}>
-        {submitting ? 'Saving...' : 'Save'}
+        {submitting ? t('common.saving') : t('timesheet.saveTime')}
       </button>
 
       {message && <Alert variant={message.type}>{message.text}</Alert>}

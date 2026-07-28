@@ -2,7 +2,7 @@
  * @file QuickBooks connection status, employee mapping, and OAuth actions.
  */
 
-import { Alert, cardClass, inputClass, primaryButtonClass, secondaryButtonClass, type FlashMessage } from '@ellr/ui'
+import { Alert, cardClass, inputClass, primaryButtonClass, secondaryButtonClass, useLocale, type FlashMessage } from '@ellr/ui'
 
 type QuickBooksConnectionStatus = {
   connected: boolean
@@ -10,7 +10,6 @@ type QuickBooksConnectionStatus = {
 }
 
 type QuickBooksAdminPanelProps = {
-  userEmail: string
   bootstrapError: string | null
   message: FlashMessage | null
   status: QuickBooksConnectionStatus | null
@@ -32,7 +31,6 @@ type QuickBooksAdminPanelProps = {
  * @returns QuickBooks admin card content.
  */
 export function QuickBooksAdminPanel({
-  userEmail,
   bootstrapError,
   message,
   status,
@@ -47,18 +45,17 @@ export function QuickBooksAdminPanel({
   onConnect,
   onDisconnect,
 }: QuickBooksAdminPanelProps) {
+  const { t } = useLocale()
+
   return (
     <section className={cardClass}>
-      <h2 className="text-xl font-medium text-slate-900">QuickBooks Online connection</h2>
-      <p className="mt-2 text-sm text-slate-600">Signed in as {userEmail}</p>
+      <h2 className="text-xl font-medium text-slate-900">{t('admin.quickbooksTitle')}</h2>
 
       <form className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4" onSubmit={onSaveEmployee}>
-        <h3 className="text-sm font-medium text-slate-900">QuickBooks employee</h3>
-        <p className="text-sm text-slate-600">
-          Link this account to a QBO employee for the timesheet app.
-        </p>
+        <h3 className="text-sm font-medium text-slate-900">{t('admin.quickbooksEmployeeTitle')}</h3>
+        <p className="text-sm text-slate-600">{t('admin.quickbooksEmployeeHelp')}</p>
         <label className="block text-sm font-medium text-slate-700">
-          QBO employee ID
+          {t('admin.qboEmployeeId')}
           <input
             required
             className={inputClass}
@@ -67,7 +64,7 @@ export function QuickBooksAdminPanel({
           />
         </label>
         <label className="block text-sm font-medium text-slate-700">
-          Employee name (optional)
+          {t('admin.employeeNameOptional')}
           <input
             className={inputClass}
             value={qboEmployeeName}
@@ -79,7 +76,7 @@ export function QuickBooksAdminPanel({
           disabled={savingEmployee}
           className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
         >
-          {savingEmployee ? 'Saving...' : 'Save employee'}
+          {savingEmployee ? t('common.saving') : t('admin.saveEmployee')}
         </button>
       </form>
 
@@ -97,9 +94,11 @@ export function QuickBooksAdminPanel({
 
       {status && (
         <p className="mt-4 text-sm text-slate-600">
-          Status:{' '}
+          {t('admin.statusLabel')}{' '}
           <span className="font-medium text-slate-900">
-            {status.connected ? `Connected (realm ${status.realm_id})` : 'Not connected'}
+            {status.connected
+              ? t('admin.statusConnected', { realmId: status.realm_id ?? '' })
+              : t('admin.statusNotConnected')}
           </span>
         </p>
       )}
@@ -111,7 +110,7 @@ export function QuickBooksAdminPanel({
           disabled={connecting}
           className={primaryButtonClass}
         >
-          {connecting ? 'Redirecting...' : 'Connect QuickBooks'}
+          {connecting ? t('admin.redirecting') : t('admin.connectQuickBooks')}
         </button>
         {status?.connected && (
           <button
@@ -120,7 +119,7 @@ export function QuickBooksAdminPanel({
             disabled={disconnecting}
             className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
           >
-            {disconnecting ? 'Disconnecting...' : 'Disconnect QuickBooks'}
+            {disconnecting ? t('admin.disconnecting') : t('admin.disconnectQuickBooks')}
           </button>
         )}
       </div>

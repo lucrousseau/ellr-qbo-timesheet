@@ -3,6 +3,7 @@
  */
 
 import type { FormEvent, ReactNode } from 'react'
+import { useLocale } from '../i18n/LocaleProvider'
 import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 import { Alert } from './Alert'
 
@@ -42,9 +43,11 @@ export function LoginForm({
   onPasswordChange,
   onSubmit,
   error,
-  heading = 'Sign in',
+  heading,
   footer,
 }: LoginFormProps) {
+  const { t } = useLocale()
+
   return (
     <main className={pageMainClass}>
       <header className="mb-8">
@@ -52,7 +55,7 @@ export function LoginForm({
         {subtitle && <p className="mt-2 text-slate-600">{subtitle}</p>}
       </header>
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">{heading}</h2>
+        <h2 className="text-xl font-medium text-slate-900">{heading ?? t('common.signIn')}</h2>
 
         {error && (
           <div className="mt-4">
@@ -62,7 +65,7 @@ export function LoginForm({
 
         <form className="mt-4 space-y-4" onSubmit={onSubmit}>
           <label className="block text-sm font-medium text-slate-700">
-            Email
+            {t('common.email')}
             <input
               type="email"
               required
@@ -72,7 +75,7 @@ export function LoginForm({
             />
           </label>
           <label className="block text-sm font-medium text-slate-700">
-            Password
+            {t('common.password')}
             <input
               type="password"
               required
@@ -82,7 +85,7 @@ export function LoginForm({
             />
           </label>
           <button type="submit" className={primaryButtonClass}>
-            Sign in
+            {t('common.signIn')}
           </button>
           {footer}
         </form>

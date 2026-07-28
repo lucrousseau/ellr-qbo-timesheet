@@ -12,6 +12,7 @@ use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use RuntimeException;
@@ -38,14 +39,10 @@ class FeatureContext implements Context
     {
         $this->bootApplication();
         $this->migrateDatabase();
-        auth()->forgetGuards();
+        $this->resetAuthenticationState();
         $this->response = null;
         $this->cookies = [];
         $this->statefulClient = false;
-
-        if (self::$app?->bound('session.store')) {
-            self::$app->make('session.store')->flush();
-        }
     }
 
     /**
@@ -57,10 +54,8 @@ class FeatureContext implements Context
         $this->response = null;
         $this->cookies = [];
         $this->statefulClient = false;
-
-        if (self::$app?->bound('session.store')) {
-            self::$app->make('session.store')->flush();
-        }
+        $this->resetAuthenticationState();
+        self::$app = null;
     }
 
     /**
@@ -108,6 +103,26 @@ class FeatureContext implements Context
             'email' => $email,
             'password' => $password,
             'email_verified_at' => now(),
+        ]);
+    }
+
+    /**
+     * @Given a verified user exists with email :email, password :password, and locale :locale
+     * @param  string  $email  Account email.
+     * @param  string  $password  Plain-text password.
+     * @param  string  $locale  Preferred locale code.
+     * @return void
+     */
+    public function aVerifiedUserExistsWithEmailPasswordAndLocale(
+        string $email,
+        string $password,
+        string $locale,
+    ): void {
+        User::factory()->create([
+            'email' => $email,
+            'password' => $password,
+            'email_verified_at' => now(),
+            'locale' => $locale,
         ]);
     }
 
@@ -198,6 +213,77 @@ class FeatureContext implements Context
                 'Expected JSON field '.$field.' to be '.json_encode($expected).', received '.json_encode($actual).'.',
             );
         }
+    }
+
+    /**
+     * @Then the JSON field :field should be the english api message :messageKey
+     * @param  string  $field  Dot-notated JSON field path.
+     * @param  string  $messageKey  Key under lang/{locale}/api.php.
+     * @return void
+     */
+    public function theJsonFieldShouldBeTheEnglishApiMessage(string $field, string $messageKey): void
+    {
+        $this->assertJsonFieldMatchesApiMessage($field, $messageKey, 'en');
+    }
+
+    /**
+     * @Then the JSON field :field should be the french api message :messageKey
+     * @param  string  $field  Dot-notated JSON field path.
+     * @param  string  $messageKey  Key under lang/{locale}/api.php.
+     * @return void
+     */
+    public function theJsonFieldShouldBeTheFrenchApiMessage(string $field, string $messageKey): void
+    {
+        $this->assertJsonFieldMatchesApiMessage($field, $messageKey, 'fr');
+    }
+
+    /**
+     * Asserts a JSON field equals a translated API message for the given locale.
+     *
+     * @param  string  $field  Dot-notated JSON field path.
+     * @param  string  $messageKey  Key under lang/{locale}/api.php.
+     * @param  string  $locale  Locale code.
+     * @return void
+     */
+    private function assertJsonFieldMatchesApiMessage(string $field, string $messageKey, string $locale): void
+    {
+        if ($this->response === null) {
+            throw new RuntimeException('No HTTP response was captured.');
+        }
+
+        $expected = __("api.{$messageKey}", [], $locale);
+        $actual = data_get($this->response->json(), $field);
+
+        if ($actual !== $expected) {
+            throw new RuntimeException(
+                'Expected JSON field '.$field.' to be '.json_encode($expected).', received '.json_encode($actual).'.',
+            );
+        }
+    }
+
+    /**
+     * Resets guards and session state between scenarios so Sanctum does not leak.
+     *
+     * @return void
+     */
+    private function resetAuthenticationState(): void
+    {
+        App::setLocale((string) config('app.locale'));
+
+        if (self::$app?->bound('session.store')) {
+            self::$app->forgetInstance('session.store');
+        }
+
+        if (self::$app?->bound('auth')) {
+            self::$app->forgetInstance('auth');
+        }
+
+        if (self::$app?->bound(HttpKernel::class)) {
+            self::$app->forgetInstance(HttpKernel::class);
+        }
+
+        auth()->shouldUse((string) config('auth.defaults.guard'));
+        auth()->forgetGuards();
     }
 
     /**

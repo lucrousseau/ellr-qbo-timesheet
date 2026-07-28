@@ -5,7 +5,6 @@
 import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import {
-  emailVerificationMessage,
   fetchAppConfig,
   getApiErrorMessage,
   parseEmailVerificationCallback,
@@ -13,14 +12,15 @@ import {
   shouldBlockUnverifiedUser,
   type User,
 } from '@ellr/api-client'
-import { useAuth, usePasswordRecovery } from '@ellr/ui'
+import { useAuth, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
 
 /**
  * Timesheet authentication state including password recovery screens.
  * @returns Auth session, recovery UI state, and handlers.
  */
 export function useTimesheetAuth() {
-  const auth = useAuth()
+  const { locale, t } = useLocale()
+  const auth = useAuth({ bootstrapErrorFallback: t('admin.bootstrapFailed') })
   const recovery = usePasswordRecovery({ client: 'timesheet' })
   const [requireEmailVerification, setRequireEmailVerification] = useState(false)
   const [loginNotice, setLoginNotice] = useState<string | null>(null)
@@ -29,6 +29,21 @@ export function useTimesheetAuth() {
     null,
   )
   const [verificationSending, setVerificationSending] = useState(false)
+  const [preferenceNotice, setPreferenceNotice] = useState<string | null>(null)
+  const [preferenceNoticeVariant, setPreferenceNoticeVariant] = useState<'success' | 'error' | null>(null)
+
+  const preferences = useUserLocalePreferences({
+    user: auth.user,
+    setUser: auth.setUser,
+    onSaved: () => {
+      setPreferenceNotice(t('preferences.saved'))
+      setPreferenceNoticeVariant('success')
+    },
+    onError: (message) => {
+      setPreferenceNotice(message)
+      setPreferenceNoticeVariant('error')
+    },
+  })
 
   useEffect(() => {
     void fetchAppConfig()
@@ -47,9 +62,20 @@ export function useTimesheetAuth() {
       return
     }
 
-    setLoginNotice(emailVerificationMessage(callback))
+    if (callback.result === 'verified') {
+      setLoginNotice(t('auth.verificationVerified'))
+    } else if (callback.result === 'already_verified') {
+      setLoginNotice(t('auth.verificationAlreadyVerified'))
+    } else if (callback.result === 'error') {
+      setLoginNotice(
+        callback.reason === 'expired' ? t('auth.verificationExpired') : t('auth.verificationFailed'),
+      )
+    } else {
+      setLoginNotice(t('auth.verificationGenericFailed'))
+    }
+
     window.history.replaceState({}, '', window.location.pathname)
-  }, [])
+  }, [t])
 
   const handleLogin = async (event: FormEvent) => {
     setLoginNotice(null)
@@ -63,10 +89,10 @@ export function useTimesheetAuth() {
 
     try {
       await resendVerificationEmail()
-      setVerificationMessage('Verification link sent.')
+      setVerificationMessage(t('auth.verificationSent'))
       setVerificationMessageVariant('success')
     } catch (caught) {
-      setVerificationMessage(getApiErrorMessage(caught, 'Unable to send the verification email.'))
+      setVerificationMessage(getApiErrorMessage(caught, t('auth.verificationSendFailed'), locale))
       setVerificationMessageVariant('error')
     } finally {
       setVerificationSending(false)
@@ -80,6 +106,7 @@ export function useTimesheetAuth() {
   return {
     ...auth,
     ...recovery,
+    ...preferences,
     handleLogin,
     loginNotice,
     verificationMessage,
@@ -87,5 +114,11 @@ export function useTimesheetAuth() {
     verificationSending,
     handleResendVerification,
     showEmailVerification,
+    preferenceNotice,
+    preferenceNoticeVariant,
+    clearPreferenceNotice: () => {
+      setPreferenceNotice(null)
+      setPreferenceNoticeVariant(null)
+    },
   }
 }

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
-import { ApiError, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee } from '@ellr/api-client'
+import { ApiError, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -11,6 +11,7 @@ vi.mock('@ellr/api-client', async () =>
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
     updateQboEmployee: vi.fn(),
+    updateUserLocale: vi.fn(),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
   }),
@@ -27,6 +28,7 @@ describe('Admin App', () => {
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(updateQboEmployee).mockReset()
+    vi.mocked(updateUserLocale).mockReset()
     vi.mocked(requestPasswordReset).mockReset()
     vi.mocked(resetPassword).mockReset()
     vi.mocked(logout).mockResolvedValue(undefined)
@@ -783,6 +785,54 @@ describe('Admin App', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/unable to send the reset link/i)).toBeInTheDocument()
+    })
+  })
+
+  it('saves locale preferences', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      locale: 'en',
+    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(updateUserLocale).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      locale: 'fr',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /preferences/i })).toBeInTheDocument()
+    })
+
+    await user.selectOptions(screen.getByLabelText(/language/i), 'fr')
+    await user.click(screen.getByRole('button', { name: /^save$/i }))
+
+    await waitFor(() => {
+      expect(updateUserLocale).toHaveBeenCalledWith('fr')
+      expect(screen.getByText(/preferences saved/i)).toBeInTheDocument()
+    })
+  })
+
+  it('renders french admin copy when the user locale is french', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 1,
+      name: 'Test User',
+      email: 'test@example.com',
+      locale: 'fr',
+    })
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /préférences/i })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /connexion quickbooks online/i })).toBeInTheDocument()
     })
   })
 })

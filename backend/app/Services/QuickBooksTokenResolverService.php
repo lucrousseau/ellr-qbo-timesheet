@@ -39,7 +39,7 @@ class QuickBooksTokenResolverService
         if ($token === null) {
             $this->denyQuickBooks(
                 ApiErrorCode::QuickBooksNotConnected,
-                'QuickBooks is not connected.',
+                __('api.quickbooks_not_connected'),
             );
         }
 
@@ -49,13 +49,13 @@ class QuickBooksTokenResolverService
             }
         } catch (LockTimeoutException) {
             abort(response()->json([
-                'message' => 'QuickBooks is busy. Please retry.',
+                'message' => __('api.quickbooks_busy'),
                 'error' => ApiErrorCode::QuickBooksBusy->value,
             ], 503));
         } catch (QuickBooksException) {
             $this->denyQuickBooks(
                 ApiErrorCode::QuickBooksExpired,
-                'QuickBooks connection expired. Please reconnect from the admin app.',
+                __('api.quickbooks_expired'),
             );
         }
 

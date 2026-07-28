@@ -57,3 +57,21 @@ it('identifies administrator accounts', function () {
     expect($admin->isAdmin())->toBeTrue()
         ->and($user->isAdmin())->toBeFalse();
 });
+
+it('returns the stored locale from preferredLocale', function () {
+    $user = User::factory()->create(['locale' => 'fr']);
+
+    expect($user->preferredLocale())->toBe('fr');
+});
+
+it('defaults preferredLocale to english when locale is missing', function () {
+    $user = User::factory()->make(['locale' => null]);
+
+    expect($user->preferredLocale())->toBe('en');
+});
+
+it('defaults preferredLocale to english for unsupported values', function () {
+    $user = User::factory()->create(['locale' => 'de']);
+
+    expect($user->preferredLocale())->toBe('en');
+});

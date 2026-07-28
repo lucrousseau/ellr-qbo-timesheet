@@ -26,7 +26,7 @@ class QboEmployeeAuthorizationService
 
         if ($employeeRef === null || $employeeRef === '') {
             abort(response()->json([
-                'message' => 'QBO employee is not configured for this user.',
+                'message' => __('api.qbo_employee_not_configured'),
                 'error' => ApiErrorCode::QboEmployeeNotConfigured->value,
             ], 403));
         }
@@ -47,7 +47,7 @@ class QboEmployeeAuthorizationService
         $activityEmployeeRef = $this->extractEmployeeRef($activity);
 
         if ($activityEmployeeRef !== $employeeRef) {
-            abort(response()->json(['message' => 'Time activity not found'], 404));
+            abort(response()->json(['message' => __('api.time_activity_not_found')], 404));
         }
     }
 

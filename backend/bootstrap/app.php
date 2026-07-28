@@ -6,6 +6,7 @@
 
 use App\Http\Middleware\EnsureEmailVerifiedIfRequired;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\SetLocaleFromUser;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        $middleware->appendToGroup('api', SetLocaleFromUser::class);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'verified.email' => EnsureEmailVerifiedIfRequired::class,

@@ -1,0 +1,65 @@
+/**
+ * @file User-facing API error messages keyed by locale.
+ */
+
+import type { UserLocale } from './locale'
+
+type ErrorMessageKey =
+  | 'invalid_credentials'
+  | 'session_expired'
+  | 'quickbooks_not_connected'
+  | 'quickbooks_expired'
+  | 'registration_disabled'
+  | 'qbo_employee_not_configured'
+  | 'admin_required'
+  | 'email_not_verified'
+  | 'access_denied'
+  | 'qbo_employee_invalid'
+  | 'invalid_data'
+  | 'quickbooks_busy'
+  | 'network_unreachable'
+
+const ERROR_MESSAGES: Record<UserLocale, Record<ErrorMessageKey, string>> = {
+  en: {
+    invalid_credentials: 'Invalid email or password.',
+    session_expired: 'Session expired. Please sign in again.',
+    quickbooks_not_connected: 'QuickBooks is not connected. Connect it from the admin app.',
+    quickbooks_expired: 'QuickBooks connection expired. Reconnect it from the admin app.',
+    registration_disabled: 'Registration disabled.',
+    qbo_employee_not_configured: 'QuickBooks employee not configured. Contact an administrator.',
+    admin_required: 'Administrator access required.',
+    email_not_verified: 'Verify your email address before signing in.',
+    access_denied: 'Access denied.',
+    qbo_employee_invalid: 'QuickBooks employee not found.',
+    invalid_data: 'Invalid data or QuickBooks error.',
+    quickbooks_busy: 'QuickBooks is busy. Please try again shortly.',
+    network_unreachable: 'Unable to reach the Laravel API.',
+  },
+  fr: {
+    invalid_credentials: 'Courriel ou mot de passe invalide.',
+    session_expired: 'Session expirée. Veuillez vous reconnecter.',
+    quickbooks_not_connected: 'QuickBooks n\'est pas connecté. Connectez-le depuis l\'application admin.',
+    quickbooks_expired: 'La connexion QuickBooks a expiré. Reconnectez-la depuis l\'application admin.',
+    registration_disabled: 'Inscription désactivée.',
+    qbo_employee_not_configured: 'Employé QuickBooks non configuré. Contactez un administrateur.',
+    admin_required: 'Accès administrateur requis.',
+    email_not_verified: 'Vérifiez votre adresse courriel avant de vous connecter.',
+    access_denied: 'Accès refusé.',
+    qbo_employee_invalid: 'Employé QuickBooks introuvable.',
+    invalid_data: 'Données invalides ou erreur QuickBooks.',
+    quickbooks_busy: 'QuickBooks est occupé. Réessayez sous peu.',
+    network_unreachable: 'Impossible de joindre l\'API Laravel.',
+  },
+}
+
+/**
+ * Returns a localized API error label for a known message key.
+ * @param locale Active user locale.
+ * @param key Stable error message key.
+ * @returns Localized label.
+ */
+export function getLocalizedApiErrorMessage(locale: UserLocale, key: ErrorMessageKey): string {
+  return ERROR_MESSAGES[locale][key]
+}
+
+export type { ErrorMessageKey }

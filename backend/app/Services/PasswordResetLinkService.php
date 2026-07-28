@@ -39,7 +39,10 @@ class PasswordResetLinkService
         $token = $broker->createToken($user);
         $frontendUrl = $this->resolveFrontendUrl($client);
 
-        $user->notify(new ResetPasswordNotification($token, $frontendUrl));
+        $user->notify(
+            (new ResetPasswordNotification($token, $frontendUrl))
+                ->locale($user->preferredLocale()),
+        );
     }
 
     /**

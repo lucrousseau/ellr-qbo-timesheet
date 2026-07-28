@@ -8,19 +8,37 @@ import {
   disconnectQuickBooks,
   fetchQuickBooksStatus,
   getApiErrorMessage,
+  normalizeUserLocale,
   parseQuickBooksOAuthCallback,
-  quickBooksOAuthErrorMessage,
   updateQboEmployee,
   type QuickBooksStatus,
   type User,
 } from '@ellr/api-client'
-import { useAuth, useFlashMessage, usePasswordRecovery } from '@ellr/ui'
+import { useAuth, useFlashMessage, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
+
+/**
+ * Maps a QuickBooks OAuth callback reason to a localized admin message key.
+ * @param reason OAuth error reason from the callback query string.
+ * @returns Message catalog key under `admin.*`.
+ */
+function quickBooksOAuthMessageKey(reason?: string | null): 'admin.oauthDenied' | 'admin.oauthMissingParams' | 'admin.oauthFailed' {
+  if (reason === 'oauth') {
+    return 'admin.oauthDenied'
+  }
+
+  if (reason === 'missing_params') {
+    return 'admin.oauthMissingParams'
+  }
+
+  return 'admin.oauthFailed'
+}
 
 /**
  * QuickBooks admin screen: session auth, OAuth callback, connect/disconnect, employee mapping.
  * @returns Auth fields, flash messages, and QuickBooks dashboard handlers.
  */
 export function useQuickBooksAdmin() {
+  const { locale, t } = useLocale()
   const { message, showError, showSuccess, clearMessage } = useFlashMessage()
   const [status, setStatus] = useState<QuickBooksStatus | null>(null)
   const [connecting, setConnecting] = useState(false)
@@ -37,14 +55,15 @@ export function useQuickBooksAdmin() {
 
     setQboEmployeeRef(currentUser.qbo_employee_ref ?? '')
     setQboEmployeeName(currentUser.qbo_employee_name ?? '')
+    const messageLocale = normalizeUserLocale(currentUser.locale)
 
     try {
       setStatus(await fetchQuickBooksStatus())
     } catch (caught) {
       setStatus(null)
-      showError(getApiErrorMessage(caught, 'Unable to load QuickBooks status.'))
+      showError(getApiErrorMessage(caught, t('admin.loadStatusFailed'), messageLocale))
     }
-  }, [showError])
+  }, [showError, t])
 
   const {
     user,
@@ -59,7 +78,13 @@ export function useQuickBooksAdmin() {
     handleLogout,
   } = useAuth({
     onUserLoaded: loadQuickBooksStatus,
-    bootstrapErrorFallback: 'Unable to load the application.',
+  })
+
+  const { preferenceLocale, setPreferenceLocale, savingLocale, saveLocale } = useUserLocalePreferences({
+    user,
+    setUser,
+    onSaved: () => showSuccess(t('preferences.saved')),
+    onError: (errorMessage) => showError(errorMessage),
   })
 
   const recovery = usePasswordRecovery({ client: 'admin' })
@@ -68,15 +93,15 @@ export function useQuickBooksAdmin() {
     const { result, reason } = parseQuickBooksOAuthCallback(window.location.search)
 
     if (result === 'connected') {
-      showSuccess('QuickBooks connected successfully.')
+      showSuccess(t('admin.connectedSuccess'))
       window.history.replaceState({}, '', window.location.pathname)
     }
 
     if (result === 'error') {
-      showError(quickBooksOAuthErrorMessage(reason))
+      showError(t(quickBooksOAuthMessageKey(reason)))
       window.history.replaceState({}, '', window.location.pathname)
     }
-  }, [showError, showSuccess])
+  }, [showError, showSuccess, t])
 
   const onLogin = async (event: React.FormEvent) => {
     clearMessage()
@@ -96,7 +121,7 @@ export function useQuickBooksAdmin() {
       const response = await connectQuickBooks()
       window.location.href = response.authorization_url
     } catch (caught) {
-      showError(getApiErrorMessage(caught, 'Unable to start QuickBooks connection.'))
+      showError(getApiErrorMessage(caught, t('admin.connectFailed'), locale))
       setConnecting(false)
     }
   }
@@ -108,9 +133,9 @@ export function useQuickBooksAdmin() {
     try {
       const updatedUser = await updateQboEmployee(qboEmployeeRef, qboEmployeeName || undefined)
       setUser(updatedUser)
-      showSuccess('QuickBooks employee saved.')
+      showSuccess(t('admin.employeeSaved'))
     } catch (caught) {
-      showError(getApiErrorMessage(caught, 'Unable to save the QuickBooks employee.'))
+      showError(getApiErrorMessage(caught, t('admin.saveEmployeeFailed'), locale))
     } finally {
       setSavingEmployee(false)
     }
@@ -122,9 +147,9 @@ export function useQuickBooksAdmin() {
     try {
       await disconnectQuickBooks()
       setStatus(await fetchQuickBooksStatus())
-      showSuccess('QuickBooks disconnected.')
+      showSuccess(t('admin.disconnectedSuccess'))
     } catch (caught) {
-      showError(getApiErrorMessage(caught, 'Unable to disconnect QuickBooks.'))
+      showError(getApiErrorMessage(caught, t('admin.disconnectFailed'), locale))
     } finally {
       setDisconnecting(false)
     }
@@ -149,9 +174,13 @@ export function useQuickBooksAdmin() {
     qboEmployeeName,
     setQboEmployeeName,
     savingEmployee,
+    preferenceLocale,
+    setPreferenceLocale,
+    savingLocale,
     connectQuickBooksFlow,
     disconnectQuickBooksFlow,
     saveQboEmployee,
+    saveLocale,
     ...recovery,
   }
 }

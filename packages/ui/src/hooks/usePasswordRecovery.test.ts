@@ -3,25 +3,22 @@
  */
 
 import type { FormEvent } from 'react'
-import { renderHook, act } from '@testing-library/react'
+import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { requestPasswordReset, resetPassword } from '@ellr/api-client'
+import { renderHookWithLocale } from '../test/renderWithLocale'
 import { usePasswordRecovery } from './usePasswordRecovery'
 
-vi.mock('@ellr/api-client', () => ({
-  getApiErrorMessage: vi.fn((_error: unknown, fallback: string) => fallback),
-  isResetPasswordRoute: (pathname: string) => pathname === '/reset-password',
-  parseResetPasswordParams: (search: string) => {
-    const params = new URLSearchParams(search)
+vi.mock('@ellr/api-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@ellr/api-client')>()
 
-    return {
-      token: params.get('token'),
-      email: params.get('email'),
-    }
-  },
-  requestPasswordReset: vi.fn(),
-  resetPassword: vi.fn(),
-}))
+  return {
+    ...actual,
+    getApiErrorMessage: vi.fn((_error: unknown, fallback: string) => fallback),
+    requestPasswordReset: vi.fn(),
+    resetPassword: vi.fn(),
+  }
+})
 
 describe('usePasswordRecovery', () => {
   beforeEach(() => {
@@ -47,7 +44,7 @@ describe('usePasswordRecovery', () => {
       },
     })
 
-    const { result } = renderHook(() => usePasswordRecovery({ client: 'admin' }))
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'admin' }))
 
     expect(result.current.authScreen).toBe('reset-password')
     expect(result.current.resetParams).toEqual({
@@ -59,7 +56,7 @@ describe('usePasswordRecovery', () => {
   it('requests a reset link with the configured client', async () => {
     vi.mocked(requestPasswordReset).mockResolvedValue(undefined)
 
-    const { result } = renderHook(() => usePasswordRecovery({ client: 'timesheet' }))
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'timesheet' }))
 
     act(() => {
       result.current.setForgotEmail('user@example.com')
@@ -75,6 +72,24 @@ describe('usePasswordRecovery', () => {
     expect(result.current.forgotSuccess).toContain('reset link has been sent')
   })
 
+  it('returns french success copy when locale is french', async () => {
+    vi.mocked(requestPasswordReset).mockResolvedValue(undefined)
+
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'timesheet' }), 'fr')
+
+    act(() => {
+      result.current.setForgotEmail('user@example.com')
+    })
+
+    await act(async () => {
+      await result.current.handleForgotPassword({
+        preventDefault: vi.fn(),
+      } as unknown as FormEvent)
+    })
+
+    expect(result.current.forgotSuccess).toContain('lien de réinitialisation')
+  })
+
   it('resets the password from URL params', async () => {
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -86,7 +101,7 @@ describe('usePasswordRecovery', () => {
     })
     vi.mocked(resetPassword).mockResolvedValue(undefined)
 
-    const { result } = renderHook(() => usePasswordRecovery({ client: 'admin' }))
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'admin' }))
 
     act(() => {
       result.current.setResetPasswordValue('new-password')
