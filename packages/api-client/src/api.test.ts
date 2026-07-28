@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
+
+/** Matches packages/password-policy/test-passwords.json alternate (tests only). */
+const VALID_TEST_PASSWORD_ALT = 'EllrNew!2026'
 import { fetchAppConfig } from './appConfig'
 import {
   fetchCurrentUser,
