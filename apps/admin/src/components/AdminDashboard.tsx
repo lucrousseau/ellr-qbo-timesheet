@@ -2,8 +2,14 @@
  * @file Tabbed admin dashboard grouped by responsibility.
  */
 
-import { Alert, TabNav, tabPanelId, useLocale } from '@ellr/ui'
-import { useMemo, useState } from 'react'
+import { Alert, TabNav, tabPanelId, useLocale, useSessionStorageState } from '@ellr/ui'
+import { useEffect, useMemo } from 'react'
+import {
+  adminActiveTabStorageKey,
+  isAdminTab,
+  LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY,
+  type AdminTab,
+} from '../adminTabStorage'
 import { AccountPanel } from './AccountPanel'
 import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
 import { TimesheetUserProvisioningPanel } from './TimesheetUserProvisioningPanel'
@@ -11,8 +17,6 @@ import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
 import { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
 
 const TAB_ID_PREFIX = 'admin'
-
-type AdminTab = 'preferences' | 'administrator'
 
 type AdminDashboardProps = {
   admin: ReturnType<typeof useQuickBooksAdmin>
@@ -25,8 +29,21 @@ type AdminDashboardProps = {
  */
 export function AdminDashboard({ admin }: AdminDashboardProps) {
   const { t } = useLocale()
-  const [activeTab, setActiveTab] = useState<AdminTab>('preferences')
+  const userId = admin.user!.id
+  const [activeTab, setActiveTab] = useSessionStorageState<AdminTab>(
+    adminActiveTabStorageKey(userId),
+    'preferences',
+    { isValid: isAdminTab },
+  )
   const isAdministrator = admin.user?.is_admin === true
+
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY)
+    } catch {
+      // Ignore privacy-mode failures.
+    }
+  }, [])
 
   const tabs = useMemo(() => {
     const items: { id: AdminTab; label: string }[] = [
@@ -41,6 +58,12 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
   }, [isAdministrator, t])
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'preferences'
+
+  useEffect(() => {
+    if (activeTab !== activeTabId) {
+      setActiveTab(activeTabId)
+    }
+  }, [activeTab, activeTabId, setActiveTab])
 
   const provisioning = useTimesheetProvisioning({
     status: admin.status,

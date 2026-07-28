@@ -4,6 +4,7 @@ import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { adminActiveTabStorageKey } from './adminTabStorage'
 import App from './App'
 
 vi.mock('@ellr/api-client', async () =>
@@ -64,6 +65,7 @@ describe('Admin App', () => {
   }
 
   beforeEach(() => {
+    sessionStorage.clear()
     vi.mocked(fetchCurrentUser).mockReset()
     vi.mocked(login).mockReset()
     vi.mocked(logout).mockReset()
@@ -126,6 +128,76 @@ describe('Admin App', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /sign in$/i })).toBeInTheDocument()
     })
+  })
+
+  it('restores the active admin tab after reload', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
+      connected: true,
+      realm_id: 'realm-42',
+    })
+
+    const { unmount } = render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
+    })
+
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('administrator')
+
+    unmount()
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
+    })
+
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('administrator')
+  })
+
+  it('does not restore another user administrator tab', async () => {
+    sessionStorage.setItem(adminActiveTabStorageKey(99), 'administrator')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
+      connected: true,
+      realm_id: 'realm-42',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText(/Connected \(realm realm-42\)/i)).not.toBeInTheDocument()
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(99))).toBe('administrator')
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).not.toBe('administrator')
+  })
+
+  it('falls back to preferences when stored tab value is invalid', async () => {
+    sessionStorage.setItem(adminActiveTabStorageKey(adminUser.id), 'invalid')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
+      connected: true,
+      realm_id: 'realm-42',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
+    })
+
+    expect(screen.queryByText(/Connected \(realm realm-42\)/i)).not.toBeInTheDocument()
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('preferences')
   })
 
   it('shows quickbooks connection status when authenticated', async () => {
@@ -1159,6 +1231,7 @@ describe('Admin App', () => {
   })
 
   it('hides the administrator tab and skips quickbooks status for non-admin users', async () => {
+    sessionStorage.setItem(adminActiveTabStorageKey(2), 'administrator')
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       id: 2,
       name: 'Timesheet User',
@@ -1175,6 +1248,7 @@ describe('Admin App', () => {
 
     expect(fetchQuickBooksStatus).not.toHaveBeenCalled()
     expect(screen.queryByText(/administrator access required/i)).not.toBeInTheDocument()
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(2))).toBe('preferences')
   })
 
   it('shows a password change error when the api rejects the current password', async () => {

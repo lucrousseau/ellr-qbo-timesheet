@@ -29,6 +29,7 @@ export type { UserLocale } from '@ellr/api-client'
 export { usePasswordResetInviteGate } from './hooks/usePasswordResetInviteGate'
 export { usePasswordRecovery, type AuthClient, type AuthScreen } from './hooks/usePasswordRecovery'
 export { useFlashMessage, type FlashMessage } from './hooks/useFlashMessage'
+export { useSessionStorageState } from './hooks/useSessionStorageState'
 export {
   alertClasses,
   cardClass,
