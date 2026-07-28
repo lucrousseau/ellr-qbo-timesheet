@@ -12,6 +12,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Services\AuthSessionService;
+use App\Support\UserApiResponse;
 use App\Support\UserLocaleApplicator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,7 +55,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        return response()->json(['user' => $user], 201);
+        return response()->json(['user' => UserApiResponse::resource($user)], 201);
     }
 
     /**
@@ -86,7 +87,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        return response()->json(['user' => $request->user()]);
+        return response()->json(['user' => UserApiResponse::resource($request->user())]);
     }
 
     /**
@@ -115,6 +116,6 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        return response()->json(['user' => $request->user()]);
+        return response()->json(['user' => UserApiResponse::resource($request->user())]);
     }
 }

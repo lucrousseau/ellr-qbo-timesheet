@@ -14,6 +14,7 @@ export type User = {
   email: string
   email_verified_at?: string | null
   locale?: UserLocale | null
+  is_admin?: boolean
   qbo_employee_ref?: string | null
   qbo_employee_name?: string | null
 }
@@ -90,6 +91,28 @@ export async function updateUserLocale(locale: UserLocale): Promise<User> {
   })
 
   return response.user
+}
+
+/**
+ * Changes the signed-in user password after validating the current password.
+ * @param currentPassword Existing account password.
+ * @param password New password value.
+ * @param passwordConfirmation Confirmation of the new password.
+ * @returns Promise resolved after the password is updated.
+ */
+export async function changePassword(
+  currentPassword: string,
+  password: string,
+  passwordConfirmation: string,
+): Promise<void> {
+  await apiFetch('/user/password', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      password,
+      password_confirmation: passwordConfirmation,
+    }),
+  })
 }
 
 /**

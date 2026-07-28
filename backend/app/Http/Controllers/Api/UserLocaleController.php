@@ -8,6 +8,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateUserLocaleRequest;
+use App\Support\UserApiResponse;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -27,6 +28,6 @@ class UserLocaleController extends Controller
         $user->fill($request->validated());
         $user->save();
 
-        return response()->json(['user' => $user->fresh()]);
+        return response()->json(['user' => UserApiResponse::resource($user->fresh())]);
     }
 }

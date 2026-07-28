@@ -150,7 +150,9 @@ npm run dev:timesheet
 | POST | `/api/register` | Register (if `ALLOW_REGISTRATION=true`) |
 | POST | `/api/login` | Sanctum sign-in |
 | POST | `/api/logout` | Sign out (auth) |
-| GET | `/api/user` | Current user (auth) |
+| GET | `/api/user` | Current user (auth; includes `is_admin` for admin UI tabs) |
+| PATCH | `/api/user/locale` | Update UI locale preference (auth) |
+| PATCH | `/api/user/password` | Change password while signed in (auth) |
 | PATCH | `/api/user/qbo-employee` | Link a QBO employee to the account (auth) |
 | GET | `/api/quickbooks/connect` | OAuth2 authorization URL (auth) |
 | GET | `/api/quickbooks/callback` | Intuit OAuth callback |

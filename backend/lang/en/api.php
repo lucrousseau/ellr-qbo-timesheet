@@ -19,6 +19,7 @@ return [
     'time_activity_not_found' => 'Time activity not found',
     'password_reset_sent' => 'If that email exists, a reset link has been sent.',
     'password_reset_success' => 'Password reset successfully.',
+    'password_changed' => 'Password updated successfully.',
     'email_already_verified' => 'Email already verified.',
     'verification_link_sent' => 'Verification link sent.',
     'time' => [

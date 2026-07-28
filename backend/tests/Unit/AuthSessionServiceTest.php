@@ -103,3 +103,29 @@ it('invalidates database sessions and api tokens for a user', function () {
     expect(DB::table('sessions')->where('user_id', $user->id)->count())->toBe(0)
         ->and($user->tokens()->count())->toBe(0);
 });
+
+it('keeps the active session when invalidating other user sessions', function () {
+    config(['session.driver' => 'database']);
+
+    $user = User::factory()->create();
+
+    DB::table('sessions')->insert([
+        [
+            'id' => 'session-current',
+            'user_id' => $user->id,
+            'payload' => 'payload',
+            'last_activity' => time(),
+        ],
+        [
+            'id' => 'session-other',
+            'user_id' => $user->id,
+            'payload' => 'payload',
+            'last_activity' => time(),
+        ],
+    ]);
+
+    app(AuthSessionService::class)->invalidateOtherUserSessions($user, 'session-current');
+
+    expect(DB::table('sessions')->where('user_id', $user->id)->pluck('id')->all())
+        ->toBe(['session-current']);
+});

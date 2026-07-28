@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateQboEmployeeRequest;
 use App\Models\User;
 use App\Services\QboEmployeeService;
+use App\Support\UserApiResponse;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -41,6 +42,6 @@ class AdminQboEmployeeController extends Controller
             $request->validated(),
         );
 
-        return response()->json(['user' => $updated]);
+        return response()->json(['user' => UserApiResponse::resource($updated)]);
     }
 }

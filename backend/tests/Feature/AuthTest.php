@@ -287,7 +287,7 @@ it('returns the authenticated user', function () {
         ->getJson('/api/user')
         ->assertOk()
         ->assertJsonPath('user.id', $user->id)
-        ->assertJsonMissingPath('user.is_admin');
+        ->assertJsonPath('user.is_admin', true);
 });
 
 it('logs out the authenticated user', function () {

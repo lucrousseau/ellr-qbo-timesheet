@@ -55,6 +55,12 @@ export function useQuickBooksAdmin() {
 
     setQboEmployeeRef(currentUser.qbo_employee_ref ?? '')
     setQboEmployeeName(currentUser.qbo_employee_name ?? '')
+
+    if (currentUser.is_admin !== true) {
+      setStatus(null)
+      return
+    }
+
     const messageLocale = normalizeUserLocale(currentUser.locale)
 
     try {
@@ -181,6 +187,8 @@ export function useQuickBooksAdmin() {
     disconnectQuickBooksFlow,
     saveQboEmployee,
     saveLocale,
+    showError,
+    showSuccess,
     ...recovery,
   }
 }

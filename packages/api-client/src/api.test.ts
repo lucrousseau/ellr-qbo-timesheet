@@ -5,6 +5,7 @@ import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStat
 const VALID_TEST_PASSWORD_ALT = 'EllrNew!2026'
 import { fetchAppConfig } from './appConfig'
 import {
+  changePassword,
   fetchCurrentUser,
   login,
   logout,
@@ -827,6 +828,36 @@ describe('auth helpers', () => {
       expect.objectContaining({
         method: 'PATCH',
         body: JSON.stringify({ locale: 'fr' }),
+      }),
+    )
+  })
+
+  it('changes the signed-in user password', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ message: 'Password updated successfully.' }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      changePassword('OldPassword!1', 'NewPassword!2', 'NewPassword!2'),
+    ).resolves.toBeUndefined()
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/user/password',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({
+          current_password: 'OldPassword!1',
+          password: 'NewPassword!2',
+          password_confirmation: 'NewPassword!2',
+        }),
       }),
     )
   })

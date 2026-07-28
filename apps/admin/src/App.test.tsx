@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee, updateUserLocale } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -13,6 +13,7 @@ vi.mock('@ellr/api-client', async () =>
     disconnectQuickBooks: vi.fn(),
     updateQboEmployee: vi.fn(),
     updateUserLocale: vi.fn(),
+    changePassword: vi.fn(),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
   }),
@@ -20,6 +21,16 @@ vi.mock('@ellr/api-client', async () =>
 
 describe('Admin App', () => {
   const originalLocation = window.location
+  const adminUser = {
+    id: 1,
+    name: 'Test User',
+    email: 'test@example.com',
+    is_admin: true,
+  }
+
+  async function openAdministratorTab(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole('tab', { name: /administrat/i }))
+  }
 
   beforeEach(() => {
     vi.mocked(fetchCurrentUser).mockReset()
@@ -30,6 +41,7 @@ describe('Admin App', () => {
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(updateQboEmployee).mockReset()
     vi.mocked(updateUserLocale).mockReset()
+    vi.mocked(changePassword).mockReset()
     vi.mocked(requestPasswordReset).mockReset()
     vi.mocked(resetPassword).mockReset()
     vi.mocked(logout).mockResolvedValue(undefined)
@@ -81,11 +93,8 @@ describe('Admin App', () => {
   })
 
   it('shows quickbooks connection status when authenticated', async () => {
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
       connected: true,
       realm_id: 'realm-42',
@@ -94,21 +103,30 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
       expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
     })
   })
 
   it('shows disconnected status when quickbooks is not connected', async () => {
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
       connected: false,
     })
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
@@ -117,11 +135,7 @@ describe('Admin App', () => {
 
   it('redirects to quickbooks when connect succeeds', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
     vi.mocked(connectQuickBooks).mockResolvedValue({ authorization_url: 'https://intuit.example/oauth' })
 
@@ -142,6 +156,12 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
       expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
     })
 
@@ -154,15 +174,17 @@ describe('Admin App', () => {
 
   it('shows an error when quickbooks connect fails', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
     vi.mocked(connectQuickBooks).mockRejectedValue(new Error('offline'))
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
@@ -178,11 +200,7 @@ describe('Admin App', () => {
   it('logs in and loads quickbooks status', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(null)
-    vi.mocked(login).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(login).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
 
     render(<App />)
@@ -194,6 +212,12 @@ describe('Admin App', () => {
     await fillLoginForm(user)
 
     await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
       expect(login).toHaveBeenCalledWith('test@example.com', VALID_TEST_PASSWORD)
       expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
     })
@@ -201,11 +225,7 @@ describe('Admin App', () => {
 
   it('shows quickbooks connected notice from callback redirect', async () => {
     const replaceState = mockLocation('?quickbooks=connected')
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
 
     render(<App />)
@@ -289,11 +309,7 @@ describe('Admin App', () => {
 
   it('shows logout error when api fails', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
     vi.mocked(logout).mockRejectedValue(new Error('logout failed'))
 
@@ -312,15 +328,17 @@ describe('Admin App', () => {
 
   it('shows disconnect error when quickbooks disconnect fails', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
     vi.mocked(disconnectQuickBooks).mockRejectedValue(new Error('disconnect failed'))
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -335,15 +353,17 @@ describe('Admin App', () => {
 
   it('shows redirecting label while quickbooks connect is in progress', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
     vi.mocked(connectQuickBooks).mockImplementation(() => new Promise(() => {}))
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
@@ -358,17 +378,19 @@ describe('Admin App', () => {
 
   it('calls quickbooks disconnect', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(disconnectQuickBooks).mockResolvedValue({ connected: false })
     vi.mocked(fetchQuickBooksStatus)
       .mockResolvedValueOnce({ connected: true, realm_id: 'realm-42' })
       .mockResolvedValueOnce({ connected: false })
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -383,11 +405,7 @@ describe('Admin App', () => {
   })
 
   it('shows quickbooks status error when status loading fails', async () => {
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockRejectedValue(new Error('status unavailable'))
 
     render(<App />)
@@ -403,11 +421,7 @@ describe('Admin App', () => {
     const user = userEvent.setup()
     mockLocation('?quickbooks=error&reason=oauth')
     vi.mocked(fetchCurrentUser).mockResolvedValue(null)
-    vi.mocked(login).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(login).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
 
     render(<App />)
@@ -419,6 +433,12 @@ describe('Admin App', () => {
     await fillLoginForm(user)
 
     await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
       expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
       expect(screen.queryByText(/quickbooks connection denied or expired/i)).not.toBeInTheDocument()
     })
@@ -426,15 +446,17 @@ describe('Admin App', () => {
 
   it('shows disconnecting label while quickbooks disconnect is in progress', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
     vi.mocked(disconnectQuickBooks).mockImplementation(() => new Promise(() => {}))
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -450,11 +472,7 @@ describe('Admin App', () => {
   it('loads quickbooks status after login', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(null)
-    vi.mocked(login).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(login).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-99' })
 
     render(<App />)
@@ -467,17 +485,18 @@ describe('Admin App', () => {
 
     await waitFor(() => {
       expect(fetchQuickBooksStatus).toHaveBeenCalled()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
       expect(screen.getByText(/Connected \(realm realm-99\)/i)).toBeInTheDocument()
     })
   })
 
   it('logs out from the admin app', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
 
     render(<App />)
@@ -497,9 +516,7 @@ describe('Admin App', () => {
   it('clears flash messages when logging out', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
+      ...adminUser,
       qbo_employee_ref: '42',
     })
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
@@ -511,6 +528,12 @@ describe('Admin App', () => {
     })
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /save employee/i })).toBeInTheDocument()
@@ -532,11 +555,7 @@ describe('Admin App', () => {
 
   it('saves the qbo employee mapping', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
     vi.mocked(updateQboEmployee).mockResolvedValue({
       id: 1,
@@ -547,6 +566,12 @@ describe('Admin App', () => {
     })
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByLabelText(/qbo employee id/i)).toBeInTheDocument()
@@ -564,15 +589,17 @@ describe('Admin App', () => {
 
   it('shows an error when qbo employee save fails', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
     vi.mocked(updateQboEmployee).mockRejectedValue(new Error('save failed'))
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByLabelText(/qbo employee id/i)).toBeInTheDocument()
@@ -588,17 +615,19 @@ describe('Admin App', () => {
 
   it('disconnects quickbooks from the admin app', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(disconnectQuickBooks).mockResolvedValue({ connected: false })
     vi.mocked(fetchQuickBooksStatus)
       .mockResolvedValueOnce({ connected: true, realm_id: 'realm-42' })
       .mockResolvedValueOnce({ connected: false })
 
     render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -821,10 +850,9 @@ describe('Admin App', () => {
   })
 
   it('renders french admin copy when the user locale is french', async () => {
+    const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
+      ...adminUser,
       locale: 'fr',
     })
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
@@ -833,7 +861,96 @@ describe('Admin App', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /préférences/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
       expect(screen.getByRole('heading', { name: /connexion quickbooks online/i })).toBeInTheDocument()
+    })
+  })
+
+  it('shows preferences and administrator tabs for admin users', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /preferences/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
+    })
+  })
+
+  it('changes password from the preferences tab', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(changePassword).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/^current password$/i), VALID_TEST_PASSWORD)
+    await user.type(screen.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.type(screen.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.click(screen.getByRole('button', { name: /update password/i }))
+
+    await waitFor(() => {
+      expect(changePassword).toHaveBeenCalledWith(
+        VALID_TEST_PASSWORD,
+        VALID_TEST_PASSWORD_ALT,
+        VALID_TEST_PASSWORD_ALT,
+      )
+      expect(screen.getByText(/password updated/i)).toBeInTheDocument()
+    })
+  })
+
+  it('hides the administrator tab and skips quickbooks status for non-admin users', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 2,
+      name: 'Timesheet User',
+      email: 'timesheet@example.com',
+      is_admin: false,
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /preferences/i })).toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: /administrat/i })).not.toBeInTheDocument()
+    })
+
+    expect(fetchQuickBooksStatus).not.toHaveBeenCalled()
+    expect(screen.queryByText(/administrator access required/i)).not.toBeInTheDocument()
+  })
+
+  it('shows a password change error when the api rejects the current password', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(changePassword).mockRejectedValue(
+      new ApiError(422, 'The password is incorrect.', 'validation_error'),
+    )
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/^current password$/i), VALID_TEST_PASSWORD)
+    await user.type(screen.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.type(screen.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.click(screen.getByRole('button', { name: /update password/i }))
+
+    await waitFor(() => {
+      expect(changePassword).toHaveBeenCalled()
+      expect(screen.getByText(/password is incorrect/i)).toBeInTheDocument()
     })
   })
 })

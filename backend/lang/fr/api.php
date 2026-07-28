@@ -19,6 +19,7 @@ return [
     'time_activity_not_found' => 'Activité de temps introuvable',
     'password_reset_sent' => 'Si ce courriel existe, un lien de réinitialisation a été envoyé.',
     'password_reset_success' => 'Mot de passe réinitialisé avec succès.',
+    'password_changed' => 'Mot de passe mis à jour avec succès.',
     'email_already_verified' => 'Le courriel est déjà vérifié.',
     'verification_link_sent' => 'Lien de vérification envoyé.',
     'time' => [

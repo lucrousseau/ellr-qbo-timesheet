@@ -90,6 +90,11 @@ function validTestPassword(): string
     return PasswordPolicy::validTestPassword();
 }
 
+function validTestPasswordAlt(): string
+{
+    return PasswordPolicy::validTestPasswordAlt();
+}
+
 /**
  * Writes JSON to a temp file for isolated password-policy tests.
  *

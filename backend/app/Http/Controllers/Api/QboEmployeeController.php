@@ -9,6 +9,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateQboEmployeeRequest;
 use App\Services\QboEmployeeService;
+use App\Support\UserApiResponse;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -36,6 +37,6 @@ class QboEmployeeController extends Controller
         $user = $request->user();
         $updated = $this->qboEmployee->updateMapping($user, $user, $request->validated());
 
-        return response()->json(['user' => $updated]);
+        return response()->json(['user' => UserApiResponse::resource($updated)]);
     }
 }

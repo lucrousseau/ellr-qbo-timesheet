@@ -65,10 +65,27 @@ class AuthSessionService
      */
     public function invalidateUserSessions(User $user): void
     {
+        $this->invalidateOtherUserSessions($user);
+    }
+
+    /**
+     * Revokes API tokens and database sessions except an optional active session id.
+     *
+     * @param  User  $user  Account whose sessions should be invalidated.
+     * @param  string|null  $exceptSessionId  Session id to keep (current browser session).
+     * @return void
+     */
+    public function invalidateOtherUserSessions(User $user, ?string $exceptSessionId = null): void
+    {
         if (config('session.driver') === 'database') {
-            DB::table(config('session.table', 'sessions'))
-                ->where('user_id', $user->id)
-                ->delete();
+            $query = DB::table(config('session.table', 'sessions'))
+                ->where('user_id', $user->id);
+
+            if ($exceptSessionId !== null) {
+                $query->where('id', '!=', $exceptSessionId);
+            }
+
+            $query->delete();
         }
 
         $user->tokens()->delete();
