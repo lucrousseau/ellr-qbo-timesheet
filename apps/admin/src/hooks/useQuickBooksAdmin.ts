@@ -14,7 +14,7 @@ import {
   type QuickBooksStatus,
   type User,
 } from '@ellr/api-client'
-import { useAuth, useFlashMessage } from '@ellr/ui'
+import { useAuth, useFlashMessage, usePasswordRecovery } from '@ellr/ui'
 
 /**
  * QuickBooks admin screen: session auth, OAuth callback, connect/disconnect, employee mapping.
@@ -61,6 +61,8 @@ export function useQuickBooksAdmin() {
     onUserLoaded: loadQuickBooksStatus,
     bootstrapErrorFallback: 'Unable to load the application.',
   })
+
+  const recovery = usePasswordRecovery({ client: 'admin' })
 
   useEffect(() => {
     const { result, reason } = parseQuickBooksOAuthCallback(window.location.search)
@@ -150,5 +152,6 @@ export function useQuickBooksAdmin() {
     connectQuickBooksFlow,
     disconnectQuickBooksFlow,
     saveQboEmployee,
+    ...recovery,
   }
 }

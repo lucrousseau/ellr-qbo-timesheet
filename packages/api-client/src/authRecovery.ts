@@ -1,5 +1,5 @@
 /**
- * @file Email verification and password reset URL helpers for the timesheet UI.
+ * @file Email verification and password reset URL helpers for admin and timesheet UIs.
  */
 
 /**

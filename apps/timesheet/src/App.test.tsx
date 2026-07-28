@@ -444,7 +444,7 @@ describe('Timesheet App', () => {
     await user.click(screen.getByRole('button', { name: /send reset link/i }))
 
     await waitFor(() => {
-      expect(requestPasswordReset).toHaveBeenCalledWith('user@example.com')
+      expect(requestPasswordReset).toHaveBeenCalledWith('user@example.com', { client: 'timesheet' })
       expect(screen.getByText(/reset link has been sent/i)).toBeInTheDocument()
     })
   })

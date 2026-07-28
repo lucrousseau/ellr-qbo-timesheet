@@ -945,6 +945,29 @@ describe('auth helpers', () => {
     )
   })
 
+  it('requests a password reset link for a specific client', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 204,
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(requestPasswordReset('user@example.com', { client: 'admin' })).resolves.toBeUndefined()
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/forgot-password',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'user@example.com', client: 'admin' }),
+      }),
+    )
+  })
+
   it('resets the password from an email link', async () => {
     mockCsrfCookie()
     const fetchMock = vi

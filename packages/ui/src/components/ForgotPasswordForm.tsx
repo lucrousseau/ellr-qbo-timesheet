@@ -3,9 +3,12 @@
  */
 
 import type { FormEvent } from 'react'
-import { Alert, cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '@ellr/ui'
+import { Alert } from './Alert'
+import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 
 type ForgotPasswordFormProps = {
+  title: string
+  subtitle?: string
   email: string
   submitting: boolean
   error: string | null
@@ -21,6 +24,8 @@ type ForgotPasswordFormProps = {
  * @returns Forgot-password page content.
  */
 export function ForgotPasswordForm({
+  title,
+  subtitle = 'Reset your password',
   email,
   submitting,
   error,
@@ -32,8 +37,8 @@ export function ForgotPasswordForm({
   return (
     <main className={pageMainClass}>
       <header className="mb-8">
-        <h1 className={pageTitleClass}>Timesheet</h1>
-        <p className="mt-2 text-slate-600">Reset your password</p>
+        <h1 className={pageTitleClass}>{title}</h1>
+        <p className="mt-2 text-slate-600">{subtitle}</p>
       </header>
       <section className={cardClass}>
         <h2 className="text-xl font-medium text-slate-900">Forgot password</h2>

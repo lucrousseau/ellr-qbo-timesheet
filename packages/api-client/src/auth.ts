@@ -102,12 +102,19 @@ export async function updateUserQboEmployee(
 /**
  * Sends a password reset link to the given email address.
  * @param email Account email address.
+ * @param options Optional client hint so the email deep link opens the right app.
  * @returns Promise resolved after the API accepts the request.
  */
-export async function requestPasswordReset(email: string): Promise<void> {
+export async function requestPasswordReset(
+  email: string,
+  options?: { client?: 'admin' | 'timesheet' },
+): Promise<void> {
   await apiFetch('/forgot-password', {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({
+      email,
+      ...(options?.client ? { client: options.client } : {}),
+    }),
   })
 }
 

@@ -11,6 +11,7 @@ use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Models\User;
 use App\Services\AuthSessionService;
+use App\Services\PasswordResetLinkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -21,12 +22,14 @@ use Illuminate\Support\Str;
 class PasswordResetController extends Controller
 {
     /**
-     * Injects the auth session helper.
+     * Injects password reset helpers.
      *
      * @param  AuthSessionService  $authSession  Session invalidation after password reset.
+     * @param  PasswordResetLinkService  $resetLinks  Reset link delivery.
      */
     public function __construct(
         private readonly AuthSessionService $authSession,
+        private readonly PasswordResetLinkService $resetLinks,
     ) {}
 
     /**
@@ -37,7 +40,12 @@ class PasswordResetController extends Controller
      */
     public function forgot(ForgotPasswordRequest $request): JsonResponse
     {
-        Password::sendResetLink($request->validated());
+        $validated = $request->validated();
+
+        $this->resetLinks->send(
+            $validated['email'],
+            $validated['client'] ?? null,
+        );
 
         return response()->json(['message' => 'If that email exists, a reset link has been sent.']);
     }

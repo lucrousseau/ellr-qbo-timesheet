@@ -261,6 +261,7 @@ Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (CDN, nginx, etc.).
 - QuickBooks OAuth: administrators connect in the admin app; timesheet users reuse the latest administrator token when they have no token of their own
 - `REQUIRE_EMAIL_VERIFICATION=true`: block sign-in and protected routes until the user confirms email
 - Password reset: `POST /api/forgot-password` and `POST /api/reset-password` (configure SMTP or another mail driver)
+  - Optional `client` on forgot-password: `admin` or `timesheet` (deep link targets `FRONTEND_ADMIN_URL` or `FRONTEND_TIMESHEET_URL`)
 - Promote at least one administrator (`users.is_admin = 1`) before connecting QuickBooks
 
 ### Rotating `APP_KEY`

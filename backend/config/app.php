@@ -86,6 +86,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend App URLs
+    |--------------------------------------------------------------------------
+    |
+    | Per-app base URLs for password reset deep links. The forgot-password API
+    | accepts an optional client field to target admin or timesheet.
+    |
+    */
+
+    'frontend_admin_url' => env('FRONTEND_ADMIN_URL', 'http://localhost:5173'),
+
+    'frontend_timesheet_url' => env('FRONTEND_TIMESHEET_URL', 'http://localhost:5174'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

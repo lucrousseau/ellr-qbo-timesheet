@@ -14,6 +14,25 @@ Feature: Authentication
     When I request "GET" "/api/user"
     Then the response status should be 401
 
+  Scenario: Forgot password returns a generic success response
+    Given I use the stateful SPA client
+    When I fetch the sanctum csrf cookie
+    And I request "POST" "/api/forgot-password" with JSON:
+      """
+      {"email":"unknown@example.com"}
+      """
+    Then the response status should be 200
+
+  Scenario: Password reset rejects an invalid token
+    Given I use the stateful SPA client
+    And a verified user exists with email "jane@example.com" and password "password"
+    When I fetch the sanctum csrf cookie
+    And I request "POST" "/api/reset-password" with JSON:
+      """
+      {"token":"invalid-token","email":"jane@example.com","password":"new-password","password_confirmation":"new-password"}
+      """
+    Then the response status should be 422
+
   Scenario: Stateful login succeeds after csrf priming
     Given I use the stateful SPA client
     And a verified user exists with email "jane@example.com" and password "password"

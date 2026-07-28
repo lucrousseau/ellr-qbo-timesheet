@@ -7,6 +7,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Form request rules for POST /api/forgot-password payloads.
@@ -32,6 +33,7 @@ class ForgotPasswordRequest extends FormRequest
     {
         return [
             'email' => ['required', 'string', 'email', 'max:255'],
+            'client' => ['sometimes', 'string', Rule::in(['admin', 'timesheet'])],
         ];
     }
 }

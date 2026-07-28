@@ -10,10 +10,25 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 
 /**
- * Sends a password reset link that opens the timesheet frontend reset screen.
+ * Sends a password reset link that opens a frontend reset screen.
  */
 class ResetPasswordNotification extends ResetPassword
 {
+    /**
+     * Optional frontend base URL override for the reset deep link.
+     */
+    public ?string $frontendUrl = null;
+
+    /**
+     * @param  string  $token  Password reset token.
+     * @param  string|null  $frontendUrl  Optional frontend base URL override.
+     */
+    public function __construct(string $token, ?string $frontendUrl = null)
+    {
+        parent::__construct($token);
+        $this->frontendUrl = $frontendUrl;
+    }
+
     /**
      * Builds the frontend URL that collects the new password.
      *
@@ -22,7 +37,10 @@ class ResetPasswordNotification extends ResetPassword
      */
     protected function resetUrl($notifiable): string
     {
-        $frontendUrl = rtrim((string) config('app.frontend_auth_url'), '/');
+        $frontendUrl = rtrim(
+            (string) ($this->frontendUrl ?? config('app.frontend_auth_url')),
+            '/',
+        );
         $query = http_build_query([
             'token' => $this->token,
             'email' => $notifiable->getEmailForPasswordReset(),

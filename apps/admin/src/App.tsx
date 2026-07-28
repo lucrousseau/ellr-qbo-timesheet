@@ -2,7 +2,8 @@
  * @file Admin UI for QuickBooks OAuth connection and QBO employee mapping.
  */
 
-import { Alert, AppShell, LoadingScreen, LoginForm } from '@ellr/ui'
+import { AppShell, LoadingScreen } from '@ellr/ui'
+import { AdminGuestAuth } from './components/AdminGuestAuth'
 import { QuickBooksAdminPanel } from './components/QuickBooksAdminPanel'
 import { useQuickBooksAdmin } from './hooks/useQuickBooksAdmin'
 
@@ -11,76 +12,38 @@ import { useQuickBooksAdmin } from './hooks/useQuickBooksAdmin'
  * @returns Loading screen, sign-in, or admin dashboard depending on session.
  */
 function App() {
-  const {
-    user,
-    authLoading,
-    email,
-    setEmail,
-    password,
-    setPassword,
-    bootstrapError,
-    onLogin,
-    onLogout,
-    message,
-    status,
-    connecting,
-    disconnecting,
-    qboEmployeeRef,
-    setQboEmployeeRef,
-    qboEmployeeName,
-    setQboEmployeeName,
-    savingEmployee,
-    connectQuickBooksFlow,
-    disconnectQuickBooksFlow,
-    saveQboEmployee,
-  } = useQuickBooksAdmin()
+  const admin = useQuickBooksAdmin()
 
-  if (authLoading) {
+  if (admin.authLoading) {
     return <LoadingScreen />
   }
 
-  if (!user) {
-    return (
-      <LoginForm
-        title="Ellr QBO Timesheet"
-        subtitle="Administration"
-        email={email}
-        password={password}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onSubmit={onLogin}
-        error={bootstrapError}
-        footer={
-          message ? (
-            <Alert variant={message.type}>{message.text}</Alert>
-          ) : undefined
-        }
-      />
-    )
+  if (!admin.user) {
+    return <AdminGuestAuth admin={admin} message={admin.message} />
   }
 
   return (
     <AppShell
       title="Ellr QBO Timesheet"
       subtitle="Administration"
-      userEmail={user.email}
-      onLogout={onLogout}
+      userEmail={admin.user.email}
+      onLogout={admin.onLogout}
     >
       <QuickBooksAdminPanel
-        userEmail={user.email}
-        bootstrapError={bootstrapError}
-        message={message}
-        status={status}
-        connecting={connecting}
-        disconnecting={disconnecting}
-        qboEmployeeRef={qboEmployeeRef}
-        qboEmployeeName={qboEmployeeName}
-        savingEmployee={savingEmployee}
-        onQboEmployeeRefChange={setQboEmployeeRef}
-        onQboEmployeeNameChange={setQboEmployeeName}
-        onSaveEmployee={saveQboEmployee}
-        onConnect={connectQuickBooksFlow}
-        onDisconnect={disconnectQuickBooksFlow}
+        userEmail={admin.user.email}
+        bootstrapError={admin.bootstrapError}
+        message={admin.message}
+        status={admin.status}
+        connecting={admin.connecting}
+        disconnecting={admin.disconnecting}
+        qboEmployeeRef={admin.qboEmployeeRef}
+        qboEmployeeName={admin.qboEmployeeName}
+        savingEmployee={admin.savingEmployee}
+        onQboEmployeeRefChange={admin.setQboEmployeeRef}
+        onQboEmployeeNameChange={admin.setQboEmployeeName}
+        onSaveEmployee={admin.saveQboEmployee}
+        onConnect={admin.connectQuickBooksFlow}
+        onDisconnect={admin.disconnectQuickBooksFlow}
       />
     </AppShell>
   )

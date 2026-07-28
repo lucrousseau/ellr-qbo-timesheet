@@ -2,10 +2,8 @@
  * @file Sign-in, forgot password, and reset password screens for guests.
  */
 
-import { Alert, LoginForm } from '@ellr/ui'
+import { Alert, ForgotPasswordForm, LoginForm, ResetPasswordForm } from '@ellr/ui'
 import type { FlashMessage } from '@ellr/ui'
-import { ForgotPasswordForm } from './ForgotPasswordForm'
-import { ResetPasswordForm } from './ResetPasswordForm'
 import type { useTimesheetAuth } from '../hooks/useTimesheetAuth'
 
 type TimesheetGuestAuthProps = {
@@ -22,6 +20,7 @@ export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
   if (auth.authScreen === 'forgot-password') {
     return (
       <ForgotPasswordForm
+        title="Timesheet"
         email={auth.forgotEmail}
         submitting={auth.forgotSubmitting}
         error={auth.forgotError}
@@ -36,6 +35,7 @@ export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
   if (auth.authScreen === 'reset-password') {
     return (
       <ResetPasswordForm
+        title="Timesheet"
         email={auth.resetParams.email ?? ''}
         password={auth.resetPasswordValue}
         passwordConfirmation={auth.resetPasswordConfirmation}

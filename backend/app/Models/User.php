@@ -8,6 +8,7 @@ namespace App\Models;
 
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
+use App\Services\PasswordResetLinkService;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -73,13 +74,18 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Sends the custom password reset notification.
+     * Sends the custom password reset notification (default frontend auth URL).
+     *
+     * Forgot-password API requests use {@see PasswordResetLinkService} for per-app deep links.
      *
      * @param  string  $token  Password reset token.
      * @return void
      */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new ResetPasswordNotification($token));
+        $this->notify(new ResetPasswordNotification(
+            $token,
+            app(PasswordResetLinkService::class)->resolveFrontendUrl(null),
+        ));
     }
 }

@@ -3,9 +3,12 @@
  */
 
 import type { FormEvent } from 'react'
-import { Alert, cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '@ellr/ui'
+import { Alert } from './Alert'
+import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 
 type ResetPasswordFormProps = {
+  title: string
+  subtitle?: string
   email: string
   password: string
   passwordConfirmation: string
@@ -25,6 +28,8 @@ type ResetPasswordFormProps = {
  * @returns Reset-password page content.
  */
 export function ResetPasswordForm({
+  title,
+  subtitle = 'Choose a new password',
   email,
   password,
   passwordConfirmation,
@@ -40,8 +45,8 @@ export function ResetPasswordForm({
   return (
     <main className={pageMainClass}>
       <header className="mb-8">
-        <h1 className={pageTitleClass}>Timesheet</h1>
-        <p className="mt-2 text-slate-600">Choose a new password</p>
+        <h1 className={pageTitleClass}>{title}</h1>
+        <p className="mt-2 text-slate-600">{subtitle}</p>
       </header>
       <section className={cardClass}>
         <h2 className="text-xl font-medium text-slate-900">Reset password</h2>

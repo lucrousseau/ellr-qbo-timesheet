@@ -167,6 +167,55 @@ it('sends a password reset link', function () {
     Notification::assertSentTo($user, ResetPasswordNotification::class);
 });
 
+it('sends a password reset link to the admin app when requested', function () {
+    Notification::fake();
+
+    config([
+        'app.frontend_admin_url' => 'http://localhost:5173',
+        'app.frontend_timesheet_url' => 'http://localhost:5174',
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->postJson('/api/forgot-password', [
+        'email' => $user->email,
+        'client' => 'admin',
+    ], frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('message', 'If that email exists, a reset link has been sent.');
+
+    Notification::assertSentTo(
+        $user,
+        function (ResetPasswordNotification $notification): bool {
+            return $notification->frontendUrl === 'http://localhost:5173';
+        },
+    );
+});
+
+it('sends a password reset link to the timesheet app when requested', function () {
+    Notification::fake();
+
+    config([
+        'app.frontend_admin_url' => 'http://localhost:5173',
+        'app.frontend_timesheet_url' => 'http://localhost:5174',
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->postJson('/api/forgot-password', [
+        'email' => $user->email,
+        'client' => 'timesheet',
+    ], frontendHeaders())
+        ->assertOk();
+
+    Notification::assertSentTo(
+        $user,
+        function (ResetPasswordNotification $notification): bool {
+            return $notification->frontendUrl === 'http://localhost:5174';
+        },
+    );
+});
+
 it('returns the same forgot-password response for unknown emails', function () {
     Notification::fake();
 
@@ -247,6 +296,13 @@ it('validates forgot-password payload', function () {
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
+
+    $this->postJson('/api/forgot-password', [
+        'email' => 'user@example.com',
+        'client' => 'invalid',
+    ], frontendHeaders())
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['client']);
 });
 
 it('validates reset-password payload', function () {

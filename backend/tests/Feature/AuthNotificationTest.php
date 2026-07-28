@@ -51,6 +51,13 @@ it('builds a password reset email pointing to the timesheet app', function () {
         ->and($message->actionUrl)->toBe('http://localhost:5174/reset-password?token=reset-token&email='.urlencode($user->email));
 });
 
+it('builds a password reset email pointing to the admin app', function () {
+    $user = User::factory()->create();
+    $message = (new ResetPasswordNotification('reset-token', 'http://localhost:5173'))->toMail($user);
+
+    expect($message->actionUrl)->toBe('http://localhost:5173/reset-password?token=reset-token&email='.urlencode($user->email));
+});
+
 it('sends custom password reset notifications from the user model', function () {
     Notification::fake();
 

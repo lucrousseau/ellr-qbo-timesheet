@@ -1,15 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { fillLoginForm, buildApiClientMock } from '@ellr/test-utils'
-import {
-  connectQuickBooks,
-  disconnectQuickBooks,
-  fetchCurrentUser,
-  fetchQuickBooksStatus,
-  login,
-  logout,
-  updateQboEmployee,
-} from '@ellr/api-client'
+import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
+import { ApiError, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -19,6 +11,8 @@ vi.mock('@ellr/api-client', async () =>
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
     updateQboEmployee: vi.fn(),
+    requestPasswordReset: vi.fn(),
+    resetPassword: vi.fn(),
   }),
 )
 
@@ -33,6 +27,8 @@ describe('Admin App', () => {
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(updateQboEmployee).mockReset()
+    vi.mocked(requestPasswordReset).mockReset()
+    vi.mocked(resetPassword).mockReset()
     vi.mocked(logout).mockResolvedValue(undefined)
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -609,6 +605,184 @@ describe('Admin App', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks disconnected/i)).toBeInTheDocument()
+    })
+  })
+
+  it('opens the forgot password screen', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+
+    expect(screen.getByRole('heading', { name: /forgot password/i })).toBeInTheDocument()
+  })
+
+  it('requests a password reset link for the admin app', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+    vi.mocked(requestPasswordReset).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+    await user.type(screen.getByLabelText(/email/i), 'admin@example.com')
+    await user.click(screen.getByRole('button', { name: /send reset link/i }))
+
+    await waitFor(() => {
+      expect(requestPasswordReset).toHaveBeenCalledWith('admin@example.com', { client: 'admin' })
+      expect(screen.getByText(/reset link has been sent/i)).toBeInTheDocument()
+    })
+  })
+
+  it('renders the reset password screen from the email link', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        pathname: '/reset-password',
+        search: '?token=abc&email=admin%40example.com',
+        href: '',
+        replaceState: vi.fn(),
+      },
+    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument()
+    })
+  })
+
+  it('shows an error when the reset link is incomplete', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        pathname: '/reset-password',
+        search: '',
+        href: '',
+        replaceState: vi.fn(),
+      },
+    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/reset link is invalid or incomplete/i)).toBeInTheDocument()
+    })
+  })
+
+  it('updates the password from the reset screen', async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        pathname: '/reset-password',
+        search: '?token=abc&email=admin%40example.com',
+        href: '',
+        replaceState: vi.fn(),
+      },
+    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+    vi.mocked(resetPassword).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/^new password$/i), 'new-password')
+    await user.type(screen.getByLabelText(/confirm password/i), 'new-password')
+    await user.click(screen.getByRole('button', { name: /update password/i }))
+
+    await waitFor(() => {
+      expect(resetPassword).toHaveBeenCalledWith({
+        token: 'abc',
+        email: 'admin@example.com',
+        password: 'new-password',
+        passwordConfirmation: 'new-password',
+      })
+      expect(screen.getByText(/password updated/i)).toBeInTheDocument()
+    })
+  })
+
+  it('shows reset password errors from the api', async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        pathname: '/reset-password',
+        search: '?token=abc&email=admin%40example.com',
+        href: '',
+        replaceState: vi.fn(),
+      },
+    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+    vi.mocked(resetPassword).mockRejectedValue(new ApiError(422, 'This password token is invalid.'))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/^new password$/i), 'new-password')
+    await user.type(screen.getByLabelText(/confirm password/i), 'new-password')
+    await user.click(screen.getByRole('button', { name: /update password/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/password token is invalid/i)).toBeInTheDocument()
+    })
+  })
+
+  it('returns to sign in from forgot password', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+    await user.click(screen.getByRole('button', { name: /back to sign in/i }))
+
+    expect(screen.getByRole('heading', { name: /sign in$/i })).toBeInTheDocument()
+  })
+
+  it('shows forgot password errors from the api', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+    vi.mocked(requestPasswordReset).mockRejectedValue(new Error('network'))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /forgot password/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /forgot password/i }))
+    await user.type(screen.getByLabelText(/email/i), 'admin@example.com')
+    await user.click(screen.getByRole('button', { name: /send reset link/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/unable to send the reset link/i)).toBeInTheDocument()
     })
   })
 })
