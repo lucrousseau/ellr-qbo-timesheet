@@ -2,7 +2,28 @@
  * @file French UI message catalog.
  */
 
+import type { ApiErrorMessageKey } from '@ellr/api-client'
 import type { Messages } from './en'
+
+const frApiErrors = {
+  session_expired: 'Session expirée. Veuillez vous reconnecter.',
+  quickbooks_not_connected: 'QuickBooks n\'est pas connecté. Connectez-le depuis l\'application admin.',
+  quickbooks_expired: 'La connexion QuickBooks a expiré. Reconnectez-la depuis l\'application admin.',
+  registration_disabled: 'Inscription désactivée.',
+  qbo_employee_not_configured: 'Employé QuickBooks non configuré. Contactez un administrateur.',
+  admin_required: 'Accès administrateur requis.',
+  email_not_verified: 'Vérifiez votre adresse courriel avant de vous connecter.',
+  access_denied: 'Accès refusé.',
+  qbo_employee_invalid: 'Employé QuickBooks introuvable.',
+  qbo_employee_removed: 'Votre accès employé QuickBooks a été retiré. Contactez un administrateur.',
+  qbo_employee_email_missing: 'L\'employé QuickBooks n\'a pas d\'adresse courriel configurée.',
+  qbo_employee_email_conflict: 'Le courriel de l\'employé QuickBooks est déjà utilisé par un autre compte.',
+  qbo_insufficient_permissions:
+    'Permissions QuickBooks insuffisantes. Connectez-vous avec un compte administrateur de la compagnie.',
+  invalid_data: 'Données invalides ou erreur QuickBooks.',
+  quickbooks_busy: 'QuickBooks est occupé. Réessayez sous peu.',
+  network_unreachable: 'Impossible de joindre l\'API Laravel.',
+} satisfies Record<ApiErrorMessageKey, string>
 
 export const frMessages: Messages = {
   common: {
@@ -17,6 +38,9 @@ export const frMessages: Messages = {
     saving: 'Enregistrement...',
     administration: 'Administration',
     signedInAs: 'Connecté en tant que {{email}}',
+  },
+  api: {
+    errors: frApiErrors,
   },
   preferences: {
     title: 'Préférences',
@@ -82,7 +106,6 @@ export const frMessages: Messages = {
     bootstrapFailed: 'Impossible de charger l\'application.',
     oauthDenied: 'Connexion QuickBooks refusée ou expirée.',
     oauthMissingParams: 'Paramètres OAuth manquants.',
-    oauthInsufficientPermissions: 'Permissions QuickBooks insuffisantes. Connectez-vous avec un compte administrateur de la compagnie.',
     oauthRealmConflict: 'Une autre compagnie QuickBooks est déjà connectée.',
     oauthFailed: 'Impossible de connecter QuickBooks.',
   },

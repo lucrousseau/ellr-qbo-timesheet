@@ -7,25 +7,24 @@ import {
   connectQuickBooks,
   disconnectQuickBooks,
   fetchQuickBooksStatus,
-  getApiErrorMessage,
   normalizeUserLocale,
   parseQuickBooksOAuthCallback,
   type QuickBooksStatus,
   type User,
 } from '@ellr/api-client'
-import { useAuth, useFlashMessage, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
+import { getApiErrorMessage, useAuth, useFlashMessage, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
 
 /**
- * Maps a QuickBooks OAuth callback reason to a localized admin message key.
+ * Maps a QuickBooks OAuth callback reason to a localized message catalog key.
  * @param reason OAuth error reason from the callback query string.
- * @returns Message catalog key under `admin.*`.
+ * @returns Message catalog key for `t()`.
  */
 function quickBooksOAuthMessageKey(
   reason?: string | null,
 ):
   | 'admin.oauthDenied'
   | 'admin.oauthMissingParams'
-  | 'admin.oauthInsufficientPermissions'
+  | 'api.errors.qbo_insufficient_permissions'
   | 'admin.oauthRealmConflict'
   | 'admin.oauthFailed' {
   if (reason === 'oauth') {
@@ -37,7 +36,7 @@ function quickBooksOAuthMessageKey(
   }
 
   if (reason === 'insufficient_permissions') {
-    return 'admin.oauthInsufficientPermissions'
+    return 'api.errors.qbo_insufficient_permissions'
   }
 
   if (reason === 'realm_conflict') {

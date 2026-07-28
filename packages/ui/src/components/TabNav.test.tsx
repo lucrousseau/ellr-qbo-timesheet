@@ -57,4 +57,38 @@ describe('TabNav', () => {
 
     expect(onChange).toHaveBeenCalledWith('administrator')
   })
+
+  it('selects tabs with ArrowLeft, Home, End, and click', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+
+    render(
+      <TabNav
+        items={[
+          { id: 'preferences', label: 'Preferences' },
+          { id: 'administrator', label: 'Administrator' },
+        ]}
+        activeId="administrator"
+        onChange={onChange}
+        ariaLabel="Admin sections"
+      />,
+    )
+
+    const navigation = screen.getByRole('navigation', { name: 'Admin sections' })
+    const administratorTab = within(navigation).getByRole('tab', { name: 'Administrator' })
+    administratorTab.focus()
+    await user.keyboard('{ArrowLeft}')
+    expect(onChange).toHaveBeenCalledWith('preferences')
+
+    administratorTab.focus()
+    await user.keyboard('{Home}')
+    expect(onChange).toHaveBeenCalledWith('preferences')
+
+    administratorTab.focus()
+    await user.keyboard('{End}')
+    expect(onChange).toHaveBeenCalledWith('administrator')
+
+    await user.click(within(navigation).getByRole('tab', { name: 'Preferences' }))
+    expect(onChange).toHaveBeenCalledWith('preferences')
+  })
 })

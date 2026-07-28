@@ -17,7 +17,6 @@ vi.mock('@ellr/api-client', async (importOriginal) => {
   return {
     ...actual,
     changePassword: vi.fn(),
-    getApiErrorMessage: vi.fn((_error: unknown, fallback: string) => fallback),
   }
 })
 

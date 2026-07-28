@@ -7,8 +7,8 @@ Repository scan (July 2026). Goal: one source of truth per responsibility, reusa
 ## Current map
 
 ```
-packages/api-client/     ✅ HTTP, auth, quickbooks, timesheet, EN errors
-packages/ui/             ✅ useAuth, LoginForm, Alert, AppShell, tokens
+packages/api-client/     ✅ HTTP, auth, quickbooks, timesheet, error resolution keys
+packages/ui/             ✅ useAuth, LoginForm, Alert, AppShell, tokens, API error i18n
 packages/test-utils/     ✅ buildApiClientMock, fillLoginForm, fixtures
 packages/vite-config/    ✅ Vite, Vitest, Stryker, oxlint, main, CSS, test setup
 apps/admin/              ✅ hooks/ + components/ + thin App.tsx (~88 lines)
@@ -46,7 +46,7 @@ backend/Controllers/     ✅ One domain per controller (Auth, QboEmployee, Quick
 | Item | Note |
 |------|------|
 | `timesheet.ts` only exposes `createTimeActivity` | API list/update/delete CRUD has no TS client until a screen consumes them |
-| UI tests in `@ellr/ui` | Package has no dedicated component tests (`--passWithNoTests`) |
+| `@ellr/ui` tests | Hook and i18n tests with monorepo coverage thresholds (85/75) |
 
 ### Backend: resolved
 

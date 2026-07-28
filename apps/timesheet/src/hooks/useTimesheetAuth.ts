@@ -6,13 +6,12 @@ import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import {
   fetchAppConfig,
-  getApiErrorMessage,
   parseEmailVerificationCallback,
   resendVerificationEmail,
   shouldBlockUnverifiedUser,
   type User,
 } from '@ellr/api-client'
-import { useAuth, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
+import { getApiErrorMessage, useAuth, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
 
 /**
  * Timesheet authentication state including password recovery screens.

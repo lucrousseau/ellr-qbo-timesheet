@@ -7,12 +7,12 @@ import { useState } from 'react'
 import {
   ApiError,
   changePassword,
-  getApiErrorMessage,
 } from '@ellr/api-client'
 import {
   loadPasswordPolicy,
   validatePasswordWithConfirmation,
 } from '@ellr/password-policy'
+import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { translatePasswordPolicyErrors, translateApiPasswordValidationMessage } from '../i18n/passwordPolicyMessages'
 

@@ -14,7 +14,8 @@ alwaysApply: false
 
 ## API
 
-- Import from `@ellr/api-client`: `apiFetch`, `getApiErrorMessage`, `login`, `logout`, `fetchCurrentUser`, `updateQboEmployee`, `ApiError`.
+- Import from `@ellr/api-client`: `apiFetch`, `login`, `logout`, `fetchCurrentUser`, `updateQboEmployee`, `ApiError`.
+- Import from `@ellr/ui`: `getApiErrorMessage`, shared hooks and components.
 - Do not duplicate an HTTP client in `apps/*/src/lib/` (DRY: single network layer).
 - `credentials: 'include'` and CSRF: handled by `apiFetch`; do not reimplement in apps.
 - Variable: `VITE_API_URL` (default `http://localhost:8000/api`).

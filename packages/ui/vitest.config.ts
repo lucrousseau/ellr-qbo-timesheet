@@ -1,14 +1,9 @@
 /// <reference types="vitest/config" />
 
-import { defineConfig } from 'vitest/config'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createVitestConfig } from '@ellr/vite-config/vitest'
 
-export default defineConfig({
-  test: {
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      passWithNoTests: true,
-    },
-  },
-})
+const packageDir = path.dirname(fileURLToPath(import.meta.url))
+
+export default createVitestConfig({ packageDir })

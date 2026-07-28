@@ -2,10 +2,6 @@
  * @file Low-level HTTP helpers, CSRF cookies, and API error mapping.
  */
 
-import { passwordPolicyErrorCodeFromApiMessage } from '@ellr/password-policy'
-import { getLocalizedApiErrorMessage } from './errorMessages'
-import { normalizeUserLocale, type UserLocale } from './locale'
-
 /**
  * HTTP error returned by the Laravel API with an optional business code.
  */
@@ -185,89 +181,4 @@ function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
   }
 
   return headers
-}
-
-/**
- * Maps a network or API error to a user-facing localized message.
- * @param error Caught error (`ApiError`, `TypeError`, etc.).
- * @param fallback Default message when no known case matches.
- * @param locale Active user locale (defaults to English).
- * @returns Label safe to display in the UI.
- */
-export function getApiErrorMessage(
-  error: unknown,
-  fallback: string,
-  locale: UserLocale = 'en',
-): string {
-  const activeLocale = normalizeUserLocale(locale)
-
-  if (error instanceof ApiError) {
-    if (error.status === 401) {
-      if (error.code === 'invalid_credentials') {
-        return error.message
-      }
-      return getLocalizedApiErrorMessage(activeLocale, 'session_expired')
-    }
-    if (error.status === 419) {
-      return getLocalizedApiErrorMessage(activeLocale, 'session_expired')
-    }
-    if (error.status === 403) {
-      if (error.code === 'quickbooks_not_connected') {
-        return getLocalizedApiErrorMessage(activeLocale, 'quickbooks_not_connected')
-      }
-      if (error.code === 'quickbooks_expired') {
-        return getLocalizedApiErrorMessage(activeLocale, 'quickbooks_expired')
-      }
-      if (error.code === 'registration_disabled') {
-        return getLocalizedApiErrorMessage(activeLocale, 'registration_disabled')
-      }
-      if (error.code === 'qbo_employee_not_configured') {
-        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_not_configured')
-      }
-      if (error.code === 'admin_required') {
-        return getLocalizedApiErrorMessage(activeLocale, 'admin_required')
-      }
-      if (error.code === 'email_not_verified') {
-        return getLocalizedApiErrorMessage(activeLocale, 'email_not_verified')
-      }
-      if (error.code === 'qbo_employee_removed') {
-        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_removed')
-      }
-      if (error.code === 'qbo_employee_email_missing') {
-        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_missing')
-      }
-      if (error.code === 'qbo_employee_email_conflict') {
-        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_conflict')
-      }
-      return getLocalizedApiErrorMessage(activeLocale, 'access_denied')
-    }
-    if (error.status === 422) {
-      if (error.code === 'qbo_employee_invalid') {
-        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_invalid')
-      }
-      if (error.code === 'qbo_employee_email_missing') {
-        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_missing')
-      }
-      if (error.code === 'qbo_employee_email_conflict') {
-        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_conflict')
-      }
-      const passwordPolicyCode = passwordPolicyErrorCodeFromApiMessage(error.message)
-      if (passwordPolicyCode === 'password_uncompromised') {
-        return getLocalizedApiErrorMessage(activeLocale, 'password_uncompromised')
-      }
-      if (error.message && !error.message.startsWith('API error:')) {
-        return error.message
-      }
-      return getLocalizedApiErrorMessage(activeLocale, 'invalid_data')
-    }
-    if (error.status === 503) {
-      return getLocalizedApiErrorMessage(activeLocale, 'quickbooks_busy')
-    }
-  }
-
-  if (error instanceof TypeError) {
-    return getLocalizedApiErrorMessage(activeLocale, 'network_unreachable')
-  }
-
-  return fallback
 }

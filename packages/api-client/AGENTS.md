@@ -6,7 +6,8 @@ Shared TypeScript HTTP client for `apps/admin` and `apps/timesheet`. Single fron
 
 ```
 src/
-├── api.ts          # apiFetch, ApiError, getApiErrorMessage, ensureCsrfCookie
+├── api.ts                  # apiFetch, ApiError, ensureCsrfCookie
+├── apiErrorResolution.ts   # resolveApiError (status + code → stable keys)
 ├── auth.ts         # login, logout, fetchCurrentUser, updateQboEmployee, type User
 ├── quickbooks.ts   # fetchQuickBooksStatus, connect/disconnect, OAuth callback helpers
 ├── timesheet.ts    # createTimeActivity
@@ -34,7 +35,8 @@ npm run test:mutation --workspace=@ellr/api-client
 ## Conventions
 
 - `apiFetch`: `credentials: 'include'` by default (Sanctum stateful), CSRF on mutations.
-- `getApiErrorMessage`: user-facing messages in **English**, stable business codes (`quickbooks_not_connected`, `registration_disabled`, `qbo_employee_not_configured`, etc.): **single** source of truth for UI copy (DRY).
+- `resolveApiError`: maps HTTP status and API `error` codes to stable keys (no UI copy).
+- User-facing API error labels: `getApiErrorMessage` in `@ellr/ui` (`api.errors.*` catalogs).
 - `ApiError`: expose `status` and `code` for UI mapping.
 - No calls to Intuit/QBO: only `VITE_API_URL`.
 - **JSDoc** required on every public export; enforced by oxlint (`oxlint.base.json`).

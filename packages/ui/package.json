@@ -18,10 +18,11 @@
     "lint": "oxlint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage --passWithNoTests"
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@ellr/test-utils": "*",
+    "@ellr/vite-config": "*",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.17",

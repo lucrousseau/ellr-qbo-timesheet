@@ -5,13 +5,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   fetchCurrentUser,
-  getApiErrorMessage,
   login,
   logout,
   normalizeUserLocale,
   type User,
   type UserLocale,
 } from '@ellr/api-client'
+import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 
 type UseAuthOptions = {

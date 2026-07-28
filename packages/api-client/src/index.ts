@@ -9,9 +9,14 @@ export {
   type CreateTimesheetUserPayload,
   type QboEmployeeOption,
 } from './admin'
-export { ApiError, API_URL, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
+export { ApiError, API_URL, apiFetch, ensureCsrfCookie, resetCsrfStateForTests } from './api'
+export {
+  API_ERROR_MESSAGE_KEYS,
+  resolveApiError,
+  type ApiErrorMessageKey,
+  type ApiErrorResolution,
+} from './apiErrorResolution'
 export { fetchAppConfig, type AppConfig } from './appConfig'
-export { getLocalizedApiErrorMessage } from './errorMessages'
 export { normalizeUserLocale, SUPPORTED_LOCALES, type UserLocale } from './locale'
 export {
   changePassword,
@@ -40,7 +45,6 @@ export {
   disconnectQuickBooks,
   fetchQuickBooksStatus,
   parseQuickBooksOAuthCallback,
-  quickBooksOAuthErrorMessage,
   type QuickBooksConnectResponse,
   type QuickBooksStatus,
 } from './quickbooks'

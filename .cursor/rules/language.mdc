@@ -12,7 +12,7 @@ alwaysApply: true
 | Code comments (JSDoc, PHPDoc) | English |
 | User-facing UI (`apps/*`, `@ellr/ui`) | `en` (default) or `fr` via `LocaleProvider` / `useLocale` |
 | API business `error` codes | Stable English snake_case values (`registration_disabled`, etc.) |
-| API human `message` fields | English (debug); UI translates known codes via `getApiErrorMessage` |
+| API human `message` fields | English (debug); UI translates known codes via `getApiErrorMessage` in `@ellr/ui` |
 | Laravel validation (`422`) | Localized via `lang/{locale}` when user locale middleware is active |
 | All documentation (`*.md`, `*.mdc`, `README`, `AGENTS.md`, `.cursor/`) | English |
 | Cursor rules, PR/commit prose | English |
@@ -22,7 +22,7 @@ alwaysApply: true
 
 - **User preference**: `users.locale` (`en` | `fr`), default `en`, updated via `PATCH /api/user/locale`.
 - **Frontend**: `@ellr/ui` `LocaleProvider`, `useLocale`, message catalogs in `packages/ui/src/i18n/messages/`.
-- **API errors (business codes)**: translate in `getApiErrorMessage` (`@ellr/api-client`) using the active locale.
+- **API errors (business codes)**: resolve in `@ellr/api-client` (`resolveApiError`); translate via `getApiErrorMessage` in `@ellr/ui` (`api.errors.*` catalogs).
 - **Laravel framework strings**: `laravel-lang/lang` (`lang/fr/validation.php`, etc.).
 - **Custom API and mail copy**: `lang/{locale}/api.php` and `lang/{locale}/mail.php` via `__()`.
 - **Validation / emails**: `SetLocaleFromUser` middleware and `->locale()` on notifications.

@@ -4,9 +4,10 @@
 
 import type { FormEvent } from 'react'
 import { act } from '@testing-library/react'
+import { ApiError } from '@ellr/api-client'
+import { VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { requestPasswordReset, resetPassword } from '@ellr/api-client'
-import { VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { renderHookWithLocale } from '../test/renderWithLocale'
 import { usePasswordRecovery } from './usePasswordRecovery'
 
@@ -15,7 +16,6 @@ vi.mock('@ellr/api-client', async (importOriginal) => {
 
   return {
     ...actual,
-    getApiErrorMessage: vi.fn((_error: unknown, fallback: string) => fallback),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
   }
@@ -149,5 +149,72 @@ describe('usePasswordRecovery', () => {
 
     expect(resetPassword).not.toHaveBeenCalled()
     expect(result.current.resetError).toContain('at least')
+  })
+
+  it('maps forgot-password api failures to localized errors', async () => {
+    vi.mocked(requestPasswordReset).mockRejectedValue(new Error('network'))
+
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'admin' }))
+
+    act(() => {
+      result.current.setAuthScreen('forgot-password')
+      result.current.setForgotEmail('user@example.com')
+    })
+
+    await act(async () => {
+      await result.current.handleForgotPassword({
+        preventDefault: vi.fn(),
+      } as unknown as FormEvent)
+    })
+
+    expect(result.current.forgotError).toBe('Unable to send the reset link.')
+  })
+
+  it('returns to login and clears recovery state', () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {})
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        pathname: '/reset-password',
+        search: '?token=abc&email=user%40example.com',
+      },
+    })
+
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'admin' }))
+
+    act(() => {
+      result.current.goToLogin()
+    })
+
+    expect(result.current.authScreen).toBe('login')
+    expect(replaceState).toHaveBeenCalledWith({}, '', '/')
+    replaceState.mockRestore()
+  })
+
+  it('maps reset-password api failures to localized errors', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        pathname: '/reset-password',
+        search: '?token=abc&email=user%40example.com',
+        replaceState: vi.fn(),
+      },
+    })
+    vi.mocked(resetPassword).mockRejectedValue(new ApiError(422, 'API error: 422'))
+
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'admin' }))
+
+    act(() => {
+      result.current.setResetPasswordValue(VALID_TEST_PASSWORD_ALT)
+      result.current.setResetPasswordConfirmation(VALID_TEST_PASSWORD_ALT)
+    })
+
+    await act(async () => {
+      await result.current.handleResetPassword({
+        preventDefault: vi.fn(),
+      } as unknown as FormEvent)
+    })
+
+    expect(result.current.resetError).toBe('Invalid data or QuickBooks error.')
   })
 })

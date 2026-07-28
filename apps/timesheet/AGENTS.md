@@ -27,7 +27,7 @@ npm run build --workspace=timesheet
 - Time entry form via `POST /api/time-activities` (Sanctum auth required on the API).
 - API calls via `@ellr/api-client`, never direct fetch to QBO (DRY).
 - QBO employee: assigned on the account (admin), not entered in the form (business rule on the API).
-- Errors: `getApiErrorMessage` only; no duplicated messages.
+- Errors: `getApiErrorMessage` from `@ellr/ui` only; no duplicated messages.
 - **JSDoc** on the `App` component and every new export; see `.cursor/rules/jsdoc.mdc` and `.cursor/rules/language.mdc`.
 - Validation on the backend; the frontend sends fields documented in the API.
 - **File layout**: thin `App.tsx`, feature logic in `hooks/` when needed, presentational UI in `components/` (see `.cursor/rules/file-structure.mdc`).

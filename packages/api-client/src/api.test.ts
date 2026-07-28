@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
+import { ApiError, apiFetch, ensureCsrfCookie, resetCsrfStateForTests } from './api'
 
 /** Matches packages/password-policy/test-passwords.json alternate (tests only). */
 const VALID_TEST_PASSWORD_ALT = 'EllrNew!2026'
@@ -26,7 +26,6 @@ import {
   disconnectQuickBooks,
   fetchQuickBooksStatus,
   parseQuickBooksOAuthCallback,
-  quickBooksOAuthErrorMessage,
 } from './quickbooks'
 import { createTimeActivity, listTimeActivities } from './timesheet'
 import {
@@ -617,127 +616,6 @@ describe('apiFetch', () => {
   })
 })
 
-describe('getApiErrorMessage', () => {
-  it('maps unauthorized responses to a session message', () => {
-    expect(getApiErrorMessage(new ApiError(401, 'API error: 401'), 'fallback')).toBe(
-      'Session expired. Please sign in again.',
-    )
-  })
-
-  it('maps invalid login credentials to the server message', () => {
-    expect(
-      getApiErrorMessage(new ApiError(401, 'Invalid credentials.', 'invalid_credentials'), 'fallback'),
-    ).toBe('Invalid credentials.')
-    expect(
-      getApiErrorMessage(
-        new ApiError(401, 'Identifiants invalides.', 'invalid_credentials'),
-        'fallback',
-        'en',
-      ),
-    ).toBe('Identifiants invalides.')
-  })
-
-  it('maps csrf mismatch responses to a session message', () => {
-    expect(getApiErrorMessage(new ApiError(419, 'Page Expired'), 'fallback')).toBe(
-      'Session expired. Please sign in again.',
-    )
-  })
-
-  it('maps forbidden responses to an access message', () => {
-    expect(getApiErrorMessage(new ApiError(403, 'API error: 403'), 'fallback')).toBe(
-      'Access denied.',
-    )
-  })
-
-  it('maps quickbooks error codes on forbidden responses', () => {
-    expect(
-      getApiErrorMessage(new ApiError(403, 'API error: 403', 'quickbooks_not_connected'), 'fallback'),
-    ).toBe('QuickBooks is not connected. Connect it from the admin app.')
-
-    expect(
-      getApiErrorMessage(new ApiError(403, 'API error: 403', 'quickbooks_expired'), 'fallback'),
-    ).toBe('QuickBooks connection expired. Reconnect it from the admin app.')
-  })
-
-  it('maps registration disabled responses', () => {
-    expect(
-      getApiErrorMessage(new ApiError(403, 'API error: 403', 'registration_disabled'), 'fallback'),
-    ).toBe('Registration disabled.')
-  })
-
-  it('maps administrator required responses', () => {
-    expect(
-      getApiErrorMessage(new ApiError(403, 'API error: 403', 'admin_required'), 'fallback'),
-    ).toBe('Administrator access required.')
-  })
-
-  it('maps email not verified responses', () => {
-    expect(
-      getApiErrorMessage(new ApiError(403, 'API error: 403', 'email_not_verified'), 'fallback'),
-    ).toBe('Verify your email address before signing in.')
-  })
-
-  it('maps invalid qbo employee responses', () => {
-    expect(
-      getApiErrorMessage(new ApiError(422, 'API error: 422', 'qbo_employee_invalid'), 'fallback'),
-    ).toBe('QuickBooks employee not found.')
-  })
-
-  it('maps validation responses to a quickbooks message', () => {
-    expect(getApiErrorMessage(new ApiError(422, 'API error: 422'), 'fallback')).toBe(
-      'Invalid data or QuickBooks error.',
-    )
-    expect(getApiErrorMessage(new ApiError(422, 'This password does not match our records.'), 'fallback')).toBe(
-      'This password does not match our records.',
-    )
-  })
-
-  it('maps uncompromised password validation to a localized message', () => {
-    expect(
-      getApiErrorMessage(
-        new ApiError(
-          422,
-          'The given password has appeared in a data leak. Please choose a different password.',
-        ),
-        'fallback',
-      ),
-    ).toBe('Choose a password that has not appeared in a known data breach.')
-
-    expect(
-      getApiErrorMessage(
-        new ApiError(
-          422,
-          'La valeur du champ password est apparue dans une fuite de données. Veuillez choisir une valeur différente.',
-        ),
-        'fallback',
-        'fr',
-      ),
-    ).toBe('Choisissez un mot de passe qui ne figure pas dans une fuite de données connue.')
-  })
-
-  it('uses the fallback for unknown errors', () => {
-    expect(getApiErrorMessage(new Error('boom'), 'fallback')).toBe('fallback')
-  })
-
-  it('maps service unavailable responses to a retry message', () => {
-    expect(getApiErrorMessage(new ApiError(503, 'API error: 503'), 'fallback')).toBe(
-      'QuickBooks is busy. Please try again shortly.',
-    )
-  })
-
-  it('maps network failures to an api outage message', () => {
-    expect(getApiErrorMessage(new TypeError('failed to fetch'), 'fallback')).toBe(
-      'Unable to reach the Laravel API.',
-    )
-  })
-
-  it('uses the fallback for unmapped api error status codes', () => {
-    expect(getApiErrorMessage(new ApiError(500, 'API error: 500'), 'Sign-out failed.')).toBe(
-      'Sign-out failed.',
-    )
-  })
-})
-
 describe('auth helpers', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -788,18 +666,6 @@ describe('auth helpers', () => {
         }),
       }),
     )
-  })
-
-  it('maps qbo employee not configured responses', () => {
-    expect(
-      getApiErrorMessage(new ApiError(403, 'API error: 403', 'qbo_employee_not_configured'), 'fallback'),
-    ).toBe('QuickBooks employee not configured. Contact an administrator.')
-  })
-
-  it('maps business error codes to french copy when locale is fr', () => {
-    expect(
-      getApiErrorMessage(new ApiError(403, 'API error: 403', 'admin_required'), 'fallback', 'fr'),
-    ).toBe('Accès administrateur requis.')
   })
 
   it('updates the user locale preference', async () => {
@@ -1182,13 +1048,6 @@ describe('quickbooks api', () => {
       reason: 'oauth',
     })
     expect(parseQuickBooksOAuthCallback('')).toEqual({ result: null })
-  })
-
-  it('maps oauth error reasons to localized messages', () => {
-    expect(quickBooksOAuthErrorMessage('oauth')).toContain('denied')
-    expect(quickBooksOAuthErrorMessage('missing_params')).toContain('Missing')
-    expect(quickBooksOAuthErrorMessage('other')).toContain('Unable')
-    expect(quickBooksOAuthErrorMessage('oauth', 'fr')).toContain('refusée')
   })
 
   it('loads quickbooks status from the api', async () => {

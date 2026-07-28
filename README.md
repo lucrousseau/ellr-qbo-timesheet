@@ -453,7 +453,8 @@ backend/
 └── features/api/            # Gherkin scenarios (Behat)
 
 packages/api-client/src/
-├── api.ts                   # apiFetch, ApiError, getApiErrorMessage
+├── api.ts                   # apiFetch, ApiError, ensureCsrfCookie
+├── apiErrorResolution.ts    # resolveApiError (status + code → stable keys)
 ├── auth.ts                  # login, logout, fetchCurrentUser
 └── api.test.ts              # HTTP client tests
 

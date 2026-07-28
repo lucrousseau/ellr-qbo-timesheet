@@ -5,12 +5,12 @@
 import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import {
-  getApiErrorMessage,
   normalizeUserLocale,
   updateUserLocale,
   type User,
   type UserLocale,
 } from '@ellr/api-client'
+import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 
 type UseUserLocalePreferencesOptions = {

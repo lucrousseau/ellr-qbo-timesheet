@@ -13,10 +13,10 @@ Mandatory reference before any new feature, refactor, or code review.
 
 | Layer | Single source | Do not duplicate |
 |-------|---------------|------------------|
-| Frontend HTTP | `packages/api-client` (`apiFetch`, `auth.ts`, `getApiErrorMessage`) | `fetch` in `apps/*` |
+| Frontend HTTP | `packages/api-client` (`apiFetch`, `auth.ts`, `resolveApiError`) | `fetch` in `apps/*` |
 | Intuit / QBO | `backend/app/Services/QuickBooksService.php` | QBO SDK outside the service |
 | QBO rate limits | `.cursor/rules/quickbooks-api.mdc` (cache, `FindById`, manual refresh) | Uncached list endpoints, redundant SDK calls |
-| UI errors (EN) | `getApiErrorMessage()` + API `error` codes | Raw backend messages in apps |
+| UI errors (API codes) | `resolveApiError` (`@ellr/api-client`) + `getApiErrorMessage` (`@ellr/ui`) | Raw backend messages in apps |
 | Session auth | `apiFetch` (CSRF + cookies) | Per-app Sanctum logic |
 | Prod config | `.env.example` + README Production | Magic values in code |
 

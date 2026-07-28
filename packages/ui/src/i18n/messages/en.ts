@@ -2,6 +2,28 @@
  * @file English UI message catalog.
  */
 
+import type { ApiErrorMessageKey } from '@ellr/api-client'
+
+const enApiErrors = {
+  session_expired: 'Session expired. Please sign in again.',
+  quickbooks_not_connected: 'QuickBooks is not connected. Connect it from the admin app.',
+  quickbooks_expired: 'QuickBooks connection expired. Reconnect it from the admin app.',
+  registration_disabled: 'Registration disabled.',
+  qbo_employee_not_configured: 'QuickBooks employee not configured. Contact an administrator.',
+  admin_required: 'Administrator access required.',
+  email_not_verified: 'Verify your email address before signing in.',
+  access_denied: 'Access denied.',
+  qbo_employee_invalid: 'QuickBooks employee not found.',
+  qbo_employee_removed: 'Your QuickBooks employee access was removed. Contact an administrator.',
+  qbo_employee_email_missing: 'QuickBooks employee has no email address configured.',
+  qbo_employee_email_conflict: 'QuickBooks employee email is already used by another account.',
+  qbo_insufficient_permissions:
+    'QuickBooks permissions are insufficient. Connect with a company administrator account.',
+  invalid_data: 'Invalid data or QuickBooks error.',
+  quickbooks_busy: 'QuickBooks is busy. Please try again shortly.',
+  network_unreachable: 'Unable to reach the Laravel API.',
+} satisfies Record<ApiErrorMessageKey, string>
+
 export const enMessages = {
   common: {
     loading: 'Loading...',
@@ -15,6 +37,9 @@ export const enMessages = {
     saving: 'Saving...',
     administration: 'Administration',
     signedInAs: 'Signed in as {{email}}',
+  },
+  api: {
+    errors: enApiErrors,
   },
   preferences: {
     title: 'Preferences',
@@ -80,7 +105,6 @@ export const enMessages = {
     bootstrapFailed: 'Unable to load the application.',
     oauthDenied: 'QuickBooks connection denied or expired.',
     oauthMissingParams: 'Missing OAuth parameters.',
-    oauthInsufficientPermissions: 'QuickBooks permissions are insufficient. Connect with a company administrator account.',
     oauthRealmConflict: 'Another QuickBooks company is already connected.',
     oauthFailed: 'Unable to connect QuickBooks.',
   },

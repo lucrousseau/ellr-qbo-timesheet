@@ -6,7 +6,6 @@ import type { FormEvent } from 'react'
 import { useCallback, useState } from 'react'
 import {
   ApiError,
-  getApiErrorMessage,
   isResetPasswordRoute,
   parseResetPasswordParams,
   requestPasswordReset,
@@ -16,6 +15,7 @@ import {
   loadPasswordPolicy,
   validatePasswordWithConfirmation,
 } from '@ellr/password-policy'
+import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { translatePasswordPolicyErrors, translateApiPasswordValidationMessage } from '../i18n/passwordPolicyMessages'
 
