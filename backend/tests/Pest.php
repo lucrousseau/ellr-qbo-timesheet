@@ -108,3 +108,22 @@ function withPasswordPolicy(array $policy, callable $callback): void
         file_put_contents($path, $backup);
     }
 }
+
+/**
+ * Replaces backend/config/test-passwords.json for the duration of a test callback.
+ *
+ * @param  array<string, mixed>  $passwords
+ */
+function withTestPasswords(array $passwords, callable $callback): void
+{
+    $path = base_path('config/test-passwords.json');
+    $backup = (string) file_get_contents($path);
+
+    file_put_contents($path, json_encode($passwords, JSON_THROW_ON_ERROR));
+
+    try {
+        $callback();
+    } finally {
+        file_put_contents($path, $backup);
+    }
+}

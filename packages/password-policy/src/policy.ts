@@ -13,14 +13,3 @@ export function loadPasswordPolicy(): PasswordPolicy {
   return policyJson as PasswordPolicy
 }
 
-const policy = loadPasswordPolicy()
-
-/**
- * Strong password that satisfies the shared policy (tests and dev seeds).
- */
-export const VALID_TEST_PASSWORD = policy.testPasswords?.primary ?? 'EllrT3st!2026'
-
-/**
- * Alternate strong password for change-password scenarios in tests.
- */
-export const VALID_TEST_PASSWORD_ALT = policy.testPasswords?.alternate ?? 'EllrNew!2026'

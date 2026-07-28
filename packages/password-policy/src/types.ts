@@ -20,8 +20,4 @@ export type PasswordPolicy = {
   requireNumbers: boolean
   requireSymbols: boolean
   uncompromised: boolean
-  testPasswords?: {
-    primary: string
-    alternate: string
-  }
 }

@@ -123,7 +123,7 @@ On startup, Docker runs `php artisan db:seed` after migrations when `APP_ENV=loc
 
 `npm run docker:smoke` logs in with `DEV_SEED_ADMIN_EMAIL` and `DEV_SEED_ADMIN_PASSWORD` from `backend/.env` (override with `SMOKE_LOGIN_EMAIL` / `SMOKE_LOGIN_PASSWORD`). The health check also verifies that the shared password policy is loaded.
 
-For backend-only deploys, run `sh scripts/sync-password-policy.sh` so `backend/config/password-policy.json` stays aligned with `packages/password-policy/password-policy.json`.
+For backend-only deploys, run `sh scripts/sync-password-policy.sh` so `backend/config/password-policy.json` and `backend/config/test-passwords.json` stay aligned with `packages/password-policy/`.
 
 Frontends call the API through the Vite dev proxy (`VITE_API_URL=/api` in Docker) so Sanctum session cookies work on `localhost:5173` and `localhost:5174`. If you have an existing `apps/admin/.env` or `apps/timesheet/.env` with `VITE_API_URL=http://localhost:8000/api`, update it to `VITE_API_URL=/api` (see `apps/*/.env.example`). Optional port overrides: `API_PORT`, `ADMIN_PORT`, `TIMESHEET_PORT` in `docker/.env` (copy from `docker/.env.example`).
 

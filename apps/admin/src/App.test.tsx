@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
-import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/password-policy'
+import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { ApiError, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'

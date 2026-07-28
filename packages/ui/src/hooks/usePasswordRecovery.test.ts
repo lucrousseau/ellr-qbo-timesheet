@@ -6,7 +6,7 @@ import type { FormEvent } from 'react'
 import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { requestPasswordReset, resetPassword } from '@ellr/api-client'
-import { VALID_TEST_PASSWORD_ALT } from '@ellr/password-policy'
+import { VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { renderHookWithLocale } from '../test/renderWithLocale'
 import { usePasswordRecovery } from './usePasswordRecovery'
 

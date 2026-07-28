@@ -21,6 +21,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "devDependencies": {
+    "@ellr/test-utils": "*",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.17",
     "@vitest/coverage-v8": "^4.1.10",

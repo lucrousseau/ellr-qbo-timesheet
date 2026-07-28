@@ -2,7 +2,7 @@
  * @file Public exports for the shared password policy package.
  */
 
-export { loadPasswordPolicy, VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from './policy'
+export { loadPasswordPolicy } from './policy'
 export {
   isPasswordUncompromisedValidationMessage,
   passwordPolicyErrorCodeFromApiMessage,

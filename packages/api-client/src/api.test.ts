@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { VALID_TEST_PASSWORD_ALT } from '@ellr/password-policy'
+import { VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
 import { fetchAppConfig } from './appConfig'
 import {

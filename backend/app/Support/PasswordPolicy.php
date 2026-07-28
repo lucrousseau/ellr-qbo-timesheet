@@ -21,7 +21,7 @@ class PasswordPolicy
      */
     public static function validTestPassword(): string
     {
-        $passwords = self::config()['testPasswords'] ?? [];
+        $passwords = self::testPasswordsConfig();
 
         return (string) ($passwords['primary'] ?? 'EllrT3st!2026');
     }
@@ -33,7 +33,7 @@ class PasswordPolicy
      */
     public static function validTestPasswordAlt(): string
     {
-        $passwords = self::config()['testPasswords'] ?? [];
+        $passwords = self::testPasswordsConfig();
 
         return (string) ($passwords['alternate'] ?? 'EllrNew!2026');
     }
@@ -47,8 +47,7 @@ class PasswordPolicy
      *     requireLowercase: bool,
      *     requireNumbers: bool,
      *     requireSymbols: bool,
-     *     uncompromised: bool,
-     *     testPasswords?: array{primary?: string, alternate?: string}
+     *     uncompromised: bool
      * }
      */
     public static function config(): array
@@ -69,10 +68,30 @@ class PasswordPolicy
             'requireNumbers' => (bool) ($decoded['requireNumbers'] ?? true),
             'requireSymbols' => (bool) ($decoded['requireSymbols'] ?? true),
             'uncompromised' => (bool) ($decoded['uncompromised'] ?? true),
-            'testPasswords' => is_array($decoded['testPasswords'] ?? null)
-                ? $decoded['testPasswords']
-                : [],
         ];
+    }
+
+    /**
+     * Returns test-only passwords from the dedicated JSON file.
+     *
+     * @return array{primary?: string, alternate?: string}
+     */
+    public static function testPasswordsConfig(): array
+    {
+        try {
+            $path = self::testPasswordsPath();
+        } catch (RuntimeException) {
+            return [];
+        }
+
+        /** @var array<string, mixed> $decoded */
+        $decoded = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        return $decoded;
     }
 
     /**
@@ -127,6 +146,31 @@ class PasswordPolicy
 
         throw new RuntimeException(
             'Password policy file not found. Run scripts/sync-password-policy.sh or mount packages/password-policy.',
+        );
+    }
+
+    /**
+     * Resolves the absolute path to test-passwords.json.
+     *
+     * @return string
+     */
+    public static function testPasswordsPath(): string
+    {
+        $candidates = [
+            base_path('config/test-passwords.json'),
+            base_path('../packages/password-policy/test-passwords.json'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            $resolved = realpath($candidate) ?: $candidate;
+
+            if (is_readable($resolved)) {
+                return $resolved;
+            }
+        }
+
+        throw new RuntimeException(
+            'Test passwords file not found. Run scripts/sync-password-policy.sh or mount packages/password-policy.',
         );
     }
 }

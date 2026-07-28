@@ -6,6 +6,7 @@ cd /var/www/html
 if [ -f /var/www/packages/password-policy/password-policy.json ]; then
   mkdir -p config
   cp /var/www/packages/password-policy/password-policy.json config/password-policy.json
+  cp /var/www/packages/password-policy/test-passwords.json config/test-passwords.json
 elif [ ! -f config/password-policy.json ]; then
   echo "Missing backend/config/password-policy.json. Run scripts/sync-password-policy.sh on the host."
   exit 1

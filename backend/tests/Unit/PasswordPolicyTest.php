@@ -15,9 +15,12 @@ it('loads the shared password policy configuration', function () {
         ->and($config['requireLowercase'])->toBeTrue()
         ->and($config['requireNumbers'])->toBeTrue()
         ->and($config['requireSymbols'])->toBeTrue()
-        ->and($config['uncompromised'])->toBeTrue()
-        ->and($config['testPasswords']['primary'])->toBe('EllrT3st!2026')
-        ->and($config['testPasswords']['alternate'])->toBe('EllrNew!2026');
+        ->and($config['uncompromised'])->toBeTrue();
+});
+
+it('resolves a readable test passwords path', function () {
+    expect(PasswordPolicy::testPasswordsPath())->toContain('test-passwords.json')
+        ->and(is_readable(PasswordPolicy::testPasswordsPath()))->toBeTrue();
 });
 
 it('resolves a readable password policy path', function () {
@@ -57,41 +60,58 @@ it('throws when no password policy file is available', function () {
     }
 });
 
-it('exposes test passwords from the shared json', function () {
+it('exposes test passwords from the dedicated json file', function () {
     expect(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026')
         ->and(PasswordPolicy::validTestPasswordAlt())->toBe('EllrNew!2026');
 });
 
-it('uses default test passwords when testPasswords is missing from json', function () {
-    withPasswordPolicy([
-        'minLength' => 12,
-        'requireUppercase' => true,
-        'requireLowercase' => true,
-        'requireNumbers' => true,
-        'requireSymbols' => true,
-        'uncompromised' => false,
-    ], function () {
+it('uses default test passwords when the test passwords file is missing keys', function () {
+    withTestPasswords([], function () {
         expect(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026')
             ->and(PasswordPolicy::validTestPasswordAlt())->toBe('EllrNew!2026');
     });
 });
 
 it('casts numeric test password values to strings', function () {
-    withPasswordPolicy([
-        'minLength' => 12,
-        'requireUppercase' => true,
-        'requireLowercase' => true,
-        'requireNumbers' => true,
-        'requireSymbols' => true,
-        'uncompromised' => false,
-        'testPasswords' => [
-            'primary' => 123456789,
-            'alternate' => 987654321,
-        ],
+    withTestPasswords([
+        'primary' => 123456789,
+        'alternate' => 987654321,
     ], function () {
         expect(PasswordPolicy::validTestPassword())->toBe('123456789')
             ->and(PasswordPolicy::validTestPasswordAlt())->toBe('987654321');
     });
+});
+
+it('falls back to the monorepo test passwords file when backend config is missing', function () {
+    $backendPath = base_path('config/test-passwords.json');
+    $backupPath = $backendPath.'.bak';
+
+    rename($backendPath, $backupPath);
+
+    try {
+        expect(PasswordPolicy::testPasswordsPath())->toContain('packages/password-policy')
+            ->and(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026');
+    } finally {
+        rename($backupPath, $backendPath);
+    }
+});
+
+it('throws when no test passwords file is available', function () {
+    $backendPath = base_path('config/test-passwords.json');
+    $packagePath = base_path('../packages/password-policy/test-passwords.json');
+    $backendBackup = $backendPath.'.bak';
+    $packageBackup = $packagePath.'.bak';
+
+    rename($backendPath, $backendBackup);
+    rename($packagePath, $packageBackup);
+
+    try {
+        expect(fn () => PasswordPolicy::testPasswordsPath())
+            ->toThrow(RuntimeException::class, 'Test passwords file not found');
+    } finally {
+        rename($backendBackup, $backendPath);
+        rename($packageBackup, $packagePath);
+    }
 });
 
 it('applies json defaults when policy keys are omitted', function () {
@@ -103,16 +123,21 @@ it('applies json defaults when policy keys are omitted', function () {
             ->and($config['requireLowercase'])->toBeTrue()
             ->and($config['requireNumbers'])->toBeTrue()
             ->and($config['requireSymbols'])->toBeTrue()
-            ->and($config['uncompromised'])->toBeTrue()
-            ->and($config['testPasswords'])->toBe([]);
+            ->and($config['uncompromised'])->toBeTrue();
     });
 });
 
-it('treats non-array testPasswords as empty', function () {
-    withPasswordPolicy(['testPasswords' => 'invalid'], function () {
-        expect(PasswordPolicy::config()['testPasswords'])->toBe([])
-            ->and(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026');
-    });
+it('returns defaults when test passwords json root is not an object', function () {
+    $path = base_path('config/test-passwords.json');
+    $backup = (string) file_get_contents($path);
+
+    file_put_contents($path, '"invalid"');
+
+    try {
+        expect(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026');
+    } finally {
+        file_put_contents($path, $backup);
+    }
 });
 
 it('accepts passwords that satisfy the shared policy', function () {

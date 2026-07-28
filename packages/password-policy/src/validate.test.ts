@@ -3,7 +3,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { VALID_TEST_PASSWORD, loadPasswordPolicy } from './policy'
+import testPasswords from '../test-passwords.json'
+import { loadPasswordPolicy } from './policy'
 import {
   getPasswordRequirementMessageKeys,
   passwordsMatch,
@@ -15,7 +16,7 @@ describe('validatePassword', () => {
   const policy = loadPasswordPolicy()
 
   it('accepts a password that meets every rule', () => {
-    expect(validatePassword(VALID_TEST_PASSWORD, policy)).toEqual([])
+    expect(validatePassword(testPasswords.primary, policy)).toEqual([])
   })
 
   it('rejects passwords that are too short', () => {
@@ -31,7 +32,7 @@ describe('validatePassword', () => {
 
   it('flags confirmation mismatches', () => {
     expect(
-      validatePasswordWithConfirmation(VALID_TEST_PASSWORD, 'Different!2026', policy),
+      validatePasswordWithConfirmation(testPasswords.primary, 'Different!2026', policy),
     ).toContain('password_confirmation_mismatch')
   })
 

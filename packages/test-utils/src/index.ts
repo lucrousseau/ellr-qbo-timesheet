@@ -4,8 +4,10 @@
 
 import { screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
-import { VALID_TEST_PASSWORD } from '@ellr/password-policy'
 import { expect, vi } from 'vitest'
+import { VALID_TEST_PASSWORD } from './testPasswords'
+
+export { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from './testPasswords'
 
 /** Authenticated user with a QBO employee for component tests. */
 export const authenticatedUser = {
