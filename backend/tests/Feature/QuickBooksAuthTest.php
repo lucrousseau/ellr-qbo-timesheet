@@ -146,8 +146,50 @@ it('reports quickbooks connection status for authenticated administrators', func
         ->assertJson([
             'connected' => true,
             'realm_id' => 'realm-42',
+            'access_token_expired' => false,
+            'refresh_token_expired' => false,
+            'needs_refresh' => false,
         ])
-        ->assertJsonStructure(['connected', 'realm_id', 'access_token_expires_at']);
+        ->assertJsonStructure([
+            'connected',
+            'realm_id',
+            'access_token_expires_at',
+            'access_token_expired',
+            'refresh_token_expired',
+            'needs_refresh',
+        ]);
+});
+
+it('reports refresh pending when the access token is expired', function () {
+    $user = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($user)->expired()->create(['realm_id' => 'realm-42']);
+
+    $this->getJson('/api/quickbooks/status')
+        ->assertOk()
+        ->assertJson([
+            'connected' => true,
+            'realm_id' => 'realm-42',
+            'access_token_expired' => true,
+            'refresh_token_expired' => false,
+            'needs_refresh' => true,
+        ]);
+});
+
+it('reports disconnected when the refresh token is expired', function () {
+    $user = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($user)->create([
+        'realm_id' => 'realm-42',
+        'refresh_token_expires_at' => now()->subMinute(),
+    ]);
+
+    $this->getJson('/api/quickbooks/status')
+        ->assertOk()
+        ->assertJson([
+            'connected' => false,
+            'realm_id' => 'realm-42',
+            'refresh_token_expired' => true,
+            'needs_refresh' => false,
+        ]);
 });
 
 it('rejects quickbooks status for non-administrators', function () {

@@ -106,4 +106,62 @@ class QuickBooksToken extends Model
 
         return $this->access_token_expires_at->isPast();
     }
+
+    /**
+     * Indicates whether the refresh token is expired based on the stored date.
+     *
+     * @return bool
+     */
+    public function isRefreshTokenExpired(): bool
+    {
+        if ($this->refresh_token_expires_at === null) {
+            return false;
+        }
+
+        return $this->refresh_token_expires_at->isPast();
+    }
+
+    /**
+     * Indicates whether the stored OAuth session can still be refreshed or used.
+     *
+     * @return bool
+     */
+    public function isConnectionUsable(): bool
+    {
+        return ! $this->isRefreshTokenExpired();
+    }
+
+    /**
+     * Indicates whether the access token is expired but refresh is still available.
+     *
+     * @return bool
+     */
+    public function needsAccessTokenRefresh(): bool
+    {
+        return $this->isAccessTokenExpired() && $this->isConnectionUsable();
+    }
+
+    /**
+     * Builds the QuickBooks connection status payload for the admin API.
+     *
+     * @return array{
+     *     connected: bool,
+     *     realm_id: string,
+     *     access_token_expires_at: Carbon|null,
+     *     access_token_expired: bool,
+     *     refresh_token_expired: bool,
+     *     needs_refresh: bool
+     * }
+     */
+    public function toConnectionStatus(): array
+    {
+        return [
+            'connected' => $this->isConnectionUsable(),
+            'realm_id' => $this->realm_id,
+            'access_token_expires_at' => $this->access_token_expires_at,
+            'access_token_expired' => $this->isAccessTokenExpired(),
+            'refresh_token_expired' => $this->isRefreshTokenExpired(),
+            'needs_refresh' => $this->needsAccessTokenRefresh(),
+        ];
+    }
 }

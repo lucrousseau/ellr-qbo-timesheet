@@ -7,6 +7,8 @@ import { Alert, cardClass, primaryButtonClass, secondaryButtonClass, useLocale, 
 type QuickBooksConnectionStatus = {
   connected: boolean
   realm_id?: string
+  refresh_token_expired?: boolean
+  needs_refresh?: boolean
 }
 
 type QuickBooksConnectionPanelProps = {
@@ -35,6 +37,26 @@ export function QuickBooksConnectionPanel({
 }: QuickBooksConnectionPanelProps) {
   const { t } = useLocale()
 
+  const statusLabel = (() => {
+    if (!status) {
+      return null
+    }
+
+    if (status.connected && status.needs_refresh) {
+      return t('admin.statusConnectedRefreshPending', { realmId: status.realm_id ?? '' })
+    }
+
+    if (status.connected) {
+      return t('admin.statusConnected', { realmId: status.realm_id ?? '' })
+    }
+
+    if (status.refresh_token_expired) {
+      return t('admin.statusExpired')
+    }
+
+    return t('admin.statusNotConnected')
+  })()
+
   return (
     <section className={cardClass}>
       <h2 className="text-xl font-medium text-slate-900">{t('admin.quickbooksTitle')}</h2>
@@ -52,14 +74,10 @@ export function QuickBooksConnectionPanel({
         </div>
       )}
 
-      {status && (
+      {statusLabel && (
         <p className="mt-4 text-sm text-slate-600">
           {t('admin.statusLabel')}{' '}
-          <span className="font-medium text-slate-900">
-            {status.connected
-              ? t('admin.statusConnected', { realmId: status.realm_id ?? '' })
-              : t('admin.statusNotConnected')}
-          </span>
+          <span className="font-medium text-slate-900">{statusLabel}</span>
         </p>
       )}
 

@@ -88,11 +88,11 @@ class QuickBooksAuthController extends Controller
     {
         $token = $request->user()->quickBooksToken;
 
-        return response()->json([
-            'connected' => $token !== null,
-            'realm_id' => $token?->realm_id,
-            'access_token_expires_at' => $token?->access_token_expires_at,
-        ]);
+        if ($token === null) {
+            return response()->json(['connected' => false]);
+        }
+
+        return response()->json($token->toConnectionStatus());
     }
 
     /**

@@ -12,6 +12,9 @@ export type QuickBooksStatus = {
   connected: boolean
   realm_id?: string
   access_token_expires_at?: string | null
+  access_token_expired?: boolean
+  refresh_token_expired?: boolean
+  needs_refresh?: boolean
 }
 
 /**

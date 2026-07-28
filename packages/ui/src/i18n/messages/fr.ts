@@ -68,6 +68,8 @@ export const frMessages: Messages = {
     redirecting: 'Redirection...',
     disconnecting: 'Déconnexion...',
     statusConnected: 'Connecté (realm {{realmId}})',
+    statusConnectedRefreshPending: 'Connecté (realm {{realmId}}, actualisation en attente)',
+    statusExpired: 'Connexion expirée. Reconnectez QuickBooks.',
     statusNotConnected: 'Non connecté',
     statusLabel: 'Statut :',
     connectedSuccess: 'QuickBooks connecté avec succès.',

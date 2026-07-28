@@ -11,6 +11,8 @@ use Mockery\MockInterface;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2AccessToken;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
 use QuickBooksOnline\API\DataService\DataService;
+use QuickBooksOnline\API\Exception\SdkException;
+use QuickBooksOnline\API\Exception\ServiceException;
 
 covers(QuickBooksService::class);
 
@@ -182,14 +184,13 @@ it('refreshes an expired quickbooks token', function () {
     $accessToken->shouldReceive('getRefreshTokenExpiresAt')->andReturn(now()->addDays(100));
 
     $oauthHelper = Mockery::mock(OAuth2LoginHelper::class);
-    $oauthHelper->shouldReceive('refreshToken')->once()->andReturn($accessToken);
-
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('getOAuth2LoginHelper')->once()->andReturn($oauthHelper);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
+    $oauthHelper->shouldReceive('refreshAccessTokenWithRefreshToken')
+        ->once()
+        ->with('old-refresh')
+        ->andReturn($accessToken);
 
     $service = Mockery::mock(QuickBooksService::class)->makePartial();
-    $service->shouldReceive('dataService')->once()->with(Mockery::on(fn ($arg) => $arg->is($token)))->andReturn($dataService);
+    $service->shouldReceive('oauthHelper')->once()->andReturn($oauthHelper);
 
     $refreshed = $service->refreshToken($token);
 
@@ -209,7 +210,7 @@ it('reloads the token from the database before checking expiry', function () {
     ]);
 
     $service = Mockery::mock(QuickBooksService::class)->makePartial();
-    $service->shouldNotReceive('dataService');
+    $service->shouldNotReceive('oauthHelper');
 
     $refreshed = $service->refreshToken($token);
 
@@ -221,7 +222,7 @@ it('returns a valid quickbooks token without calling the sdk', function () {
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
     $service = Mockery::mock(QuickBooksService::class)->makePartial();
-    $service->shouldNotReceive('dataService');
+    $service->shouldNotReceive('oauthHelper');
 
     $refreshed = $service->refreshToken($token);
 
@@ -242,14 +243,13 @@ it('persists refreshed token expiry timestamps', function () {
     $accessToken->shouldReceive('getRefreshTokenExpiresAt')->andReturn($refreshExpires);
 
     $oauthHelper = Mockery::mock(OAuth2LoginHelper::class);
-    $oauthHelper->shouldReceive('refreshToken')->once()->andReturn($accessToken);
-
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('getOAuth2LoginHelper')->once()->andReturn($oauthHelper);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
+    $oauthHelper->shouldReceive('refreshAccessTokenWithRefreshToken')
+        ->once()
+        ->with($token->refresh_token)
+        ->andReturn($accessToken);
 
     $service = Mockery::mock(QuickBooksService::class)->makePartial();
-    $service->shouldReceive('dataService')->once()->andReturn($dataService);
+    $service->shouldReceive('oauthHelper')->once()->andReturn($oauthHelper);
 
     $refreshed = $service->refreshToken($token);
 
@@ -306,42 +306,40 @@ it('builds an oauth helper with optional state', function () {
     expect($helper)->toBeInstanceOf(OAuth2LoginHelper::class);
 });
 
-it('throws when quickbooks token refresh returns null', function () {
+it('throws when quickbooks token refresh fails with intuit error', function () {
     $user = User::factory()->create();
     $token = QuickBooksToken::factory()->forUser($user)->expired()->create();
 
     $oauthHelper = Mockery::mock(OAuth2LoginHelper::class);
-    $oauthHelper->shouldReceive('refreshToken')->andReturn(null);
-
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('getOAuth2LoginHelper')->andReturn($oauthHelper);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
+    $oauthHelper->shouldReceive('refreshAccessTokenWithRefreshToken')
+        ->once()
+        ->with($token->refresh_token)
+        ->andThrow(new ServiceException('Refresh OAuth 2 Access token with Refresh Token failed. Body: [invalid_grant].', 400));
 
     $service = Mockery::mock(QuickBooksService::class)->makePartial();
-    $service->shouldReceive('dataService')->andReturn($dataService);
+    $service->shouldReceive('oauthHelper')->once()->andReturn($oauthHelper);
 
-    expect(fn () => $service->refreshToken($token))
-        ->toThrow(QuickBooksException::class, 'QuickBooks token refresh failed.');
+    try {
+        $service->refreshToken($token);
+        expect(false)->toBeTrue('Expected refresh failure');
+    } catch (QuickBooksException $exception) {
+        expect($exception->getMessage())->toBe('QuickBooks token refresh failed.')
+            ->and($exception->responseBody)->toBe('invalid_grant');
+    }
 });
 
 it('throws when quickbooks token refresh fails with sdk error', function () {
     $user = User::factory()->create();
     $token = QuickBooksToken::factory()->forUser($user)->expired()->create();
 
-    $accessToken = Mockery::mock(OAuth2AccessToken::class);
-
     $oauthHelper = Mockery::mock(OAuth2LoginHelper::class);
-    $oauthHelper->shouldReceive('refreshToken')->andReturn($accessToken);
-
-    $error = Mockery::mock();
-    $error->shouldReceive('getResponseBody')->andReturn('refresh failed');
-
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('getOAuth2LoginHelper')->andReturn($oauthHelper);
-    $dataService->shouldReceive('getLastError')->andReturn($error);
+    $oauthHelper->shouldReceive('refreshAccessTokenWithRefreshToken')
+        ->once()
+        ->with($token->refresh_token)
+        ->andThrow(new SdkException('SDK refresh failed.'));
 
     $service = Mockery::mock(QuickBooksService::class)->makePartial();
-    $service->shouldReceive('dataService')->andReturn($dataService);
+    $service->shouldReceive('oauthHelper')->once()->andReturn($oauthHelper);
 
     expect(fn () => $service->refreshToken($token))
         ->toThrow(QuickBooksException::class, 'QuickBooks token refresh failed.');

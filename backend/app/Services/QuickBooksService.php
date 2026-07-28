@@ -9,10 +9,13 @@ namespace App\Services;
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Support\QboOAuthRefreshError;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper;
 use QuickBooksOnline\API\DataService\DataService;
+use QuickBooksOnline\API\Exception\SdkException;
+use QuickBooksOnline\API\Exception\ServiceException;
 
 /**
  * Wraps the Intuit SDK for token refresh, queries, and entity mutations.
@@ -177,23 +180,13 @@ class QuickBooksService
                 return $token;
             }
 
-            $dataService = $this->dataService($token);
-            $oauthHelper = $dataService->getOAuth2LoginHelper();
-
-            if (! $oauthHelper instanceof OAuth2LoginHelper) {
-                throw new QuickBooksException('QuickBooks token refresh failed.');
-            }
-
-            $accessToken = $oauthHelper->refreshToken();
-
-            if ($accessToken === null) {
-                throw new QuickBooksException('QuickBooks token refresh failed.');
-            }
-
-            if ($error = $dataService->getLastError()) {
+            try {
+                $accessToken = $this->oauthHelper()
+                    ->refreshAccessTokenWithRefreshToken($token->refresh_token);
+            } catch (ServiceException|SdkException $exception) {
                 throw new QuickBooksException(
                     'QuickBooks token refresh failed.',
-                    $error->getResponseBody(),
+                    QboOAuthRefreshError::responseBody($exception),
                 );
             }
 
