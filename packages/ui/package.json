@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@ellr/api-client": "*",
-    "@ellr/password-policy": "*"
+    "@ellr/password-policy": "*",
+    "@headlessui/react": "^2.2.10"
   },
   "scripts": {
     "lint": "oxlint src",

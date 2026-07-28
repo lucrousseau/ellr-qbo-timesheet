@@ -61,6 +61,7 @@ export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
       onEmailChange={auth.setEmail}
       onPasswordChange={auth.setPassword}
       onSubmit={auth.handleLogin}
+      submitting={auth.loggingIn}
       error={auth.bootstrapError}
       footer={
         <>

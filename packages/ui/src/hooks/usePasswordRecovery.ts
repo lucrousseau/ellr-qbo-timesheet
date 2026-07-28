@@ -18,6 +18,7 @@ import {
 import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { translatePasswordPolicyErrors, translateApiPasswordValidationMessage } from '../i18n/passwordPolicyMessages'
+import { useGuardedAction } from './useGuardedAction'
 
 /**
  * Frontend app that initiates password recovery.
@@ -61,12 +62,10 @@ export function usePasswordRecovery(options: UsePasswordRecoveryOptions) {
     isResetPasswordRoute(window.location.pathname) ? 'reset-password' : 'login',
   )
   const [forgotEmail, setForgotEmail] = useState('')
-  const [forgotSubmitting, setForgotSubmitting] = useState(false)
   const [forgotError, setForgotError] = useState<string | null>(null)
   const [forgotSuccess, setForgotSuccess] = useState<string | null>(null)
   const [resetPasswordValue, setResetPasswordValue] = useState('')
   const [resetPasswordConfirmation, setResetPasswordConfirmation] = useState('')
-  const [resetSubmitting, setResetSubmitting] = useState(false)
   const [resetError, setResetError] = useState<string | null>(null)
   const [resetSuccess, setResetSuccess] = useState<string | null>(null)
 
@@ -87,64 +86,62 @@ export function usePasswordRecovery(options: UsePasswordRecoveryOptions) {
     window.history.replaceState({}, '', resolveLoginPath(window.location.pathname))
   }, [])
 
-  const handleForgotPassword = async (event: FormEvent) => {
-    event.preventDefault()
-    setForgotSubmitting(true)
-    setForgotError(null)
-    setForgotSuccess(null)
+  const { run: handleForgotPassword, pending: forgotSubmitting } = useGuardedAction(
+    async (event: FormEvent) => {
+      event.preventDefault()
+      setForgotError(null)
+      setForgotSuccess(null)
 
-    try {
-      await requestPasswordReset(forgotEmail, { client: options.client })
-      setForgotSuccess(t('auth.resetLinkSent'))
-    } catch (caught) {
-      setForgotError(getApiErrorMessage(caught, t('auth.resetLinkSendFailed'), locale))
-    } finally {
-      setForgotSubmitting(false)
-    }
-  }
+      try {
+        await requestPasswordReset(forgotEmail, { client: options.client })
+        setForgotSuccess(t('auth.resetLinkSent'))
+      } catch (caught) {
+        setForgotError(getApiErrorMessage(caught, t('auth.resetLinkSendFailed'), locale))
+      }
+    },
+  )
 
-  const handleResetPassword = async (event: FormEvent) => {
-    event.preventDefault()
+  const { run: handleResetPassword, pending: resetSubmitting } = useGuardedAction(
+    async (event: FormEvent) => {
+      event.preventDefault()
 
-    if (!resetParams.token || !resetParams.email) {
-      return
-    }
+      if (!resetParams.token || !resetParams.email) {
+        return
+      }
 
-    const policy = loadPasswordPolicy()
-    const validationErrors = validatePasswordWithConfirmation(
-      resetPasswordValue,
-      resetPasswordConfirmation,
-      policy,
-    )
-
-    if (validationErrors.length > 0) {
-      setResetError(translatePasswordPolicyErrors(locale, validationErrors))
-      return
-    }
-
-    setResetSubmitting(true)
-    setResetError(null)
-
-    try {
-      await resetPassword({
-        token: resetParams.token,
-        email: resetParams.email,
-        password: resetPasswordValue,
-        passwordConfirmation: resetPasswordConfirmation,
-      })
-      setResetSuccess(t('auth.passwordUpdated'))
-      setResetPasswordValue('')
-      setResetPasswordConfirmation('')
-    } catch (caught) {
-      const apiMessage = caught instanceof ApiError ? caught.message : ''
-      const policyMessage = translateApiPasswordValidationMessage(locale, apiMessage)
-      setResetError(
-        policyMessage ?? getApiErrorMessage(caught, t('auth.resetFailed'), locale),
+      const policy = loadPasswordPolicy()
+      const validationErrors = validatePasswordWithConfirmation(
+        resetPasswordValue,
+        resetPasswordConfirmation,
+        policy,
       )
-    } finally {
-      setResetSubmitting(false)
-    }
-  }
+
+      if (validationErrors.length > 0) {
+        setResetError(translatePasswordPolicyErrors(locale, validationErrors))
+        return
+      }
+
+      setResetError(null)
+
+      try {
+        await resetPassword({
+          token: resetParams.token,
+          email: resetParams.email,
+          password: resetPasswordValue,
+          passwordConfirmation: resetPasswordConfirmation,
+        })
+        setResetSuccess(t('auth.passwordUpdated'))
+        setResetPasswordValue('')
+        setResetPasswordConfirmation('')
+      } catch (caught) {
+        const apiMessage = caught instanceof ApiError ? caught.message : ''
+        const policyMessage = translateApiPasswordValidationMessage(locale, apiMessage)
+        setResetError(
+          policyMessage ?? getApiErrorMessage(caught, t('auth.resetFailed'), locale),
+        )
+      }
+    },
+  )
 
   return {
     authScreen,

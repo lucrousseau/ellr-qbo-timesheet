@@ -88,6 +88,48 @@ describe('useAuth', () => {
     expect(result.current.password).toBe('')
   })
 
+  it('ignores duplicate sign-in submissions while login is pending', async () => {
+    let resolveLogin: (value: typeof signedInUser) => void = () => {}
+    vi.mocked(fetchCurrentUser).mockRejectedValue(new ApiError(401, 'API error: 401'))
+    vi.mocked(login).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveLogin = resolve
+        }),
+    )
+
+    const { result } = renderHookWithLocale(() => useAuth())
+
+    await waitFor(() => {
+      expect(result.current.authLoading).toBe(false)
+    })
+
+    act(() => {
+      result.current.setEmail('jane@example.com')
+      result.current.setPassword(VALID_TEST_PASSWORD)
+    })
+
+    let firstLogin: Promise<void | undefined>
+    let secondLogin: Promise<void | undefined>
+
+    await act(async () => {
+      const event = { preventDefault: vi.fn() } as unknown as FormEvent
+      firstLogin = result.current.handleLogin(event)
+      secondLogin = result.current.handleLogin(event)
+    })
+
+    expect(login).toHaveBeenCalledTimes(1)
+    expect(result.current.loggingIn).toBe(true)
+
+    await act(async () => {
+      resolveLogin(signedInUser)
+      await firstLogin
+      await secondLogin
+    })
+
+    expect(result.current.loggingIn).toBe(false)
+  })
+
   it('signs out and clears the session user', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue(signedInUser)
     vi.mocked(logout).mockResolvedValue(undefined)

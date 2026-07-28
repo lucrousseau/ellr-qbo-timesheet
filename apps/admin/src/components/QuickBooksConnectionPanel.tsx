@@ -2,7 +2,16 @@
  * @file QuickBooks connection status and OAuth actions for administrators.
  */
 
-import { Alert, cardClass, primaryButtonClass, secondaryButtonClass, useLocale, type FlashMessage } from '@ellr/ui'
+import { useState } from 'react'
+import {
+  Alert,
+  cardClass,
+  ConfirmDialog,
+  primaryButtonClass,
+  secondaryButtonClass,
+  useLocale,
+  type FlashMessage,
+} from '@ellr/ui'
 
 type QuickBooksConnectionStatus = {
   connected: boolean
@@ -36,6 +45,7 @@ export function QuickBooksConnectionPanel({
   onDisconnect,
 }: QuickBooksConnectionPanelProps) {
   const { t } = useLocale()
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false)
 
   const statusLabel = (() => {
     if (!status) {
@@ -56,6 +66,11 @@ export function QuickBooksConnectionPanel({
 
     return t('admin.statusNotConnected')
   })()
+
+  const handleConfirmDisconnect = () => {
+    setDisconnectDialogOpen(false)
+    void onDisconnect()
+  }
 
   return (
     <section className={cardClass}>
@@ -93,7 +108,7 @@ export function QuickBooksConnectionPanel({
         {status?.connected && (
           <button
             type="button"
-            onClick={onDisconnect}
+            onClick={() => setDisconnectDialogOpen(true)}
             disabled={disconnecting}
             className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
           >
@@ -101,6 +116,17 @@ export function QuickBooksConnectionPanel({
           </button>
         )}
       </div>
+
+      <ConfirmDialog
+        open={disconnectDialogOpen}
+        title={t('admin.disconnectQuickBooksConfirmTitle')}
+        description={t('admin.disconnectQuickBooksConfirmDescription')}
+        confirmLabel={t('admin.disconnectQuickBooksConfirmAction')}
+        cancelLabel={t('common.cancel')}
+        confirming={disconnecting}
+        onConfirm={handleConfirmDisconnect}
+        onCancel={() => setDisconnectDialogOpen(false)}
+      />
     </section>
   )
 }

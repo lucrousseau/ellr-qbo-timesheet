@@ -36,6 +36,7 @@ function AdminApp() {
       subtitle={t('common.administration')}
       userEmail={admin.user!.email}
       onLogout={admin.onLogout}
+      loggingOut={admin.loggingOut}
     >
       <AdminDashboard admin={admin} />
     </AppShell>

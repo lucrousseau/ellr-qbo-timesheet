@@ -5,7 +5,8 @@
 import type { FormEvent } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
-import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
+import { TextField } from './TextField'
+import { cardClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 
 type ForgotPasswordFormProps = {
   title: string
@@ -59,16 +60,14 @@ export function ForgotPasswordForm({
         ) : null}
 
         <form className="mt-4 space-y-4" onSubmit={onSubmit}>
-          <label className="block text-sm font-medium text-slate-700">
-            {t('common.email')}
-            <input
-              type="email"
-              required
-              className={inputClass}
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-            />
-          </label>
+          <TextField
+            label={t('common.email')}
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(event) => onEmailChange(event.target.value)}
+          />
           <button type="submit" className={primaryButtonClass} disabled={submitting}>
             {submitting ? t('auth.sending') : t('auth.sendResetLink')}
           </button>

@@ -1241,6 +1241,23 @@ describe('admin api helpers', () => {
     )
   })
 
+  it('forwards an abort signal when loading quickbooks employees', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const controller = new AbortController()
+
+    await fetchQboEmployees({ refresh: true, signal: controller.signal })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8000/api/quickbooks/employees?refresh=1',
+      expect.objectContaining({ signal: controller.signal }),
+    )
+  })
+
   it('loads provisioned timesheet users from the api', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

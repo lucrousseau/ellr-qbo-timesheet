@@ -11,6 +11,7 @@ type AppShellProps = {
   subtitle?: string
   userEmail?: string | null
   onLogout?: () => void
+  loggingOut?: boolean
   children: ReactNode
 }
 
@@ -23,7 +24,7 @@ type AppShellProps = {
  * @param props.children Main page content.
  * @returns Centered layout with header.
  */
-export function AppShell({ title, subtitle, userEmail, onLogout, children }: AppShellProps) {
+export function AppShell({ title, subtitle, userEmail, onLogout, loggingOut = false, children }: AppShellProps) {
   const { t } = useLocale()
 
   return (
@@ -37,8 +38,13 @@ export function AppShell({ title, subtitle, userEmail, onLogout, children }: App
           )}
         </div>
         {userEmail && onLogout && (
-          <button type="button" onClick={onLogout} className={secondaryButtonClass}>
-            {t('common.signOut')}
+          <button
+            type="button"
+            onClick={onLogout}
+            disabled={loggingOut}
+            className={`${secondaryButtonClass} disabled:opacity-50`}
+          >
+            {loggingOut ? t('common.signingOut') : t('common.signOut')}
           </button>
         )}
       </header>

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
@@ -32,6 +32,34 @@ describe('Admin App', () => {
 
   async function openAdministratorTab(user: ReturnType<typeof userEvent.setup>) {
     await user.click(screen.getByRole('tab', { name: /administrat/i }))
+  }
+
+  async function openEmployeeDropdown(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole('button', { name: /choose an employee/i }))
+
+    await waitFor(() => {
+      expect(fetchQboEmployees).toHaveBeenCalledWith(
+        expect.objectContaining({ refresh: true }),
+      )
+    })
+  }
+
+  async function confirmQuickBooksDisconnect(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
+
+    const dialog = screen.getByRole('alertdialog')
+    await user.click(within(dialog).getByRole('button', { name: /^disconnect$/i }))
+  }
+
+  async function selectEmployeeOption(
+    user: ReturnType<typeof userEvent.setup>,
+    name: RegExp | string,
+  ) {
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('option', { name }))
   }
 
   beforeEach(() => {
@@ -172,6 +200,10 @@ describe('Admin App', () => {
     })
 
     await user.click(screen.getByRole('button', { name: /connect quickbooks/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /redirecting/i })).toBeDisabled()
+    })
 
     await waitFor(() => {
       expect(redirectedTo).toBe('https://intuit.example/oauth')
@@ -350,7 +382,7 @@ describe('Admin App', () => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
+    await confirmQuickBooksDisconnect(user)
 
     await waitFor(() => {
       expect(screen.getByText(/unable to disconnect quickbooks/i)).toBeInTheDocument()
@@ -402,7 +434,7 @@ describe('Admin App', () => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
+    await confirmQuickBooksDisconnect(user)
 
     await waitFor(() => {
       expect(disconnectQuickBooks).toHaveBeenCalled()
@@ -468,7 +500,7 @@ describe('Admin App', () => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
+    await confirmQuickBooksDisconnect(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnecting/i })).toBeDisabled()
@@ -546,7 +578,8 @@ describe('Admin App', () => {
       expect(screen.getByRole('button', { name: /create timesheet access/i })).toBeInTheDocument()
     })
 
-    await user.selectOptions(screen.getByLabelText(/quickbooks employee/i), '42')
+    await openEmployeeDropdown(user)
+    await selectEmployeeOption(user, /jane doe/i)
     await user.click(screen.getByRole('button', { name: /create timesheet access/i }))
 
     await waitFor(() => {
@@ -561,15 +594,13 @@ describe('Admin App', () => {
     })
   })
 
-  it('refreshes employees when the initial list is empty', async () => {
+  it('does not fetch employees until the administrator dropdown is opened', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
-    vi.mocked(fetchQboEmployees)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        { id: '7', display_name: 'Jane Doe', email: 'jane@example.com' },
-      ])
+    vi.mocked(fetchQboEmployees).mockResolvedValue([
+      { id: '7', display_name: 'Jane Doe', email: 'jane@example.com' },
+    ])
     vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
 
     render(<App />)
@@ -578,23 +609,33 @@ describe('Admin App', () => {
       expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
     })
 
+    expect(fetchQboEmployees).not.toHaveBeenCalled()
+
     await openAdministratorTab(user)
 
     await waitFor(() => {
-      expect(fetchQboEmployees).toHaveBeenCalledTimes(2)
-      expect(fetchQboEmployees).toHaveBeenNthCalledWith(1, { refresh: false })
-      expect(fetchQboEmployees).toHaveBeenNthCalledWith(2, { refresh: true })
-      expect(screen.getByLabelText(/quickbooks employee/i)).toBeEnabled()
+      expect(fetchTimesheetUsers).toHaveBeenCalled()
     })
+
+    expect(fetchQboEmployees).not.toHaveBeenCalled()
+
+    await openEmployeeDropdown(user)
+
+    expect(fetchQboEmployees).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: /choose an employee/i })).toBeEnabled()
   })
 
-  it('does not show a success notice when employee sync fails', async () => {
+  it('does not surface an error when the employee dropdown closes during loading', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
-    vi.mocked(fetchQboEmployees)
-      .mockResolvedValueOnce([{ id: '7', display_name: 'Jane Doe', email: 'jane@example.com' }])
-      .mockRejectedValueOnce(new ApiError(503, 'API error: 503', 'quickbooks_busy'))
+    vi.mocked(fetchQboEmployees).mockImplementation(({ signal } = {}) => {
+      return new Promise((_resolve, reject) => {
+        signal?.addEventListener('abort', () => {
+          reject(new DOMException('Aborted', 'AbortError'))
+        })
+      })
+    })
     vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
 
     render(<App />)
@@ -604,12 +645,34 @@ describe('Admin App', () => {
     })
 
     await openAdministratorTab(user)
+    await openEmployeeDropdown(user)
+
+    expect(screen.getByText(/loading employees/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /choose an employee/i }))
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/refresh employees from quickbooks/i)).toBeInTheDocument()
+      expect(screen.queryByText(/loading employees/i)).not.toBeInTheDocument()
     })
 
-    await user.click(screen.getByLabelText(/refresh employees from quickbooks/i))
+    expect(screen.queryByText(/unable to load timesheet provisioning data/i)).not.toBeInTheDocument()
+  })
+
+  it('shows an error when employee loading fails on dropdown open', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockRejectedValue(new ApiError(503, 'API error: 503', 'quickbooks_busy'))
+    vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+    await openEmployeeDropdown(user)
 
     await waitFor(() => {
       expect(screen.queryByText(/employee list refreshed from quickbooks/i)).not.toBeInTheDocument()
@@ -641,10 +704,11 @@ describe('Admin App', () => {
     await openAdministratorTab(user)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/quickbooks employee/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /choose an employee/i })).toBeInTheDocument()
     })
 
-    await user.selectOptions(screen.getByLabelText(/quickbooks employee/i), '7')
+    await openEmployeeDropdown(user)
+    await selectEmployeeOption(user, /jane doe/i)
 
     expect(screen.getByText(/managed in quickbooks/i)).toBeInTheDocument()
     expect(screen.getByText('jane@example.com')).toBeInTheDocument()
@@ -677,10 +741,11 @@ describe('Admin App', () => {
     await openAdministratorTab(user)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/quickbooks employee/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /choose an employee/i })).toBeInTheDocument()
     })
 
-    await user.selectOptions(screen.getByLabelText(/quickbooks employee/i), '7')
+    await openEmployeeDropdown(user)
+    await selectEmployeeOption(user, /jane doe/i)
     await user.click(screen.getByRole('button', { name: /create timesheet access/i }))
 
     await waitFor(() => {
@@ -708,7 +773,7 @@ describe('Admin App', () => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
+    await confirmQuickBooksDisconnect(user)
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks disconnected/i)).toBeInTheDocument()
@@ -937,7 +1002,8 @@ describe('Admin App', () => {
       expect(screen.getByRole('heading', { name: /preferences/i })).toBeInTheDocument()
     })
 
-    await user.selectOptions(screen.getByLabelText(/language/i), 'fr')
+    await user.click(screen.getByLabelText(/language/i))
+    await user.click(screen.getByRole('option', { name: /french/i }))
     await user.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => {

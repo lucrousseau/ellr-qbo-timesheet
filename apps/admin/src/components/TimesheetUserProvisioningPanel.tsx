@@ -2,7 +2,7 @@
  * @file Timesheet user provisioning UI for QuickBooks employees.
  */
 
-import { cardClass, inputClass, secondaryButtonClass, useLocale } from '@ellr/ui'
+import { cardClass, LazySearchCombobox, secondaryButtonClass, useLocale } from '@ellr/ui'
 import type { QboEmployeeOption, User } from '../hooks/useTimesheetProvisioning'
 
 type TimesheetUserProvisioningPanelProps = {
@@ -10,37 +10,14 @@ type TimesheetUserProvisioningPanelProps = {
   employees: QboEmployeeOption[]
   users: User[]
   loadingEmployees: boolean
-  syncingEmployees: boolean
+  employeesLoaded: boolean
   loadingUsers: boolean
   selectedEmployee: QboEmployeeOption | null
   creating: boolean
-  onEmployeeChange: (employeeId: string) => void
-  onRefreshEmployees: () => void
+  onEmployeeChange: (employee: QboEmployeeOption | null) => void
+  onEmployeeDropdownOpen: () => void
+  onEmployeeDropdownClose: () => void
   onSubmit: (event: React.FormEvent) => void
-}
-
-/**
- * Circular arrow icon for manual QuickBooks employee sync.
- * @param props Icon presentation props.
- * @returns SVG refresh icon.
- */
-function RefreshIcon({ spinning }: { spinning: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={`h-5 w-5 ${spinning ? 'animate-spin' : ''}`}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.992 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182"
-      />
-    </svg>
-  )
 }
 
 /**
@@ -53,12 +30,13 @@ export function TimesheetUserProvisioningPanel({
   employees,
   users,
   loadingEmployees,
-  syncingEmployees,
+  employeesLoaded,
   loadingUsers,
   selectedEmployee,
   creating,
   onEmployeeChange,
-  onRefreshEmployees,
+  onEmployeeDropdownOpen,
+  onEmployeeDropdownClose,
   onSubmit,
 }: TimesheetUserProvisioningPanelProps) {
   const { t } = useLocale()
@@ -78,44 +56,25 @@ export function TimesheetUserProvisioningPanel({
       <p className="mt-2 text-sm text-slate-600">{t('admin.timesheetAccessHelp')}</p>
 
       <form className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4" onSubmit={onSubmit}>
-        <div className="flex items-end gap-2">
-          <label className="block flex-1 text-sm font-medium text-slate-700">
-            {t('admin.selectQboEmployee')}
-            <select
-              required
-              className={inputClass}
-              value={selectedEmployee?.id ?? ''}
-              disabled={loadingEmployees || syncingEmployees}
-              onChange={(event) => onEmployeeChange(event.target.value)}
-            >
-              <option value="">
-                {loadingEmployees || syncingEmployees
-                  ? t('admin.loadingEmployees')
-                  : t('admin.chooseEmployee')}
-              </option>
-              {employees.map((employee) => (
-                <option key={employee.id} value={employee.id} disabled={!employee.email}>
-                  {employee.display_name}
-                  {!employee.email ? ` (${t('admin.employeeMissingEmail')})` : ''}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            onClick={onRefreshEmployees}
-            disabled={loadingEmployees || syncingEmployees}
-            aria-label={syncingEmployees ? t('admin.syncingEmployees') : t('admin.refreshEmployees')}
-            title={syncingEmployees ? t('admin.syncingEmployees') : t('admin.refreshEmployees')}
-            className={`${secondaryButtonClass} mb-0.5 px-3 py-2.5 disabled:opacity-50`}
-          >
-            <RefreshIcon spinning={syncingEmployees} />
-          </button>
-        </div>
-
-        {!loadingEmployees && !syncingEmployees && employees.length === 0 && (
-          <p className="text-sm text-slate-600">{t('admin.noEmployeesAvailable')}</p>
-        )}
+        <LazySearchCombobox
+          label={t('admin.selectQboEmployee')}
+          placeholder={t('admin.chooseEmployee')}
+          searchPlaceholder={t('admin.searchEmployees')}
+          loadingLabel={t('admin.loadingEmployees')}
+          emptyLabel={t('admin.noEmployeesAvailable')}
+          noResultsLabel={t('admin.noEmployeeSearchResults')}
+          value={selectedEmployee}
+          options={employees}
+          loading={loadingEmployees}
+          loaded={employeesLoaded}
+          onLoad={onEmployeeDropdownOpen}
+          onClose={onEmployeeDropdownClose}
+          onChange={onEmployeeChange}
+          getOptionValue={(employee) => employee.id}
+          getOptionLabel={(employee) => employee.display_name}
+          isOptionDisabled={(employee) => !employee.email}
+          getOptionHint={(employee) => (employee.email ? null : t('admin.employeeMissingEmail'))}
+        />
 
         {selectedEmployee && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">

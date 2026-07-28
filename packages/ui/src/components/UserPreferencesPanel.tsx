@@ -6,6 +6,7 @@ import type { UserLocale } from '@ellr/api-client'
 import { SUPPORTED_LOCALES } from '@ellr/api-client'
 import { cardClass, secondaryButtonClass } from '../styles/tokens'
 import { useLocale } from '../i18n/LocaleProvider'
+import { StaticSelect } from './StaticSelect'
 
 type UserPreferencesPanelProps = {
   locale: UserLocale
@@ -41,20 +42,14 @@ export function UserPreferencesPanel({
       <p className="mt-2 text-sm text-slate-600">{t('preferences.languageHelp')}</p>
 
       <form className="mt-6 space-y-4" onSubmit={onSave}>
-        <label className="block text-sm font-medium text-slate-700">
-          {t('preferences.language')}
-          <select
-            className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900"
-            value={locale}
-            onChange={(event) => onLocaleChange(event.target.value as UserLocale)}
-          >
-            {SUPPORTED_LOCALES.map((supportedLocale) => (
-              <option key={supportedLocale} value={supportedLocale}>
-                {t(LOCALE_LABEL_KEYS[supportedLocale])}
-              </option>
-            ))}
-          </select>
-        </label>
+        <StaticSelect
+          label={t('preferences.language')}
+          value={locale}
+          options={SUPPORTED_LOCALES}
+          onChange={onLocaleChange}
+          getOptionValue={(supportedLocale) => supportedLocale}
+          getOptionLabel={(supportedLocale) => t(LOCALE_LABEL_KEYS[supportedLocale])}
+        />
         <button
           type="submit"
           disabled={saving}

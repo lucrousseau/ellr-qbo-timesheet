@@ -4,8 +4,9 @@
 
 import type { FormEvent, ReactNode } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
-import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
+import { cardClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 import { Alert } from './Alert'
+import { TextField } from './TextField'
 
 type LoginFormProps = {
   title: string
@@ -15,6 +16,7 @@ type LoginFormProps = {
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onSubmit: (event: FormEvent) => void
+  submitting?: boolean
   error?: string | null
   heading?: string
   footer?: ReactNode
@@ -42,6 +44,7 @@ export function LoginForm({
   onEmailChange,
   onPasswordChange,
   onSubmit,
+  submitting = false,
   error,
   heading,
   footer,
@@ -64,28 +67,24 @@ export function LoginForm({
         )}
 
         <form className="mt-4 space-y-4" onSubmit={onSubmit}>
-          <label className="block text-sm font-medium text-slate-700">
-            {t('common.email')}
-            <input
-              type="email"
-              required
-              className={inputClass}
-              value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-            />
-          </label>
-          <label className="block text-sm font-medium text-slate-700">
-            {t('common.password')}
-            <input
-              type="password"
-              required
-              className={inputClass}
-              value={password}
-              onChange={(event) => onPasswordChange(event.target.value)}
-            />
-          </label>
-          <button type="submit" className={primaryButtonClass}>
-            {t('common.signIn')}
+          <TextField
+            label={t('common.email')}
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(event) => onEmailChange(event.target.value)}
+          />
+          <TextField
+            label={t('common.password')}
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => onPasswordChange(event.target.value)}
+          />
+          <button type="submit" className={primaryButtonClass} disabled={submitting}>
+            {submitting ? t('common.signingIn') : t('common.signIn')}
           </button>
           {footer}
         </form>

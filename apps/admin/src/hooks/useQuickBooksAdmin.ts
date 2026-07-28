@@ -2,7 +2,7 @@
  * @file Admin QuickBooks OAuth, connection status, and employee mapping state.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   connectQuickBooks,
   disconnectQuickBooks,
@@ -12,7 +12,7 @@ import {
   type QuickBooksStatus,
   type User,
 } from '@ellr/api-client'
-import { getApiErrorMessage, useAuth, useFlashMessage, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
+import { getApiErrorMessage, useAuth, useFlashMessage, useGuardedAction, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
 
 /**
  * Maps a QuickBooks OAuth callback reason to a localized message catalog key.
@@ -55,7 +55,7 @@ export function useQuickBooksAdmin() {
   const { message, showError, showSuccess, clearMessage } = useFlashMessage()
   const [status, setStatus] = useState<QuickBooksStatus | null>(null)
   const [connecting, setConnecting] = useState(false)
-  const [disconnecting, setDisconnecting] = useState(false)
+  const connectInFlightRef = useRef(false)
 
   const loadQuickBooksStatus = useCallback(async (currentUser: User | null) => {
     if (!currentUser) {
@@ -89,6 +89,8 @@ export function useQuickBooksAdmin() {
     bootstrapError,
     handleLogin,
     handleLogout,
+    loggingIn,
+    loggingOut,
   } = useAuth({
     onUserLoaded: loadQuickBooksStatus,
   })
@@ -127,7 +129,12 @@ export function useQuickBooksAdmin() {
     setStatus(null)
   }
 
-  const connectQuickBooksFlow = async () => {
+  const connectQuickBooksFlow = useCallback(async () => {
+    if (connectInFlightRef.current) {
+      return
+    }
+
+    connectInFlightRef.current = true
     setConnecting(true)
 
     try {
@@ -135,23 +142,20 @@ export function useQuickBooksAdmin() {
       window.location.href = response.authorization_url
     } catch (caught) {
       showError(getApiErrorMessage(caught, t('admin.connectFailed'), locale))
+      connectInFlightRef.current = false
       setConnecting(false)
     }
-  }
+  }, [locale, showError, t])
 
-  const disconnectQuickBooksFlow = async () => {
-    setDisconnecting(true)
-
+  const { run: disconnectQuickBooksFlow, pending: disconnecting } = useGuardedAction(async () => {
     try {
       await disconnectQuickBooks()
       setStatus(await fetchQuickBooksStatus())
       showSuccess(t('admin.disconnectedSuccess'))
     } catch (caught) {
       showError(getApiErrorMessage(caught, t('admin.disconnectFailed'), locale))
-    } finally {
-      setDisconnecting(false)
     }
-  }
+  })
 
   return {
     user,
@@ -161,6 +165,8 @@ export function useQuickBooksAdmin() {
     password,
     setPassword,
     bootstrapError,
+    loggingIn,
+    loggingOut,
     onLogin,
     onLogout,
     message,

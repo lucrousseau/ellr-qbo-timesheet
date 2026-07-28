@@ -2,6 +2,10 @@
  * @file Public exports for shared React UI components and hooks.
  */
 
+export { ConfirmDialog } from './components/ConfirmDialog'
+export { LazySearchCombobox } from './components/LazySearchCombobox'
+export { StaticSelect } from './components/StaticSelect'
+export { TextField } from './components/TextField'
 export { Alert } from './components/Alert'
 export { AppShell } from './components/AppShell'
 export { ChangePasswordPanel } from './components/ChangePasswordPanel'
@@ -13,6 +17,8 @@ export { TabNav, tabButtonId, tabPanelId, type TabNavItem } from './components/T
 export { UserPreferencesPanel } from './components/UserPreferencesPanel'
 export { LocaleProvider, useLocale } from './i18n/LocaleProvider'
 export { getApiErrorMessage, translateApiError } from './i18n/apiErrorMessages'
+export { useGuardedAction } from './hooks/useGuardedAction'
+export { useLazyApiSelect } from './hooks/useLazyApiSelect'
 export { useAuth } from './hooks/useAuth'
 export { useChangePassword } from './hooks/useChangePassword'
 export { useSyncUserLocale } from './hooks/useSyncUserLocale'
@@ -30,3 +36,10 @@ export {
   primaryButtonClass,
   secondaryButtonClass,
 } from './styles/tokens'
+export {
+  fieldLabelClass,
+  selectOptionClass,
+  selectOptionsPanelClass,
+  selectSearchInputClass,
+  selectTriggerClass,
+} from './styles/selectTokens'

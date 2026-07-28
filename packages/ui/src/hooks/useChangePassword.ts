@@ -15,6 +15,7 @@ import {
 import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { translatePasswordPolicyErrors, translateApiPasswordValidationMessage } from '../i18n/passwordPolicyMessages'
+import { useGuardedAction } from './useGuardedAction'
 
 type UseChangePasswordOptions = {
   onSuccess?: () => void
@@ -31,11 +32,10 @@ export function useChangePassword(options: UseChangePasswordOptions = {}) {
   const [currentPassword, setCurrentPassword] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirmation, setPasswordConfirmation] = useState('')
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const handleSubmit = async (event: FormEvent) => {
+  const { run: handleSubmit, pending: saving } = useGuardedAction(async (event: FormEvent) => {
     event.preventDefault()
 
     const policy = loadPasswordPolicy()
@@ -53,7 +53,6 @@ export function useChangePassword(options: UseChangePasswordOptions = {}) {
       return
     }
 
-    setSaving(true)
     setError(null)
     setSuccess(null)
 
@@ -71,10 +70,8 @@ export function useChangePassword(options: UseChangePasswordOptions = {}) {
       const message = policyMessage ?? getApiErrorMessage(caught, t('auth.changePasswordFailed'), locale)
       setError(message)
       options.onError?.(message)
-    } finally {
-      setSaving(false)
     }
-  }
+  })
 
   return {
     currentPassword,

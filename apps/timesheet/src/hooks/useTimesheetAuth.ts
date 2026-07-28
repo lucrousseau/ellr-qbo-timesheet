@@ -11,7 +11,7 @@ import {
   shouldBlockUnverifiedUser,
   type User,
 } from '@ellr/api-client'
-import { getApiErrorMessage, useAuth, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
+import { getApiErrorMessage, useAuth, useGuardedAction, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
 
 /**
  * Timesheet authentication state including password recovery screens.
@@ -27,7 +27,6 @@ export function useTimesheetAuth() {
   const [verificationMessageVariant, setVerificationMessageVariant] = useState<'success' | 'error' | null>(
     null,
   )
-  const [verificationSending, setVerificationSending] = useState(false)
   const [preferenceNotice, setPreferenceNotice] = useState<string | null>(null)
   const [preferenceNoticeVariant, setPreferenceNoticeVariant] = useState<'success' | 'error' | null>(null)
 
@@ -81,8 +80,7 @@ export function useTimesheetAuth() {
     await auth.handleLogin(event)
   }
 
-  const handleResendVerification = async () => {
-    setVerificationSending(true)
+  const { run: handleResendVerification, pending: verificationSending } = useGuardedAction(async () => {
     setVerificationMessage(null)
     setVerificationMessageVariant(null)
 
@@ -93,10 +91,8 @@ export function useTimesheetAuth() {
     } catch (caught) {
       setVerificationMessage(getApiErrorMessage(caught, t('auth.verificationSendFailed'), locale))
       setVerificationMessageVariant('error')
-    } finally {
-      setVerificationSending(false)
     }
-  }
+  })
 
   const showEmailVerification = (user: User | null): boolean => {
     return user !== null && shouldBlockUnverifiedUser(user, requireEmailVerification)
@@ -107,6 +103,8 @@ export function useTimesheetAuth() {
     ...recovery,
     ...preferences,
     handleLogin,
+    loggingIn: auth.loggingIn,
+    loggingOut: auth.loggingOut,
     loginNotice,
     verificationMessage,
     verificationMessageVariant,

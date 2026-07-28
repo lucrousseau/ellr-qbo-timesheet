@@ -14,7 +14,7 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 |------|-----------|
 | **SDK only in services** | `QuickBooksService` and domain services (`QboEmployeeListService`, `TimeActivityListService`, etc.) |
 | **Cache read-heavy lists** | Employee, customer, project, service pickers: `QboListCacheService` keyed by `quickbooks:{resource}:{realm_id}` |
-| **Explicit refresh only** | Admin UI exposes a manual sync control; API uses `?refresh=1` to bypass cache |
+| **Lazy picker loads** | Admin API-backed selects use `useLazyApiSelect` (`@ellr/ui`); fetch on dropdown open with `?refresh=1`, abort in-flight on close/reopen (client-side only; server may still finish), clear list on close |
 | **No cache on auth probes** | OAuth validation (`assertCanListEmployees`) must hit QBO live |
 | **Invalidate on disconnect** | Clear realm-scoped cache when QuickBooks disconnects |
 | **Do not cache empty lists** | Avoid persisting `[]` from failed or single-entity SDK quirks |
@@ -30,7 +30,7 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 | Service | `QboListCacheService::remember($resource, $realmId, $refresh, $fetch)` |
 | Resources | `employees` today; add `customers`, `projects`, `services` as endpoints ship |
 | Cache key | `quickbooks:{resource}:{realm_id}` |
-| TTL config | `QUICKBOOKS_LIST_CACHE_TTL_MINUTES` (default 15; `0` disables) |
+| TTL config | `QUICKBOOKS_LIST_CACHE_TTL_MINUTES` (default 15; secondary when pickers always send `?refresh=1`) |
 | Max results | `QUICKBOOKS_LIST_MAX_RESULTS` (default 1000) |
 | Refresh | `?refresh=1` on list endpoints |
 | Disconnect | `QboListCacheService::forgetRealm($realmId)` |
@@ -41,13 +41,13 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 |------|-------|
 | Service | `QboEmployeeListService::listActive($token, $refresh)` |
 | Refresh route | `GET /api/quickbooks/employees?refresh=1` |
-| Frontend | `fetchQboEmployees({ refresh: true })` via admin sync button |
+| Frontend | `LazySearchCombobox` (`@ellr/ui`, Headless UI) + `useLazyApiSelect` + `fetchQboEmployees({ refresh: true })` on open |
 
 ## Before adding a new QBO endpoint
 
 1. Can the data be cached or derived from existing cached data?
 2. Is a single-entity lookup (`FindById`) enough?
-3. Does the admin UI need a manual refresh affordance?
+3. Does the picker use `useLazyApiSelect` (no mount-time list fetch)?
 4. Add Pest tests: cache hit (one SDK call for two HTTP requests) and `refresh=1` bypass.
 
 ## Agent routine

@@ -1,0 +1,66 @@
+---
+description: Ellr UI design system and Headless UI wrapper conventions
+globs: packages/ui/**,apps/admin/src/**,apps/timesheet/src/**
+alwaysApply: false
+---
+
+# UI design system (`@ellr/ui`)
+
+Headless UI is the **primitive layer** for interactive controls. Apps consume **Ellr wrappers only**.
+
+## Rules
+
+| Rule | Rationale |
+|------|-----------|
+| **`@headlessui/react` only in `packages/ui`** | Single dependency boundary; apps stay thin |
+| **No direct Headless imports in apps** | Consistent a11y, styling, and API surface |
+| **Tokens over inline Tailwind** | `styles/tokens.ts`, `styles/selectTokens.ts` for shared control chrome |
+| **`data-focus` / `data-selected`** | Headless state styling; no custom focus hacks |
+
+## Wrapped today (`packages/ui`)
+
+| Ellr component | Headless primitive | Hook |
+|----------------|-------------------|------|
+| `TextField` | `Field` + `Label` + `Input` | — |
+| `StaticSelect` | `Listbox` | — |
+| `LazySearchCombobox` | `Combobox` | `useLazyApiSelect` |
+| `ConfirmDialog` | `Dialog` | — |
+
+QBO picker economy: see `.cursor/rules/quickbooks-api.mdc` (`?refresh=1` on open).
+
+Select panels use `portal={false}` and absolute positioning inside a `relative` wrapper.
+
+## Headless inventory (not wrapped yet)
+
+Adopt **progressively** when a real screen needs the control. Do not bulk-wrap or re-export Headless.
+
+| Priority | Planned Ellr name | Headless primitive | Notes |
+|----------|-------------------|-------------------|-------|
+| P1 | `TextAreaField` | `Textarea` + `Field` | Long text, notes |
+| P1 | `CheckboxField` | `Checkbox` + `Field` | Group via `Fieldset` + `Legend` (no `CheckboxGroup` in Headless) |
+| P1 | `RadioGroupField` | `RadioGroup` + `Radio` + `Fieldset` | Mutually exclusive choices |
+| P1 | `SwitchField` | `Switch` + `Field` | Boolean settings |
+| P2 | `NativeSelectField` | `Select` + `Field` | Native `<select>` styling |
+| P2 | `AppDialog` | `Dialog` | Non-destructive panels (generic slot) |
+| P2 | `DropdownMenu` | `Menu` | Action menus |
+| P2 | `PopoverPanel` | `Popover` | Contextual content |
+| P2 | `DisclosurePanel` | `Disclosure` | Accordions |
+| P3 | `TabsNav` (optional) | `Tabs` | Replace custom `TabNav` only if justified |
+| — | (internal) | `Button`, `CloseButton`, `Portal`, `FocusTrap`, `Transition` | Use inside wrappers, not exported |
+
+## Adding a new control
+
+1. Confirm no existing Ellr wrapper fits; check the inventory above.
+2. Pick the Headless primitive ([docs](https://headlessui.com/react)).
+3. Add styles to `styles/*Tokens.ts` (e.g. `formTokens.ts` for checkboxes/radios).
+4. Export a typed wrapper from `packages/ui/src/components/`.
+5. Add `ComponentName.test.tsx`, export from `packages/ui/src/index.ts`.
+6. Move the row from "not wrapped" to "wrapped" in this file and `packages/ui/AGENTS.md`.
+
+## Agent routine
+
+1. Prefer extending an existing wrapper over a new Headless usage site.
+2. Do not add shadcn/Radix/react-select alongside Headless without an ADR-level decision.
+3. Apps must not import `@headlessui/react`; add or extend a wrapper in `@ellr/ui` instead.
+4. Wrap on demand (P1 → P2 → P3), not all primitives at once.
+5. **Double-click / duplicate requests:** wrap async CTAs and submit handlers with `useGuardedAction` (`@ellr/ui`); disable buttons via `pending`, not debounce.

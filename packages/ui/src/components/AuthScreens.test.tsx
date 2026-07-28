@@ -199,7 +199,8 @@ describe('auth and layout screens', () => {
       />,
     )
 
-    await user.selectOptions(screen.getByRole('combobox'), 'fr')
+    await user.click(screen.getByLabelText(/language/i))
+    await user.click(screen.getByRole('option', { name: /french/i }))
     expect(onLocaleChange).toHaveBeenCalledWith('fr')
 
     await user.click(screen.getByRole('button', { name: 'Save' }))

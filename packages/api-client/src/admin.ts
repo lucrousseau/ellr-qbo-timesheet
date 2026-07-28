@@ -26,9 +26,14 @@ export type CreateTimesheetUserPayload = {
  * @param options Optional fetch options (`refresh` bypasses server cache).
  * @returns Employee id, display name, and optional email.
  */
-export async function fetchQboEmployees(options?: { refresh?: boolean }): Promise<QboEmployeeOption[]> {
+export async function fetchQboEmployees(options?: {
+  refresh?: boolean
+  signal?: AbortSignal
+}): Promise<QboEmployeeOption[]> {
   const query = options?.refresh ? '?refresh=1' : ''
-  const response = await apiFetch<{ data: QboEmployeeOption[] }>(`/quickbooks/employees${query}`)
+  const response = await apiFetch<{ data: QboEmployeeOption[] }>(`/quickbooks/employees${query}`, {
+    signal: options?.signal,
+  })
 
   return response.data
 }

@@ -27,12 +27,6 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
   const { t } = useLocale()
   const [activeTab, setActiveTab] = useState<AdminTab>('preferences')
   const isAdministrator = admin.user?.is_admin === true
-  const provisioning = useTimesheetProvisioning({
-    status: admin.status,
-    isAdministrator,
-    onError: admin.showError,
-    onSuccess: admin.showSuccess,
-  })
 
   const tabs = useMemo(() => {
     const items: { id: AdminTab; label: string }[] = [
@@ -47,6 +41,14 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
   }, [isAdministrator, t])
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'preferences'
+
+  const provisioning = useTimesheetProvisioning({
+    status: admin.status,
+    isAdministrator,
+    administratorTabActive: activeTabId === 'administrator',
+    onError: admin.showError,
+    onSuccess: admin.showSuccess,
+  })
 
   return (
     <div className="space-y-6">
@@ -97,14 +99,13 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             employees={provisioning.employees}
             users={provisioning.users}
             loadingEmployees={provisioning.loadingEmployees}
-            syncingEmployees={provisioning.syncingEmployees}
+            employeesLoaded={provisioning.employeesLoaded}
             loadingUsers={provisioning.loadingUsers}
             selectedEmployee={provisioning.selectedEmployee}
             creating={provisioning.creating}
             onEmployeeChange={provisioning.onEmployeeChange}
-            onRefreshEmployees={() => {
-              void provisioning.refreshEmployees()
-            }}
+            onEmployeeDropdownOpen={provisioning.onEmployeeDropdownOpen}
+            onEmployeeDropdownClose={provisioning.onEmployeeDropdownClose}
             onSubmit={provisioning.onCreateTimesheetUser}
           />
         </div>

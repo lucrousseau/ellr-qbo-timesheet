@@ -65,6 +65,7 @@ export function AdminGuestAuth({ admin, message }: AdminGuestAuthProps) {
       onEmailChange={admin.setEmail}
       onPasswordChange={admin.setPassword}
       onSubmit={admin.onLogin}
+      submitting={admin.loggingIn}
       error={admin.bootstrapError}
       footer={
         <>

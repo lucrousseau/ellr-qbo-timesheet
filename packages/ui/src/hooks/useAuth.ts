@@ -13,6 +13,7 @@ import {
 } from '@ellr/api-client'
 import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
+import { useGuardedAction } from './useGuardedAction'
 
 type UseAuthOptions = {
   onUserLoaded?: (user: User | null) => void | Promise<void>
@@ -70,7 +71,7 @@ export function useAuth(options: UseAuthOptions = {}) {
     void bootstrap()
   }, [bootstrap])
 
-  const handleLogin = async (event: React.FormEvent) => {
+  const { run: handleLogin, pending: loggingIn } = useGuardedAction(async (event: React.FormEvent) => {
     event.preventDefault()
     setBootstrapError(null)
 
@@ -83,9 +84,9 @@ export function useAuth(options: UseAuthOptions = {}) {
     } catch (caught) {
       setBootstrapError(getApiErrorMessage(caught, t('common.signInFailed'), locale))
     }
-  }
+  })
 
-  const handleLogout = async () => {
+  const { run: handleLogout, pending: loggingOut } = useGuardedAction(async () => {
     try {
       await logout()
       applyUserLocale(setLocale, null)
@@ -93,7 +94,7 @@ export function useAuth(options: UseAuthOptions = {}) {
     } catch (caught) {
       setBootstrapError(getApiErrorMessage(caught, t('common.signOutFailed'), locale))
     }
-  }
+  })
 
   return {
     user,
@@ -107,6 +108,8 @@ export function useAuth(options: UseAuthOptions = {}) {
     setBootstrapError,
     handleLogin,
     handleLogout,
+    loggingIn,
+    loggingOut,
     bootstrap,
   }
 }

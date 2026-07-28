@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { createTimeActivity } from '@ellr/api-client'
-import { getApiErrorMessage, useFlashMessage, useLocale } from '@ellr/ui'
+import { getApiErrorMessage, useFlashMessage, useGuardedAction, useLocale } from '@ellr/ui'
 
 type TimeActivityForm = {
   start_time: string
@@ -24,12 +24,10 @@ export function useTimeEntry() {
     end_time: '',
     description: '',
   })
-  const [submitting, setSubmitting] = useState(false)
 
-  const submit = async (event: React.FormEvent) => {
+  const { run: submit, pending: submitting } = useGuardedAction(async (event: React.FormEvent) => {
     event.preventDefault()
     clearMessage()
-    setSubmitting(true)
 
     const payload: { start_time: string; end_time: string; description?: string } = {
       start_time: form.start_time,
@@ -45,10 +43,8 @@ export function useTimeEntry() {
       showSuccess(t('timesheet.savedSuccess'))
     } catch (caught) {
       showError(getApiErrorMessage(caught, t('timesheet.saveFailed'), locale))
-    } finally {
-      setSubmitting(false)
     }
-  }
+  })
 
   return {
     form,

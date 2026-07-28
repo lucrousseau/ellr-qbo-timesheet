@@ -40,7 +40,12 @@ function TimesheetDashboard() {
   }
 
   return (
-    <AppShell title={t('timesheet.appTitle')} userEmail={auth.user!.email} onLogout={onLogout}>
+    <AppShell
+      title={t('timesheet.appTitle')}
+      userEmail={auth.user!.email}
+      onLogout={onLogout}
+      loggingOut={auth.loggingOut}
+    >
       {auth.bootstrapError && (
         <div className="mb-4">
           <Alert variant="error">{auth.bootstrapError}</Alert>

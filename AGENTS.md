@@ -10,6 +10,7 @@ Minimal QuickBooks Online timesheet monorepo.
 |--------|------|-------|
 | `backend/` | Laravel REST API | PHP 8.3, Laravel 13, Sanctum, QBO SDK |
 | `packages/api-client/` | Shared HTTP client | TypeScript, Vitest, Stryker |
+| `packages/ui/` | Shared UI and design system | React 19, Headless UI, Tailwind 4 |
 | `apps/admin/` | Admin UI (QBO connect) | React 19, Vite 8, Tailwind 4 |
 | `apps/timesheet/` | User time entry | React 19, Vite 8, Tailwind 4 |
 
@@ -75,4 +76,4 @@ Measured Stryker scores: admin ~85 %, timesheet ~91 %, api-client ~93 %.
 - Shared IDE: `.vscode/` (also used by Cursor), `.editorconfig`, `.nvmrc`
 - PR review: `.cursor/BUGBOT.md` (includes DRY/SOLID checklist)
 - Reusability plan: `docs/dry-reusability-plan.md`
-- Per-area details: `backend/AGENTS.md`, `packages/api-client/AGENTS.md`, `apps/*/AGENTS.md`
+- Per-area details: `backend/AGENTS.md`, `packages/api-client/AGENTS.md`, `packages/ui/AGENTS.md`, `apps/*/AGENTS.md`

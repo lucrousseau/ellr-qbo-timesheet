@@ -6,7 +6,8 @@ import type { FormEvent } from 'react'
 import { getPasswordRequirementLabels } from '../i18n/passwordPolicyMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
-import { cardClass, inputClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
+import { TextField } from './TextField'
+import { cardClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
 
 type ResetPasswordFormProps = {
   title: string
@@ -85,26 +86,22 @@ export function ResetPasswordForm({
                 ))}
               </ul>
             </div>
-            <label className="block text-sm font-medium text-slate-700">
-              {t('auth.newPassword')}
-              <input
-                type="password"
-                required
-                className={inputClass}
-                value={password}
-                onChange={(event) => onPasswordChange(event.target.value)}
-              />
-            </label>
-            <label className="block text-sm font-medium text-slate-700">
-              {t('auth.confirmPassword')}
-              <input
-                type="password"
-                required
-                className={inputClass}
-                value={passwordConfirmation}
-                onChange={(event) => onPasswordConfirmationChange(event.target.value)}
-              />
-            </label>
+            <TextField
+              label={t('auth.newPassword')}
+              type="password"
+              required
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => onPasswordChange(event.target.value)}
+            />
+            <TextField
+              label={t('auth.confirmPassword')}
+              type="password"
+              required
+              autoComplete="new-password"
+              value={passwordConfirmation}
+              onChange={(event) => onPasswordConfirmationChange(event.target.value)}
+            />
             <button type="submit" className={primaryButtonClass} disabled={submitting}>
               {submitting ? t('common.saving') : t('auth.updatePassword')}
             </button>

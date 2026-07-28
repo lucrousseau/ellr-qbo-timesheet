@@ -688,7 +688,8 @@ describe('Timesheet App', () => {
       expect(screen.getByRole('heading', { name: /preferences/i })).toBeInTheDocument()
     })
 
-    await user.selectOptions(screen.getByLabelText(/language/i), 'fr')
+    await user.click(screen.getByLabelText(/language/i))
+    await user.click(screen.getByRole('option', { name: /french/i }))
     await user.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => {

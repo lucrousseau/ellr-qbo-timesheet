@@ -6,7 +6,8 @@ import type { FormEvent } from 'react'
 import { getPasswordRequirementLabels } from '../i18n/passwordPolicyMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
-import { cardClass, inputClass, secondaryButtonClass } from '../styles/tokens'
+import { TextField } from './TextField'
+import { cardClass, secondaryButtonClass } from '../styles/tokens'
 
 type ChangePasswordPanelProps = {
   currentPassword: string
@@ -67,39 +68,30 @@ export function ChangePasswordPanel({
             ))}
           </ul>
         </div>
-        <label className="block text-sm font-medium text-slate-700">
-          {t('auth.currentPassword')}
-          <input
-            type="password"
-            required
-            autoComplete="current-password"
-            className={inputClass}
-            value={currentPassword}
-            onChange={(event) => onCurrentPasswordChange(event.target.value)}
-          />
-        </label>
-        <label className="block text-sm font-medium text-slate-700">
-          {t('auth.newPassword')}
-          <input
-            type="password"
-            required
-            autoComplete="new-password"
-            className={inputClass}
-            value={password}
-            onChange={(event) => onPasswordChange(event.target.value)}
-          />
-        </label>
-        <label className="block text-sm font-medium text-slate-700">
-          {t('auth.confirmPassword')}
-          <input
-            type="password"
-            required
-            autoComplete="new-password"
-            className={inputClass}
-            value={passwordConfirmation}
-            onChange={(event) => onPasswordConfirmationChange(event.target.value)}
-          />
-        </label>
+        <TextField
+          label={t('auth.currentPassword')}
+          type="password"
+          required
+          autoComplete="current-password"
+          value={currentPassword}
+          onChange={(event) => onCurrentPasswordChange(event.target.value)}
+        />
+        <TextField
+          label={t('auth.newPassword')}
+          type="password"
+          required
+          autoComplete="new-password"
+          value={password}
+          onChange={(event) => onPasswordChange(event.target.value)}
+        />
+        <TextField
+          label={t('auth.confirmPassword')}
+          type="password"
+          required
+          autoComplete="new-password"
+          value={passwordConfirmation}
+          onChange={(event) => onPasswordConfirmationChange(event.target.value)}
+        />
         <button
           type="submit"
           disabled={saving}
