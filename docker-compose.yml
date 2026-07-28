@@ -1,25 +1,4 @@
 services:
-  mysql:
-    image: mysql:8.4
-    restart: unless-stopped
-    env_file:
-      - docker/.env
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-ellr}
-      MYSQL_USER: ${MYSQL_USER:-ellr}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-secret}
-    ports:
-      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
-
   api:
     build:
       context: .
@@ -29,12 +8,7 @@ services:
       - backend/.env
     environment:
       APP_URL: http://localhost:8000
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: ${MYSQL_DATABASE:-ellr}
-      DB_USERNAME: ${MYSQL_USER:-ellr}
-      DB_PASSWORD: ${MYSQL_PASSWORD:-secret}
+      DEV_SEED_ENABLED: "true"
       FRONTEND_ADMIN_URL: http://localhost:5173
       FRONTEND_TIMESHEET_URL: http://localhost:5174
       SANCTUM_STATEFUL_DOMAINS: localhost:5173,localhost:5174
@@ -44,9 +18,6 @@ services:
     volumes:
       - ./backend:/var/www/html
       - api_vendor:/var/www/html/vendor
-    depends_on:
-      mysql:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 5s
@@ -72,7 +43,8 @@ services:
     environment:
       VITE_DOCKER: "true"
       CHOKIDAR_USEPOLLING: "true"
-      VITE_API_URL: http://localhost:8000/api
+      VITE_API_URL: /api
+      VITE_API_PROXY_TARGET: http://api:8000
     ports:
       - "127.0.0.1:${ADMIN_PORT:-5173}:5173"
     volumes:
@@ -93,7 +65,8 @@ services:
     environment:
       VITE_DOCKER: "true"
       CHOKIDAR_USEPOLLING: "true"
-      VITE_API_URL: http://localhost:8000/api
+      VITE_API_URL: /api
+      VITE_API_PROXY_TARGET: http://api:8000
     ports:
       - "127.0.0.1:${TIMESHEET_PORT:-5174}:5174"
     volumes:
@@ -107,6 +80,5 @@ services:
         condition: service_completed_successfully
 
 volumes:
-  mysql_data:
   api_vendor:
   node_modules:

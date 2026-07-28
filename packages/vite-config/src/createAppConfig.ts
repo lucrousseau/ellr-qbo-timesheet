@@ -23,6 +23,7 @@ export function createAppConfig({ port, importMetaUrl }: CreateAppConfigOptions)
   const monorepoRoot = path.join(configDir, '../..')
   const isDocker = process.env.VITE_DOCKER === 'true'
   const usePolling = process.env.CHOKIDAR_USEPOLLING === 'true'
+  const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:8000'
 
   return defineConfig({
     plugins: [react(), tailwindcss()],
@@ -31,6 +32,11 @@ export function createAppConfig({ port, importMetaUrl }: CreateAppConfigOptions)
       strictPort: true,
       ...(isDocker ? { host: true } : {}),
       ...(usePolling ? { watch: { usePolling: true, interval: 1000 } } : {}),
+      // Same-origin proxy so Sanctum session + CSRF cookies work in dev (SPA on :5173/5174).
+      proxy: {
+        '/api': { target: apiProxyTarget, changeOrigin: true },
+        '/sanctum': { target: apiProxyTarget, changeOrigin: true },
+      },
     },
     envPrefix: 'VITE_',
     resolve: {

@@ -6,12 +6,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds the default development database records.
+ * Seeds the default development database records when APP_ENV is local.
  */
 class DatabaseSeeder extends Seeder
 {
@@ -24,12 +23,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        if (! app()->environment('local') || ! config('dev-seed.enabled')) {
+            return;
+        }
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'password',
-        ]);
+        $this->call(DevDatabaseSeeder::class);
     }
 }

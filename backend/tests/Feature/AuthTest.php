@@ -88,7 +88,8 @@ it('rejects invalid login credentials', function () {
         'password' => 'wrong-password',
     ], frontendHeaders())
         ->assertUnauthorized()
-        ->assertJsonPath('message', 'Invalid credentials.');
+        ->assertJsonPath('message', 'Invalid credentials.')
+        ->assertJsonPath('error', 'invalid_credentials');
 });
 
 it('requires email on login', function () {

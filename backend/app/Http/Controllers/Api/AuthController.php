@@ -67,7 +67,10 @@ class AuthController extends Controller
         $credentials = $request->validated();
 
         if (! Auth::attempt($credentials)) {
-            return response()->json(['message' => 'Invalid credentials.'], 401);
+            return response()->json([
+                'message' => 'Invalid credentials.',
+                'error' => ApiErrorCode::InvalidCredentials->value,
+            ], 401);
         }
 
         $user = $request->user();

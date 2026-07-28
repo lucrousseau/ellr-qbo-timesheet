@@ -83,7 +83,7 @@ SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:5174
 
 ### Docker (recommended for portability)
 
-Runs the Laravel API, MySQL, admin, and timesheet dev servers in containers. No local PHP, Composer, or Node required beyond Docker.
+Runs the Laravel API, admin, and timesheet dev servers in containers. No local PHP, Composer, or Node required beyond Docker.
 
 **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose v2).
 
@@ -101,7 +101,6 @@ npm run docker:up
 | API | http://localhost:8000 |
 | Admin | http://localhost:5173 |
 | Timesheet | http://localhost:5174 |
-| MySQL | `127.0.0.1:3306` (user `ellr`, database `ellr`; localhost only) |
 
 Useful commands:
 
@@ -110,12 +109,19 @@ npm run docker:up:build  # rebuild images then start (after Dockerfile changes)
 npm run docker:smoke     # wait for API/admin/timesheet and verify /api/health
 npm run docker:logs      # follow all service logs
 npm run docker:down      # stop containers
-npm run docker:reset     # stop and remove volumes (fresh database)
+npm run docker:reset     # stop and remove volumes (fresh node_modules vendor cache)
 ```
 
-Docker uses **MySQL 8** for the API (`DB_*` vars are overridden in `docker-compose.yml`). Local non-Docker dev keeps the default **SQLite** file (`backend/database/database.sqlite`). Tests always use in-memory SQLite.
+Docker and local non-Docker dev both use **SQLite** (`backend/database/database.sqlite`, configured in `backend/.env`). **MySQL is for production only** (see Production below). Tests always use in-memory SQLite.
 
-Configure MySQL credentials and ports in `docker/.env` (copy from `docker/.env.example`). If port `3306` is already used on your machine, set `MYSQL_PORT` to another value (for example `3307`). Published ports bind to `127.0.0.1` only (API, frontends, and MySQL). Frontend API URL stays `http://localhost:8000/api` because the browser talks to published host ports.
+On startup, Docker runs `php artisan db:seed` after migrations when `APP_ENV=local` and `DEV_SEED_ENABLED=true` (set in `docker-compose.yml` and `backend/.env.example`). Passwords are reset to the `DEV_SEED_*` values on each seed run, including every API container restart. Default dev accounts (override via `backend/.env`):
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | `admin@ellr.local` | `password` |
+| Timesheet user | `timesheet@ellr.local` | `password` |
+
+Frontends call the API through the Vite dev proxy (`VITE_API_URL=/api` in Docker) so Sanctum session cookies work on `localhost:5173` and `localhost:5174`. If you have an existing `apps/admin/.env` or `apps/timesheet/.env` with `VITE_API_URL=http://localhost:8000/api`, update it to `VITE_API_URL=/api` (see `apps/*/.env.example`). Optional port overrides: `API_PORT`, `ADMIN_PORT`, `TIMESHEET_PORT` in `docker/.env` (copy from `docker/.env.example`).
 
 `node-init` installs npm dependencies once before admin and timesheet start. Lock file changes (`package-lock.json`, `composer.lock`) trigger a fresh install on the next container start.
 

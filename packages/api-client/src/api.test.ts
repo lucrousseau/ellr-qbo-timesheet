@@ -571,6 +571,18 @@ describe('getApiErrorMessage', () => {
     )
   })
 
+  it('maps invalid login credentials to a password message', () => {
+    expect(
+      getApiErrorMessage(new ApiError(401, 'Invalid credentials.', 'invalid_credentials'), 'fallback'),
+    ).toBe('Invalid email or password.')
+  })
+
+  it('maps csrf mismatch responses to a session message', () => {
+    expect(getApiErrorMessage(new ApiError(419, 'Page Expired'), 'fallback')).toBe(
+      'Session expired. Please sign in again.',
+    )
+  })
+
   it('maps forbidden responses to an access message', () => {
     expect(getApiErrorMessage(new ApiError(403, 'API error: 403'), 'fallback')).toBe(
       'Access denied.',

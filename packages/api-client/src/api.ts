@@ -192,6 +192,12 @@ function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
     if (error.status === 401) {
+      if (error.code === 'invalid_credentials' || error.message === 'Invalid credentials.') {
+        return 'Invalid email or password.'
+      }
+      return 'Session expired. Please sign in again.'
+    }
+    if (error.status === 419) {
       return 'Session expired. Please sign in again.'
     }
     if (error.status === 403) {

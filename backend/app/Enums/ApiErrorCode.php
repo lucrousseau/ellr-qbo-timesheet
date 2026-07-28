@@ -19,4 +19,5 @@ enum ApiErrorCode: string
     case QboEmployeeInvalid = 'qbo_employee_invalid';
     case AdminRequired = 'admin_required';
     case EmailNotVerified = 'email_not_verified';
+    case InvalidCredentials = 'invalid_credentials';
 }
