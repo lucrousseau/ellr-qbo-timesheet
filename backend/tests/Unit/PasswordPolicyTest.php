@@ -5,6 +5,7 @@ use App\Support\PasswordRules;
 use Illuminate\Support\Facades\Validator;
 
 covers(PasswordPolicy::class);
+covers(PasswordRules::class);
 
 it('loads the shared password policy configuration', function () {
     $config = PasswordPolicy::config();
@@ -24,9 +25,94 @@ it('resolves a readable password policy path', function () {
         ->and(is_readable(PasswordPolicy::configPath()))->toBeTrue();
 });
 
+it('falls back to the monorepo package policy file when backend config is missing', function () {
+    $backendPath = base_path('config/password-policy.json');
+    $backupPath = $backendPath.'.bak';
+
+    rename($backendPath, $backupPath);
+
+    try {
+        expect(PasswordPolicy::configPath())->toContain('packages/password-policy')
+            ->and(PasswordPolicy::config()['minLength'])->toBe(12);
+    } finally {
+        rename($backupPath, $backendPath);
+    }
+});
+
+it('throws when no password policy file is available', function () {
+    $backendPath = base_path('config/password-policy.json');
+    $packagePath = base_path('../packages/password-policy/password-policy.json');
+    $backendBackup = $backendPath.'.bak';
+    $packageBackup = $packagePath.'.bak';
+
+    rename($backendPath, $backendBackup);
+    rename($packagePath, $packageBackup);
+
+    try {
+        expect(fn () => PasswordPolicy::configPath())
+            ->toThrow(RuntimeException::class, 'Password policy file not found');
+    } finally {
+        rename($backendBackup, $backendPath);
+        rename($packageBackup, $packagePath);
+    }
+});
+
 it('exposes test passwords from the shared json', function () {
     expect(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026')
         ->and(PasswordPolicy::validTestPasswordAlt())->toBe('EllrNew!2026');
+});
+
+it('uses default test passwords when testPasswords is missing from json', function () {
+    withPasswordPolicy([
+        'minLength' => 12,
+        'requireUppercase' => true,
+        'requireLowercase' => true,
+        'requireNumbers' => true,
+        'requireSymbols' => true,
+        'uncompromised' => false,
+    ], function () {
+        expect(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026')
+            ->and(PasswordPolicy::validTestPasswordAlt())->toBe('EllrNew!2026');
+    });
+});
+
+it('casts numeric test password values to strings', function () {
+    withPasswordPolicy([
+        'minLength' => 12,
+        'requireUppercase' => true,
+        'requireLowercase' => true,
+        'requireNumbers' => true,
+        'requireSymbols' => true,
+        'uncompromised' => false,
+        'testPasswords' => [
+            'primary' => 123456789,
+            'alternate' => 987654321,
+        ],
+    ], function () {
+        expect(PasswordPolicy::validTestPassword())->toBe('123456789')
+            ->and(PasswordPolicy::validTestPasswordAlt())->toBe('987654321');
+    });
+});
+
+it('applies json defaults when policy keys are omitted', function () {
+    withPasswordPolicy([], function () {
+        $config = PasswordPolicy::config();
+
+        expect($config['minLength'])->toBe(12)
+            ->and($config['requireUppercase'])->toBeTrue()
+            ->and($config['requireLowercase'])->toBeTrue()
+            ->and($config['requireNumbers'])->toBeTrue()
+            ->and($config['requireSymbols'])->toBeTrue()
+            ->and($config['uncompromised'])->toBeTrue()
+            ->and($config['testPasswords'])->toBe([]);
+    });
+});
+
+it('treats non-array testPasswords as empty', function () {
+    withPasswordPolicy(['testPasswords' => 'invalid'], function () {
+        expect(PasswordPolicy::config()['testPasswords'])->toBe([])
+            ->and(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026');
+    });
 });
 
 it('accepts passwords that satisfy the shared policy', function () {
@@ -83,4 +169,132 @@ it('rejects unconfirmed passwords', function () {
 
     expect($validator->fails())->toBeTrue()
         ->and($validator->errors()->has('password'))->toBeTrue();
+});
+
+it('enforces mixed case when only lowercase is required', function () {
+    withPasswordPolicy([
+        'minLength' => 12,
+        'requireUppercase' => false,
+        'requireLowercase' => true,
+        'requireNumbers' => true,
+        'requireSymbols' => true,
+        'uncompromised' => false,
+    ], function () {
+        $validator = Validator::make(
+            [
+                'password' => 'alllowercase1!',
+                'password_confirmation' => 'alllowercase1!',
+            ],
+            ['password' => PasswordRules::newPassword()],
+        );
+
+        expect($validator->fails())->toBeTrue();
+    });
+});
+
+it('allows passwords without numbers when numbers are disabled', function () {
+    withPasswordPolicy([
+        'minLength' => 12,
+        'requireUppercase' => true,
+        'requireLowercase' => true,
+        'requireNumbers' => false,
+        'requireSymbols' => true,
+        'uncompromised' => false,
+    ], function () {
+        $validator = Validator::make(
+            [
+                'password' => 'NoNumbersHere!',
+                'password_confirmation' => 'NoNumbersHere!',
+            ],
+            ['password' => PasswordRules::newPassword()],
+        );
+
+        expect($validator->passes())->toBeTrue();
+    });
+});
+
+it('allows passwords without symbols when symbols are disabled', function () {
+    withPasswordPolicy([
+        'minLength' => 12,
+        'requireUppercase' => true,
+        'requireLowercase' => true,
+        'requireNumbers' => true,
+        'requireSymbols' => false,
+        'uncompromised' => false,
+    ], function () {
+        $validator = Validator::make(
+            [
+                'password' => 'NoSymbols12345',
+                'password_confirmation' => 'NoSymbols12345',
+            ],
+            ['password' => PasswordRules::newPassword()],
+        );
+
+        expect($validator->passes())->toBeTrue();
+    });
+});
+
+it('skips mixed case when neither uppercase nor lowercase is required', function () {
+    withPasswordPolicy([
+        'minLength' => 12,
+        'requireUppercase' => false,
+        'requireLowercase' => false,
+        'requireNumbers' => true,
+        'requireSymbols' => true,
+        'uncompromised' => false,
+    ], function () {
+        $validator = Validator::make(
+            [
+                'password' => 'alllowercase1!',
+                'password_confirmation' => 'alllowercase1!',
+            ],
+            ['password' => PasswordRules::newPassword()],
+        );
+
+        expect($validator->passes())->toBeTrue();
+    });
+});
+
+it('skips uncompromised validation when disabled in policy', function () {
+    withPasswordPolicy([
+        'minLength' => 12,
+        'requireUppercase' => true,
+        'requireLowercase' => true,
+        'requireNumbers' => true,
+        'requireSymbols' => true,
+        'uncompromised' => false,
+    ], function () {
+        $validator = Validator::make(
+            [
+                'password' => 'Password12345!',
+                'password_confirmation' => 'Password12345!',
+            ],
+            ['password' => PasswordRules::newPassword()],
+        );
+
+        expect($validator->passes())->toBeTrue();
+    });
+});
+
+it('honors a custom minimum length from policy json', function () {
+    withPasswordPolicy([
+        'minLength' => 16,
+        'requireUppercase' => false,
+        'requireLowercase' => false,
+        'requireNumbers' => false,
+        'requireSymbols' => false,
+        'uncompromised' => false,
+    ], function () {
+        $short = Validator::make(
+            ['password' => 'short', 'password_confirmation' => 'short'],
+            ['password' => PasswordRules::newPassword()],
+        );
+        $long = Validator::make(
+            ['password' => 'sixteencharslong', 'password_confirmation' => 'sixteencharslong'],
+            ['password' => PasswordRules::newPassword()],
+        );
+
+        expect($short->fails())->toBeTrue()
+            ->and($long->passes())->toBeTrue();
+    });
 });

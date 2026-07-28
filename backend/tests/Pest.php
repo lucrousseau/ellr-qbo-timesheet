@@ -89,3 +89,22 @@ function validTestPassword(): string
 {
     return PasswordPolicy::validTestPassword();
 }
+
+/**
+ * Replaces backend/config/password-policy.json for the duration of a test callback.
+ *
+ * @param  array<string, mixed>  $policy
+ */
+function withPasswordPolicy(array $policy, callable $callback): void
+{
+    $path = base_path('config/password-policy.json');
+    $backup = (string) file_get_contents($path);
+
+    file_put_contents($path, json_encode($policy, JSON_THROW_ON_ERROR));
+
+    try {
+        $callback();
+    } finally {
+        file_put_contents($path, $backup);
+    }
+}
