@@ -22,11 +22,13 @@ class UserProvisioningService
      * @param  QboEmployeeService  $qboEmployee  Employee mapping validation.
      * @param  QuickBooksTokenResolverService  $tokenResolver  QuickBooks token resolver.
      * @param  TimesheetInvitationService  $invitation  Password-set email sender.
+     * @param  AuthSessionService  $authSessions  Session and token invalidation.
      */
     public function __construct(
         private readonly QboEmployeeService $qboEmployee,
         private readonly QuickBooksTokenResolverService $tokenResolver,
         private readonly TimesheetInvitationService $invitation,
+        private readonly AuthSessionService $authSessions,
     ) {}
 
     /**
@@ -70,5 +72,28 @@ class UserProvisioningService
             ->whereNotNull('qbo_employee_ref')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Deletes a provisioned timesheet user account and revokes active sessions.
+     *
+     * @param  User  $user  Timesheet user to remove.
+     * @return void
+     */
+    public function revokeTimesheetUser(User $user): void
+    {
+        if ($user->isAdmin() || $user->qbo_employee_ref === null || $user->qbo_employee_ref === '') {
+            abort(404);
+        }
+
+        DB::transaction(function () use ($user): void {
+            $this->authSessions->invalidateUserSessions($user);
+
+            DB::table(config('auth.passwords.users.table', 'password_reset_tokens'))
+                ->where('email', $user->email)
+                ->delete();
+
+            $user->delete();
+        });
     }
 }

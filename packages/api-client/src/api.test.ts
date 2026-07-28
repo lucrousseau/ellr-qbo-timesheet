@@ -5,6 +5,7 @@ import { ApiError, apiFetch, ensureCsrfCookie, resetCsrfStateForTests } from './
 const VALID_TEST_PASSWORD_ALT = 'EllrNew!2026'
 import {
   createTimesheetUser,
+  deleteTimesheetUser,
   fetchQboEmployees,
   fetchTimesheetUsers,
 } from './admin'
@@ -1297,6 +1298,22 @@ describe('admin api helpers', () => {
       email: 'jane@example.com',
       qbo_employee_ref: '7',
     })
+  })
+
+  it('removes a provisioned timesheet user through the api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(deleteTimesheetUser(2)).resolves.toBeUndefined()
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:8000/api/admin/users/2',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
   })
 })
 

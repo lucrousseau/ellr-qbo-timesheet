@@ -4,6 +4,7 @@
 
 export {
   createTimesheetUser,
+  deleteTimesheetUser,
   fetchQboEmployees,
   fetchTimesheetUsers,
   type CreateTimesheetUserPayload,

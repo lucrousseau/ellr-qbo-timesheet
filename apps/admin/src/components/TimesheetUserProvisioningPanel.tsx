@@ -3,6 +3,9 @@
  */
 
 import { Button, cardClass, LazySearchCombobox, useLocale } from '@ellr/ui'
+import { useState } from 'react'
+import { RemoveTimesheetAccessDialog } from './RemoveTimesheetAccessDialog'
+import { TimesheetProvisionedUserRow } from './TimesheetProvisionedUserRow'
 import type { QboEmployeeOption, User } from '../hooks/useTimesheetProvisioning'
 
 type TimesheetUserProvisioningPanelProps = {
@@ -14,10 +17,13 @@ type TimesheetUserProvisioningPanelProps = {
   loadingUsers: boolean
   selectedEmployee: QboEmployeeOption | null
   creating: boolean
+  removing: boolean
+  removingUserId: number | null
   onEmployeeChange: (employee: QboEmployeeOption | null) => void
   onEmployeeDropdownOpen: () => void
   onEmployeeDropdownClose: () => void
   onSubmit: (event: React.FormEvent) => void
+  onRemoveTimesheetUser: (userId: number) => Promise<boolean>
 }
 
 /**
@@ -34,12 +40,16 @@ export function TimesheetUserProvisioningPanel({
   loadingUsers,
   selectedEmployee,
   creating,
+  removing,
+  removingUserId,
   onEmployeeChange,
   onEmployeeDropdownOpen,
   onEmployeeDropdownClose,
   onSubmit,
+  onRemoveTimesheetUser,
 }: TimesheetUserProvisioningPanelProps) {
   const { t } = useLocale()
+  const [userToRemove, setUserToRemove] = useState<User | null>(null)
 
   if (!connected) {
     return (
@@ -111,19 +121,24 @@ export function TimesheetUserProvisioningPanel({
         ) : (
           <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
             {users.map((user) => (
-              <li key={user.id} className="px-4 py-3 text-sm">
-                <p className="font-medium text-slate-900">{user.name}</p>
-                <p className="text-slate-600">{user.email}</p>
-                <p className="text-slate-500">
-                  {t('admin.mappedEmployee', {
-                    name: user.qbo_employee_name ?? user.qbo_employee_ref ?? '',
-                  })}
-                </p>
-              </li>
+              <TimesheetProvisionedUserRow
+                key={user.id}
+                user={user}
+                removing={removing}
+                removingUserId={removingUserId}
+                onRequestRemove={setUserToRemove}
+              />
             ))}
           </ul>
         )}
       </div>
+
+      <RemoveTimesheetAccessDialog
+        user={userToRemove}
+        confirming={removing}
+        onConfirm={onRemoveTimesheetUser}
+        onClose={() => setUserToRemove(null)}
+      />
     </section>
   )
 }

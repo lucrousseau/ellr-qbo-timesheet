@@ -29,3 +29,9 @@ Feature: Timesheet user provisioning
       {"qbo_employee_ref":"42"}
       """
     Then the response status should be 422
+
+  Scenario: Remove a provisioned timesheet user
+    Given a timesheet user is mapped to quickbooks employee "7"
+    When I request "DELETE" "/api/admin/users/{timesheet_user_id}"
+    Then the response status should be 204
+    And the timesheet user should no longer exist

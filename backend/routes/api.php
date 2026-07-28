@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::middleware('admin')->group(function () {
             Route::get('/admin/users', [AdminUserController::class, 'index']);
             Route::post('/admin/users', [AdminUserController::class, 'store']);
+            Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
             Route::patch('/user/qbo-employee', [QboEmployeeController::class, 'update']);
             Route::patch('/admin/users/{user}/qbo-employee', [AdminQboEmployeeController::class, 'update']);
 

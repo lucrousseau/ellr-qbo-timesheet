@@ -31,6 +31,8 @@ class FeatureContext implements Context
 
     private bool $statefulClient = false;
 
+    private ?int $timesheetUserId = null;
+
     /**
      * @BeforeScenario
      * @return void
@@ -43,6 +45,7 @@ class FeatureContext implements Context
         $this->response = null;
         $this->cookies = [];
         $this->statefulClient = false;
+        $this->timesheetUserId = null;
     }
 
     /**
@@ -54,6 +57,7 @@ class FeatureContext implements Context
         $this->response = null;
         $this->cookies = [];
         $this->statefulClient = false;
+        $this->timesheetUserId = null;
         $this->resetAuthenticationState();
         self::$app = null;
     }
@@ -134,6 +138,36 @@ class FeatureContext implements Context
     public function anotherUserIsMappedToQuickbooksEmployee(string $ref): void
     {
         User::factory()->create(['qbo_employee_ref' => $ref]);
+    }
+
+    /**
+     * @Given a timesheet user is mapped to quickbooks employee :ref
+     * @param  string  $ref  QuickBooks employee reference.
+     * @return void
+     */
+    public function aTimesheetUserIsMappedToQuickbooksEmployee(string $ref): void
+    {
+        $user = User::factory()->create([
+            'qbo_employee_ref' => $ref,
+            'qbo_employee_name' => 'Jane Doe',
+        ]);
+
+        $this->timesheetUserId = $user->id;
+    }
+
+    /**
+     * @Then the timesheet user should no longer exist
+     * @return void
+     */
+    public function theTimesheetUserShouldNoLongerExist(): void
+    {
+        if ($this->timesheetUserId === null) {
+            throw new RuntimeException('No timesheet user id was captured.');
+        }
+
+        if (User::query()->find($this->timesheetUserId) !== null) {
+            throw new RuntimeException('Expected the timesheet user to be deleted.');
+        }
     }
 
     /**
@@ -297,6 +331,10 @@ class FeatureContext implements Context
      */
     private function dispatchRequest(string $method, string $path, ?string $body = null): void
     {
+        if ($this->timesheetUserId !== null) {
+            $path = str_replace('{timesheet_user_id}', (string) $this->timesheetUserId, $path);
+        }
+
         $server = $this->requestServerHeaders($method, $body !== null);
 
         $request = Request::create($path, $method, [], $this->cookies, [], $server, $body);

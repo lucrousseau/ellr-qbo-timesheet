@@ -8,6 +8,7 @@ use App\Services\QboEmployeeService;
 use App\Services\QuickBooksService;
 use App\Services\TimesheetInvitationService;
 use App\Services\UserProvisioningService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use QuickBooksOnline\API\DataService\DataService;
 
@@ -183,4 +184,91 @@ it('rejects duplicate quickbooks employee provisioning', function () {
         ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['qbo_employee_ref']);
+});
+
+it('removes a provisioned timesheet user and revokes their sessions', function () {
+    $admin = actingAsAdmin();
+    $timesheetUser = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+    $timesheetUser->createToken('timesheet');
+
+    $this->actingAs($admin)
+        ->deleteJson("/api/admin/users/{$timesheetUser->id}", [], frontendHeaders())
+        ->assertNoContent();
+
+    expect(User::query()->find($timesheetUser->id))->toBeNull()
+        ->and($timesheetUser->tokens()->count())->toBe(0);
+});
+
+it('requires administrator access to remove a timesheet user', function () {
+    $user = User::factory()->create();
+    $timesheetUser = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    $this->actingAs($user)
+        ->deleteJson("/api/admin/users/{$timesheetUser->id}", [], frontendHeaders())
+        ->assertForbidden()
+        ->assertJsonPath('error', 'admin_required');
+
+    expect(User::query()->find($timesheetUser->id))->not->toBeNull();
+});
+
+it('returns not found when removing a non-provisioned user', function () {
+    $admin = actingAsAdmin();
+    $user = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->deleteJson("/api/admin/users/{$user->id}", [], frontendHeaders())
+        ->assertNotFound();
+});
+
+it('returns not found when removing an administrator account', function () {
+    $admin = actingAsAdmin();
+    $adminTarget = User::factory()->admin()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    $this->actingAs($admin)
+        ->deleteJson("/api/admin/users/{$adminTarget->id}", [], frontendHeaders())
+        ->assertNotFound();
+
+    expect(User::query()->find($adminTarget->id))->not->toBeNull();
+});
+
+it('removes database sessions and password reset tokens when revoking a timesheet user', function () {
+    config()->set('session.driver', 'database');
+
+    $admin = actingAsAdmin();
+    $timesheetUser = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    DB::table('sessions')->insert([
+        'id' => 'session-to-revoke',
+        'user_id' => $timesheetUser->id,
+        'ip_address' => '127.0.0.1',
+        'user_agent' => 'test',
+        'payload' => 'payload',
+        'last_activity' => time(),
+    ]);
+
+    DB::table('password_reset_tokens')->insert([
+        'email' => $timesheetUser->email,
+        'token' => 'reset-token',
+        'created_at' => now(),
+    ]);
+
+    $this->actingAs($admin)
+        ->deleteJson("/api/admin/users/{$timesheetUser->id}", [], frontendHeaders())
+        ->assertNoContent();
+
+    expect(User::query()->find($timesheetUser->id))->toBeNull()
+        ->and(DB::table('sessions')->where('user_id', $timesheetUser->id)->count())->toBe(0)
+        ->and(DB::table('password_reset_tokens')->where('email', $timesheetUser->email)->count())->toBe(0);
 });

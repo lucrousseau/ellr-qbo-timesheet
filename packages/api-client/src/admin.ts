@@ -61,3 +61,13 @@ export async function createTimesheetUser(payload: CreateTimesheetUserPayload): 
 
   return response.user
 }
+
+/**
+ * Removes a provisioned timesheet user account without deleting QuickBooks time entries.
+ * @param userId Application user id to revoke.
+ */
+export async function deleteTimesheetUser(userId: number): Promise<void> {
+  await apiFetch(`/admin/users/${userId}`, {
+    method: 'DELETE',
+  })
+}

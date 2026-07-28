@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   createTimesheetUser,
+  deleteTimesheetUser,
   fetchQboEmployees,
   fetchTimesheetUsers,
   type QboEmployeeOption,
@@ -39,6 +40,7 @@ export function useTimesheetProvisioning({
   const [users, setUsers] = useState<User[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<QboEmployeeOption | null>(null)
+  const [removingUserId, setRemovingUserId] = useState<number | null>(null)
 
   const employeesEnabled =
     isAdministrator && status?.connected === true && administratorTabActive
@@ -123,6 +125,31 @@ export function useTimesheetProvisioning({
     },
   )
 
+  const { run: removeTimesheetUserGuarded, pending: removing } = useGuardedAction(
+    async (userId: number): Promise<boolean> => {
+      setRemovingUserId(userId)
+
+      try {
+        await deleteTimesheetUser(userId)
+        setUsers((current) => current.filter((user) => user.id !== userId))
+        onSuccess(t('admin.timesheetUserRemoved'))
+
+        return true
+      } catch (caught) {
+        onError(getApiErrorMessage(caught, t('admin.removeTimesheetUserFailed'), locale))
+
+        return false
+      } finally {
+        setRemovingUserId(null)
+      }
+    },
+  )
+
+  const onRemoveTimesheetUser = useCallback(
+    async (userId: number): Promise<boolean> => (await removeTimesheetUserGuarded(userId)) ?? false,
+    [removeTimesheetUserGuarded],
+  )
+
   return {
     employees: availableEmployees,
     users,
@@ -131,9 +158,12 @@ export function useTimesheetProvisioning({
     loadingUsers,
     selectedEmployee,
     creating,
+    removing,
+    removingUserId,
     onEmployeeChange,
     onEmployeeDropdownOpen,
     onEmployeeDropdownClose,
     onCreateTimesheetUser,
+    onRemoveTimesheetUser,
   }
 }

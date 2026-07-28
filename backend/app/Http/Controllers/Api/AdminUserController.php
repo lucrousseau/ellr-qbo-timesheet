@@ -8,10 +8,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAdminUserRequest;
+use App\Models\User;
 use App\Services\UserProvisioningService;
 use App\Support\UserApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Lists timesheet users and creates accounts linked to QuickBooks employees.
@@ -56,5 +58,18 @@ class AdminUserController extends Controller
         );
 
         return response()->json(['user' => UserApiResponse::resource($user)], 201);
+    }
+
+    /**
+     * Removes a provisioned timesheet user account without deleting QuickBooks time entries.
+     *
+     * @param  User  $user  Timesheet user to revoke.
+     * @return JsonResponse
+     */
+    public function destroy(User $user): JsonResponse
+    {
+        $this->provisioning->revokeTimesheetUser($user);
+
+        return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }

@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, disconnectQuickBooks, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, updateUserLocale } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -12,6 +12,7 @@ vi.mock('@ellr/api-client', async () =>
     fetchQboEmployees: vi.fn(),
     fetchTimesheetUsers: vi.fn(),
     createTimesheetUser: vi.fn(),
+    deleteTimesheetUser: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
     updateUserLocale: vi.fn(),
@@ -70,6 +71,7 @@ describe('Admin App', () => {
     vi.mocked(fetchQboEmployees).mockReset()
     vi.mocked(fetchTimesheetUsers).mockReset()
     vi.mocked(createTimesheetUser).mockReset()
+    vi.mocked(deleteTimesheetUser).mockReset()
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(fetchQboEmployees).mockResolvedValue([])
@@ -720,6 +722,89 @@ describe('Admin App', () => {
         qbo_employee_ref: '7',
       })
       expect(screen.getByText(/timesheet access created/i)).toBeInTheDocument()
+    })
+  })
+
+  it('removes timesheet access for a provisioned user', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockResolvedValue([])
+    vi.mocked(fetchTimesheetUsers).mockResolvedValue([
+      {
+        id: 2,
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        qbo_employee_ref: '7',
+        qbo_employee_name: 'Jane Doe',
+      },
+    ])
+    vi.mocked(deleteTimesheetUser).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /remove timesheet access for jane doe/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /remove timesheet access for jane doe/i }))
+
+    const dialog = screen.getByRole('alertdialog')
+    expect(within(dialog).getByText(/deletes the timesheet app account/i)).toBeInTheDocument()
+    expect(within(dialog).getByText(/hours already logged in quickbooks online are not deleted/i)).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: /^remove access$/i }))
+
+    await waitFor(() => {
+      expect(deleteTimesheetUser).toHaveBeenCalledWith(2)
+      expect(screen.getByText(/timesheet access removed/i)).toBeInTheDocument()
+      expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
+    })
+  })
+
+  it('keeps the remove dialog open when timesheet access removal fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockResolvedValue([])
+    vi.mocked(fetchTimesheetUsers).mockResolvedValue([
+      {
+        id: 2,
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        qbo_employee_ref: '7',
+        qbo_employee_name: 'Jane Doe',
+      },
+    ])
+    vi.mocked(deleteTimesheetUser).mockRejectedValue(new Error('delete failed'))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /remove timesheet access for jane doe/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /remove timesheet access for jane doe/i }))
+
+    const dialog = screen.getByRole('alertdialog')
+    await user.click(within(dialog).getByRole('button', { name: /^remove access$/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/unable to remove timesheet access/i)).toBeInTheDocument()
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+      expect(screen.getByText('Jane Doe')).toBeInTheDocument()
     })
   })
 

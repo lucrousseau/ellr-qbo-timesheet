@@ -103,10 +103,13 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             loadingUsers={provisioning.loadingUsers}
             selectedEmployee={provisioning.selectedEmployee}
             creating={provisioning.creating}
+            removing={provisioning.removing}
+            removingUserId={provisioning.removingUserId}
             onEmployeeChange={provisioning.onEmployeeChange}
             onEmployeeDropdownOpen={provisioning.onEmployeeDropdownOpen}
             onEmployeeDropdownClose={provisioning.onEmployeeDropdownClose}
             onSubmit={provisioning.onCreateTimesheetUser}
+            onRemoveTimesheetUser={provisioning.onRemoveTimesheetUser}
           />
         </div>
       )}
