@@ -2,7 +2,7 @@
  * @file Account settings tab: language preferences and password change.
  */
 
-import type { UserLocale } from '@ellr/api-client'
+import type { UserLocale } from '@ellr/ui'
 import {
   ChangePasswordPanel,
   UserPreferencesPanel,

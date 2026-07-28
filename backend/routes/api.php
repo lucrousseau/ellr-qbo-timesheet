@@ -5,12 +5,14 @@
  */
 
 use App\Http\Controllers\Api\AdminQboEmployeeController;
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\QboEmployeeController;
 use App\Http\Controllers\Api\QuickBooksAuthController;
+use App\Http\Controllers\Api\QuickBooksEmployeeController;
 use App\Http\Controllers\Api\TimeActivityController;
 use App\Http\Controllers\Api\UserLocaleController;
 use App\Http\Controllers\Api\UserPasswordController;
@@ -46,10 +48,13 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 
     Route::middleware('verified.email')->group(function () {
         Route::middleware('admin')->group(function () {
+            Route::get('/admin/users', [AdminUserController::class, 'index']);
+            Route::post('/admin/users', [AdminUserController::class, 'store']);
             Route::patch('/user/qbo-employee', [QboEmployeeController::class, 'update']);
             Route::patch('/admin/users/{user}/qbo-employee', [AdminQboEmployeeController::class, 'update']);
 
             Route::prefix('quickbooks')->group(function () {
+                Route::get('/employees', [QuickBooksEmployeeController::class, 'index']);
                 Route::get('/status', [QuickBooksAuthController::class, 'status']);
                 Route::get('/connect', [QuickBooksAuthController::class, 'connect']);
                 Route::post('/disconnect', [QuickBooksAuthController::class, 'disconnect']);

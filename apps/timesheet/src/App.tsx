@@ -2,7 +2,7 @@
  * @file Timesheet UI for creating and reviewing QuickBooks time activities.
  */
 
-import { Alert, AppShell, LoadingScreen, LocaleProvider, UserPreferencesPanel, useLocale, useSyncUserLocale } from '@ellr/ui'
+import { Alert, AppShell, LoadingScreen, LocaleProvider, UserPreferencesPanel, useLocale, usePasswordResetInviteGate, useSyncUserLocale } from '@ellr/ui'
 import { EmailVerificationBanner } from './components/EmailVerificationBanner'
 import { QboEmployeeWarning } from './components/QboEmployeeWarning'
 import { TimeEntryForm } from './components/TimeEntryForm'
@@ -18,14 +18,19 @@ function TimesheetDashboard() {
   const { form, setForm, submitting, message, clearMessage, submit } = useTimeEntry()
   const auth = useTimesheetAuth()
   const { t } = useLocale()
+  const resetInviteGate = usePasswordResetInviteGate({
+    authLoading: auth.authLoading,
+    user: auth.user,
+    handleLogout: auth.handleLogout,
+  })
 
   useSyncUserLocale(auth.user)
 
-  if (auth.authLoading) {
+  if (resetInviteGate.gateLoading) {
     return <LoadingScreen />
   }
 
-  if (!auth.user) {
+  if (resetInviteGate.showGuestAuth) {
     return <TimesheetGuestAuth auth={auth} message={message} />
   }
 
@@ -35,7 +40,7 @@ function TimesheetDashboard() {
   }
 
   return (
-    <AppShell title={t('timesheet.appTitle')} userEmail={auth.user.email} onLogout={onLogout}>
+    <AppShell title={t('timesheet.appTitle')} userEmail={auth.user!.email} onLogout={onLogout}>
       {auth.bootstrapError && (
         <div className="mb-4">
           <Alert variant="error">{auth.bootstrapError}</Alert>
@@ -56,7 +61,7 @@ function TimesheetDashboard() {
           onSave={auth.saveLocale}
         />
       </div>
-      {auth.showEmailVerification(auth.user) && (
+      {auth.showEmailVerification(auth.user!) && (
         <EmailVerificationBanner
           message={auth.verificationMessage}
           messageVariant={auth.verificationMessageVariant}
@@ -64,14 +69,14 @@ function TimesheetDashboard() {
           onResend={auth.handleResendVerification}
         />
       )}
-      {!auth.user.qbo_employee_ref ? (
+      {!auth.user!.qbo_employee_ref ? (
         <QboEmployeeWarning />
-      ) : auth.showEmailVerification(auth.user) ? null : (
+      ) : auth.showEmailVerification(auth.user!) ? null : (
         <TimeEntryForm
           employeeLabel={
-            auth.user.qbo_employee_name
-              ? `${auth.user.qbo_employee_name} (${auth.user.qbo_employee_ref})`
-              : String(auth.user.qbo_employee_ref)
+            auth.user!.qbo_employee_name
+              ? `${auth.user!.qbo_employee_name} (${auth.user!.qbo_employee_ref})`
+              : String(auth.user!.qbo_employee_ref)
           }
           form={form}
           submitting={submitting}

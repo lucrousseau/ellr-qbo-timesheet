@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, createTimeActivity, fetchAppConfig, fetchCurrentUser, login, requestPasswordReset, resendVerificationEmail, resetPassword, updateUserLocale } from '@ellr/api-client'
+import { ApiError, createTimeActivity, fetchAppConfig, fetchCurrentUser, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -27,6 +27,8 @@ describe('Timesheet App', () => {
     vi.mocked(requestPasswordReset).mockReset()
     vi.mocked(resetPassword).mockReset()
     vi.mocked(resendVerificationEmail).mockReset()
+    vi.mocked(logout).mockReset()
+    vi.mocked(logout).mockResolvedValue(undefined)
   })
 
   it('shows an api outage message when session bootstrap fails', async () => {
@@ -499,6 +501,19 @@ describe('Timesheet App', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument()
       expect(screen.getByText(/resetting password for user@example.com/i)).toBeInTheDocument()
+    })
+  })
+
+  it('logs out an active session before showing the reset password screen', async () => {
+    window.history.replaceState({}, '', '/reset-password?token=abc&email=user%40example.com')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(logout).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(logout).toHaveBeenCalledTimes(1)
+      expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument()
     })
   })
 

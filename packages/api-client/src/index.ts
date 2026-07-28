@@ -2,6 +2,13 @@
  * @file Public exports for the shared Laravel API HTTP client.
  */
 
+export {
+  createTimesheetUser,
+  fetchQboEmployees,
+  fetchTimesheetUsers,
+  type CreateTimesheetUserPayload,
+  type QboEmployeeOption,
+} from './admin'
 export { ApiError, API_URL, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
 export { fetchAppConfig, type AppConfig } from './appConfig'
 export { getLocalizedApiErrorMessage } from './errorMessages'
@@ -21,6 +28,7 @@ export {
 } from './auth'
 export {
   isEmailUnverified,
+  hasValidPasswordResetInvite,
   isResetPasswordRoute,
   parseEmailVerificationCallback,
   parseResetPasswordParams,

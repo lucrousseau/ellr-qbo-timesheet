@@ -44,6 +44,20 @@ export function isResetPasswordRoute(pathname: string): boolean {
 }
 
 /**
+ * Returns whether the current URL contains a complete password reset invite.
+ * @returns `true` when token and email query params are both present.
+ */
+export function hasValidPasswordResetInvite(): boolean {
+  if (!isResetPasswordRoute(window.location.pathname)) {
+    return false
+  }
+
+  const { token, email } = parseResetPasswordParams(window.location.search)
+
+  return Boolean(token && email)
+}
+
+/**
  * Reads password reset token and email from the query string.
  * @param search `location.search` string.
  * @returns Token and email when present.

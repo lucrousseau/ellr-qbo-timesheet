@@ -35,6 +35,15 @@ describe('createAppConfig', () => {
     })
   })
 
+  it('includes Tailwind source paths for shared UI and both apps', () => {
+    const monorepoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../..')
+    const appCss = readFileSync(path.join(monorepoRoot, 'packages/vite-config/src/shared/app.css'), 'utf8')
+
+    expect(appCss).toContain('@source "../../../ui/src"')
+    expect(appCss).toContain('@source "../../../../apps/admin/src"')
+    expect(appCss).toContain('@source "../../../../apps/timesheet/src"')
+  })
+
   it('enables Docker host binding and polling when env vars are set', () => {
     vi.stubEnv('VITE_DOCKER', 'true')
     vi.stubEnv('CHOKIDAR_USEPOLLING', 'true')

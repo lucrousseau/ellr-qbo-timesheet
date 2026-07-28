@@ -15,6 +15,10 @@ type ErrorMessageKey =
   | 'email_not_verified'
   | 'access_denied'
   | 'qbo_employee_invalid'
+  | 'qbo_employee_removed'
+  | 'qbo_employee_email_missing'
+  | 'qbo_employee_email_conflict'
+  | 'qbo_insufficient_permissions'
   | 'invalid_data'
   | 'password_uncompromised'
   | 'quickbooks_busy'
@@ -32,6 +36,10 @@ const ERROR_MESSAGES: Record<UserLocale, Record<ErrorMessageKey, string>> = {
     email_not_verified: 'Verify your email address before signing in.',
     access_denied: 'Access denied.',
     qbo_employee_invalid: 'QuickBooks employee not found.',
+    qbo_employee_removed: 'Your QuickBooks employee access was removed. Contact an administrator.',
+    qbo_employee_email_missing: 'QuickBooks employee has no email address configured.',
+    qbo_employee_email_conflict: 'QuickBooks employee email is already used by another account.',
+    qbo_insufficient_permissions: 'QuickBooks permissions are insufficient. Connect with a company administrator account.',
     invalid_data: 'Invalid data or QuickBooks error.',
     password_uncompromised: 'Choose a password that has not appeared in a known data breach.',
     quickbooks_busy: 'QuickBooks is busy. Please try again shortly.',
@@ -48,6 +56,10 @@ const ERROR_MESSAGES: Record<UserLocale, Record<ErrorMessageKey, string>> = {
     email_not_verified: 'Vérifiez votre adresse courriel avant de vous connecter.',
     access_denied: 'Accès refusé.',
     qbo_employee_invalid: 'Employé QuickBooks introuvable.',
+    qbo_employee_removed: 'Votre accès employé QuickBooks a été retiré. Contactez un administrateur.',
+    qbo_employee_email_missing: 'L\'employé QuickBooks n\'a pas d\'adresse courriel configurée.',
+    qbo_employee_email_conflict: 'Le courriel de l\'employé QuickBooks est déjà utilisé par un autre compte.',
+    qbo_insufficient_permissions: 'Permissions QuickBooks insuffisantes. Connectez-vous avec un compte administrateur de la compagnie.',
     invalid_data: 'Données invalides ou erreur QuickBooks.',
     password_uncompromised: 'Choisissez un mot de passe qui ne figure pas dans une fuite de données connue.',
     quickbooks_busy: 'QuickBooks est occupé. Réessayez sous peu.',

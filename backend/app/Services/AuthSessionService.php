@@ -14,10 +14,35 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Applies email verification rules during authentication.
+ * Applies email verification and QBO employee rules during authentication.
  */
 class AuthSessionService
 {
+    /**
+     * Injects the QBO employee login guard.
+     *
+     * @param  QboEmployeeLoginGuardService  $qboEmployeeLoginGuard  QBO employee login validation.
+     */
+    public function __construct(
+        private readonly QboEmployeeLoginGuardService $qboEmployeeLoginGuard,
+    ) {}
+
+    /**
+     * Logs out and returns a JSON response when login requirements are not met.
+     *
+     * @param  User  $user  Authenticated user.
+     * @param  Request  $request  Incoming HTTP request.
+     * @return JsonResponse|null
+     */
+    public function rejectLoginIfNeeded(User $user, Request $request): ?JsonResponse
+    {
+        if ($response = $this->rejectUnverifiedLogin($user, $request)) {
+            return $response;
+        }
+
+        return $this->qboEmployeeLoginGuard->rejectIfEmployeeRemoved($user, $request);
+    }
+
     /**
      * Logs out and returns a JSON response when verification is required but pending.
      *

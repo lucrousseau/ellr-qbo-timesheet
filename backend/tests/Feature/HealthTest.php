@@ -36,3 +36,13 @@ it('returns require_email_verification as false when disabled', function () {
 
     expect($response->json('require_email_verification'))->toBeBool();
 });
+
+it('casts disabled require_email_verification config values to booleans', function () {
+    config(['app.require_email_verification' => 0]);
+
+    $response = $this->getJson('/api/health');
+
+    $response->assertOk();
+
+    expect($response->json('require_email_verification'))->toBeFalse();
+});

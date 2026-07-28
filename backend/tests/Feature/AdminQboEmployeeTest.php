@@ -14,7 +14,11 @@ it('allows administrators to map a qbo employee for another user', function () {
     $target = User::factory()->create();
 
     $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('FindById')->once()->with('Employee', '42')->andReturn((object) ['Id' => '42']);
+    $dataService->shouldReceive('FindById')->once()->with('Employee', '42')->andReturn((object) [
+        'Id' => '42',
+        'DisplayName' => 'Jane Doe',
+        'PrimaryEmailAddr' => (object) ['Address' => 'jane@example.com'],
+    ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
     $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
@@ -24,10 +28,11 @@ it('allows administrators to map a qbo employee for another user', function () {
     $this->actingAs($admin)
         ->patchJson("/api/admin/users/{$target->id}/qbo-employee", [
             'qbo_employee_ref' => '42',
-            'qbo_employee_name' => 'Jane Doe',
         ], frontendHeaders())
         ->assertOk()
-        ->assertJsonPath('user.qbo_employee_ref', '42');
+        ->assertJsonPath('user.qbo_employee_ref', '42')
+        ->assertJsonPath('user.name', 'Jane Doe')
+        ->assertJsonPath('user.email', 'jane@example.com');
 
     expect($target->fresh()->qbo_employee_ref)->toBe('42');
 });

@@ -10,7 +10,6 @@ import {
   getApiErrorMessage,
   normalizeUserLocale,
   parseQuickBooksOAuthCallback,
-  updateQboEmployee,
   type QuickBooksStatus,
   type User,
 } from '@ellr/api-client'
@@ -21,7 +20,14 @@ import { useAuth, useFlashMessage, useLocale, usePasswordRecovery, useUserLocale
  * @param reason OAuth error reason from the callback query string.
  * @returns Message catalog key under `admin.*`.
  */
-function quickBooksOAuthMessageKey(reason?: string | null): 'admin.oauthDenied' | 'admin.oauthMissingParams' | 'admin.oauthFailed' {
+function quickBooksOAuthMessageKey(
+  reason?: string | null,
+):
+  | 'admin.oauthDenied'
+  | 'admin.oauthMissingParams'
+  | 'admin.oauthInsufficientPermissions'
+  | 'admin.oauthRealmConflict'
+  | 'admin.oauthFailed' {
   if (reason === 'oauth') {
     return 'admin.oauthDenied'
   }
@@ -30,11 +36,19 @@ function quickBooksOAuthMessageKey(reason?: string | null): 'admin.oauthDenied' 
     return 'admin.oauthMissingParams'
   }
 
+  if (reason === 'insufficient_permissions') {
+    return 'admin.oauthInsufficientPermissions'
+  }
+
+  if (reason === 'realm_conflict') {
+    return 'admin.oauthRealmConflict'
+  }
+
   return 'admin.oauthFailed'
 }
 
 /**
- * QuickBooks admin screen: session auth, OAuth callback, connect/disconnect, employee mapping.
+ * QuickBooks admin screen: session auth, OAuth callback, connect/disconnect.
  * @returns Auth fields, flash messages, and QuickBooks dashboard handlers.
  */
 export function useQuickBooksAdmin() {
@@ -42,9 +56,6 @@ export function useQuickBooksAdmin() {
   const { message, showError, showSuccess, clearMessage } = useFlashMessage()
   const [status, setStatus] = useState<QuickBooksStatus | null>(null)
   const [connecting, setConnecting] = useState(false)
-  const [qboEmployeeRef, setQboEmployeeRef] = useState('')
-  const [qboEmployeeName, setQboEmployeeName] = useState('')
-  const [savingEmployee, setSavingEmployee] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
 
   const loadQuickBooksStatus = useCallback(async (currentUser: User | null) => {
@@ -52,9 +63,6 @@ export function useQuickBooksAdmin() {
       setStatus(null)
       return
     }
-
-    setQboEmployeeRef(currentUser.qbo_employee_ref ?? '')
-    setQboEmployeeName(currentUser.qbo_employee_name ?? '')
 
     if (currentUser.is_admin !== true) {
       setStatus(null)
@@ -132,21 +140,6 @@ export function useQuickBooksAdmin() {
     }
   }
 
-  const saveQboEmployee = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setSavingEmployee(true)
-
-    try {
-      const updatedUser = await updateQboEmployee(qboEmployeeRef, qboEmployeeName || undefined)
-      setUser(updatedUser)
-      showSuccess(t('admin.employeeSaved'))
-    } catch (caught) {
-      showError(getApiErrorMessage(caught, t('admin.saveEmployeeFailed'), locale))
-    } finally {
-      setSavingEmployee(false)
-    }
-  }
-
   const disconnectQuickBooksFlow = async () => {
     setDisconnecting(true)
 
@@ -175,17 +168,11 @@ export function useQuickBooksAdmin() {
     status,
     connecting,
     disconnecting,
-    qboEmployeeRef,
-    setQboEmployeeRef,
-    qboEmployeeName,
-    setQboEmployeeName,
-    savingEmployee,
     preferenceLocale,
     setPreferenceLocale,
     savingLocale,
     connectQuickBooksFlow,
     disconnectQuickBooksFlow,
-    saveQboEmployee,
     saveLocale,
     showError,
     showSuccess,

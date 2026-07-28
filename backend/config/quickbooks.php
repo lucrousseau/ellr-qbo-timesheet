@@ -61,4 +61,24 @@ return [
 
     'time_activities_probe_truncated' => (bool) env('QUICKBOOKS_TIME_ACTIVITIES_PROBE_TRUNCATED', true),
 
+    /*
+    |--------------------------------------------------------------------------
+    | QBO list endpoints (employees, customers, projects, services, ...)
+    |--------------------------------------------------------------------------
+    |
+    | Shared cache TTL and MAXRESULTS cap for read-heavy picker lists. Set TTL to
+    | 0 to disable caching. Use ?refresh=1 on list endpoints to bypass cache.
+    |
+    */
+
+    'list_cache_ttl_minutes' => (int) env(
+        'QUICKBOOKS_LIST_CACHE_TTL_MINUTES',
+        env('QUICKBOOKS_EMPLOYEES_CACHE_TTL_MINUTES', 15),
+    ),
+
+    'list_max_results' => (int) env(
+        'QUICKBOOKS_LIST_MAX_RESULTS',
+        env('QUICKBOOKS_EMPLOYEES_MAX_RESULTS', 1000),
+    ),
+
 ];

@@ -3,6 +3,7 @@
 use App\Exceptions\QuickBooksOAuthException;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Services\QuickBooksConnectionValidationService;
 use App\Services\QuickBooksOAuthCallbackService;
 use App\Services\QuickBooksService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +26,12 @@ it('exchanges oauth code for the user encoded in state', function () {
         ->with('auth-code', '1234567890', Mockery::on(fn ($arg) => $arg->is($user)))
         ->andReturn($token);
 
-    (new QuickBooksOAuthCallbackService($quickBooks))->exchangeFromCallback(
+    $connectionValidation = Mockery::mock(QuickBooksConnectionValidationService::class);
+    $connectionValidation->shouldReceive('validateAdministratorConnection')
+        ->once()
+        ->with(Mockery::on(fn ($arg) => $arg->is($user)), Mockery::on(fn ($arg) => $arg->is($token)));
+
+    (new QuickBooksOAuthCallbackService($quickBooks, $connectionValidation))->exchangeFromCallback(
         'auth-code',
         '1234567890',
         'secure-state',
@@ -43,7 +49,7 @@ it('rejects oauth callback when session user differs from state user', function 
         ->andReturn(['user_id' => $initiator->id]);
     $quickBooks->shouldReceive('exchangeCode')->never();
 
-    (new QuickBooksOAuthCallbackService($quickBooks))->exchangeFromCallback(
+    (new QuickBooksOAuthCallbackService($quickBooks, Mockery::mock(QuickBooksConnectionValidationService::class)))->exchangeFromCallback(
         'auth-code',
         '1234567890',
         'secure-state',
@@ -52,7 +58,10 @@ it('rejects oauth callback when session user differs from state user', function 
 })->throws(QuickBooksOAuthException::class, 'OAuth session mismatch.');
 
 it('redirects to admin with an oauth error reason', function () {
-    $response = (new QuickBooksOAuthCallbackService(Mockery::mock(QuickBooksService::class)))
+    $response = (new QuickBooksOAuthCallbackService(
+        Mockery::mock(QuickBooksService::class),
+        Mockery::mock(QuickBooksConnectionValidationService::class),
+    ))
         ->redirectError('http://localhost:5173', 'oauth');
 
     expect($response->getTargetUrl())->toBe('http://localhost:5173?quickbooks=error&reason=oauth');

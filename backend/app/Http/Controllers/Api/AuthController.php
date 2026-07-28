@@ -79,7 +79,7 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        if ($response = $this->authSession->rejectUnverifiedLogin($user, $request)) {
+        if ($response = $this->authSession->rejectLoginIfNeeded($user, $request)) {
             return $response;
         }
 
@@ -87,7 +87,9 @@ class AuthController extends Controller
             $request->session()->regenerate();
         }
 
-        return response()->json(['user' => UserApiResponse::resource($request->user())]);
+        $authenticatedUser = $request->user()->fresh() ?? $request->user();
+
+        return response()->json(['user' => UserApiResponse::resource($authenticatedUser)]);
     }
 
     /**

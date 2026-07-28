@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@source "../../../ui/src";
+@source "../../../../apps/admin/src";
+@source "../../../../apps/timesheet/src";
+
 @theme {
   --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
 }

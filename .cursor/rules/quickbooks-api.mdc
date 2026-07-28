@@ -1,0 +1,57 @@
+---
+description: QuickBooks Online API usage, caching, and rate-limit discipline
+globs: backend/app/Services/**,backend/app/Http/Controllers/Api/**,packages/api-client/src/quickbooks.ts,packages/api-client/src/admin.ts,apps/admin/**
+alwaysApply: false
+---
+
+# QuickBooks API economy
+
+Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
+
+## Rules
+
+| Rule | Rationale |
+|------|-----------|
+| **SDK only in services** | `QuickBooksService` and domain services (`QboEmployeeListService`, `TimeActivityListService`, etc.) |
+| **Cache read-heavy lists** | Employee, customer, project, service pickers: `QboListCacheService` keyed by `quickbooks:{resource}:{realm_id}` |
+| **Explicit refresh only** | Admin UI exposes a manual sync control; API uses `?refresh=1` to bypass cache |
+| **No cache on auth probes** | OAuth validation (`assertCanListEmployees`) must hit QBO live |
+| **Invalidate on disconnect** | Clear realm-scoped cache when QuickBooks disconnects |
+| **Do not cache empty lists** | Avoid persisting `[]` from failed or single-entity SDK quirks |
+| **Normalize SDK query results** | `QboQueryResult::entities()` wraps single objects into arrays |
+| **FindById over re-list** | Login guard and mapping use `FindById` for one employee, not a full list |
+| **Paginate large queries** | Time activities: `STARTPOSITION` / `MAXRESULTS`; respect config caps |
+| **Avoid probe unless needed** | `time_activities_probe_truncated` defaults true; disable only when latency matters more than accuracy |
+
+## QBO list cache (reference)
+
+| Item | Value |
+|------|-------|
+| Service | `QboListCacheService::remember($resource, $realmId, $refresh, $fetch)` |
+| Resources | `employees` today; add `customers`, `projects`, `services` as endpoints ship |
+| Cache key | `quickbooks:{resource}:{realm_id}` |
+| TTL config | `QUICKBOOKS_LIST_CACHE_TTL_MINUTES` (default 15; `0` disables) |
+| Max results | `QUICKBOOKS_LIST_MAX_RESULTS` (default 1000) |
+| Refresh | `?refresh=1` on list endpoints |
+| Disconnect | `QboListCacheService::forgetRealm($realmId)` |
+
+### Employee list (current)
+
+| Item | Value |
+|------|-------|
+| Service | `QboEmployeeListService::listActive($token, $refresh)` |
+| Refresh route | `GET /api/quickbooks/employees?refresh=1` |
+| Frontend | `fetchQboEmployees({ refresh: true })` via admin sync button |
+
+## Before adding a new QBO endpoint
+
+1. Can the data be cached or derived from existing cached data?
+2. Is a single-entity lookup (`FindById`) enough?
+3. Does the admin UI need a manual refresh affordance?
+4. Add Pest tests: cache hit (one SDK call for two HTTP requests) and `refresh=1` bypass.
+
+## Agent routine
+
+1. Read this file before any QBO feature or list endpoint.
+2. Prefer extending an existing service over a new SDK call site.
+3. Document new cache keys and TTL in `config/quickbooks.php` + `.env.example` when added.

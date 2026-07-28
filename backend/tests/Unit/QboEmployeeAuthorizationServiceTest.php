@@ -71,6 +71,7 @@ it('extracts employee refs from sdk activity objects', function () {
         ->and($service->extractEmployeeRef((object) ['EmployeeRef' => (object) ['value' => 15]]))->toBe('15')
         ->and($service->extractEmployeeRef((object) ['EmployeeRef' => (object) ['value' => '16']]))->toBe('16')
         ->and($service->extractEmployeeRef((object) ['EmployeeRef' => '15']))->toBe('15')
+        ->and($service->extractEmployeeRef((object) ['EmployeeRef' => 7]))->toBe('7')
         ->and($service->extractEmployeeRef((object) ['EmployeeRef' => null]))->toBeNull()
         ->and($service->extractEmployeeRef((object) ['EmployeeRef' => $stringableRef]))->toBe('plain-ref');
 });

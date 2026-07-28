@@ -230,11 +230,26 @@ export function getApiErrorMessage(
       if (error.code === 'email_not_verified') {
         return getLocalizedApiErrorMessage(activeLocale, 'email_not_verified')
       }
+      if (error.code === 'qbo_employee_removed') {
+        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_removed')
+      }
+      if (error.code === 'qbo_employee_email_missing') {
+        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_missing')
+      }
+      if (error.code === 'qbo_employee_email_conflict') {
+        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_conflict')
+      }
       return getLocalizedApiErrorMessage(activeLocale, 'access_denied')
     }
     if (error.status === 422) {
       if (error.code === 'qbo_employee_invalid') {
         return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_invalid')
+      }
+      if (error.code === 'qbo_employee_email_missing') {
+        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_missing')
+      }
+      if (error.code === 'qbo_employee_email_conflict') {
+        return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_email_conflict')
       }
       const passwordPolicyCode = passwordPolicyErrorCodeFromApiMessage(error.message)
       if (passwordPolicyCode === 'password_uncompromised') {

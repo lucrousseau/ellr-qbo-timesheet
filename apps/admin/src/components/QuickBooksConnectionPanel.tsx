@@ -1,84 +1,44 @@
 /**
- * @file QuickBooks connection status, employee mapping, and OAuth actions.
+ * @file QuickBooks connection status and OAuth actions for administrators.
  */
 
-import { Alert, cardClass, inputClass, primaryButtonClass, secondaryButtonClass, useLocale, type FlashMessage } from '@ellr/ui'
+import { Alert, cardClass, primaryButtonClass, secondaryButtonClass, useLocale, type FlashMessage } from '@ellr/ui'
 
 type QuickBooksConnectionStatus = {
   connected: boolean
   realm_id?: string
 }
 
-type QuickBooksAdminPanelProps = {
+type QuickBooksConnectionPanelProps = {
   bootstrapError: string | null
   message: FlashMessage | null
   status: QuickBooksConnectionStatus | null
   connecting: boolean
   disconnecting: boolean
-  qboEmployeeRef: string
-  qboEmployeeName: string
-  savingEmployee: boolean
-  onQboEmployeeRefChange: (value: string) => void
-  onQboEmployeeNameChange: (value: string) => void
-  onSaveEmployee: (event: React.FormEvent) => void
   onConnect: () => void
   onDisconnect: () => void
 }
 
 /**
- * Admin dashboard section for QBO employee mapping and OAuth connection.
+ * Admin dashboard section for QuickBooks OAuth connection.
  * @param props Panel state and event handlers from `useQuickBooksAdmin`.
- * @returns QuickBooks admin card content.
+ * @returns QuickBooks connection card content.
  */
-export function QuickBooksAdminPanel({
+export function QuickBooksConnectionPanel({
   bootstrapError,
   message,
   status,
   connecting,
   disconnecting,
-  qboEmployeeRef,
-  qboEmployeeName,
-  savingEmployee,
-  onQboEmployeeRefChange,
-  onQboEmployeeNameChange,
-  onSaveEmployee,
   onConnect,
   onDisconnect,
-}: QuickBooksAdminPanelProps) {
+}: QuickBooksConnectionPanelProps) {
   const { t } = useLocale()
 
   return (
     <section className={cardClass}>
       <h2 className="text-xl font-medium text-slate-900">{t('admin.quickbooksTitle')}</h2>
-
-      <form className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4" onSubmit={onSaveEmployee}>
-        <h3 className="text-sm font-medium text-slate-900">{t('admin.quickbooksEmployeeTitle')}</h3>
-        <p className="text-sm text-slate-600">{t('admin.quickbooksEmployeeHelp')}</p>
-        <label className="block text-sm font-medium text-slate-700">
-          {t('admin.qboEmployeeId')}
-          <input
-            required
-            className={inputClass}
-            value={qboEmployeeRef}
-            onChange={(event) => onQboEmployeeRefChange(event.target.value)}
-          />
-        </label>
-        <label className="block text-sm font-medium text-slate-700">
-          {t('admin.employeeNameOptional')}
-          <input
-            className={inputClass}
-            value={qboEmployeeName}
-            onChange={(event) => onQboEmployeeNameChange(event.target.value)}
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={savingEmployee}
-          className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
-        >
-          {savingEmployee ? t('common.saving') : t('admin.saveEmployee')}
-        </button>
-      </form>
+      <p className="mt-2 text-sm text-slate-600">{t('admin.quickbooksConnectionHelp')}</p>
 
       {message && (
         <div className="mt-4">

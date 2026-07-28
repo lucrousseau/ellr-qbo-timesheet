@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
 use App\Services\AuthSessionService;
+use App\Services\QboEmployeeLoginGuardService;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -102,6 +103,21 @@ it('invalidates database sessions and api tokens for a user', function () {
 
     expect(DB::table('sessions')->where('user_id', $user->id)->count())->toBe(0)
         ->and($user->tokens()->count())->toBe(0);
+});
+
+it('rejects login when quickbooks identity guard fails', function () {
+    $guard = Mockery::mock(QboEmployeeLoginGuardService::class);
+    $guard->shouldReceive('rejectIfEmployeeRemoved')
+        ->once()
+        ->andReturn(response()->json(['message' => 'removed', 'error' => 'qbo_employee_removed'], 403));
+
+    $user = User::factory()->make();
+    $request = Request::create('/api/login', 'POST');
+
+    $response = (new AuthSessionService($guard))->rejectLoginIfNeeded($user, $request);
+
+    expect($response?->getStatusCode())->toBe(403)
+        ->and($response?->getData(true)['error'])->toBe('qbo_employee_removed');
 });
 
 it('keeps the active session when invalidating other user sessions', function () {

@@ -19,9 +19,11 @@ class QuickBooksOAuthCallbackService
      * Injects the QuickBooks service.
      *
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
+     * @param  QuickBooksConnectionValidationService  $connectionValidation  Post-OAuth validation.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
+        private readonly QuickBooksConnectionValidationService $connectionValidation,
     ) {}
 
     /**
@@ -42,7 +44,8 @@ class QuickBooksOAuthCallbackService
             throw new QuickBooksOAuthException('OAuth session mismatch.');
         }
 
-        $this->quickBooks->exchangeCode($code, $realmId, $user);
+        $token = $this->quickBooks->exchangeCode($code, $realmId, $user);
+        $this->connectionValidation->validateAdministratorConnection($user, $token);
     }
 
     /**

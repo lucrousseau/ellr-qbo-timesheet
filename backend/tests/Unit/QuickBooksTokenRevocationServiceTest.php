@@ -30,6 +30,42 @@ it('revokes a refresh token at intuit', function () {
     });
 });
 
+it('casts non-string quickbooks oauth credentials before revocation', function () {
+    config([
+        'quickbooks.client_id' => new class
+        {
+            public function __toString(): string
+            {
+                return 'string-client-id';
+            }
+        },
+        'quickbooks.client_secret' => new class
+        {
+            public function __toString(): string
+            {
+                return 'string-client-secret';
+            }
+        },
+    ]);
+
+    Http::fake([
+        'developer.api.intuit.com/*' => Http::response('', 200),
+    ]);
+
+    $token = QuickBooksToken::factory()->make([
+        'refresh_token' => 'refresh-token-value',
+    ]);
+
+    app(QuickBooksTokenRevocationService::class)->revoke($token);
+
+    Http::assertSent(function ($request) {
+        return $request->hasHeader(
+            'Authorization',
+            'Basic '.base64_encode('string-client-id:string-client-secret'),
+        );
+    });
+});
+
 it('throws when intuit token revocation fails', function () {
     config([
         'quickbooks.client_id' => 'client-id',

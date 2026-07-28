@@ -2,7 +2,7 @@
  * @file Admin UI for QuickBooks OAuth connection and QBO employee mapping.
  */
 
-import { AppShell, LoadingScreen, LocaleProvider, useLocale, useSyncUserLocale } from '@ellr/ui'
+import { AppShell, LoadingScreen, LocaleProvider, useLocale, usePasswordResetInviteGate, useSyncUserLocale } from '@ellr/ui'
 import { AdminDashboard } from './components/AdminDashboard'
 import { AdminGuestAuth } from './components/AdminGuestAuth'
 import { useQuickBooksAdmin } from './hooks/useQuickBooksAdmin'
@@ -14,14 +14,19 @@ import { useQuickBooksAdmin } from './hooks/useQuickBooksAdmin'
 function AdminApp() {
   const admin = useQuickBooksAdmin()
   const { t } = useLocale()
+  const resetInviteGate = usePasswordResetInviteGate({
+    authLoading: admin.authLoading,
+    user: admin.user,
+    handleLogout: admin.onLogout,
+  })
 
   useSyncUserLocale(admin.user)
 
-  if (admin.authLoading) {
+  if (resetInviteGate.gateLoading) {
     return <LoadingScreen />
   }
 
-  if (!admin.user) {
+  if (resetInviteGate.showGuestAuth) {
     return <AdminGuestAuth admin={admin} message={admin.message} />
   }
 
@@ -29,7 +34,7 @@ function AdminApp() {
     <AppShell
       title={t('admin.appTitle')}
       subtitle={t('common.administration')}
-      userEmail={admin.user.email}
+      userEmail={admin.user!.email}
       onLogout={admin.onLogout}
     >
       <AdminDashboard admin={admin} />

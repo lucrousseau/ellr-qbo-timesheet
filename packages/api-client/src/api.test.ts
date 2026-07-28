@@ -3,6 +3,11 @@ import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStat
 
 /** Matches packages/password-policy/test-passwords.json alternate (tests only). */
 const VALID_TEST_PASSWORD_ALT = 'EllrNew!2026'
+import {
+  createTimesheetUser,
+  fetchQboEmployees,
+  fetchTimesheetUsers,
+} from './admin'
 import { fetchAppConfig } from './appConfig'
 import {
   changePassword,
@@ -25,6 +30,7 @@ import {
 } from './quickbooks'
 import { createTimeActivity, listTimeActivities } from './timesheet'
 import {
+  hasValidPasswordResetInvite,
   isEmailUnverified,
   isResetPasswordRoute,
   parseEmailVerificationCallback,
@@ -1329,6 +1335,95 @@ describe('timesheet api', () => {
   })
 })
 
+describe('admin api helpers', () => {
+  function mockCsrfCookie(token = 'csrf-token-value') {
+    document.cookie = `XSRF-TOKEN=${encodeURIComponent(token)}`
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    document.cookie = ''
+    resetCsrfStateForTests()
+  })
+
+  it('loads quickbooks employees from the api', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: [{ id: '7', display_name: 'Jane Doe', email: 'jane@example.com' }],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchQboEmployees()).resolves.toEqual([
+      { id: '7', display_name: 'Jane Doe', email: 'jane@example.com' },
+    ])
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8000/api/quickbooks/employees',
+      expect.objectContaining({ credentials: 'include' }),
+    )
+  })
+
+  it('requests a quickbooks employee refresh when asked', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: [] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await fetchQboEmployees({ refresh: true })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8000/api/quickbooks/employees?refresh=1',
+      expect.objectContaining({ credentials: 'include' }),
+    )
+  })
+
+  it('loads provisioned timesheet users from the api', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: [{ id: 2, name: 'Jane Doe', email: 'jane@example.com', qbo_employee_ref: '7' }],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchTimesheetUsers()).resolves.toEqual([
+      { id: 2, name: 'Jane Doe', email: 'jane@example.com', qbo_employee_ref: '7' },
+    ])
+  })
+
+  it('creates a timesheet user through the api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({
+          user: { id: 2, name: 'Jane Doe', email: 'jane@example.com', qbo_employee_ref: '7' },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      createTimesheetUser({
+        qbo_employee_ref: '7',
+      }),
+    ).resolves.toEqual({
+      id: 2,
+      name: 'Jane Doe',
+      email: 'jane@example.com',
+      qbo_employee_ref: '7',
+    })
+  })
+})
+
 describe('auth recovery helpers', () => {
   it('parses email verification callbacks', () => {
     expect(parseEmailVerificationCallback('?email=verified')).toEqual({ result: 'verified' })
@@ -1353,6 +1448,38 @@ describe('auth recovery helpers', () => {
       token: 'abc',
       email: 'user@example.com',
     })
+  })
+
+  it('detects complete password reset invites from the current url', () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        pathname: '/reset-password',
+        search: '?token=abc&email=user%40example.com',
+      },
+    })
+
+    expect(hasValidPasswordResetInvite()).toBe(true)
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        pathname: '/reset-password',
+        search: '',
+      },
+    })
+
+    expect(hasValidPasswordResetInvite()).toBe(false)
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        pathname: '/',
+        search: '?token=abc&email=user%40example.com',
+      },
+    })
+
+    expect(hasValidPasswordResetInvite()).toBe(false)
   })
 
   it('detects unverified users and blocking rules', () => {

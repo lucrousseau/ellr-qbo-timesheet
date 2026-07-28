@@ -4,12 +4,14 @@ use App\Exceptions\QuickBooksException;
 use App\Http\Controllers\Api\QuickBooksAuthController;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Services\QuickBooksConnectionValidationService;
 use App\Services\QuickBooksService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 
 covers(QuickBooksAuthController::class);
+covers(QuickBooksConnectionValidationService::class);
 
 it('requires authentication for quickbooks connect', function () {
     $this->getJson('/api/quickbooks/connect')->assertUnauthorized();
@@ -56,6 +58,12 @@ it('redirects to admin after oauth callback', function () {
             ->andReturn($token);
     });
 
+    $this->mock(QuickBooksConnectionValidationService::class, function ($mock) use ($token, $user) {
+        $mock->shouldReceive('validateAdministratorConnection')
+            ->once()
+            ->with(Mockery::on(fn ($arg) => $arg->is($user)), Mockery::on(fn ($arg) => $arg->is($token)));
+    });
+
     $this->get('/api/quickbooks/callback?code=auth-code&realmId=1234567890&state=secure-state')
         ->assertRedirect('http://localhost:5173?quickbooks=connected');
 });
@@ -72,6 +80,12 @@ it('binds oauth callback to the user encoded in state without an active session'
             ->once()
             ->with('auth-code', '1234567890', Mockery::on(fn ($arg) => $arg->is($initiator)))
             ->andReturn($token);
+    });
+
+    $this->mock(QuickBooksConnectionValidationService::class, function ($mock) use ($token, $initiator) {
+        $mock->shouldReceive('validateAdministratorConnection')
+            ->once()
+            ->with(Mockery::on(fn ($arg) => $arg->is($initiator)), Mockery::on(fn ($arg) => $arg->is($token)));
     });
 
     $this->get('/api/quickbooks/callback?code=auth-code&realmId=1234567890&state=secure-state')

@@ -17,4 +17,10 @@ return [
         'action' => 'Réinitialiser le mot de passe',
         'footer' => 'Si vous n\'avez pas demandé de réinitialisation, aucune action n\'est requise.',
     ],
+    'invite' => [
+        'subject' => 'Configurez votre accès au timesheet',
+        'line' => 'Un administrateur a créé un compte timesheet pour vous. Cliquez sur le bouton ci-dessous pour choisir votre mot de passe.',
+        'action' => 'Choisir un mot de passe',
+        'footer' => 'Si vous n\'attendiez pas ce courriel, contactez votre administrateur.',
+    ],
 ];

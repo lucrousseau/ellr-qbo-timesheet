@@ -42,6 +42,7 @@ composer qa                # format + analyse + coverage + arch + behat
 - `QuickBooksToken` model: `quickbooks_tokens` table.
 - Protected routes: `auth:sanctum` middleware.
 - Mock `QuickBooksService` in tests; never call the Intuit API in tests.
+- **QBO API economy**: cache read-heavy lists (`QboEmployeeListService`), manual `?refresh=1` bypass, invalidate on disconnect. See `.cursor/rules/quickbooks-api.mdc`.
 - Avoid bloated controllers: extract a service if auth, QBO mapping, or employee rules grow.
 - **PHPDoc** on all code in `app/`; see `.cursor/rules/phpdoc.mdc` and `.cursor/rules/language.mdc`.
 
@@ -65,6 +66,8 @@ QUICKBOOKS_CLIENT_SECRET=
 QUICKBOOKS_REDIRECT_URI=http://localhost:8000/api/quickbooks/callback
 QUICKBOOKS_BASE_URL=development
 QUICKBOOKS_EXPOSE_API_ERRORS=
+QUICKBOOKS_LIST_CACHE_TTL_MINUTES=15
+QUICKBOOKS_LIST_MAX_RESULTS=1000
 FRONTEND_ADMIN_URL=http://localhost:5173
 FRONTEND_TIMESHEET_URL=http://localhost:5174
 SANCTUM_STATEFUL_DOMAINS=localhost:5173,localhost:5174

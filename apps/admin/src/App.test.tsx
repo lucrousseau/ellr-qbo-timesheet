@@ -2,16 +2,18 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee, updateUserLocale } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, disconnectQuickBooks, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 vi.mock('@ellr/api-client', async () =>
   buildApiClientMock({
     fetchQuickBooksStatus: vi.fn(),
+    fetchQboEmployees: vi.fn(),
+    fetchTimesheetUsers: vi.fn(),
+    createTimesheetUser: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
-    updateQboEmployee: vi.fn(),
     updateUserLocale: vi.fn(),
     changePassword: vi.fn(),
     requestPasswordReset: vi.fn(),
@@ -37,9 +39,13 @@ describe('Admin App', () => {
     vi.mocked(login).mockReset()
     vi.mocked(logout).mockReset()
     vi.mocked(fetchQuickBooksStatus).mockReset()
+    vi.mocked(fetchQboEmployees).mockReset()
+    vi.mocked(fetchTimesheetUsers).mockReset()
+    vi.mocked(createTimesheetUser).mockReset()
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
-    vi.mocked(updateQboEmployee).mockReset()
+    vi.mocked(fetchQboEmployees).mockResolvedValue([])
+    vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
     vi.mocked(updateUserLocale).mockReset()
     vi.mocked(changePassword).mockReset()
     vi.mocked(requestPasswordReset).mockReset()
@@ -515,16 +521,17 @@ describe('Admin App', () => {
 
   it('clears flash messages when logging out', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      ...adminUser,
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockResolvedValue([
+      { id: '42', display_name: 'Jane Doe', email: 'jane@example.com' },
+    ])
+    vi.mocked(createTimesheetUser).mockResolvedValue({
+      id: 2,
+      name: 'Jane Doe',
+      email: 'jane@example.com',
       qbo_employee_ref: '42',
-    })
-    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
-    vi.mocked(updateQboEmployee).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
-      qbo_employee_ref: '42',
+      qbo_employee_name: 'Jane Doe',
     })
 
     render(<App />)
@@ -536,31 +543,91 @@ describe('Admin App', () => {
     await openAdministratorTab(user)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save employee/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /create timesheet access/i })).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /save employee/i }))
+    await user.selectOptions(screen.getByLabelText(/quickbooks employee/i), '42')
+    await user.click(screen.getByRole('button', { name: /create timesheet access/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/quickbooks employee saved/i)).toBeInTheDocument()
+      expect(screen.getByText(/timesheet access created/i)).toBeInTheDocument()
     })
 
     await user.click(screen.getByRole('button', { name: /sign out/i }))
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
-      expect(screen.queryByText(/quickbooks employee saved/i)).not.toBeInTheDocument()
+      expect(screen.queryByText(/timesheet access created/i)).not.toBeInTheDocument()
     })
   })
 
-  it('saves the qbo employee mapping', async () => {
+  it('refreshes employees when the initial list is empty', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
-    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
-    vi.mocked(updateQboEmployee).mockResolvedValue({
-      id: 1,
-      name: 'Test User',
-      email: 'test@example.com',
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { id: '7', display_name: 'Jane Doe', email: 'jane@example.com' },
+      ])
+    vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
+      expect(fetchQboEmployees).toHaveBeenCalledTimes(2)
+      expect(fetchQboEmployees).toHaveBeenNthCalledWith(1, { refresh: false })
+      expect(fetchQboEmployees).toHaveBeenNthCalledWith(2, { refresh: true })
+      expect(screen.getByLabelText(/quickbooks employee/i)).toBeEnabled()
+    })
+  })
+
+  it('does not show a success notice when employee sync fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees)
+      .mockResolvedValueOnce([{ id: '7', display_name: 'Jane Doe', email: 'jane@example.com' }])
+      .mockRejectedValueOnce(new ApiError(503, 'API error: 503', 'quickbooks_busy'))
+    vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+    })
+
+    await openAdministratorTab(user)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/refresh employees from quickbooks/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByLabelText(/refresh employees from quickbooks/i))
+
+    await waitFor(() => {
+      expect(screen.queryByText(/employee list refreshed from quickbooks/i)).not.toBeInTheDocument()
+      expect(screen.getByText(/quickbooks is busy/i)).toBeInTheDocument()
+    })
+  })
+
+  it('creates timesheet access for a quickbooks employee', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockResolvedValue([
+      { id: '7', display_name: 'Jane Doe', email: 'jane@example.com' },
+    ])
+    vi.mocked(createTimesheetUser).mockResolvedValue({
+      id: 2,
+      name: 'Jane Doe',
+      email: 'jane@example.com',
       qbo_employee_ref: '7',
       qbo_employee_name: 'Jane Doe',
     })
@@ -574,24 +641,32 @@ describe('Admin App', () => {
     await openAdministratorTab(user)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/qbo employee id/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/quickbooks employee/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/qbo employee id/i), '7')
-    await user.type(screen.getByLabelText(/employee name/i), 'Jane Doe')
-    await user.click(screen.getByRole('button', { name: /save employee/i }))
+    await user.selectOptions(screen.getByLabelText(/quickbooks employee/i), '7')
+
+    expect(screen.getByText(/managed in quickbooks/i)).toBeInTheDocument()
+    expect(screen.getByText('jane@example.com')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /create timesheet access/i }))
 
     await waitFor(() => {
-      expect(updateQboEmployee).toHaveBeenCalledWith('7', 'Jane Doe')
-      expect(screen.getByText(/quickbooks employee saved/i)).toBeInTheDocument()
+      expect(createTimesheetUser).toHaveBeenCalledWith({
+        qbo_employee_ref: '7',
+      })
+      expect(screen.getByText(/timesheet access created/i)).toBeInTheDocument()
     })
   })
 
-  it('shows an error when qbo employee save fails', async () => {
+  it('shows an error when timesheet access creation fails', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
-    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
-    vi.mocked(updateQboEmployee).mockRejectedValue(new Error('save failed'))
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockResolvedValue([
+      { id: '7', display_name: 'Jane Doe', email: 'jane@example.com' },
+    ])
+    vi.mocked(createTimesheetUser).mockRejectedValue(new Error('create failed'))
 
     render(<App />)
 
@@ -602,14 +677,14 @@ describe('Admin App', () => {
     await openAdministratorTab(user)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/qbo employee id/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/quickbooks employee/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/qbo employee id/i), '7')
-    await user.click(screen.getByRole('button', { name: /save employee/i }))
+    await user.selectOptions(screen.getByLabelText(/quickbooks employee/i), '7')
+    await user.click(screen.getByRole('button', { name: /create timesheet access/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/unable to save the quickbooks employee/i)).toBeInTheDocument()
+      expect(screen.getByText(/unable to create timesheet access/i)).toBeInTheDocument()
     })
   })
 
@@ -692,6 +767,28 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument()
+    })
+  })
+
+  it('logs out an active session before showing the reset password screen', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        pathname: '/reset-password',
+        search: '?token=abc&email=admin%40example.com',
+        href: '',
+        replaceState: vi.fn(),
+      },
+    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(logout).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(logout).toHaveBeenCalledTimes(1)
       expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument()
     })
   })

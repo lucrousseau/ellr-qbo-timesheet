@@ -10,6 +10,8 @@ use App\Enums\ApiErrorCode;
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Support\QboEmployeeEmail;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Confirms an employee exists in QBO before saving a user mapping.
@@ -39,20 +41,98 @@ class QboEmployeeService
     {
         $token = $this->tokenResolver->resolve($actor);
         $employeeRef = (string) $validated['qbo_employee_ref'];
+        $identity = $this->resolveEmployeeIdentity($token, $employeeRef, $target);
 
-        if (! $this->employeeExists($token, $employeeRef)) {
-            abort(response()->json([
-                'message' => __('api.qbo_employee_not_found'),
-                'error' => ApiErrorCode::QboEmployeeInvalid->value,
-            ], 422));
+        $attributes = [
+            'qbo_employee_ref' => $employeeRef,
+            'qbo_employee_name' => $identity['display_name'],
+        ];
+
+        if (! $target->isAdmin()) {
+            $attributes['name'] = $identity['display_name'];
+            $attributes['email'] = $identity['email'];
         }
 
-        $target->update([
-            'qbo_employee_ref' => $employeeRef,
-            'qbo_employee_name' => $validated['qbo_employee_name'] ?? null,
-        ]);
+        $target->update($attributes);
 
         return $target->fresh();
+    }
+
+    /**
+     * Resolves a QuickBooks employee identity for provisioning or login sync.
+     *
+     * @param  QuickBooksToken  $token  OAuth token for the connected company.
+     * @param  string  $employeeRef  QuickBooks employee identifier.
+     * @param  User|null  $exceptUser  User to ignore when checking email uniqueness.
+     * @return array{display_name: string, email: string}
+     */
+    public function resolveEmployeeIdentity(QuickBooksToken $token, string $employeeRef, ?User $exceptUser = null): array
+    {
+        $employee = $this->findEmployee($token, $employeeRef);
+
+        if ($employee === null) {
+            $this->abortEmployeeError(ApiErrorCode::QboEmployeeInvalid, 'api.qbo_employee_not_found');
+        }
+
+        if ($employee['email'] === null) {
+            $this->abortEmployeeError(ApiErrorCode::QboEmployeeEmailMissing, 'api.qbo_employee_email_missing');
+        }
+
+        if (
+            User::query()
+                ->when($exceptUser, fn ($query) => $query->whereKeyNot($exceptUser->id))
+                ->where('email', $employee['email'])
+                ->exists()
+        ) {
+            $this->abortEmployeeError(ApiErrorCode::QboEmployeeEmailConflict, 'api.qbo_employee_email_conflict');
+        }
+
+        return [
+            'display_name' => $employee['display_name'],
+            'email' => $employee['email'],
+        ];
+    }
+
+    /**
+     * Synchronizes a timesheet user's profile fields from QuickBooks.
+     *
+     * @param  User  $user  Timesheet user linked to a QBO employee.
+     * @param  QuickBooksToken  $token  OAuth token for the connected company.
+     * @return User
+     */
+    public function syncTimesheetUserFromQuickBooks(User $user, QuickBooksToken $token): User
+    {
+        $identity = $this->resolveEmployeeIdentity($token, (string) $user->qbo_employee_ref, $user);
+
+        return $this->syncTimesheetUserFromIdentity($user, $identity);
+    }
+
+    /**
+     * Applies a resolved QuickBooks employee identity to a timesheet user.
+     *
+     * @param  User  $user  Timesheet user linked to a QBO employee.
+     * @param  array{display_name: string, email: string}  $identity  Resolved employee identity.
+     * @return User
+     */
+    public function syncTimesheetUserFromIdentity(User $user, array $identity): User
+    {
+        if ($this->timesheetIdentityMatches($user, $identity)) {
+            return $user;
+        }
+
+        if ($this->emailTakenByAnotherUser($user, $identity['email'])) {
+            throw ValidationException::withMessages([
+                'email' => [__('api.qbo_employee_email_conflict')],
+            ]);
+        }
+
+        $user->update([
+            'name' => $identity['display_name'],
+            'email' => $identity['email'],
+            'qbo_employee_name' => $identity['display_name'],
+        ]);
+
+        return $user->fresh();
     }
 
     /**
@@ -62,7 +142,19 @@ class QboEmployeeService
      * @param  string  $employeeRef  QuickBooks employee identifier.
      * @return bool
      */
-    private function employeeExists(QuickBooksToken $token, string $employeeRef): bool
+    public function employeeExists(QuickBooksToken $token, string $employeeRef): bool
+    {
+        return $this->findEmployee($token, $employeeRef) !== null;
+    }
+
+    /**
+     * Loads a QuickBooks employee record when it exists.
+     *
+     * @param  QuickBooksToken  $token  OAuth token for the connected company.
+     * @param  string  $employeeRef  QuickBooks employee identifier.
+     * @return array{display_name: string, email: string|null}|null
+     */
+    public function findEmployee(QuickBooksToken $token, string $employeeRef): ?array
     {
         $dataService = $this->quickBooks->dataService($token);
         $employee = $dataService->FindById('Employee', $employeeRef);
@@ -74,6 +166,57 @@ class QboEmployeeService
             );
         }
 
-        return $employee !== null;
+        if ($employee === null) {
+            return null;
+        }
+
+        return [
+            'display_name' => (string) ($employee->DisplayName ?? ''),
+            'email' => QboEmployeeEmail::fromEmployee($employee),
+        ];
+    }
+
+    /**
+     * Returns whether a timesheet user already matches the resolved QuickBooks identity.
+     *
+     * @param  User  $user  Timesheet user linked to a QBO employee.
+     * @param  array{display_name: string, email: string}  $identity  Resolved employee identity.
+     * @return bool
+     */
+    private function timesheetIdentityMatches(User $user, array $identity): bool
+    {
+        return $user->name === $identity['display_name']
+            && $user->email === $identity['email']
+            && $user->qbo_employee_name === $identity['display_name'];
+    }
+
+    /**
+     * Returns whether another account already uses the given email address.
+     *
+     * @param  User  $user  Timesheet user being synchronized.
+     * @param  string  $email  Candidate email address.
+     * @return bool
+     */
+    private function emailTakenByAnotherUser(User $user, string $email): bool
+    {
+        return User::query()
+            ->where('email', $email)
+            ->whereKeyNot($user->id)
+            ->exists();
+    }
+
+    /**
+     * Aborts with a standardized QuickBooks employee validation response.
+     *
+     * @param  ApiErrorCode  $code  API error code.
+     * @param  string  $messageKey  Translation key under lang/{locale}/api.php.
+     * @return never
+     */
+    private function abortEmployeeError(ApiErrorCode $code, string $messageKey): never
+    {
+        abort(response()->json([
+            'message' => __($messageKey),
+            'error' => $code->value,
+        ], 422));
     }
 }

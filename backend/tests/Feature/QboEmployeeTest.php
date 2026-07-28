@@ -13,7 +13,11 @@ it('updates the authenticated administrators qbo employee mapping', function () 
     QuickBooksToken::factory()->forUser($admin)->create();
 
     $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('FindById')->once()->with('Employee', '42')->andReturn((object) ['Id' => '42']);
+    $dataService->shouldReceive('FindById')->once()->with('Employee', '42')->andReturn((object) [
+        'Id' => '42',
+        'DisplayName' => 'Jane Doe',
+        'PrimaryEmailAddr' => (object) ['Address' => 'jane@example.com'],
+    ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
     $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
@@ -23,7 +27,6 @@ it('updates the authenticated administrators qbo employee mapping', function () 
     $this->actingAs($admin)
         ->patchJson('/api/user/qbo-employee', [
             'qbo_employee_ref' => '42',
-            'qbo_employee_name' => 'Jane Doe',
         ], frontendHeaders())
         ->assertOk()
         ->assertJsonPath('user.qbo_employee_ref', '42')

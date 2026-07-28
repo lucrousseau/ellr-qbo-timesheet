@@ -23,6 +23,7 @@ alwaysApply: false
 - Do not pass `null` to QBO refs (e.g. omit `CustomerRef` when absent).
 - JSON error codes: `error` (e.g. `quickbooks_not_connected`, `registration_disabled`).
 - `ALLOW_REGISTRATION` controls public registration; `QUICKBOOKS_EXPOSE_API_ERRORS` filters Intuit details.
+- **API economy**: cache read-heavy QBO data, manual `?refresh=1` bypass, invalidate on disconnect. See `.cursor/rules/quickbooks-api.mdc`.
 
 ## Tests (required)
 

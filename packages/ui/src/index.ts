@@ -16,6 +16,8 @@ export { useAuth } from './hooks/useAuth'
 export { useChangePassword } from './hooks/useChangePassword'
 export { useSyncUserLocale } from './hooks/useSyncUserLocale'
 export { useUserLocalePreferences } from './hooks/useUserLocalePreferences'
+export type { UserLocale } from '@ellr/api-client'
+export { usePasswordResetInviteGate } from './hooks/usePasswordResetInviteGate'
 export { usePasswordRecovery, type AuthClient, type AuthScreen } from './hooks/usePasswordRecovery'
 export { useFlashMessage, type FlashMessage } from './hooks/useFlashMessage'
 export {

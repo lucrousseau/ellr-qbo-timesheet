@@ -57,7 +57,7 @@ it('returns the unverified login response from the auth session service', functi
     $request->setUserResolver(fn () => $user);
 
     $authSession = Mockery::mock(AuthSessionService::class);
-    $authSession->shouldReceive('rejectUnverifiedLogin')
+    $authSession->shouldReceive('rejectLoginIfNeeded')
         ->once()
         ->with($user, $request)
         ->andReturn($blocked);
@@ -88,7 +88,7 @@ it('regenerates the session after login when a session is present', function () 
     Auth::shouldReceive('attempt')->once()->andReturn(true);
 
     $authSession = Mockery::mock(AuthSessionService::class);
-    $authSession->shouldReceive('rejectUnverifiedLogin')->once()->andReturn(null);
+    $authSession->shouldReceive('rejectLoginIfNeeded')->once()->andReturn(null);
 
     $response = (new AuthController($authSession))->login($request);
 

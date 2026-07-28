@@ -203,6 +203,7 @@ class FeatureContext implements Context
         $expected = match ($value) {
             'true' => true,
             'false' => false,
+            '[]' => [],
             default => $value,
         };
 

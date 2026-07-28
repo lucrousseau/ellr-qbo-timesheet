@@ -367,6 +367,56 @@ it('skips uncompromised validation when disabled in policy', function () {
     });
 });
 
+it('resolves policy and test password paths directly', function () {
+    expect(PasswordPolicyPaths::policyConfig())->toBe(realpath(base_path('config/password-policy.json')))
+        ->and(PasswordPolicyPaths::testPasswords())->toBe(realpath(base_path('config/test-passwords.json')));
+});
+
+it('uses associative candidate override keys when resolving policy paths', function () {
+    $path = writeTempPasswordPolicyJson(['minLength' => 19]);
+
+    withPasswordPolicyEnvOverride(
+        'PASSWORD_POLICY_CONFIG_CANDIDATES',
+        json_encode(['first' => $path], JSON_THROW_ON_ERROR),
+        function () use ($path) {
+            expect(PasswordPolicyPaths::policyConfig())->toBe($path);
+        },
+    );
+});
+
+it('ignores whitespace-only candidate override env values', function () {
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_CANDIDATES', '   ', function () {
+        expect(PasswordPolicyPaths::policyConfig())->toBe(realpath(base_path('config/password-policy.json')));
+    });
+});
+
+it('ignores an empty direct policy path override', function () {
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_PATH', '', function () {
+        expect(PasswordPolicyPaths::policyConfig())->toBe(realpath(base_path('config/password-policy.json')));
+    });
+});
+
+it('reads candidate overrides from getenv when the env superglobal is unset', function () {
+    $path = writeTempPasswordPolicyJson(['minLength' => 21]);
+    $key = 'PASSWORD_POLICY_CONFIG_CANDIDATES';
+    $previous = $_ENV[$key] ?? getenv($key);
+
+    putenv($key.'='.json_encode([$path], JSON_THROW_ON_ERROR));
+    unset($_ENV[$key]);
+
+    try {
+        expect(PasswordPolicyPaths::policyConfig())->toBe($path);
+    } finally {
+        if ($previous === false || $previous === '') {
+            putenv($key);
+            unset($_ENV[$key]);
+        } else {
+            putenv($key.'='.$previous);
+            $_ENV[$key] = $previous;
+        }
+    }
+});
+
 it('honors a custom minimum length from policy json', function () {
     withPasswordPolicy([
         'minLength' => 16,

@@ -17,6 +17,10 @@ enum ApiErrorCode: string
     case QuickBooksBusy = 'quickbooks_busy';
     case QboEmployeeNotConfigured = 'qbo_employee_not_configured';
     case QboEmployeeInvalid = 'qbo_employee_invalid';
+    case QboEmployeeRemoved = 'qbo_employee_removed';
+    case QboEmployeeEmailMissing = 'qbo_employee_email_missing';
+    case QboEmployeeEmailConflict = 'qbo_employee_email_conflict';
+    case QboInsufficientPermissions = 'qbo_insufficient_permissions';
     case AdminRequired = 'admin_required';
     case EmailNotVerified = 'email_not_verified';
     case InvalidCredentials = 'invalid_credentials';

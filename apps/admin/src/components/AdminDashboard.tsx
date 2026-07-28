@@ -5,8 +5,10 @@
 import { Alert, TabNav, tabPanelId, useLocale } from '@ellr/ui'
 import { useMemo, useState } from 'react'
 import { AccountPanel } from './AccountPanel'
-import { QuickBooksAdminPanel } from './QuickBooksAdminPanel'
+import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
+import { TimesheetUserProvisioningPanel } from './TimesheetUserProvisioningPanel'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
+import { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
 
 const TAB_ID_PREFIX = 'admin'
 
@@ -25,6 +27,12 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
   const { t } = useLocale()
   const [activeTab, setActiveTab] = useState<AdminTab>('preferences')
   const isAdministrator = admin.user?.is_admin === true
+  const provisioning = useTimesheetProvisioning({
+    status: admin.status,
+    isAdministrator,
+    onError: admin.showError,
+    onSuccess: admin.showSuccess,
+  })
 
   const tabs = useMemo(() => {
     const items: { id: AdminTab; label: string }[] = [
@@ -73,21 +81,31 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           id={tabPanelId(TAB_ID_PREFIX, 'administrator')}
           role="tabpanel"
           aria-labelledby={`${TAB_ID_PREFIX}-tab-administrator`}
+          className="space-y-6"
         >
-          <QuickBooksAdminPanel
+          <QuickBooksConnectionPanel
             bootstrapError={null}
             message={null}
             status={admin.status}
             connecting={admin.connecting}
             disconnecting={admin.disconnecting}
-            qboEmployeeRef={admin.qboEmployeeRef}
-            qboEmployeeName={admin.qboEmployeeName}
-            savingEmployee={admin.savingEmployee}
-            onQboEmployeeRefChange={admin.setQboEmployeeRef}
-            onQboEmployeeNameChange={admin.setQboEmployeeName}
-            onSaveEmployee={admin.saveQboEmployee}
             onConnect={admin.connectQuickBooksFlow}
             onDisconnect={admin.disconnectQuickBooksFlow}
+          />
+          <TimesheetUserProvisioningPanel
+            connected={admin.status?.connected === true}
+            employees={provisioning.employees}
+            users={provisioning.users}
+            loadingEmployees={provisioning.loadingEmployees}
+            syncingEmployees={provisioning.syncingEmployees}
+            loadingUsers={provisioning.loadingUsers}
+            selectedEmployee={provisioning.selectedEmployee}
+            creating={provisioning.creating}
+            onEmployeeChange={provisioning.onEmployeeChange}
+            onRefreshEmployees={() => {
+              void provisioning.refreshEmployees()
+            }}
+            onSubmit={provisioning.onCreateTimesheetUser}
           />
         </div>
       )}
