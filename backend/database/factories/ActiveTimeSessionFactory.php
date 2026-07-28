@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * Model factory for generating ActiveTimeSession records in tests.
+ */
+
+namespace Database\Factories;
+
+use App\Models\ActiveTimeSession;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<ActiveTimeSession>
+ */
+class ActiveTimeSessionFactory extends Factory
+{
+    protected $model = ActiveTimeSession::class;
+
+    /**
+     * Default factory state for an active time session.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'user_id' => User::factory(),
+            'customer_ref' => '1',
+            'customer_name' => 'Acme Corp',
+            'project_ref' => null,
+            'project_name' => null,
+            'service_ref' => null,
+            'service_name' => null,
+            'description' => null,
+            'accumulated_seconds' => 0,
+            'running_since' => now(),
+        ];
+    }
+}

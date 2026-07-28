@@ -52,6 +52,28 @@ it('changes the password for the signed-in user', function () {
     expect(Hash::check($newPassword, $user->fresh()->password))->toBeTrue();
 });
 
+it('rotates the remember token when the password changes', function () {
+    $currentPassword = validTestPassword();
+    $newPassword = validTestPasswordAlt();
+    $user = User::factory()->create([
+        'password' => $currentPassword,
+        'remember_token' => str_repeat('a', 60),
+    ]);
+
+    $this->actingAs($user)
+        ->patchJson('/api/user/password', [
+            'current_password' => $currentPassword,
+            'password' => $newPassword,
+            'password_confirmation' => $newPassword,
+        ])
+        ->assertOk();
+
+    $rememberToken = $user->fresh()->remember_token;
+
+    expect($rememberToken)->not->toBe(str_repeat('a', 60))
+        ->and(strlen((string) $rememberToken))->toBe(60);
+});
+
 it('rejects password change when the current password is wrong', function () {
     $user = User::factory()->create(['password' => validTestPassword()]);
 

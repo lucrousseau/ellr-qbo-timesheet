@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * Persisted timer state for an authenticated timesheet user.
+ */
+
+namespace App\Models;
+
+use Database\Factories\ActiveTimeSessionFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+
+#[Fillable([
+    'user_id',
+    'customer_ref',
+    'customer_name',
+    'project_ref',
+    'project_name',
+    'service_ref',
+    'service_name',
+    'description',
+    'accumulated_seconds',
+    'running_since',
+])]
+/**
+ * Stores running or paused timer metadata for cross-session persistence.
+ *
+ * @property int $accumulated_seconds
+ * @property Carbon|null $running_since
+ */
+class ActiveTimeSession extends Model
+{
+    /** @use HasFactory<ActiveTimeSessionFactory> */
+    use HasFactory;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'accumulated_seconds' => 'integer',
+            'running_since' => 'datetime',
+        ];
+    }
+
+    /**
+     * Relationship to the owning application user.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Indicates whether the timer is currently running.
+     *
+     * @return bool
+     */
+    public function isRunning(): bool
+    {
+        return $this->running_since !== null;
+    }
+}

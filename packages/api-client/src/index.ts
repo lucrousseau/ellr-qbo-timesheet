@@ -51,10 +51,20 @@ export {
 } from './quickbooks'
 export {
   createTimeActivity,
+  discardTimeTracker,
+  fetchQboCustomers,
+  fetchQboProjects,
+  fetchQboServices,
+  fetchTimeTracker,
   listTimeActivities,
+  logTimeTracker,
+  updateTimeTracker,
   type ListTimeActivitiesParams,
+  type QboPickerOption,
   type TimeActivity,
   type TimeActivityListMeta,
   type TimeActivityListResponse,
   type TimeActivityPayload,
+  type TimeTrackerPayload,
+  type TimeTrackerSession,
 } from './timesheet'

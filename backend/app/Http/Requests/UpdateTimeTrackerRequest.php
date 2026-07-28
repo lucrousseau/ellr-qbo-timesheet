@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Validates payloads for creating QuickBooks time activities.
+ * Validates payloads for upserting active time tracker state.
  */
 
 namespace App\Http\Requests;
@@ -10,14 +10,14 @@ use App\Http\Concerns\AllowsAuthenticatedApiUser;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request rules for POST /api/time-activities payloads.
+ * Form request rules for PUT /api/time-tracker payloads.
  */
-class StoreTimeActivityRequest extends FormRequest
+class UpdateTimeTrackerRequest extends FormRequest
 {
     use AllowsAuthenticatedApiUser;
 
     /**
-     * Validation rules for time activity creation.
+     * Validation rules for active timer synchronization.
      *
      * @return array<string, mixed>
      */
@@ -28,11 +28,10 @@ class StoreTimeActivityRequest extends FormRequest
             'customer_name' => ['nullable', 'string', 'max:255'],
             'project_ref' => ['nullable', 'string', 'max:255'],
             'project_name' => ['nullable', 'string', 'max:255'],
-            'item_ref' => ['nullable', 'string', 'max:255'],
-            'item_name' => ['nullable', 'string', 'max:255'],
-            'start_time' => ['required', 'date'],
-            'end_time' => ['required', 'date', 'after:start_time'],
+            'service_ref' => ['nullable', 'string', 'max:255'],
+            'service_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
+            'is_running' => ['required', 'boolean'],
         ];
     }
 }

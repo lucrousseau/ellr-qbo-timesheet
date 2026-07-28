@@ -70,3 +70,47 @@ it('sends reset notifications in the user locale', function () {
         fn (ResetPasswordNotification $notification): bool => $notification->locale === 'fr',
     );
 });
+
+it('targets the timesheet frontend when client is timesheet', function () {
+    Notification::fake();
+
+    config(['app.frontend_timesheet_url' => 'http://localhost:5174/']);
+
+    $user = User::factory()->create();
+
+    app(PasswordResetLinkService::class)->send($user->email, 'timesheet');
+
+    Notification::assertSentTo(
+        $user,
+        fn (ResetPasswordNotification $notification): bool => $notification->frontendUrl === 'http://localhost:5174',
+    );
+});
+
+it('targets the shared auth frontend when client is unknown', function () {
+    Notification::fake();
+
+    config(['app.frontend_auth_url' => 'http://localhost:5180/']);
+
+    $user = User::factory()->create();
+
+    app(PasswordResetLinkService::class)->send($user->email, 'mobile');
+
+    Notification::assertSentTo(
+        $user,
+        fn (ResetPasswordNotification $notification): bool => $notification->frontendUrl === 'http://localhost:5180',
+    );
+});
+
+it('resolves frontend urls through the public helper', function () {
+    config([
+        'app.frontend_admin_url' => 'http://localhost:5173/',
+        'app.frontend_timesheet_url' => 'http://localhost:5174/',
+        'app.frontend_auth_url' => 'http://localhost:5180/',
+    ]);
+
+    $service = app(PasswordResetLinkService::class);
+
+    expect($service->resolveFrontendUrl('admin'))->toBe('http://localhost:5173')
+        ->and($service->resolveFrontendUrl('timesheet'))->toBe('http://localhost:5174')
+        ->and($service->resolveFrontendUrl(null))->toBe('http://localhost:5180');
+});

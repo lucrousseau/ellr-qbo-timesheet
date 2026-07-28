@@ -13,7 +13,9 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\QboEmployeeController;
 use App\Http\Controllers\Api\QuickBooksAuthController;
 use App\Http\Controllers\Api\QuickBooksEmployeeController;
+use App\Http\Controllers\Api\QuickBooksPickerController;
 use App\Http\Controllers\Api\TimeActivityController;
+use App\Http\Controllers\Api\TimeTrackerController;
 use App\Http\Controllers\Api\UserLocaleController;
 use App\Http\Controllers\Api\UserPasswordController;
 use Illuminate\Support\Facades\Route;
@@ -63,5 +65,14 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         });
 
         Route::apiResource('time-activities', TimeActivityController::class);
+
+        Route::get('/quickbooks/customers', [QuickBooksPickerController::class, 'customers']);
+        Route::get('/quickbooks/projects', [QuickBooksPickerController::class, 'projects']);
+        Route::get('/quickbooks/services', [QuickBooksPickerController::class, 'services']);
+
+        Route::get('/time-tracker', [TimeTrackerController::class, 'show']);
+        Route::put('/time-tracker', [TimeTrackerController::class, 'update']);
+        Route::post('/time-tracker/log', [TimeTrackerController::class, 'log']);
+        Route::delete('/time-tracker', [TimeTrackerController::class, 'destroy']);
     });
 });

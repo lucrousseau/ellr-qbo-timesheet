@@ -97,3 +97,10 @@ it('clears password reset tokens when revoking a timesheet user', function () {
 
     expect(DB::table('password_reset_tokens')->where('email', $timesheetUser->email)->count())->toBe(0);
 });
+
+it('rejects revoking a user with an empty quickbooks employee mapping', function () {
+    $user = User::factory()->create(['qbo_employee_ref' => '']);
+
+    expect(fn () => app(UserProvisioningService::class)->revokeTimesheetUser($user))
+        ->toThrow(NotFoundHttpException::class);
+});

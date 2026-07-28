@@ -28,7 +28,7 @@ import {
   fetchQuickBooksStatus,
   parseQuickBooksOAuthCallback,
 } from './quickbooks'
-import { createTimeActivity, listTimeActivities } from './timesheet'
+import { createTimeActivity, discardTimeTracker, fetchTimeTracker, listTimeActivities, logTimeTracker, updateTimeTracker } from './timesheet'
 import {
   hasValidPasswordResetInvite,
   isEmailUnverified,
@@ -1191,6 +1191,119 @@ describe('timesheet api', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:8000/api/time-activities?start_position=3&max_results=10',
       expect.objectContaining({ method: 'GET' }),
+    )
+  })
+
+  it('loads the active timer session from the api', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          customer_ref: '11',
+          customer_name: 'Acme Corp',
+          project_ref: null,
+          project_name: null,
+          service_ref: null,
+          service_name: null,
+          description: null,
+          accumulated_seconds: 120,
+          running_since: null,
+          elapsed_seconds: 120,
+          is_running: false,
+        },
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchTimeTracker()).resolves.toMatchObject({
+      customer_ref: '11',
+      elapsed_seconds: 120,
+      is_running: false,
+    })
+  })
+
+  it('updates the active timer session through the api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            customer_ref: null,
+            customer_name: null,
+            project_ref: null,
+            project_name: null,
+            service_ref: null,
+            service_name: null,
+            description: 'Support',
+            accumulated_seconds: 0,
+            running_since: '2026-07-28T12:00:00Z',
+            elapsed_seconds: 0,
+            is_running: true,
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      updateTimeTracker({
+        description: 'Support',
+        is_running: true,
+      }),
+    ).resolves.toMatchObject({
+      description: 'Support',
+      is_running: true,
+    })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/time-tracker',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          description: 'Support',
+          is_running: true,
+        }),
+      }),
+    )
+  })
+
+  it('logs the active timer session through the api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { Id: '77' } }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(logTimeTracker()).resolves.toEqual({ Id: '77' })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/time-tracker/log',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('discards the active timer session through the api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(discardTimeTracker()).resolves.toBeUndefined()
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/time-tracker',
+      expect.objectContaining({ method: 'DELETE' }),
     )
   })
 })

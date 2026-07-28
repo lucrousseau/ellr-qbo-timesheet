@@ -28,8 +28,8 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 | Item | Value |
 |------|-------|
 | Service | `QboListCacheService::remember($resource, $realmId, $refresh, $fetch)` |
-| Resources | `employees` today; add `customers`, `projects`, `services` as endpoints ship |
-| Cache key | `quickbooks:{resource}:{realm_id}` |
+| Resources | `employees`, `customers`, `projects`, `services` |
+| Cache key | `quickbooks:{resource}:{realm_id}` (projects also include parent customer ref; customers include employee ref) |
 | TTL config | `QUICKBOOKS_LIST_CACHE_TTL_MINUTES` (default 15; secondary when pickers always send `?refresh=1`) |
 | Max results | `QUICKBOOKS_LIST_MAX_RESULTS` (default 1000) |
 | Refresh | `?refresh=1` on list endpoints |

@@ -2,13 +2,42 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, createTimeActivity, fetchAppConfig, fetchCurrentUser, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, updateUserLocale } from '@ellr/api-client'
+import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQboCustomers, fetchQboProjects, fetchQboServices, fetchTimeTracker, logTimeTracker, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, updateTimeTracker, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
+const { mockActiveSession } = vi.hoisted(() => ({
+  mockActiveSession: {
+    customer_ref: null,
+    customer_name: null,
+    project_ref: null,
+    project_name: null,
+    service_ref: null,
+    service_name: null,
+    description: null,
+    accumulated_seconds: 3600,
+    running_since: null,
+    elapsed_seconds: 3600,
+    is_running: false,
+  },
+}))
+
 vi.mock('@ellr/api-client', async () =>
   buildApiClientMock({
-    createTimeActivity: vi.fn(),
+    discardTimeTracker: vi.fn().mockResolvedValue(undefined),
+    fetchQboCustomers: vi.fn().mockResolvedValue([]),
+    fetchQboProjects: vi.fn().mockResolvedValue([]),
+    fetchQboServices: vi.fn().mockResolvedValue([]),
+    fetchTimeTracker: vi.fn().mockResolvedValue(mockActiveSession),
+    logTimeTracker: vi.fn(),
+    updateTimeTracker: vi.fn().mockImplementation(async (payload) => ({
+      ...mockActiveSession,
+      ...payload,
+      accumulated_seconds: mockActiveSession.accumulated_seconds,
+      running_since: payload.is_running ? new Date().toISOString() : null,
+      elapsed_seconds: mockActiveSession.elapsed_seconds,
+      is_running: payload.is_running,
+    })),
     fetchAppConfig: vi.fn().mockResolvedValue({ require_email_verification: false }),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
@@ -20,7 +49,19 @@ vi.mock('@ellr/api-client', async () =>
 describe('Timesheet App', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/')
-    vi.mocked(createTimeActivity).mockReset()
+    sessionStorage.clear()
+    vi.mocked(logTimeTracker).mockReset()
+    vi.mocked(fetchTimeTracker).mockReset()
+    vi.mocked(fetchTimeTracker).mockResolvedValue(mockActiveSession)
+    vi.mocked(updateTimeTracker).mockReset()
+    vi.mocked(updateTimeTracker).mockImplementation(async (payload) => ({
+      ...mockActiveSession,
+      ...payload,
+      accumulated_seconds: mockActiveSession.accumulated_seconds,
+      running_since: payload.is_running ? new Date().toISOString() : null,
+      elapsed_seconds: mockActiveSession.elapsed_seconds,
+      is_running: payload.is_running,
+    }))
     vi.mocked(fetchCurrentUser).mockReset()
     vi.mocked(fetchAppConfig).mockReset()
     vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: false })
@@ -89,30 +130,21 @@ describe('Timesheet App', () => {
     })
   })
 
-  it('submits optional description fields', async () => {
+  it('syncs description changes to the timer session', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockResolvedValue({ Id: '1' })
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
     await user.type(screen.getByLabelText(/description/i), 'Support client')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.tab()
 
     await waitFor(() => {
-      expect(createTimeActivity).toHaveBeenCalledWith(
-        expect.objectContaining({
-          description: 'Support client',
-          start_time: '2026-07-27T09:00',
-          end_time: '2026-07-27T17:00',
-        }),
-      )
+      expect(updateTimeTracker).toHaveBeenCalled()
     })
   })
 
@@ -137,17 +169,15 @@ describe('Timesheet App', () => {
   it('shows a service unavailable error on submission', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockRejectedValue(new ApiError(503, 'API error: 503'))
+    vi.mocked(logTimeTracker).mockRejectedValue(new ApiError(503, 'API error: 503'))
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.click(screen.getByRole('button', { name: /log time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks is busy/i)).toBeInTheDocument()
@@ -166,7 +196,7 @@ describe('Timesheet App', () => {
     })
   })
 
-  it('renders the time entry form when authenticated with a configured employee', async () => {
+  it('renders the timer panel when authenticated with a configured employee', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
 
     render(<App />)
@@ -174,13 +204,13 @@ describe('Timesheet App', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /timesheet/i })).toBeInTheDocument()
       expect(screen.getByText('Signed in as test@example.com')).toBeInTheDocument()
-      expect(screen.getByText(/Jane Doe \(7\)/i)).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByText('No Client')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
       expect(document.querySelector('.bg-red-50')).not.toBeInTheDocument()
     })
   })
 
-  it('shows the employee ref when only the ref is configured', async () => {
+  it('renders the timer panel when only the employee ref is configured', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
       qbo_employee_name: null,
@@ -189,8 +219,7 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByText(/QBO employee:\s*7/i)).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
   })
 
@@ -205,30 +234,25 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks employee not configured/i)).toBeInTheDocument()
-      expect(screen.queryByRole('button', { name: /save time/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /log time/i })).not.toBeInTheDocument()
     })
   })
 
   it('submits a time entry through the api', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockResolvedValue({ Id: '1' })
+    vi.mocked(logTimeTracker).mockResolvedValue({ Id: '1' })
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.click(screen.getByRole('button', { name: /log time/i }))
 
     await waitFor(() => {
-      expect(createTimeActivity).toHaveBeenCalledWith({
-        start_time: '2026-07-27T09:00',
-        end_time: '2026-07-27T17:00',
-      })
+      expect(logTimeTracker).toHaveBeenCalled()
       const success = screen.getByText('Time saved to QuickBooks Online.')
       expectMessageClasses(success, 'success')
     })
@@ -237,17 +261,15 @@ describe('Timesheet App', () => {
   it('shows a quickbooks connection error on forbidden responses', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockRejectedValue(new ApiError(403, 'API error: 403', 'quickbooks_not_connected'))
+    vi.mocked(logTimeTracker).mockRejectedValue(new ApiError(403, 'API error: 403', 'quickbooks_not_connected'))
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.click(screen.getByRole('button', { name: /log time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks is not connected/i)).toBeInTheDocument()
@@ -257,17 +279,15 @@ describe('Timesheet App', () => {
   it('shows a quickbooks expired error on forbidden responses', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockRejectedValue(new ApiError(403, 'API error: 403', 'quickbooks_expired'))
+    vi.mocked(logTimeTracker).mockRejectedValue(new ApiError(403, 'API error: 403', 'quickbooks_expired'))
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.click(screen.getByRole('button', { name: /log time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks connection expired/i)).toBeInTheDocument()
@@ -277,17 +297,15 @@ describe('Timesheet App', () => {
   it('shows a generic error when submission fails', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockRejectedValue(new Error('failed'))
+    vi.mocked(logTimeTracker).mockRejectedValue(new Error('failed'))
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.click(screen.getByRole('button', { name: /log time/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/error while saving/i)).toBeInTheDocument()
@@ -310,7 +328,7 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(login).toHaveBeenCalledWith('test@example.com', VALID_TEST_PASSWORD)
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
   })
 
@@ -370,49 +388,43 @@ describe('Timesheet App', () => {
   it('disables submit while saving', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockImplementation(
+    vi.mocked(logTimeTracker).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve({ Id: '1' }), 100)),
     )
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.click(screen.getByRole('button', { name: /log time/i }))
 
     const savingButton = screen.getByRole('button', { name: 'Saving...' })
     expect(savingButton).toBeDisabled()
     expect(savingButton).toHaveClass('disabled:opacity-50')
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled()
+      expect(screen.getByText('Time saved to QuickBooks Online.')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeDisabled()
     })
   })
 
-  it('omits optional fields from the submission payload', async () => {
+  it('logs elapsed time through the tracker api', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(createTimeActivity).mockResolvedValue({ Id: '1' })
+    vi.mocked(logTimeTracker).mockResolvedValue({ Id: '1' })
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/start/i), '2026-07-27T09:00')
-    await user.type(screen.getByLabelText(/end/i), '2026-07-27T17:00')
-    await user.click(screen.getByRole('button', { name: /save time/i }))
+    await user.click(screen.getByRole('button', { name: /log time/i }))
 
     await waitFor(() => {
-      expect(createTimeActivity).toHaveBeenCalledWith({
-        start_time: '2026-07-27T09:00',
-        end_time: '2026-07-27T17:00',
-      })
+      expect(logTimeTracker).toHaveBeenCalled()
     })
   })
 
@@ -476,7 +488,7 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /save time/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
     })
     expect(screen.queryByText(/verify your email address/i)).not.toBeInTheDocument()
   })
@@ -685,6 +697,12 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /preferences/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('tab', { name: /preferences/i }))
+
+    await waitFor(() => {
       expect(screen.getByRole('heading', { name: /preferences/i })).toBeInTheDocument()
     })
 
@@ -695,6 +713,168 @@ describe('Timesheet App', () => {
     await waitFor(() => {
       expect(updateUserLocale).toHaveBeenCalledWith('fr')
       expect(screen.getByText(/preferences saved/i)).toBeInTheDocument()
+    })
+  })
+
+  it('does not load the timer session before authentication', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
+    })
+
+    expect(fetchTimeTracker).not.toHaveBeenCalled()
+  })
+
+  it('toggles the timer between play and pause', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /start timer/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /start timer/i }))
+
+    await waitFor(() => {
+      expect(updateTimeTracker).toHaveBeenCalledWith(expect.objectContaining({ is_running: true }))
+      expect(screen.getByRole('button', { name: /pause timer/i })).toBeInTheDocument()
+    })
+  })
+
+  it('discards the active timer session', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /discard/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /discard/i }))
+
+    await waitFor(() => {
+      expect(discardTimeTracker).toHaveBeenCalled()
+    })
+  })
+
+  it('loads customers when the client picker opens', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByLabelText(/^client$/i))
+
+    await waitFor(() => {
+      expect(fetchQboCustomers).toHaveBeenCalled()
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+    })
+  })
+
+  it('shows an error when the timer session fails to load', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchTimeTracker).mockRejectedValue(new Error('offline'))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/unable to load timer state/i)).toBeInTheDocument()
+    })
+  })
+
+  it('shows an error when discarding the timer fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(discardTimeTracker).mockRejectedValue(new Error('offline'))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /discard/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /discard/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/unable to discard the timer/i)).toBeInTheDocument()
+    })
+  })
+
+  it('shows an error when timer sync fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(updateTimeTracker).mockRejectedValue(new Error('offline'))
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /start timer/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /start timer/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/unable to save timer state/i)).toBeInTheDocument()
+    })
+  })
+
+  it('selects a client and loads projects', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
+    vi.mocked(fetchQboProjects).mockResolvedValue([{ id: '22', display_name: 'Website' }])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByLabelText(/^client$/i))
+    await waitFor(() => {
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+    })
+    await user.click(screen.getByText('Acme Corp'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^project$/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByLabelText(/^project$/i))
+
+    await waitFor(() => {
+      expect(fetchQboProjects).toHaveBeenCalled()
+      expect(screen.getByText('Website')).toBeInTheDocument()
+    })
+  })
+
+  it('loads services when the service picker opens', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchQboServices).mockResolvedValue([{ id: '33', display_name: 'Consulting' }])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^service$/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByLabelText(/^service$/i))
+
+    await waitFor(() => {
+      expect(fetchQboServices).toHaveBeenCalled()
+      expect(screen.getByText('Consulting')).toBeInTheDocument()
     })
   })
 })

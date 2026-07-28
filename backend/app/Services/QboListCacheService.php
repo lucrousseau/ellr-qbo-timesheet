@@ -15,6 +15,12 @@ class QboListCacheService
 {
     public const RESOURCE_EMPLOYEES = 'employees';
 
+    public const RESOURCE_CUSTOMERS = 'customers';
+
+    public const RESOURCE_PROJECTS = 'projects';
+
+    public const RESOURCE_SERVICES = 'services';
+
     /**
      * Returns the configured cache TTL for QBO list endpoints in minutes.
      *
@@ -40,11 +46,19 @@ class QboListCacheService
      *
      * @param  string  $resource  List resource name (for example `employees`).
      * @param  string  $realmId  Intuit company realm identifier.
+     * @param  string|null  $scope  Optional scope suffix (for example a parent customer ref).
      * @return string
      */
-    public function cacheKey(string $resource, string $realmId): string
+    public function cacheKey(string $resource, string $realmId, ?string $scope = null): string
     {
-        return "quickbooks:{$resource}:{$realmId}";
+        $version = $this->realmVersion($realmId);
+        $key = "quickbooks:v{$version}:{$resource}:{$realmId}";
+
+        if ($scope !== null && $scope !== '') {
+            $key .= ':'.preg_replace('/\D+/', '', $scope);
+        }
+
+        return $key;
     }
 
     /**
@@ -54,11 +68,12 @@ class QboListCacheService
      * @param  string  $realmId  Intuit company realm identifier.
      * @param  bool  $refresh  When true, bypasses and replaces the cached list.
      * @param  callable(): array  $fetch  Callback that queries QuickBooks.
+     * @param  string|null  $scope  Optional scope suffix for scoped lists (for example projects per customer).
      * @return array
      */
-    public function remember(string $resource, string $realmId, bool $refresh, callable $fetch): array
+    public function remember(string $resource, string $realmId, bool $refresh, callable $fetch, ?string $scope = null): array
     {
-        $cacheKey = $this->cacheKey($resource, $realmId);
+        $cacheKey = $this->cacheKey($resource, $realmId, $scope);
         $ttlMinutes = $this->ttlMinutes();
 
         if ($refresh) {
@@ -91,11 +106,12 @@ class QboListCacheService
      *
      * @param  string  $resource  List resource name.
      * @param  string  $realmId  Intuit company realm identifier.
+     * @param  string|null  $scope  Optional scope suffix.
      * @return void
      */
-    public function forget(string $resource, string $realmId): void
+    public function forget(string $resource, string $realmId, ?string $scope = null): void
     {
-        Cache::forget($this->cacheKey($resource, $realmId));
+        Cache::forget($this->cacheKey($resource, $realmId, $scope));
     }
 
     /**
@@ -106,9 +122,35 @@ class QboListCacheService
      */
     public function forgetRealm(string $realmId): void
     {
+        $versionKey = $this->realmVersionKey($realmId);
+        $version = (int) Cache::get($versionKey, 0);
+        Cache::forever($versionKey, $version + 1);
+
         foreach ($this->resources() as $resource) {
             $this->forget($resource, $realmId);
         }
+    }
+
+    /**
+     * Returns the active cache generation for a QuickBooks company realm.
+     *
+     * @param  string  $realmId  Intuit company realm identifier.
+     * @return int
+     */
+    public function realmVersion(string $realmId): int
+    {
+        return max(0, (int) Cache::get($this->realmVersionKey($realmId), 0));
+    }
+
+    /**
+     * Builds the cache key that stores a realm list-cache generation counter.
+     *
+     * @param  string  $realmId  Intuit company realm identifier.
+     * @return string
+     */
+    private function realmVersionKey(string $realmId): string
+    {
+        return "quickbooks:realm_version:{$realmId}";
     }
 
     /**
@@ -120,6 +162,9 @@ class QboListCacheService
     {
         return [
             self::RESOURCE_EMPLOYEES,
+            self::RESOURCE_CUSTOMERS,
+            self::RESOURCE_PROJECTS,
+            self::RESOURCE_SERVICES,
         ];
     }
 }

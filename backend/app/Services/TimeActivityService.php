@@ -48,12 +48,27 @@ class TimeActivityService
             $timeActivityPayload['Description'] = $validated['description'];
         }
 
-        if (! empty($validated['customer_ref'])) {
-            $customerRef = ['value' => $validated['customer_ref']];
-            if (! empty($validated['customer_name'])) {
-                $customerRef['name'] = $validated['customer_name'];
+        if (! empty($validated['customer_ref']) || ! empty($validated['project_ref'])) {
+            $customerRefValue = ! empty($validated['project_ref'])
+                ? $validated['project_ref']
+                : $validated['customer_ref'];
+            $customerNameValue = ! empty($validated['project_ref'])
+                ? ($validated['project_name'] ?? null)
+                : ($validated['customer_name'] ?? null);
+
+            $customerRef = ['value' => $customerRefValue];
+            if (! empty($customerNameValue)) {
+                $customerRef['name'] = $customerNameValue;
             }
             $timeActivityPayload['CustomerRef'] = $customerRef;
+        }
+
+        if (! empty($validated['item_ref'])) {
+            $itemRef = ['value' => $validated['item_ref']];
+            if (! empty($validated['item_name'])) {
+                $itemRef['name'] = $validated['item_name'];
+            }
+            $timeActivityPayload['ItemRef'] = $itemRef;
         }
 
         $timeActivity = TimeActivity::create($timeActivityPayload);

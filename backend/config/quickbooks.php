@@ -81,4 +81,27 @@ return [
         env('QUICKBOOKS_EMPLOYEES_MAX_RESULTS', 1000),
     ),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Employee customer scan pages
+    |--------------------------------------------------------------------------
+    |
+    | When building the customer picker, the API scans time activities for the
+    | signed-in employee. This caps how many paginated QBO queries are issued.
+    |
+    */
+
+    'employee_customer_scan_max_pages' => (int) env('QUICKBOOKS_EMPLOYEE_CUSTOMER_SCAN_MAX_PAGES', 25),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Active timer maximum elapsed seconds
+    |--------------------------------------------------------------------------
+    |
+    | Caps server-side accumulated timer duration to prevent inflated billing.
+    |
+    */
+
+    'time_tracker_max_accumulated_seconds' => (int) env('QUICKBOOKS_TIME_TRACKER_MAX_ACCUMULATED_SECONDS', 86400),
+
 ];

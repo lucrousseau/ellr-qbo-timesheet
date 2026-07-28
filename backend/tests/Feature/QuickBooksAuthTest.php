@@ -1,10 +1,13 @@
 <?php
 
 use App\Exceptions\QuickBooksException;
+use App\Exceptions\QuickBooksOAuthException;
 use App\Http\Controllers\Api\QuickBooksAuthController;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Services\QboListCacheService;
 use App\Services\QuickBooksConnectionValidationService;
+use App\Services\QuickBooksOAuthCallbackService;
 use App\Services\QuickBooksService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -268,4 +271,49 @@ it('stores oauth state in cache during connect flow', function () {
     $state = $service->createAuthorizationState($user);
 
     expect(Cache::get("quickbooks_oauth_state:{$state}"))->toBe(['user_id' => $user->id]);
+});
+
+it('invalidates cached quickbooks lists when disconnecting a company', function () {
+    Http::fake([
+        'developer.api.intuit.com/*' => Http::response('', 200),
+    ]);
+
+    $user = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-42']);
+    $cache = app(QboListCacheService::class);
+
+    expect($cache->realmVersion('realm-42'))->toBe(0);
+
+    $this->postJson('/api/quickbooks/disconnect')
+        ->assertOk()
+        ->assertJson(['connected' => false]);
+
+    expect($cache->realmVersion('realm-42'))->toBe(1);
+});
+
+it('disconnects without invalidating list caches when no realm is stored', function () {
+    Http::fake([
+        'developer.api.intuit.com/*' => Http::response('', 200),
+    ]);
+
+    actingAsAdmin();
+    $cache = app(QboListCacheService::class);
+
+    $this->postJson('/api/quickbooks/disconnect')
+        ->assertOk()
+        ->assertJson(['connected' => false]);
+
+    expect($cache->realmVersion('realm-42'))->toBe(0);
+});
+
+it('redirects oauth callback errors using the exception reason when provided', function () {
+    $this->partialMock(QuickBooksOAuthCallbackService::class, function ($mock) {
+        $mock->shouldReceive('exchangeFromCallback')
+            ->once()
+            ->andThrow(new QuickBooksOAuthException('OAuth failed.', null, 'state_mismatch'));
+    });
+
+    $this->get('/api/quickbooks/callback?code=auth-code&realmId=1234567890&state=secure-state')
+        ->assertRedirectContains('quickbooks=error')
+        ->assertRedirectContains('reason=state_mismatch');
 });

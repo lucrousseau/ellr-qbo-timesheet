@@ -225,3 +225,25 @@ it('aborts when the qbo employee is missing', function () {
 
     $service->listForUser($user, $token);
 })->throws(HttpResponseException::class);
+
+it('clamps max results to the configured quickbooks maximum', function () {
+    config(['quickbooks.time_activities_max_results' => 25]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with("SELECT * FROM TimeActivity WHERE EmployeeRef = '7' STARTPOSITION 1 MAXRESULTS 25")
+        ->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $service = makeTimeActivityListService($dataService);
+    $user = User::factory()->make([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+    $token = QuickBooksToken::factory()->make();
+
+    $result = $service->listForUser($user, $token, 1, 75);
+
+    expect($result['meta']['max_results'])->toBe(25);
+});

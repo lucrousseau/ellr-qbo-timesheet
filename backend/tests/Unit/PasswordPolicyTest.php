@@ -439,3 +439,22 @@ it('honors a custom minimum length from policy json', function () {
             ->and($long->passes())->toBeTrue();
     });
 });
+
+it('resolves test password paths from numeric candidate overrides', function () {
+    $path = writeTempPasswordPolicyJson(['minLength' => 17]);
+
+    withPasswordPolicyEnvOverride(
+        'PASSWORD_TEST_PASSWORDS_CANDIDATES',
+        json_encode([$path], JSON_THROW_ON_ERROR),
+        function () use ($path) {
+            expect(PasswordPolicyPaths::testPasswords())->toBe($path);
+        },
+    );
+});
+
+it('throws when a direct policy path override is not readable', function () {
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_PATH', '/tmp/missing-password-policy.json', function () {
+        expect(fn () => PasswordPolicyPaths::policyConfig())
+            ->toThrow(RuntimeException::class, 'Password policy override file not readable');
+    });
+});
