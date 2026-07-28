@@ -360,6 +360,49 @@ describe('apiFetch', () => {
     )
   })
 
+  it('builds relative csrf and api urls when VITE_API_URL is /api', async () => {
+    vi.resetModules()
+    vi.stubEnv('VITE_API_URL', '/api')
+
+    const { apiFetch, ensureCsrfCookie, resetCsrfStateForTests } = await import('./api')
+    resetCsrfStateForTests()
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({}),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    document.cookie = `XSRF-TOKEN=${encodeURIComponent('proxy-token')}`
+
+    await ensureCsrfCookie()
+    await apiFetch('/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'jane@example.com', password: 'password' }),
+    })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/sanctum/csrf-cookie', {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    })
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/api/login',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        headers: expect.objectContaining({
+          'X-XSRF-TOKEN': 'proxy-token',
+        }),
+      }),
+    )
+
+    vi.resetModules()
+  })
+
   it('builds the csrf cookie url for nested api base paths', async () => {
     vi.resetModules()
     vi.stubEnv('VITE_API_URL', 'http://localhost:8000/backend/api')

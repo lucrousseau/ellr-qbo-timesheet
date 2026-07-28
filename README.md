@@ -106,7 +106,7 @@ Useful commands:
 
 ```bash
 npm run docker:up:build  # rebuild images then start (after Dockerfile changes)
-npm run docker:smoke     # wait for API/admin/timesheet and verify /api/health
+npm run docker:smoke     # wait for API/admin/timesheet, health, and login via admin proxy
 npm run docker:logs      # follow all service logs
 npm run docker:down      # stop containers
 npm run docker:reset     # stop and remove volumes (fresh node_modules vendor cache)

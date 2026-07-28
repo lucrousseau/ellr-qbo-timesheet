@@ -2,12 +2,24 @@
  * @file Tests for shared Vite app configuration (local vs Docker dev server).
  */
 
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createAppConfig } from './createAppConfig'
 
 describe('createAppConfig', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
+  })
+
+  it('documents relative api urls in frontend env examples', () => {
+    const monorepoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../..')
+    const adminExample = readFileSync(path.join(monorepoRoot, 'apps/admin/.env.example'), 'utf8')
+    const timesheetExample = readFileSync(path.join(monorepoRoot, 'apps/timesheet/.env.example'), 'utf8')
+
+    expect(adminExample).toContain('VITE_API_URL=/api')
+    expect(timesheetExample).toContain('VITE_API_URL=/api')
   })
 
   it('keeps default Vite server options outside Docker', () => {

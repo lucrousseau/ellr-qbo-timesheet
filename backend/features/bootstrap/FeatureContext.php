@@ -25,6 +25,11 @@ class FeatureContext implements Context
 
     private ?TestResponse $response = null;
 
+    /** @var array<string, string> */
+    private array $cookies = [];
+
+    private bool $statefulClient = false;
+
     /**
      * @BeforeScenario
      * @return void
@@ -35,6 +40,12 @@ class FeatureContext implements Context
         $this->migrateDatabase();
         auth()->forgetGuards();
         $this->response = null;
+        $this->cookies = [];
+        $this->statefulClient = false;
+
+        if (self::$app?->bound('session.store')) {
+            self::$app->make('session.store')->flush();
+        }
     }
 
     /**
@@ -44,6 +55,12 @@ class FeatureContext implements Context
     public function tearDownBehat(): void
     {
         $this->response = null;
+        $this->cookies = [];
+        $this->statefulClient = false;
+
+        if (self::$app?->bound('session.store')) {
+            self::$app->make('session.store')->flush();
+        }
     }
 
     /**
@@ -62,6 +79,36 @@ class FeatureContext implements Context
     public function iAmLoggedOut(): void
     {
         auth()->forgetGuards();
+        $this->cookies = [];
+
+        if (self::$app->bound('session.store')) {
+            self::$app->make('session.store')->flush();
+        }
+    }
+
+    /**
+     * @Given I use the stateful SPA client
+     * @return void
+     */
+    public function iUseTheStatefulSpaClient(): void
+    {
+        $this->statefulClient = true;
+        $this->cookies = [];
+    }
+
+    /**
+     * @Given a verified user exists with email :email and password :password
+     * @param  string  $email  Account email.
+     * @param  string  $password  Plain-text password.
+     * @return void
+     */
+    public function aVerifiedUserExistsWithEmailAndPassword(string $email, string $password): void
+    {
+        User::factory()->create([
+            'email' => $email,
+            'password' => $password,
+            'email_verified_at' => now(),
+        ]);
     }
 
     /**
@@ -75,6 +122,15 @@ class FeatureContext implements Context
     }
 
     /**
+     * @When I fetch the sanctum csrf cookie
+     * @return void
+     */
+    public function iFetchTheSanctumCsrfCookie(): void
+    {
+        $this->dispatchRequest('GET', '/sanctum/csrf-cookie');
+    }
+
+    /**
      * @When I request :method :path with JSON:
      * @param  string  $method  HTTP method.
      * @param  string  $path  Request path.
@@ -83,14 +139,7 @@ class FeatureContext implements Context
      */
     public function iRequestWithJson(string $method, string $path, string $body): void
     {
-        $kernel = self::$app->make(HttpKernel::class);
-
-        $request = Request::create($path, strtoupper($method), [], [], [], [
-            'HTTP_ACCEPT' => 'application/json',
-            'CONTENT_TYPE' => 'application/json',
-        ], $body);
-
-        $this->response = TestResponse::fromBaseResponse($kernel->handle($request));
+        $this->dispatchRequest(strtoupper($method), $path, $body);
     }
 
     /**
@@ -101,14 +150,7 @@ class FeatureContext implements Context
      */
     public function iRequest(string $method, string $path): void
     {
-        $kernel = self::$app->make(HttpKernel::class);
-
-        $request = Request::create($path, strtoupper($method), [], [], [], [
-            'HTTP_ACCEPT' => 'application/json',
-            'CONTENT_TYPE' => 'application/json',
-        ]);
-
-        $this->response = TestResponse::fromBaseResponse($kernel->handle($request));
+        $this->dispatchRequest(strtoupper($method), $path);
     }
 
     /**
@@ -159,6 +201,69 @@ class FeatureContext implements Context
     }
 
     /**
+     * Dispatches an HTTP request through the kernel and keeps cookies for stateful flows.
+     *
+     * @param  string  $method  HTTP method.
+     * @param  string  $path  Request path.
+     * @param  string|null  $body  Optional JSON request body.
+     * @return void
+     */
+    private function dispatchRequest(string $method, string $path, ?string $body = null): void
+    {
+        $server = $this->requestServerHeaders($method, $body !== null);
+
+        $request = Request::create($path, $method, [], $this->cookies, [], $server, $body);
+
+        $kernel = self::$app->make(HttpKernel::class);
+        $response = $kernel->handle($request);
+        $kernel->terminate($request, $response);
+
+        $this->response = TestResponse::fromBaseResponse($response);
+
+        foreach ($this->response->headers->getCookies() as $cookie) {
+            $this->cookies[$cookie->getName()] = $cookie->getValue();
+        }
+    }
+
+    /**
+     * Builds server headers for the next HTTP request.
+     *
+     * @param  string  $method  HTTP method.
+     * @param  bool  $hasJsonBody  Whether the request carries a JSON body.
+     * @return array<string, string>
+     */
+    private function requestServerHeaders(string $method, bool $hasJsonBody): array
+    {
+        $headers = [
+            'HTTP_ACCEPT' => 'application/json',
+        ];
+
+        if ($hasJsonBody) {
+            $headers['CONTENT_TYPE'] = 'application/json';
+        }
+
+        if ($this->statefulClient) {
+            $headers['HTTP_ORIGIN'] = 'http://localhost:5173';
+            $headers['HTTP_REFERER'] = 'http://localhost:5173/';
+        }
+
+        if ($this->statefulClient && $this->isMutatingMethod($method) && isset($this->cookies['XSRF-TOKEN'])) {
+            $headers['HTTP_X_XSRF_TOKEN'] = urldecode($this->cookies['XSRF-TOKEN']);
+        }
+
+        return $headers;
+    }
+
+    /**
+     * @param  string  $method  HTTP method.
+     * @return bool
+     */
+    private function isMutatingMethod(string $method): bool
+    {
+        return ! in_array($method, ['GET', 'HEAD', 'OPTIONS'], true);
+    }
+
+    /**
      * Boots the Laravel application once per Behat process.
      *
      * @return void
@@ -186,6 +291,12 @@ class FeatureContext implements Context
         self::$app['config']->set('database.connections.sqlite.database', ':memory:');
         self::$app['config']->set('cache.default', 'array');
         self::$app['config']->set('session.driver', 'array');
+        self::$app['config']->set('sanctum.stateful', [
+            'localhost:5173',
+            'localhost:5174',
+            'localhost',
+            '127.0.0.1',
+        ]);
 
         self::$app->make('db')->purge('sqlite');
         self::$app->make('db')->reconnect('sqlite');

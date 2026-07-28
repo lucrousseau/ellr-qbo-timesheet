@@ -50,7 +50,7 @@
     "test:mutation:frontend": "npm run test:mutation --workspaces --if-present",
     "test:mutation": "npm run test:mutation:backend && npm run test:mutation:frontend",
     "analyse": "cd backend && composer analyse",
-    "precommit:qa": "npm run lint:fast && npm run typecheck && cd backend && composer test:arch && composer test:unit && composer test:feature:time-activities",
+    "precommit:qa": "npm run lint:fast && npm run typecheck && cd backend && composer test:arch && composer test:unit && composer test:feature:time-activities && composer test:feature:auth",
     "precommit": "npm run precommit:qa",
     "prepush:tests": "sh scripts/prepush-tests.sh",
     "prepush": "npm run qa && npm run lint:dup:tests && npm run test:mutation",
