@@ -1,10 +1,12 @@
 <?php
 
 use App\Support\PasswordPolicy;
+use App\Support\PasswordPolicyPaths;
 use App\Support\PasswordRules;
 use Illuminate\Support\Facades\Validator;
 
 covers(PasswordPolicy::class);
+covers(PasswordPolicyPaths::class);
 covers(PasswordRules::class);
 
 it('loads the shared password policy configuration', function () {
