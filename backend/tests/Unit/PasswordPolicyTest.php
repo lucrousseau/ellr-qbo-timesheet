@@ -30,6 +30,94 @@ it('resolves a readable password policy path', function () {
         ->and(is_readable(PasswordPolicy::configPath()))->toBeTrue();
 });
 
+it('prefers the synced backend policy file over the package default', function () {
+    expect(PasswordPolicy::configPath())->toBe(realpath(base_path('config/password-policy.json')));
+});
+
+it('prefers the synced backend test passwords file over the package default', function () {
+    expect(PasswordPolicy::testPasswordsPath())->toBe(realpath(base_path('config/test-passwords.json')));
+});
+
+it('loads policy rules from a direct path override', function () {
+    $path = writeTempPasswordPolicyJson(['minLength' => 15]);
+
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_PATH', $path, function () use ($path) {
+        expect(PasswordPolicy::configPath())->toBe($path)
+            ->and(PasswordPolicy::config()['minLength'])->toBe(15);
+    });
+});
+
+it('ignores invalid candidate list overrides and uses default paths', function () {
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_CANDIDATES', '"not-an-array"', function () {
+        expect(PasswordPolicy::configPath())->toBe(realpath(base_path('config/password-policy.json')));
+    });
+});
+
+it('ignores empty candidate override env values', function () {
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_CANDIDATES', '', function () {
+        expect(PasswordPolicy::configPath())->toBe(realpath(base_path('config/password-policy.json')));
+    });
+});
+
+it('normalizes candidate path overrides from json arrays', function () {
+    $path = writeTempPasswordPolicyJson(['minLength' => 16]);
+
+    withPasswordPolicyCandidates([$path], function () use ($path) {
+        expect(PasswordPolicy::configPath())->toBe($path)
+            ->and(PasswordPolicy::config()['minLength'])->toBe(16);
+    });
+});
+
+it('skips non-string candidate entries before resolving readable paths', function () {
+    withPasswordPolicyCandidates([
+        123,
+        base_path('../packages/password-policy/password-policy.json'),
+    ], function () {
+        expect(PasswordPolicy::configPath())->toContain('packages/password-policy');
+    });
+});
+
+it('reads path overrides from getenv when the env superglobal is unset', function () {
+    $path = writeTempPasswordPolicyJson(['minLength' => 17]);
+    $key = 'PASSWORD_POLICY_CONFIG_PATH';
+    $previous = $_ENV[$key] ?? getenv($key);
+
+    putenv($key.'='.$path);
+    unset($_ENV[$key]);
+
+    try {
+        expect(PasswordPolicy::config()['minLength'])->toBe(17);
+    } finally {
+        if ($previous === false || $previous === '') {
+            putenv($key);
+            unset($_ENV[$key]);
+        } else {
+            putenv($key.'='.$previous);
+            $_ENV[$key] = $previous;
+        }
+    }
+});
+
+it('casts decoded policy values to expected scalar types', function () {
+    withPasswordPolicy([
+        'minLength' => '18',
+        'requireUppercase' => '0',
+        'requireLowercase' => '1',
+        'requireNumbers' => 0,
+        'requireSymbols' => 1,
+        'uncompromised' => 0,
+    ], function () {
+        $config = PasswordPolicy::config();
+
+        expect($config['minLength'])->toBeInt()->toBe(18)
+            ->and($config['requireUppercase'])->toBeBool()->toBeFalse()
+            ->and($config['requireLowercase'])->toBeBool()->toBeTrue()
+            ->and($config['requireNumbers'])->toBeBool()->toBeFalse()
+            ->and($config['requireSymbols'])->toBeBool()->toBeTrue()
+            ->and($config['uncompromised'])->toBeBool()->toBeFalse();
+    });
+});
+
 it('falls back to the monorepo package policy file when backend config is missing', function () {
     withPasswordPolicyCandidates([
         base_path('config/password-policy-missing.json'),
