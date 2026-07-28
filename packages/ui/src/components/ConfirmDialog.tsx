@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from '@headlessui/react'
 import {
-  dangerButtonClass,
   dialogActionsClass,
   dialogBackdropClass,
   dialogContainerClass,
@@ -18,8 +17,8 @@ import {
   dialogPanelClass,
   dialogTitleClass,
 } from '../styles/dialogTokens'
-import { secondaryButtonClass } from '../styles/tokens'
 import { useGuardedAction } from '../hooks/useGuardedAction'
+import { Button } from './Button'
 
 type ConfirmDialogProps = {
   open: boolean
@@ -58,24 +57,19 @@ export function ConfirmDialog({
           <DialogTitle className={dialogTitleClass}>{title}</DialogTitle>
           <Description className={dialogDescriptionClass}>{description}</Description>
           <div className={dialogActionsClass}>
-            <button
-              type="button"
-              disabled={isBusy}
-              className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
-              onClick={onCancel}
-            >
+            <Button type="button" variant="secondary" disabled={isBusy} onClick={onCancel}>
               {cancelLabel}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="danger"
               disabled={isBusy}
-              className={dangerButtonClass}
               onClick={() => {
                 void handleConfirm()
               }}
             >
               {confirmLabel}
-            </button>
+            </Button>
           </div>
         </DialogPanel>
       </div>

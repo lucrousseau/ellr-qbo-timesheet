@@ -2,7 +2,9 @@
  * @file Public exports for shared React UI components and hooks.
  */
 
+export { Button } from './components/Button'
 export { ConfirmDialog } from './components/ConfirmDialog'
+export { TextAreaField } from './components/TextAreaField'
 export { LazySearchCombobox } from './components/LazySearchCombobox'
 export { StaticSelect } from './components/StaticSelect'
 export { TextField } from './components/TextField'
@@ -36,8 +38,8 @@ export {
   primaryButtonClass,
   secondaryButtonClass,
 } from './styles/tokens'
+export { fieldLabelClass } from './styles/formTokens'
 export {
-  fieldLabelClass,
   selectOptionClass,
   selectOptionsPanelClass,
   selectSearchInputClass,

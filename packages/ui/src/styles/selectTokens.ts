@@ -2,7 +2,7 @@
  * @file Shared Tailwind classes for Headless UI select primitives.
  */
 
-export const fieldLabelClass = 'block text-sm font-medium text-slate-700'
+export { fieldLabelClass } from './formTokens'
 
 export const selectTriggerClass =
   'flex w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200'

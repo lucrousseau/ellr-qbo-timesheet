@@ -51,6 +51,7 @@ cd backend && composer test:mutation
 9. Run Pint + PHPCS (backend) and oxlint (TS/TSX) before finishing a task.
 10. **JSDoc / PHPDoc** on public exports; project language is **English** (see `.cursor/rules/language.mdc`, `jsdoc.mdc`, `phpdoc.mdc`).
 11. `npm run prepush` (Husky pre-push) includes coverage and mutation thresholds. Use `npm run qa:finance` for a standalone coverage + mutation rerun without the full prepush pipeline.
+12. **Design system:** evolve `@ellr/ui` incrementally on every UI change; prefer Ellr wrappers over raw HTML controls in apps; see `.cursor/rules/ui-design-system.mdc`.
 
 ## Git hooks (Husky)
 

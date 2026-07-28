@@ -4,8 +4,9 @@
 
 import type { UserLocale } from '@ellr/api-client'
 import { SUPPORTED_LOCALES } from '@ellr/api-client'
-import { cardClass, secondaryButtonClass } from '../styles/tokens'
+import { cardClass } from '../styles/tokens'
 import { useLocale } from '../i18n/LocaleProvider'
+import { Button } from './Button'
 import { StaticSelect } from './StaticSelect'
 
 type UserPreferencesPanelProps = {
@@ -50,13 +51,9 @@ export function UserPreferencesPanel({
           getOptionValue={(supportedLocale) => supportedLocale}
           getOptionLabel={(supportedLocale) => t(LOCALE_LABEL_KEYS[supportedLocale])}
         />
-        <button
-          type="submit"
-          disabled={saving}
-          className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
-        >
+        <Button type="submit" variant="secondary" disabled={saving}>
           {saving ? t('common.saving') : t('common.save')}
-        </button>
+        </Button>
       </form>
     </section>
   )

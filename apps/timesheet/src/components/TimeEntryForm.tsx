@@ -3,7 +3,14 @@
  */
 
 import type { FlashMessage } from '@ellr/ui'
-import { Alert, cardClass, inputClass, primaryButtonClass, useLocale } from '@ellr/ui'
+import {
+  Alert,
+  Button,
+  cardClass,
+  TextAreaField,
+  TextField,
+  useLocale,
+} from '@ellr/ui'
 
 type TimeActivityForm = {
   start_time: string
@@ -41,41 +48,32 @@ export function TimeEntryForm({
         {t('timesheet.qboEmployeeLabel', { label: employeeLabel })}
       </p>
 
-      <label className="block text-sm font-medium text-slate-700">
-        {t('timesheet.start')}
-        <input
-          type="datetime-local"
-          required
-          className={inputClass}
-          value={form.start_time}
-          onChange={(event) => onFormChange({ ...form, start_time: event.target.value })}
-        />
-      </label>
+      <TextField
+        label={t('timesheet.start')}
+        type="datetime-local"
+        required
+        value={form.start_time}
+        onChange={(event) => onFormChange({ ...form, start_time: event.target.value })}
+      />
 
-      <label className="block text-sm font-medium text-slate-700">
-        {t('timesheet.end')}
-        <input
-          type="datetime-local"
-          required
-          className={inputClass}
-          value={form.end_time}
-          onChange={(event) => onFormChange({ ...form, end_time: event.target.value })}
-        />
-      </label>
+      <TextField
+        label={t('timesheet.end')}
+        type="datetime-local"
+        required
+        value={form.end_time}
+        onChange={(event) => onFormChange({ ...form, end_time: event.target.value })}
+      />
 
-      <label className="block text-sm font-medium text-slate-700">
-        {t('timesheet.description')}
-        <textarea
-          rows={4}
-          className={inputClass}
-          value={form.description}
-          onChange={(event) => onFormChange({ ...form, description: event.target.value })}
-        />
-      </label>
+      <TextAreaField
+        label={t('timesheet.description')}
+        rows={4}
+        value={form.description}
+        onChange={(event) => onFormChange({ ...form, description: event.target.value })}
+      />
 
-      <button type="submit" disabled={submitting} className={primaryButtonClass}>
+      <Button type="submit" disabled={submitting}>
         {submitting ? t('common.saving') : t('timesheet.saveTime')}
-      </button>
+      </Button>
 
       {message && <Alert variant={message.type}>{message.text}</Alert>}
     </form>

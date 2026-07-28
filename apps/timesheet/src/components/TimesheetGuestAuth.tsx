@@ -2,7 +2,7 @@
  * @file Sign-in, forgot password, and reset password screens for guests.
  */
 
-import { Alert, ForgotPasswordForm, LoginForm, ResetPasswordForm, useLocale, type FlashMessage } from '@ellr/ui'
+import { Alert, Button, ForgotPasswordForm, LoginForm, ResetPasswordForm, useLocale, type FlashMessage } from '@ellr/ui'
 import type { useTimesheetAuth } from '../hooks/useTimesheetAuth'
 
 type TimesheetGuestAuthProps = {
@@ -75,13 +75,11 @@ export function TimesheetGuestAuth({ auth, message }: TimesheetGuestAuthProps) {
               <Alert variant={message.type === 'error' ? 'error' : 'success'}>{message.text}</Alert>
             </div>
           ) : null}
-          <button
-            type="button"
-            className="mt-4 text-sm text-slate-600 underline"
-            onClick={() => auth.setAuthScreen('forgot-password')}
-          >
-            {t('auth.forgotPassword')}
-          </button>
+          <div className="mt-4">
+            <Button type="button" variant="link" onClick={() => auth.setAuthScreen('forgot-password')}>
+              {t('auth.forgotPassword')}
+            </Button>
+          </div>
         </>
       }
     />

@@ -17,6 +17,7 @@ Mandatory reference before any new feature, refactor, or code review.
 | Intuit / QBO | `backend/app/Services/QuickBooksService.php` | QBO SDK outside the service |
 | QBO rate limits | `.cursor/rules/quickbooks-api.mdc` (cache, `FindById`, manual refresh) | Uncached list endpoints, redundant SDK calls |
 | UI errors (API codes) | `resolveApiError` (`@ellr/api-client`) + `getApiErrorMessage` (`@ellr/ui`) | Raw backend messages in apps |
+| UI primitives and tokens | `@ellr/ui` (`Button`, `TextField`, tokens in `styles/`) | Raw `<input>` / `<button>` with inline Tailwind in `apps/*` |
 | Session auth | `apiFetch` (CSRF + cookies) | Per-app Sanctum logic |
 | Prod config | `.env.example` + README Production | Magic values in code |
 
@@ -48,6 +49,7 @@ Mandatory reference before any new feature, refactor, or code review.
 3. Keep controllers and `App.tsx` thin; extract when past soft limits (see `.cursor/rules/file-structure.mdc`).
 4. Update tests + rules if a new pattern becomes the project norm.
 5. Read the detailed plan: `docs/dry-reusability-plan.md` before any new UI feature or QBO endpoint.
+6. **Design system:** evolve `@ellr/ui` incrementally on every UI change; see `.cursor/rules/ui-design-system.mdc`.
 
 ## File size (pragmatic SRP)
 

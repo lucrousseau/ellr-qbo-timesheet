@@ -2,7 +2,7 @@
  * @file Timesheet user provisioning UI for QuickBooks employees.
  */
 
-import { cardClass, LazySearchCombobox, secondaryButtonClass, useLocale } from '@ellr/ui'
+import { Button, cardClass, LazySearchCombobox, useLocale } from '@ellr/ui'
 import type { QboEmployeeOption, User } from '../hooks/useTimesheetProvisioning'
 
 type TimesheetUserProvisioningPanelProps = {
@@ -93,13 +93,13 @@ export function TimesheetUserProvisioningPanel({
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
+          variant="secondary"
           disabled={creating || !selectedEmployee?.email}
-          className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
         >
           {creating ? t('admin.creatingTimesheetUser') : t('admin.createTimesheetUser')}
-        </button>
+        </Button>
       </form>
 
       <div className="mt-6">

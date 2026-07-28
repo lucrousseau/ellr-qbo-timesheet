@@ -6,8 +6,9 @@ import type { FormEvent } from 'react'
 import { getPasswordRequirementLabels } from '../i18n/passwordPolicyMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
+import { Button } from './Button'
 import { TextField } from './TextField'
-import { cardClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
+import { cardClass, pageMainClass, pageTitleClass } from '../styles/tokens'
 
 type ResetPasswordFormProps = {
   title: string
@@ -102,19 +103,17 @@ export function ResetPasswordForm({
               value={passwordConfirmation}
               onChange={(event) => onPasswordConfirmationChange(event.target.value)}
             />
-            <button type="submit" className={primaryButtonClass} disabled={submitting}>
+            <Button type="submit" disabled={submitting}>
               {submitting ? t('common.saving') : t('auth.updatePassword')}
-            </button>
+            </Button>
           </form>
         )}
 
-        <button
-          type="button"
-          className="mt-4 text-sm text-slate-600 underline"
-          onClick={onBackToLogin}
-        >
-          {t('auth.backToSignIn')}
-        </button>
+        <div className="mt-4">
+          <Button type="button" variant="link" onClick={onBackToLogin}>
+            {t('auth.backToSignIn')}
+          </Button>
+        </div>
       </section>
     </main>
   )

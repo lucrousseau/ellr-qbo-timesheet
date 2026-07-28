@@ -5,10 +5,9 @@
 import { useState } from 'react'
 import {
   Alert,
+  Button,
   cardClass,
   ConfirmDialog,
-  primaryButtonClass,
-  secondaryButtonClass,
   useLocale,
   type FlashMessage,
 } from '@ellr/ui'
@@ -97,23 +96,18 @@ export function QuickBooksConnectionPanel({
       )}
 
       <div className="mt-6 flex gap-3">
-        <button
-          type="button"
-          onClick={onConnect}
-          disabled={connecting}
-          className={primaryButtonClass}
-        >
+        <Button type="button" onClick={onConnect} disabled={connecting}>
           {connecting ? t('admin.redirecting') : t('admin.connectQuickBooks')}
-        </button>
+        </Button>
         {status?.connected && (
-          <button
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => setDisconnectDialogOpen(true)}
             disabled={disconnecting}
-            className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
           >
             {disconnecting ? t('admin.disconnecting') : t('admin.disconnectQuickBooks')}
-          </button>
+          </Button>
         )}
       </div>
 

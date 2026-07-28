@@ -4,7 +4,7 @@
 
 import { Field, Input, Label } from '@headlessui/react'
 import type { InputHTMLAttributes } from 'react'
-import { fieldLabelClass } from '../styles/selectTokens'
+import { fieldLabelClass } from '../styles/formTokens'
 import { inputClass } from '../styles/tokens'
 
 type TextFieldProps = {

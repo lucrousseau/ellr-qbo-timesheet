@@ -6,8 +6,9 @@ import type { FormEvent } from 'react'
 import { getPasswordRequirementLabels } from '../i18n/passwordPolicyMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
+import { Button } from './Button'
 import { TextField } from './TextField'
-import { cardClass, secondaryButtonClass } from '../styles/tokens'
+import { cardClass } from '../styles/tokens'
 
 type ChangePasswordPanelProps = {
   currentPassword: string
@@ -92,13 +93,9 @@ export function ChangePasswordPanel({
           value={passwordConfirmation}
           onChange={(event) => onPasswordConfirmationChange(event.target.value)}
         />
-        <button
-          type="submit"
-          disabled={saving}
-          className={`${secondaryButtonClass} px-4 py-2.5 disabled:opacity-50`}
-        >
+        <Button type="submit" variant="secondary" disabled={saving}>
           {saving ? t('common.saving') : t('auth.updatePassword')}
-        </button>
+        </Button>
       </form>
     </section>
   )

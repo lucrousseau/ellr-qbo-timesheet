@@ -4,8 +4,9 @@
 
 import type { FormEvent, ReactNode } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
-import { cardClass, pageMainClass, pageTitleClass, primaryButtonClass } from '../styles/tokens'
+import { cardClass, pageMainClass, pageTitleClass } from '../styles/tokens'
 import { Alert } from './Alert'
+import { Button } from './Button'
 import { TextField } from './TextField'
 
 type LoginFormProps = {
@@ -83,9 +84,9 @@ export function LoginForm({
             value={password}
             onChange={(event) => onPasswordChange(event.target.value)}
           />
-          <button type="submit" className={primaryButtonClass} disabled={submitting}>
+          <Button type="submit" disabled={submitting}>
             {submitting ? t('common.signingIn') : t('common.signIn')}
-          </button>
+          </Button>
           {footer}
         </form>
       </section>

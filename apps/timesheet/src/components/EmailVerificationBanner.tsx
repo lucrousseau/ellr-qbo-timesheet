@@ -2,7 +2,7 @@
  * @file Prompt to verify email and resend the verification link.
  */
 
-import { Alert, primaryButtonClass, useLocale } from '@ellr/ui'
+import { Alert, Button, useLocale } from '@ellr/ui'
 
 type EmailVerificationBannerProps = {
   message: string | null
@@ -28,9 +28,9 @@ export function EmailVerificationBanner({
     <div className="mb-4 space-y-3">
       <Alert variant="warning">{t('timesheet.emailVerificationWarning')}</Alert>
       {message && messageVariant && <Alert variant={messageVariant}>{message}</Alert>}
-      <button type="button" className={primaryButtonClass} disabled={sending} onClick={onResend}>
+      <Button type="button" disabled={sending} onClick={onResend}>
         {sending ? t('timesheet.resendingVerification') : t('timesheet.resendVerification')}
-      </button>
+      </Button>
     </div>
   )
 }

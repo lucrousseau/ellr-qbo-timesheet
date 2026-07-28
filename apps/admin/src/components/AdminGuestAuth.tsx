@@ -2,7 +2,7 @@
  * @file Sign-in, forgot password, and reset password screens for admin guests.
  */
 
-import { Alert, ForgotPasswordForm, LoginForm, ResetPasswordForm } from '@ellr/ui'
+import { Alert, Button, ForgotPasswordForm, LoginForm, ResetPasswordForm } from '@ellr/ui'
 import type { FlashMessage } from '@ellr/ui'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
 
@@ -74,13 +74,11 @@ export function AdminGuestAuth({ admin, message }: AdminGuestAuthProps) {
               <Alert variant={message.type}>{message.text}</Alert>
             </div>
           ) : null}
-          <button
-            type="button"
-            className="mt-4 text-sm text-slate-600 underline"
-            onClick={() => admin.setAuthScreen('forgot-password')}
-          >
-            Forgot password?
-          </button>
+          <div className="mt-4">
+            <Button type="button" variant="link" onClick={() => admin.setAuthScreen('forgot-password')}>
+              Forgot password?
+            </Button>
+          </div>
         </>
       }
     />

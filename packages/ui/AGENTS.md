@@ -11,14 +11,17 @@ See also the [root README](../../README.md) and [root AGENTS.md](../../AGENTS.md
 | Rule | Detail |
 |------|--------|
 | **Import Headless only in `@ellr/ui`** | Apps use Ellr wrappers, never `@headlessui/react` directly |
-| **Style via tokens** | `styles/tokens.ts`, `styles/selectTokens.ts`, `styles/dialogTokens.ts` |
+| **Style via tokens** | `styles/tokens.ts`, `styles/formTokens.ts`, `styles/selectTokens.ts`, `styles/dialogTokens.ts` |
 | **Wrap, do not re-export Headless** | Export Ellr components only |
+| **Evolve incrementally** | See `.cursor/rules/ui-design-system.mdc` (mandatory checklist on every UI change) |
 
 ### Wrapped components
 
 | Component | Headless primitive | Use when |
 |-----------|-------------------|----------|
-| `TextField` | `Field` + `Label` + `Input` | Email, password, text inputs |
+| `Button` | `Button` | Primary, secondary, danger, link; `size="compact"` for header chrome |
+| `TextField` | `Field` + `Label` + `Input` | Text, email, password, datetime-local |
+| `TextAreaField` | `Field` + `Label` + `Textarea` | Multi-line text, notes, descriptions |
 | `StaticSelect` | `Listbox` | Short static lists (locale, enums) |
 | `LazySearchCombobox` | `Combobox` | API-backed lists with search (`useLazyApiSelect`) |
 | `ConfirmDialog` | `Dialog` | Destructive or irreversible confirmations |
@@ -31,7 +34,6 @@ Select panels use `portal={false}` and absolute positioning inside a `relative` 
 
 | Status | Planned Ellr name | Headless primitive | Notes |
 |--------|-------------------|-------------------|-------|
-| P1 | `TextAreaField` | `Textarea` + `Field` | Long text, notes |
 | P1 | `CheckboxField` | `Checkbox` + `Field` | Multiple checkboxes: `Fieldset` + `Legend` + `Description` |
 | P1 | `RadioGroupField` | `RadioGroup` + `Radio` | Mutually exclusive options |
 | P1 | `SwitchField` | `Switch` + `Field` | Boolean toggles |
@@ -41,9 +43,19 @@ Select panels use `portal={false}` and absolute positioning inside a `relative` 
 | P2 | `PopoverPanel` | `Popover` | Contextual overlays |
 | P2 | `DisclosurePanel` | `Disclosure` | Expand/collapse sections |
 | P3 | `TabsNav` (optional) | `Tabs` | Only if replacing custom `TabNav` is justified |
-| internal | — | `Button`, `CloseButton`, `Portal`, `FocusTrap`, `Transition` | Used inside wrappers, not public exports |
+| internal | — | `CloseButton`, `Portal`, `FocusTrap`, `Transition` | Used inside wrappers, not public exports |
 
 When adding a wrapper: tokens in `styles/*Tokens.ts`, test file, export in `src/index.ts`, update this table and `.cursor/rules/ui-design-system.mdc`.
+
+### Incremental evolution checklist
+
+On every UI change, agents and contributors should:
+
+1. Replace raw form controls in touched files with Ellr wrappers.
+2. Prefer `Button` over `primaryButtonClass` / `secondaryButtonClass` in apps.
+3. Add or extend a wrapper when the same control pattern appears twice.
+4. Update inventory docs when a wrapper ships.
+5. Add tests for new public exports.
 
 ### Duplicate interaction guard
 

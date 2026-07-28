@@ -4,7 +4,8 @@
 
 import type { ReactNode } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
-import { pageMainClass, pageTitleClass, secondaryButtonClass } from '../styles/tokens'
+import { pageMainClass, pageTitleClass } from '../styles/tokens'
+import { Button } from './Button'
 
 type AppShellProps = {
   title: string
@@ -38,14 +39,15 @@ export function AppShell({ title, subtitle, userEmail, onLogout, loggingOut = fa
           )}
         </div>
         {userEmail && onLogout && (
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="compact"
             onClick={onLogout}
             disabled={loggingOut}
-            className={`${secondaryButtonClass} disabled:opacity-50`}
           >
             {loggingOut ? t('common.signingOut') : t('common.signOut')}
-          </button>
+          </Button>
         )}
       </header>
       {children}
