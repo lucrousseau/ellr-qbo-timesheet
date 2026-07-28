@@ -2,6 +2,7 @@
  * @file Low-level HTTP helpers, CSRF cookies, and API error mapping.
  */
 
+import { passwordPolicyErrorCodeFromApiMessage } from '@ellr/password-policy'
 import { getLocalizedApiErrorMessage } from './errorMessages'
 import { normalizeUserLocale, type UserLocale } from './locale'
 
@@ -234,6 +235,10 @@ export function getApiErrorMessage(
     if (error.status === 422) {
       if (error.code === 'qbo_employee_invalid') {
         return getLocalizedApiErrorMessage(activeLocale, 'qbo_employee_invalid')
+      }
+      const passwordPolicyCode = passwordPolicyErrorCodeFromApiMessage(error.message)
+      if (passwordPolicyCode === 'password_uncompromised') {
+        return getLocalizedApiErrorMessage(activeLocale, 'password_uncompromised')
       }
       if (error.message && !error.message.startsWith('API error:')) {
         return error.message

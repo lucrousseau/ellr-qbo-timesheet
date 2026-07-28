@@ -6,13 +6,13 @@ use App\Models\User;
 covers(AuthController::class);
 
 it('completes login after csrf priming and returns the authenticated user', function () {
-    $user = User::factory()->create(['password' => 'password']);
+    $user = User::factory()->create();
 
     $this->get('/sanctum/csrf-cookie', frontendHeaders())->assertNoContent();
 
     $this->postJson('/api/login', [
         'email' => $user->email,
-        'password' => 'password',
+        'password' => validTestPassword(),
     ], frontendHeaders())
         ->assertOk()
         ->assertJsonPath('user.id', $user->id);

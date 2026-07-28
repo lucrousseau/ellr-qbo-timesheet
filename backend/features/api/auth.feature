@@ -25,21 +25,21 @@ Feature: Authentication
 
   Scenario: Password reset rejects an invalid token
     Given I use the stateful SPA client
-    And a verified user exists with email "jane@example.com" and password "password"
+    And a verified user exists with email "jane@example.com" and password "EllrT3st!2026"
     When I fetch the sanctum csrf cookie
     And I request "POST" "/api/reset-password" with JSON:
       """
-      {"token":"invalid-token","email":"jane@example.com","password":"new-password","password_confirmation":"new-password"}
+      {"token":"invalid-token","email":"jane@example.com","password":"EllrNew!2026","password_confirmation":"EllrNew!2026"}
       """
     Then the response status should be 422
 
   Scenario: Stateful login succeeds after csrf priming
     Given I use the stateful SPA client
-    And a verified user exists with email "jane@example.com" and password "password"
+    And a verified user exists with email "jane@example.com" and password "EllrT3st!2026"
     When I fetch the sanctum csrf cookie
     And I request "POST" "/api/login" with JSON:
       """
-      {"email":"jane@example.com","password":"password"}
+      {"email":"jane@example.com","password":"EllrT3st!2026"}
       """
     Then the response status should be 200
     When I request "GET" "/api/user"
@@ -48,9 +48,9 @@ Feature: Authentication
 
   Scenario: Stateful login requires a csrf token
     Given I use the stateful SPA client
-    And a verified user exists with email "jane@example.com" and password "password"
+    And a verified user exists with email "jane@example.com" and password "EllrT3st!2026"
     When I request "POST" "/api/login" with JSON:
       """
-      {"email":"jane@example.com","password":"password"}
+      {"email":"jane@example.com","password":"EllrT3st!2026"}
       """
     Then the response status should be 419

@@ -10,6 +10,7 @@ COPY packages/api-client/package.json packages/api-client/
 COPY packages/ui/package.json packages/ui/
 COPY packages/vite-config/package.json packages/vite-config/
 COPY packages/test-utils/package.json packages/test-utils/
+COPY packages/password-policy/package.json packages/password-policy/
 
 RUN npm ci
 

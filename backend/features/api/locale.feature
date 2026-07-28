@@ -5,11 +5,11 @@ Feature: User locale preferences
 
   Scenario: User can update locale preference
     Given I use the stateful SPA client
-    And a verified user exists with email "jane@example.com", password "password", and locale "en"
+    And a verified user exists with email "jane@example.com", password "EllrT3st!2026", and locale "en"
     When I fetch the sanctum csrf cookie
     And I request "POST" "/api/login" with JSON:
       """
-      {"email":"jane@example.com","password":"password"}
+      {"email":"jane@example.com","password":"EllrT3st!2026"}
       """
     Then the response status should be 200
     When I request "PATCH" "/api/user/locale" with JSON:
@@ -21,11 +21,11 @@ Feature: User locale preferences
 
   Scenario: French user receives french logout message
     Given I use the stateful SPA client
-    And a verified user exists with email "jane@example.com", password "password", and locale "fr"
+    And a verified user exists with email "jane@example.com", password "EllrT3st!2026", and locale "fr"
     When I fetch the sanctum csrf cookie
     And I request "POST" "/api/login" with JSON:
       """
-      {"email":"jane@example.com","password":"password"}
+      {"email":"jane@example.com","password":"EllrT3st!2026"}
       """
     Then the response status should be 200
     When I request "POST" "/api/logout"
@@ -34,11 +34,11 @@ Feature: User locale preferences
 
   Scenario: Invalid locale is rejected for french users
     Given I use the stateful SPA client
-    And a verified user exists with email "jane@example.com", password "password", and locale "fr"
+    And a verified user exists with email "jane@example.com", password "EllrT3st!2026", and locale "fr"
     When I fetch the sanctum csrf cookie
     And I request "POST" "/api/login" with JSON:
       """
-      {"email":"jane@example.com","password":"password"}
+      {"email":"jane@example.com","password":"EllrT3st!2026"}
       """
     Then the response status should be 200
     When I request "PATCH" "/api/user/locale" with JSON:

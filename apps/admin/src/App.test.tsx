@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
+import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/password-policy'
 import { ApiError, connectQuickBooks, disconnectQuickBooks, fetchCurrentUser, fetchQuickBooksStatus, login, logout, requestPasswordReset, resetPassword, updateQboEmployee, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -193,7 +194,7 @@ describe('Admin App', () => {
     await fillLoginForm(user)
 
     await waitFor(() => {
-      expect(login).toHaveBeenCalledWith('test@example.com', 'password')
+      expect(login).toHaveBeenCalledWith('test@example.com', VALID_TEST_PASSWORD)
       expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
     })
   })
@@ -707,16 +708,16 @@ describe('Admin App', () => {
       expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/^new password$/i), 'new-password')
-    await user.type(screen.getByLabelText(/confirm password/i), 'new-password')
+    await user.type(screen.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.type(screen.getByLabelText(/confirm password/i), VALID_TEST_PASSWORD_ALT)
     await user.click(screen.getByRole('button', { name: /update password/i }))
 
     await waitFor(() => {
       expect(resetPassword).toHaveBeenCalledWith({
         token: 'abc',
         email: 'admin@example.com',
-        password: 'new-password',
-        passwordConfirmation: 'new-password',
+        password: VALID_TEST_PASSWORD_ALT,
+        passwordConfirmation: VALID_TEST_PASSWORD_ALT,
       })
       expect(screen.getByText(/password updated/i)).toBeInTheDocument()
     })
@@ -743,8 +744,8 @@ describe('Admin App', () => {
       expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/^new password$/i), 'new-password')
-    await user.type(screen.getByLabelText(/confirm password/i), 'new-password')
+    await user.type(screen.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.type(screen.getByLabelText(/confirm password/i), VALID_TEST_PASSWORD_ALT)
     await user.click(screen.getByRole('button', { name: /update password/i }))
 
     await waitFor(() => {

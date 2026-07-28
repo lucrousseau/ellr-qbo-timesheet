@@ -6,8 +6,8 @@
 
 namespace App\Http\Requests;
 
+use App\Support\PasswordRules;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * Form request rules for POST /api/register payloads.
@@ -34,7 +34,7 @@ class RegisterRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => PasswordRules::newPassword(),
         ];
     }
 }

@@ -16,6 +16,7 @@ type ErrorMessageKey =
   | 'access_denied'
   | 'qbo_employee_invalid'
   | 'invalid_data'
+  | 'password_uncompromised'
   | 'quickbooks_busy'
   | 'network_unreachable'
 
@@ -32,6 +33,7 @@ const ERROR_MESSAGES: Record<UserLocale, Record<ErrorMessageKey, string>> = {
     access_denied: 'Access denied.',
     qbo_employee_invalid: 'QuickBooks employee not found.',
     invalid_data: 'Invalid data or QuickBooks error.',
+    password_uncompromised: 'Choose a password that has not appeared in a known data breach.',
     quickbooks_busy: 'QuickBooks is busy. Please try again shortly.',
     network_unreachable: 'Unable to reach the Laravel API.',
   },
@@ -47,6 +49,7 @@ const ERROR_MESSAGES: Record<UserLocale, Record<ErrorMessageKey, string>> = {
     access_denied: 'Accès refusé.',
     qbo_employee_invalid: 'Employé QuickBooks introuvable.',
     invalid_data: 'Données invalides ou erreur QuickBooks.',
+    password_uncompromised: 'Choisissez un mot de passe qui ne figure pas dans une fuite de données connue.',
     quickbooks_busy: 'QuickBooks est occupé. Réessayez sous peu.',
     network_unreachable: 'Impossible de joindre l\'API Laravel.',
   },

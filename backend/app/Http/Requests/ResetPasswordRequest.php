@@ -6,8 +6,8 @@
 
 namespace App\Http\Requests;
 
+use App\Support\PasswordRules;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * Form request rules for POST /api/reset-password payloads.
@@ -34,7 +34,7 @@ class ResetPasswordRequest extends FormRequest
         return [
             'token' => ['required', 'string'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => PasswordRules::newPassword(),
         ];
     }
 }

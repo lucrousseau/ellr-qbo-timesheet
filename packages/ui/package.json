@@ -11,7 +11,8 @@
     "react-dom": "^19.2.7"
   },
   "dependencies": {
-    "@ellr/api-client": "*"
+    "@ellr/api-client": "*",
+    "@ellr/password-policy": "*"
   },
   "scripts": {
     "lint": "oxlint src",

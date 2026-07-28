@@ -12,9 +12,9 @@ it('runs the dev seeder only in the local environment when enabled', function ()
     config([
         'dev-seed.enabled' => true,
         'dev-seed.admin_email' => 'admin@ellr.local',
-        'dev-seed.admin_password' => 'password',
+        'dev-seed.admin_password' => 'EllrDev!2026',
         'dev-seed.user_email' => 'timesheet@ellr.local',
-        'dev-seed.user_password' => 'password',
+        'dev-seed.user_password' => 'EllrDev!2026',
     ]);
 
     $this->app->detectEnvironment(fn () => 'local');

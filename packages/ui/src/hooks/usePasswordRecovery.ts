@@ -5,13 +5,19 @@
 import type { FormEvent } from 'react'
 import { useCallback, useState } from 'react'
 import {
+  ApiError,
   getApiErrorMessage,
   isResetPasswordRoute,
   parseResetPasswordParams,
   requestPasswordReset,
   resetPassword,
 } from '@ellr/api-client'
+import {
+  loadPasswordPolicy,
+  validatePasswordWithConfirmation,
+} from '@ellr/password-policy'
 import { useLocale } from '../i18n/LocaleProvider'
+import { translatePasswordPolicyErrors, translateApiPasswordValidationMessage } from '../i18n/passwordPolicyMessages'
 
 /**
  * Frontend app that initiates password recovery.
@@ -104,6 +110,18 @@ export function usePasswordRecovery(options: UsePasswordRecoveryOptions) {
       return
     }
 
+    const policy = loadPasswordPolicy()
+    const validationErrors = validatePasswordWithConfirmation(
+      resetPasswordValue,
+      resetPasswordConfirmation,
+      policy,
+    )
+
+    if (validationErrors.length > 0) {
+      setResetError(translatePasswordPolicyErrors(locale, validationErrors))
+      return
+    }
+
     setResetSubmitting(true)
     setResetError(null)
 
@@ -118,7 +136,11 @@ export function usePasswordRecovery(options: UsePasswordRecoveryOptions) {
       setResetPasswordValue('')
       setResetPasswordConfirmation('')
     } catch (caught) {
-      setResetError(getApiErrorMessage(caught, t('auth.resetFailed'), locale))
+      const apiMessage = caught instanceof ApiError ? caught.message : ''
+      const policyMessage = translateApiPasswordValidationMessage(locale, apiMessage)
+      setResetError(
+        policyMessage ?? getApiErrorMessage(caught, t('auth.resetFailed'), locale),
+      )
     } finally {
       setResetSubmitting(false)
     }

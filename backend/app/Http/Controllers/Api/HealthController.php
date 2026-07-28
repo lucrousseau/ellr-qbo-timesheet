@@ -7,6 +7,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Support\PasswordPolicy;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -21,10 +22,16 @@ class HealthController extends Controller
      */
     public function show(): JsonResponse
     {
+        $passwordPolicy = PasswordPolicy::config();
+
         return response()->json([
             'status' => 'ok',
             'service' => 'ellr-qbo-timesheet-api',
             'require_email_verification' => (bool) config('app.require_email_verification'),
+            'password_policy' => [
+                'loaded' => true,
+                'min_length' => $passwordPolicy['minLength'],
+            ],
         ]);
     }
 }

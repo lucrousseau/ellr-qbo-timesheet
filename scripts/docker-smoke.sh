@@ -1,13 +1,30 @@
 #!/bin/sh
 set -e
 
+ROOT_DIR="$(CDPATH= cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="${ROOT_DIR}/backend/.env"
+
+read_env_value() {
+  KEY="$1"
+  if [ ! -f "$ENV_FILE" ]; then
+    return 0
+  fi
+
+  VALUE=$(grep -E "^${KEY}=" "$ENV_FILE" | tail -n 1 | cut -d= -f2-)
+  VALUE=$(printf '%s' "$VALUE" | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+  printf '%s' "$VALUE"
+}
+
+DEV_SEED_ADMIN_EMAIL="$(read_env_value DEV_SEED_ADMIN_EMAIL)"
+DEV_SEED_ADMIN_PASSWORD="$(read_env_value DEV_SEED_ADMIN_PASSWORD)"
+
 API_URL="${API_URL:-http://localhost:8000/api/health}"
 ADMIN_URL="${ADMIN_URL:-http://localhost:5173/}"
 ADMIN_ORIGIN="${ADMIN_ORIGIN:-http://localhost:5173}"
 TIMESHEET_URL="${TIMESHEET_URL:-http://localhost:5174/}"
 MAX_ATTEMPTS="${SMOKE_WAIT_ATTEMPTS:-60}"
-SMOKE_LOGIN_EMAIL="${SMOKE_LOGIN_EMAIL:-admin@ellr.local}"
-SMOKE_LOGIN_PASSWORD="${SMOKE_LOGIN_PASSWORD:-password}"
+SMOKE_LOGIN_EMAIL="${SMOKE_LOGIN_EMAIL:-${DEV_SEED_ADMIN_EMAIL:-admin@ellr.local}}"
+SMOKE_LOGIN_PASSWORD="${SMOKE_LOGIN_PASSWORD:-${DEV_SEED_ADMIN_PASSWORD:-EllrDev!2026}}"
 COOKIE_JAR="$(mktemp)"
 trap 'rm -f "$COOKIE_JAR"' EXIT
 
@@ -33,7 +50,9 @@ wait_for_api_health() {
 
   while true; do
     HEALTH_BODY=$(curl -sf "$API_URL" || true)
-    if [ -n "$HEALTH_BODY" ] && echo "$HEALTH_BODY" | grep -q '"status":"ok"'; then
+    if [ -n "$HEALTH_BODY" ] && echo "$HEALTH_BODY" | grep -q '"status":"ok"' \
+      && echo "$HEALTH_BODY" | grep -q '"password_policy"' \
+      && echo "$HEALTH_BODY" | grep -q '"loaded":true'; then
       echo "OK: API health check passed ($API_URL)"
       return 0
     fi
@@ -78,15 +97,17 @@ smoke_login_through_admin_proxy() {
     fi
 
     DECODED_XSRF=$(urldecode "$XSRF_TOKEN")
+    LOGIN_PAYLOAD=$(node -e 'console.log(JSON.stringify({ email: process.argv[1], password: process.argv[2] }))' \
+      "$SMOKE_LOGIN_EMAIL" "$SMOKE_LOGIN_PASSWORD")
 
-    LOGIN_BODY=$(curl -sf -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
+    LOGIN_BODY=$(curl -s -c "$COOKIE_JAR" -b "$COOKIE_JAR" \
       -X POST "${ADMIN_ORIGIN}/api/login" \
       -H "Accept: application/json" \
       -H "Content-Type: application/json" \
       -H "Origin: ${ADMIN_ORIGIN}" \
       -H "Referer: ${ADMIN_ORIGIN}/" \
       -H "X-XSRF-TOKEN: ${DECODED_XSRF}" \
-      -d "{\"email\":\"${SMOKE_LOGIN_EMAIL}\",\"password\":\"${SMOKE_LOGIN_PASSWORD}\"}" || true)
+      -d "$LOGIN_PAYLOAD" || true)
 
     if [ -n "$LOGIN_BODY" ] && echo "$LOGIN_BODY" | grep -q "\"email\":\"${SMOKE_LOGIN_EMAIL}\""; then
       USER_BODY=$(curl -sf -b "$COOKIE_JAR" \

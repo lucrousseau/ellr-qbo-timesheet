@@ -42,6 +42,7 @@ export function createAppConfig({ port, importMetaUrl }: CreateAppConfigOptions)
     resolve: {
       alias: {
         '@ellr/api-client': path.join(monorepoRoot, 'packages/api-client/src/index.ts'),
+        '@ellr/password-policy': path.join(monorepoRoot, 'packages/password-policy/src/index.ts'),
         '@ellr/ui': path.join(monorepoRoot, 'packages/ui/src/index.ts'),
       },
     },

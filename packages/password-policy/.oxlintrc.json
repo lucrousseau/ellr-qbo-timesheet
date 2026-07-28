@@ -1,0 +1,3 @@
+{
+  "extends": ["../../packages/vite-config/oxlint.packages.json"]
+}

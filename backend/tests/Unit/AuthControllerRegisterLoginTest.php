@@ -5,6 +5,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Services\AuthSessionService;
+use App\Support\PasswordPolicy;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\JsonResponse;
@@ -23,8 +24,8 @@ it('regenerates the session after registration when a session is present', funct
     $request = RegisterRequest::create('/api/register', 'POST', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => PasswordPolicy::validTestPassword(),
+        'password_confirmation' => PasswordPolicy::validTestPassword(),
     ]);
     $request->setContainer(app());
     $request->setRedirector(app('redirect'));
@@ -46,7 +47,7 @@ it('returns the unverified login response from the auth session service', functi
 
     $request = LoginRequest::create('/api/login', 'POST', [
         'email' => 'jane@example.com',
-        'password' => 'password',
+        'password' => PasswordPolicy::validTestPassword(),
     ]);
     $request->setContainer(app());
     $request->setRedirector(app('redirect'));
@@ -76,7 +77,7 @@ it('regenerates the session after login when a session is present', function () 
 
     $request = LoginRequest::create('/api/login', 'POST', [
         'email' => 'jane@example.com',
-        'password' => 'password',
+        'password' => PasswordPolicy::validTestPassword(),
     ]);
     $request->setContainer(app());
     $request->setRedirector(app('redirect'));

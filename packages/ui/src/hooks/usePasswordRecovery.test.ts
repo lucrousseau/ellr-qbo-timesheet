@@ -6,6 +6,7 @@ import type { FormEvent } from 'react'
 import { act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { requestPasswordReset, resetPassword } from '@ellr/api-client'
+import { VALID_TEST_PASSWORD_ALT } from '@ellr/password-policy'
 import { renderHookWithLocale } from '../test/renderWithLocale'
 import { usePasswordRecovery } from './usePasswordRecovery'
 
@@ -104,8 +105,8 @@ describe('usePasswordRecovery', () => {
     const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'admin' }))
 
     act(() => {
-      result.current.setResetPasswordValue('new-password')
-      result.current.setResetPasswordConfirmation('new-password')
+      result.current.setResetPasswordValue(VALID_TEST_PASSWORD_ALT)
+      result.current.setResetPasswordConfirmation(VALID_TEST_PASSWORD_ALT)
     })
 
     await act(async () => {
@@ -117,9 +118,36 @@ describe('usePasswordRecovery', () => {
     expect(resetPassword).toHaveBeenCalledWith({
       token: 'abc',
       email: 'user@example.com',
-      password: 'new-password',
-      passwordConfirmation: 'new-password',
+      password: VALID_TEST_PASSWORD_ALT,
+      passwordConfirmation: VALID_TEST_PASSWORD_ALT,
     })
     expect(result.current.resetSuccess).toContain('Password updated')
+  })
+
+  it('blocks reset when the password does not satisfy the shared policy', async () => {
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        pathname: '/reset-password',
+        search: '?token=abc&email=user%40example.com',
+        replaceState: vi.fn(),
+      },
+    })
+
+    const { result } = renderHookWithLocale(() => usePasswordRecovery({ client: 'admin' }))
+
+    act(() => {
+      result.current.setResetPasswordValue('weak-password')
+      result.current.setResetPasswordConfirmation('weak-password')
+    })
+
+    await act(async () => {
+      await result.current.handleResetPassword({
+        preventDefault: vi.fn(),
+      } as unknown as FormEvent)
+    })
+
+    expect(resetPassword).not.toHaveBeenCalled()
+    expect(result.current.resetError).toContain('at least')
   })
 })

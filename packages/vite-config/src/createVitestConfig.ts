@@ -51,6 +51,7 @@ export function createVitestConfig({ packageDir }: CreateVitestConfigOptions): U
     resolve: {
       alias: {
         '@ellr/api-client': path.join(monorepoRoot, 'packages/api-client/src/index.ts'),
+        '@ellr/password-policy': path.join(monorepoRoot, 'packages/password-policy/src/index.ts'),
         '@ellr/ui': path.join(monorepoRoot, 'packages/ui/src/index.ts'),
         '@ellr/test-utils': path.join(monorepoRoot, 'packages/test-utils/src/index.ts'),
       },

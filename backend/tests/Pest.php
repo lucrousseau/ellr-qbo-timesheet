@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Support\PasswordPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -82,4 +83,9 @@ function frontendHeaders(): array
         'Origin' => 'http://localhost:5173',
         'Referer' => 'http://localhost:5173',
     ];
+}
+
+function validTestPassword(): string
+{
+    return PasswordPolicy::validTestPassword();
 }

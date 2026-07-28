@@ -11,8 +11,8 @@ it('registers a new user', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertCreated()
         ->assertJsonPath('user.email', 'jane@example.com');
@@ -27,8 +27,8 @@ it('sends a verification email when registration requires verification', functio
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())->assertCreated();
 
     $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
@@ -37,11 +37,11 @@ it('sends a verification email when registration requires verification', functio
 });
 
 it('logs in with valid credentials', function () {
-    $user = User::factory()->create(['password' => 'password']);
+    $user = User::factory()->create();
 
     $this->postJson('/api/login', [
         'email' => $user->email,
-        'password' => 'password',
+        'password' => validTestPassword(),
     ], frontendHeaders())
         ->assertOk()
         ->assertJsonPath('user.id', $user->id);
@@ -50,12 +50,12 @@ it('logs in with valid credentials', function () {
 });
 
 it('regenerates the session id after login', function () {
-    $user = User::factory()->create(['password' => 'password']);
+    $user = User::factory()->create();
     $sessionBefore = session()->getId();
 
     $this->postJson('/api/login', [
         'email' => $user->email,
-        'password' => 'password',
+        'password' => validTestPassword(),
     ], frontendHeaders())->assertOk();
 
     expect(session()->getId())->not->toBe($sessionBefore);
@@ -67,8 +67,8 @@ it('regenerates the session id after registration', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())->assertCreated();
 
     expect(session()->getId())->not->toBe($sessionBefore);
@@ -81,7 +81,7 @@ it('validates login payload', function () {
 });
 
 it('rejects invalid login credentials', function () {
-    User::factory()->create(['email' => 'jane@example.com', 'password' => 'password']);
+    User::factory()->create(['email' => 'jane@example.com']);
 
     $this->postJson('/api/login', [
         'email' => 'jane@example.com',
@@ -95,7 +95,7 @@ it('rejects invalid login credentials', function () {
 it('returns french invalid credentials for a french user email', function () {
     User::factory()->create([
         'email' => 'jane@example.com',
-        'password' => 'password',
+        'password' => validTestPassword(),
         'locale' => 'fr',
     ]);
 
@@ -110,7 +110,7 @@ it('returns french invalid credentials for a french user email', function () {
 
 it('requires email on login', function () {
     $this->postJson('/api/login', [
-        'password' => 'password',
+        'password' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
@@ -127,14 +127,14 @@ it('requires password on login', function () {
 it('rejects invalid email format on login', function () {
     $this->postJson('/api/login', [
         'email' => 'not-an-email',
-        'password' => 'password',
+        'password' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
 });
 
 it('rate limits login attempts', function () {
-    $user = User::factory()->create(['password' => 'password']);
+    $user = User::factory()->create();
 
     for ($i = 0; $i < 10; $i++) {
         $this->postJson('/api/login', [
@@ -154,7 +154,7 @@ it('rate limits registration attempts', function () {
         $this->postJson('/api/register', [
             'name' => 'Jane Doe',
             'email' => "user{$i}@example.com",
-            'password' => 'password',
+            'password' => validTestPassword(),
             'password_confirmation' => 'mismatch',
         ], frontendHeaders())->assertUnprocessable();
     }
@@ -162,8 +162,8 @@ it('rate limits registration attempts', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'blocked@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())->assertStatus(429);
 });
 
@@ -173,8 +173,8 @@ it('rejects registration when disabled', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertForbidden()
         ->assertJsonPath('error', 'registration_disabled')
@@ -199,8 +199,8 @@ it('validates registration payload', function () {
 it('requires name on registration', function () {
     $this->postJson('/api/register', [
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['name']);
@@ -209,8 +209,8 @@ it('requires name on registration', function () {
 it('requires email on registration', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
@@ -229,8 +229,8 @@ it('rejects invalid email format on registration', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'not-an-email',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
@@ -242,8 +242,8 @@ it('rejects duplicate email on registration', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'taken@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['email']);
@@ -253,7 +253,7 @@ it('rejects unconfirmed password on registration', function () {
     $this->postJson('/api/register', [
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'password' => 'password',
+        'password' => validTestPassword(),
         'password_confirmation' => 'different',
     ], frontendHeaders())
         ->assertUnprocessable()
@@ -264,8 +264,8 @@ it('rejects overly long names on registration', function () {
     $this->postJson('/api/register', [
         'name' => str_repeat('a', 256),
         'email' => 'jane@example.com',
-        'password' => 'password',
-        'password_confirmation' => 'password',
+        'password' => validTestPassword(),
+        'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['name']);
@@ -291,11 +291,11 @@ it('returns the authenticated user', function () {
 });
 
 it('logs out the authenticated user', function () {
-    $user = User::factory()->create(['password' => 'password']);
+    $user = User::factory()->create();
 
     $this->postJson('/api/login', [
         'email' => $user->email,
-        'password' => 'password',
+        'password' => validTestPassword(),
     ], frontendHeaders())->assertOk();
 
     $this->postJson('/api/logout', [], frontendHeaders())

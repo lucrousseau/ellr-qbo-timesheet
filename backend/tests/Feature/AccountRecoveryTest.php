@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
+use App\Support\PasswordPolicy;
 use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -130,11 +131,11 @@ it('sends a verification email for authenticated unverified users', function () 
 it('rejects login when email verification is required and pending', function () {
     config(['app.require_email_verification' => true]);
 
-    $user = User::factory()->unverified()->create(['password' => 'password']);
+    $user = User::factory()->unverified()->create();
 
     $this->postJson('/api/login', [
         'email' => $user->email,
-        'password' => 'password',
+        'password' => validTestPassword(),
     ], frontendHeaders())
         ->assertForbidden()
         ->assertJsonPath('error', 'email_not_verified');
@@ -229,15 +230,15 @@ it('returns the same forgot-password response for unknown emails', function () {
 });
 
 it('resets a password with a valid token', function () {
-    $user = User::factory()->create(['password' => 'old-password']);
+    $user = User::factory()->create();
     $previousRememberToken = $user->remember_token;
     $token = Password::createToken($user);
 
     $this->postJson('/api/reset-password', [
         'token' => $token,
         'email' => $user->email,
-        'password' => 'new-password',
-        'password_confirmation' => 'new-password',
+        'password' => PasswordPolicy::validTestPasswordAlt(),
+        'password_confirmation' => PasswordPolicy::validTestPasswordAlt(),
     ], frontendHeaders())
         ->assertOk()
         ->assertJsonPath('message', 'Password reset successfully.');
@@ -249,14 +250,14 @@ it('resets a password with a valid token', function () {
 
     $this->postJson('/api/login', [
         'email' => $user->email,
-        'password' => 'new-password',
+        'password' => PasswordPolicy::validTestPasswordAlt(),
     ], frontendHeaders())->assertOk();
 });
 
 it('invalidates existing sessions after password reset', function () {
     config(['session.driver' => 'database']);
 
-    $user = User::factory()->create(['password' => 'old-password']);
+    $user = User::factory()->create();
 
     DB::table('sessions')->insert([
         'id' => 'existing-session',
@@ -270,8 +271,8 @@ it('invalidates existing sessions after password reset', function () {
     $this->postJson('/api/reset-password', [
         'token' => $token,
         'email' => $user->email,
-        'password' => 'new-password',
-        'password_confirmation' => 'new-password',
+        'password' => PasswordPolicy::validTestPasswordAlt(),
+        'password_confirmation' => PasswordPolicy::validTestPasswordAlt(),
     ], frontendHeaders())->assertOk();
 
     expect(DB::table('sessions')->where('user_id', $user->id)->count())->toBe(0);
@@ -283,8 +284,8 @@ it('rejects password reset with an invalid token', function () {
     $this->postJson('/api/reset-password', [
         'token' => 'invalid-token',
         'email' => $user->email,
-        'password' => 'new-password',
-        'password_confirmation' => 'new-password',
+        'password' => PasswordPolicy::validTestPasswordAlt(),
+        'password_confirmation' => PasswordPolicy::validTestPasswordAlt(),
     ], frontendHeaders())
         ->assertUnprocessable()
         ->assertJsonPath('message', 'This password reset token is invalid.');

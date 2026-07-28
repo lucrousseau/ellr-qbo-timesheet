@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { VALID_TEST_PASSWORD_ALT } from '@ellr/password-policy'
 import { ApiError, apiFetch, ensureCsrfCookie, getApiErrorMessage, resetCsrfStateForTests } from './api'
 import { fetchAppConfig } from './appConfig'
 import {
@@ -682,6 +683,29 @@ describe('getApiErrorMessage', () => {
     )
   })
 
+  it('maps uncompromised password validation to a localized message', () => {
+    expect(
+      getApiErrorMessage(
+        new ApiError(
+          422,
+          'The given password has appeared in a data leak. Please choose a different password.',
+        ),
+        'fallback',
+      ),
+    ).toBe('Choose a password that has not appeared in a known data breach.')
+
+    expect(
+      getApiErrorMessage(
+        new ApiError(
+          422,
+          'La valeur du champ password est apparue dans une fuite de données. Veuillez choisir une valeur différente.',
+        ),
+        'fallback',
+        'fr',
+      ),
+    ).toBe('Choisissez un mot de passe qui ne figure pas dans une fuite de données connue.')
+  })
+
   it('uses the fallback for unknown errors', () => {
     expect(getApiErrorMessage(new Error('boom'), 'fallback')).toBe('fallback')
   })
@@ -1032,8 +1056,8 @@ describe('auth helpers', () => {
       resetPassword({
         token: 'reset-token',
         email: 'user@example.com',
-        password: 'new-password',
-        passwordConfirmation: 'new-password',
+        password: VALID_TEST_PASSWORD_ALT,
+        passwordConfirmation: VALID_TEST_PASSWORD_ALT,
       }),
     ).resolves.toBeUndefined()
 
@@ -1045,8 +1069,8 @@ describe('auth helpers', () => {
         body: JSON.stringify({
           token: 'reset-token',
           email: 'user@example.com',
-          password: 'new-password',
-          password_confirmation: 'new-password',
+          password: VALID_TEST_PASSWORD_ALT,
+          password_confirmation: VALID_TEST_PASSWORD_ALT,
         }),
       }),
     )

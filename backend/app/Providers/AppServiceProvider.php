@@ -6,7 +6,9 @@
 
 namespace App\Providers;
 
+use App\Support\PasswordPolicy;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 /**
  * Registers application-level container bindings on boot.
@@ -25,5 +27,8 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot(): void {}
+    public function boot(): void
+    {
+        Password::defaults(fn (): Password => PasswordPolicy::rule());
+    }
 }

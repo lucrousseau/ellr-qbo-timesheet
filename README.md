@@ -118,8 +118,12 @@ On startup, Docker runs `php artisan db:seed` after migrations when `APP_ENV=loc
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | `admin@ellr.local` | `password` |
-| Timesheet user | `timesheet@ellr.local` | `password` |
+| Admin | `admin@ellr.local` | `EllrDev!2026` |
+| Timesheet user | `timesheet@ellr.local` | `EllrDev!2026` |
+
+`npm run docker:smoke` logs in with `DEV_SEED_ADMIN_EMAIL` and `DEV_SEED_ADMIN_PASSWORD` from `backend/.env` (override with `SMOKE_LOGIN_EMAIL` / `SMOKE_LOGIN_PASSWORD`). The health check also verifies that the shared password policy is loaded.
+
+For backend-only deploys, run `sh scripts/sync-password-policy.sh` so `backend/config/password-policy.json` stays aligned with `packages/password-policy/password-policy.json`.
 
 Frontends call the API through the Vite dev proxy (`VITE_API_URL=/api` in Docker) so Sanctum session cookies work on `localhost:5173` and `localhost:5174`. If you have an existing `apps/admin/.env` or `apps/timesheet/.env` with `VITE_API_URL=http://localhost:8000/api`, update it to `VITE_API_URL=/api` (see `apps/*/.env.example`). Optional port overrides: `API_PORT`, `ADMIN_PORT`, `TIMESHEET_PORT` in `docker/.env` (copy from `docker/.env.example`).
 
@@ -329,10 +333,6 @@ Husky v9+ format: one command per hook file (e.g. `npm run precommit`), no `husk
 | `pre-push` | `npm run prepush` | Full lint (deps + jscpd) + `lint:dup:tests` + typecheck + coverage (frontend + backend in parallel with Behat) + PHPStan + Pest/Stryker mutation + parallel Vite builds |
 
 Automatic install via `npm install` (`prepare` script).
-
-### GitHub Actions
-
-`.github/workflows/ci.yml` runs `npm run prepush` on every push and pull request to `main`/`master` (remote guardrail when hooks are bypassed).
 
 ### IDE setup (VS Code / Cursor)
 

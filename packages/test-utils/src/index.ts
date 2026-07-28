@@ -4,6 +4,7 @@
 
 import { screen } from '@testing-library/react'
 import type { UserEvent } from '@testing-library/user-event'
+import { VALID_TEST_PASSWORD } from '@ellr/password-policy'
 import { expect, vi } from 'vitest'
 
 /** Authenticated user with a QBO employee for component tests. */
@@ -47,7 +48,7 @@ export async function fillLoginForm(
   credentials: { email?: string; password?: string } = {},
 ) {
   await user.type(screen.getByLabelText(/email/i), credentials.email ?? 'test@example.com')
-  await user.type(screen.getByLabelText(/password/i), credentials.password ?? 'password')
+  await user.type(screen.getByLabelText(/password/i), credentials.password ?? VALID_TEST_PASSWORD)
   await user.click(screen.getByRole('button', { name: /sign in/i }))
 }
 

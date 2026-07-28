@@ -12,9 +12,9 @@ it('seeds dev admin and timesheet users with stable credentials', function () {
     config([
         'dev-seed.enabled' => true,
         'dev-seed.admin_email' => 'admin@ellr.local',
-        'dev-seed.admin_password' => 'password',
+        'dev-seed.admin_password' => 'EllrDev!2026',
         'dev-seed.user_email' => 'timesheet@ellr.local',
-        'dev-seed.user_password' => 'password',
+        'dev-seed.user_password' => 'EllrDev!2026',
     ]);
 
     $this->seed(DevDatabaseSeeder::class);
@@ -23,18 +23,18 @@ it('seeds dev admin and timesheet users with stable credentials', function () {
     $timesheetUser = User::query()->where('email', 'timesheet@ellr.local')->firstOrFail();
 
     expect($admin->is_admin)->toBeTrue()
-        ->and(Hash::check('password', $admin->password))->toBeTrue()
+        ->and(Hash::check('EllrDev!2026', $admin->password))->toBeTrue()
         ->and($timesheetUser->is_admin)->toBeFalse()
-        ->and(Hash::check('password', $timesheetUser->password))->toBeTrue();
+        ->and(Hash::check('EllrDev!2026', $timesheetUser->password))->toBeTrue();
 });
 
 it('refreshes passwords when the seeder runs again', function () {
     config([
         'dev-seed.enabled' => true,
         'dev-seed.admin_email' => 'admin@ellr.local',
-        'dev-seed.admin_password' => 'password',
+        'dev-seed.admin_password' => 'EllrDev!2026',
         'dev-seed.user_email' => 'timesheet@ellr.local',
-        'dev-seed.user_password' => 'password',
+        'dev-seed.user_password' => 'EllrDev!2026',
     ]);
 
     User::factory()->admin()->create([
@@ -46,7 +46,7 @@ it('refreshes passwords when the seeder runs again', function () {
 
     $admin = User::query()->where('email', 'admin@ellr.local')->firstOrFail();
 
-    expect(Hash::check('password', $admin->password))->toBeTrue()
+    expect(Hash::check('EllrDev!2026', $admin->password))->toBeTrue()
         ->and(Hash::check('old-password', $admin->password))->toBeFalse();
 });
 
@@ -72,14 +72,14 @@ it('clears admin privileges from the timesheet dev account', function () {
     config([
         'dev-seed.enabled' => true,
         'dev-seed.admin_email' => 'admin@ellr.local',
-        'dev-seed.admin_password' => 'password',
+        'dev-seed.admin_password' => 'EllrDev!2026',
         'dev-seed.user_email' => 'timesheet@ellr.local',
-        'dev-seed.user_password' => 'password',
+        'dev-seed.user_password' => 'EllrDev!2026',
     ]);
 
     User::factory()->admin()->create([
         'email' => 'timesheet@ellr.local',
-        'password' => 'password',
+        'password' => 'EllrDev!2026',
     ]);
 
     $this->seed(DevDatabaseSeeder::class);
