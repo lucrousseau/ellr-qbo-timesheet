@@ -329,8 +329,8 @@ Husky v9+ format: one command per hook file (e.g. `npm run precommit`), no `husk
 
 | Hook | Command | Checks |
 |------|---------|--------|
-| `pre-commit` | `npm run precommit` | `lint:fast` (oxlint, Pint, PHPCS, PHPMD) + typecheck (workspaces in parallel) |
-| `pre-push` | `npm run prepush` | Full lint (deps + jscpd) + `lint:dup:tests` + typecheck + coverage (frontend + backend in parallel with Behat) + PHPStan + Pest/Stryker mutation + parallel Vite builds |
+| `pre-commit` | `npm run precommit` | sync policy + `lint:fast` + typecheck + Pest Arch + Unit + time-activity/auth Feature (fast gate, ~15 s) |
+| `pre-push` | `npm run prepush` | sync policy + full `qa` (lint + deps/jscpd in parallel + typecheck + parallel coverage/Behat/PHPStan/builds) + `lint:dup:tests` + Pest/Stryker mutation |
 
 Automatic install via `npm install` (`prepare` script).
 

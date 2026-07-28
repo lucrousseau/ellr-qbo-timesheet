@@ -27,7 +27,7 @@ npm run dev:timesheet    # Timesheet :5174
 npm run lint             # oxlint + Pint + PHPCS
 npm run typecheck        # TypeScript (apps + api-client)
 npm run test:coverage    # Vitest + Pest at 85 % thresholds
-npm run qa               # lint + types + coverage + Behat + builds
+npm run qa               # lint + types + scripts/qa-tests.sh (parallel coverage, Behat, PHPStan, builds)
 npm run qa:finance       # validate:thresholds (coverage + mutation)
 
 # Backend
@@ -58,7 +58,7 @@ Husky v9+ format: `.husky/*` = npm command only (no `husky.sh`).
 | Hook | Command | Checks |
 |------|---------|--------|
 | `pre-commit` | `npm run precommit` | `precommit:qa` (lint:fast + typecheck + Pest Arch + Unit + time-activity Feature) |
-| `pre-push` | `npm run prepush` | `qa` (lint + types + coverage + Behat + PHPStan + builds) + `lint:dup:tests` + Pest/Stryker mutation |
+| `pre-push` | `npm run prepush` | sync policy + `qa` (lint + types + `scripts/qa-tests.sh`) + `lint:dup:tests` + Pest/Stryker mutation |
 
 ## Quality thresholds (finance)
 

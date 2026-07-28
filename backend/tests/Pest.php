@@ -91,39 +91,133 @@ function validTestPassword(): string
 }
 
 /**
- * Replaces backend/config/password-policy.json for the duration of a test callback.
+ * Writes JSON to a temp file for isolated password-policy tests.
+ *
+ * @param  array<string, mixed>  $payload
+ * @return string Absolute path to the temp file.
+ */
+function writeTempPasswordPolicyJson(array $payload): string
+{
+    $path = tempnam(sys_get_temp_dir(), 'ellr-password-policy-');
+    if ($path === false) {
+        throw new RuntimeException('Unable to create a temp password policy file.');
+    }
+
+    $jsonPath = $path.'.json';
+    rename($path, $jsonPath);
+    file_put_contents($jsonPath, json_encode($payload, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
+
+    return $jsonPath;
+}
+
+/**
+ * Runs a callback with a password-policy env override, then restores the previous value.
+ *
+ * @param  string  $envKey  Environment variable to override.
+ * @param  string  $path  Readable JSON file path.
+ */
+function withPasswordPolicyEnvOverride(string $envKey, string $path, callable $callback): void
+{
+    $previous = $_ENV[$envKey] ?? getenv($envKey);
+    putenv($envKey.'='.$path);
+    $_ENV[$envKey] = $path;
+
+    try {
+        $callback();
+    } finally {
+        if ($previous === false || $previous === null || $previous === '') {
+            putenv($envKey);
+            unset($_ENV[$envKey]);
+        } else {
+            putenv($envKey.'='.$previous);
+            $_ENV[$envKey] = $previous;
+        }
+    }
+}
+
+/**
+ * Uses a temp password-policy.json override instead of mutating backend/config.
  *
  * @param  array<string, mixed>  $policy
  */
 function withPasswordPolicy(array $policy, callable $callback): void
 {
-    $path = base_path('config/password-policy.json');
-    $backup = (string) file_get_contents($path);
+    $path = writeTempPasswordPolicyJson($policy);
 
-    file_put_contents($path, json_encode($policy, JSON_THROW_ON_ERROR));
-
-    try {
-        $callback();
-    } finally {
-        file_put_contents($path, $backup);
-    }
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_PATH', $path, function () use ($callback, $path) {
+        try {
+            $callback();
+        } finally {
+            @unlink($path);
+        }
+    });
 }
 
 /**
- * Replaces backend/config/test-passwords.json for the duration of a test callback.
+ * Uses a temp test-passwords.json override instead of mutating backend/config.
  *
  * @param  array<string, mixed>  $passwords
  */
 function withTestPasswords(array $passwords, callable $callback): void
 {
-    $path = base_path('config/test-passwords.json');
-    $backup = (string) file_get_contents($path);
+    $path = writeTempPasswordPolicyJson($passwords);
 
-    file_put_contents($path, json_encode($passwords, JSON_THROW_ON_ERROR));
+    withPasswordPolicyEnvOverride('PASSWORD_TEST_PASSWORDS_PATH', $path, function () use ($callback, $path) {
+        try {
+            $callback();
+        } finally {
+            @unlink($path);
+        }
+    });
+}
 
-    try {
-        $callback();
-    } finally {
-        file_put_contents($path, $backup);
+/**
+ * Uses a temp test-passwords.json file with raw JSON contents.
+ */
+function withTestPasswordsContents(string $contents, callable $callback): void
+{
+    $path = tempnam(sys_get_temp_dir(), 'ellr-test-passwords-');
+    if ($path === false) {
+        throw new RuntimeException('Unable to create a temp test passwords file.');
     }
+
+    $jsonPath = $path.'.json';
+    rename($path, $jsonPath);
+    file_put_contents($jsonPath, $contents);
+
+    withPasswordPolicyEnvOverride('PASSWORD_TEST_PASSWORDS_PATH', $jsonPath, function () use ($callback, $jsonPath) {
+        try {
+            $callback();
+        } finally {
+            @unlink($jsonPath);
+        }
+    });
+}
+
+/**
+ * Overrides password-policy.json search candidates for isolated path resolution tests.
+ *
+ * @param  list<string>  $candidates
+ */
+function withPasswordPolicyCandidates(array $candidates, callable $callback): void
+{
+    withPasswordPolicyEnvOverride(
+        'PASSWORD_POLICY_CONFIG_CANDIDATES',
+        json_encode(array_values($candidates), JSON_THROW_ON_ERROR),
+        $callback,
+    );
+}
+
+/**
+ * Overrides test-passwords.json search candidates for isolated path resolution tests.
+ *
+ * @param  list<string>  $candidates
+ */
+function withTestPasswordsCandidates(array $candidates, callable $callback): void
+{
+    withPasswordPolicyEnvOverride(
+        'PASSWORD_TEST_PASSWORDS_CANDIDATES',
+        json_encode(array_values($candidates), JSON_THROW_ON_ERROR),
+        $callback,
+    );
 }

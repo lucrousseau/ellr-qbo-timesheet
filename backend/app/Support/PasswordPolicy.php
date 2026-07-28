@@ -131,22 +131,7 @@ class PasswordPolicy
      */
     public static function configPath(): string
     {
-        $candidates = [
-            base_path('config/password-policy.json'),
-            base_path('../packages/password-policy/password-policy.json'),
-        ];
-
-        foreach ($candidates as $candidate) {
-            $resolved = realpath($candidate) ?: $candidate;
-
-            if (is_readable($resolved)) {
-                return $resolved;
-            }
-        }
-
-        throw new RuntimeException(
-            'Password policy file not found. Run scripts/sync-password-policy.sh or mount packages/password-policy.',
-        );
+        return PasswordPolicyPaths::policyConfig();
     }
 
     /**
@@ -156,21 +141,6 @@ class PasswordPolicy
      */
     public static function testPasswordsPath(): string
     {
-        $candidates = [
-            base_path('config/test-passwords.json'),
-            base_path('../packages/password-policy/test-passwords.json'),
-        ];
-
-        foreach ($candidates as $candidate) {
-            $resolved = realpath($candidate) ?: $candidate;
-
-            if (is_readable($resolved)) {
-                return $resolved;
-            }
-        }
-
-        throw new RuntimeException(
-            'Test passwords file not found. Run scripts/sync-password-policy.sh or mount packages/password-policy.',
-        );
+        return PasswordPolicyPaths::testPasswords();
     }
 }

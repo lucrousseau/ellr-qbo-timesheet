@@ -35,7 +35,7 @@
     "build:apps": "sh scripts/build-apps.sh",
     "lint": "npm run lint:fast && npm run lint:structure",
     "lint:fast": "npm run lint --workspaces --parallel && cd backend && composer lint",
-    "lint:structure": "npm run lint:deps && npm run lint:dup",
+    "lint:structure": "npm run lint:deps & npm run lint:dup & wait",
     "lint:deps": "depcruise --config .dependency-cruiser.cjs \"apps/admin/src/**/*.{ts,tsx}\" \"apps/timesheet/src/**/*.{ts,tsx}\" \"packages/ui/src/**/*.{ts,tsx}\" \"packages/api-client/src/**/*.{ts,tsx}\" \"packages/password-policy/src/**/*.{ts,tsx}\" \"packages/test-utils/src/**/*.{ts,tsx}\"",
     "lint:dup": "jscpd --config .jscpd.json apps/admin/src apps/timesheet/src packages/api-client/src packages/password-policy/src packages/ui/src packages/test-utils/src backend/app",
     "lint:dup:tests": "jscpd --config .jscpd.tests.json \"apps/admin/src/**/*.test.tsx\" \"apps/timesheet/src/**/*.test.tsx\" \"packages/api-client/src/**/*.test.ts\" \"packages/ui/src/**/*.test.tsx\" \"packages/test-utils/src/**/*.test.ts\" \"backend/tests\"",
@@ -52,9 +52,9 @@
     "analyse": "cd backend && composer analyse",
     "precommit:qa": "sh scripts/sync-password-policy.sh && npm run lint:fast && npm run typecheck && cd backend && composer test:arch && composer test:unit && composer test:feature:time-activities && composer test:feature:auth",
     "precommit": "npm run precommit:qa",
-    "prepush:tests": "sh scripts/prepush-tests.sh",
-    "prepush": "npm run qa && npm run lint:dup:tests && npm run test:mutation",
-    "qa": "npm run lint && npm run typecheck && npm run test:coverage && npm run test:behat && npm run analyse && npm run build:apps",
+    "prepush:tests": "sh scripts/qa-tests.sh",
+    "prepush": "sh scripts/sync-password-policy.sh && npm run qa && npm run lint:dup:tests && npm run test:mutation",
+    "qa": "npm run lint && npm run typecheck && sh scripts/qa-tests.sh",
     "qa:finance": "npm run validate:thresholds",
     "validate:thresholds": "npm run test:coverage:workspaces && (cd backend && composer test:coverage && composer test:mutation) && npm run test:mutation:frontend"
   }

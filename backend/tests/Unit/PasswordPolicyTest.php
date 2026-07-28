@@ -29,35 +29,30 @@ it('resolves a readable password policy path', function () {
 });
 
 it('falls back to the monorepo package policy file when backend config is missing', function () {
-    $backendPath = base_path('config/password-policy.json');
-    $backupPath = $backendPath.'.bak';
-
-    rename($backendPath, $backupPath);
-
-    try {
+    withPasswordPolicyCandidates([
+        base_path('config/password-policy-missing.json'),
+        base_path('../packages/password-policy/password-policy.json'),
+    ], function () {
         expect(PasswordPolicy::configPath())->toContain('packages/password-policy')
             ->and(PasswordPolicy::config()['minLength'])->toBe(12);
-    } finally {
-        rename($backupPath, $backendPath);
-    }
+    });
 });
 
 it('throws when no password policy file is available', function () {
-    $backendPath = base_path('config/password-policy.json');
-    $packagePath = base_path('../packages/password-policy/password-policy.json');
-    $backendBackup = $backendPath.'.bak';
-    $packageBackup = $packagePath.'.bak';
-
-    rename($backendPath, $backendBackup);
-    rename($packagePath, $packageBackup);
-
-    try {
+    withPasswordPolicyCandidates([
+        base_path('config/password-policy-missing.json'),
+        base_path('../packages/password-policy/password-policy-missing.json'),
+    ], function () {
         expect(fn () => PasswordPolicy::configPath())
             ->toThrow(RuntimeException::class, 'Password policy file not found');
-    } finally {
-        rename($backendBackup, $backendPath);
-        rename($packageBackup, $packagePath);
-    }
+    });
+});
+
+it('throws when a test policy override path is not readable', function () {
+    withPasswordPolicyEnvOverride('PASSWORD_POLICY_CONFIG_PATH', '/tmp/ellr-missing-password-policy.json', function () {
+        expect(fn () => PasswordPolicy::configPath())
+            ->toThrow(RuntimeException::class, 'not readable');
+    });
 });
 
 it('exposes test passwords from the dedicated json file', function () {
@@ -83,35 +78,23 @@ it('casts numeric test password values to strings', function () {
 });
 
 it('falls back to the monorepo test passwords file when backend config is missing', function () {
-    $backendPath = base_path('config/test-passwords.json');
-    $backupPath = $backendPath.'.bak';
-
-    rename($backendPath, $backupPath);
-
-    try {
+    withTestPasswordsCandidates([
+        base_path('config/test-passwords-missing.json'),
+        base_path('../packages/password-policy/test-passwords.json'),
+    ], function () {
         expect(PasswordPolicy::testPasswordsPath())->toContain('packages/password-policy')
             ->and(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026');
-    } finally {
-        rename($backupPath, $backendPath);
-    }
+    });
 });
 
 it('throws when no test passwords file is available', function () {
-    $backendPath = base_path('config/test-passwords.json');
-    $packagePath = base_path('../packages/password-policy/test-passwords.json');
-    $backendBackup = $backendPath.'.bak';
-    $packageBackup = $packagePath.'.bak';
-
-    rename($backendPath, $backendBackup);
-    rename($packagePath, $packageBackup);
-
-    try {
+    withTestPasswordsCandidates([
+        base_path('config/test-passwords-missing.json'),
+        base_path('../packages/password-policy/test-passwords-missing.json'),
+    ], function () {
         expect(fn () => PasswordPolicy::testPasswordsPath())
             ->toThrow(RuntimeException::class, 'Test passwords file not found');
-    } finally {
-        rename($backendBackup, $backendPath);
-        rename($packageBackup, $packagePath);
-    }
+    });
 });
 
 it('applies json defaults when policy keys are omitted', function () {
@@ -128,16 +111,9 @@ it('applies json defaults when policy keys are omitted', function () {
 });
 
 it('returns defaults when test passwords json root is not an object', function () {
-    $path = base_path('config/test-passwords.json');
-    $backup = (string) file_get_contents($path);
-
-    file_put_contents($path, '"invalid"');
-
-    try {
+    withTestPasswordsContents('"invalid"', function () {
         expect(PasswordPolicy::validTestPassword())->toBe('EllrT3st!2026');
-    } finally {
-        file_put_contents($path, $backup);
-    }
+    });
 });
 
 it('accepts passwords that satisfy the shared policy', function () {

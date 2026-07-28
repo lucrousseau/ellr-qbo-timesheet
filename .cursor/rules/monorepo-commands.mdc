@@ -22,7 +22,7 @@ Format **v9+**: `.husky/pre-commit` and `.husky/pre-push` contain only the npm c
 | Hook | Command | Checks |
 |------|---------|--------|
 | `pre-commit` | `npm run precommit` | oxlint, Pint, PHPCS, PHPMD, TypeScript (workspaces in parallel) |
-| `pre-push` | `npm run prepush` | Full lint (deps + jscpd) + typecheck + 85 % coverage (Arch via Pest) + Behat + PHPStan + Pest/Stryker mutation + parallel Vite builds |
+| `pre-push` | `npm run prepush` | `qa` (lint + types + `scripts/qa-tests.sh` parallel phases) + `lint:dup:tests` + Pest/Stryker mutation |
 
 Shared IDE config: `.vscode/`, `.editorconfig`, `.nvmrc`, `backend/.php-version` (committed for consistent dev setup).
 
