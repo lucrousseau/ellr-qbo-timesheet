@@ -41,7 +41,7 @@ class AdminUserController extends Controller
             ->load('qboCustomers')
             ->map(function ($user) {
                 $resource = UserApiResponse::resource($user);
-                $resource->setAttribute('all_customers_access', (bool) $user->qbo_all_customers_access);
+                $resource->setAttribute('all_customers_access', $user->qbo_all_customers_access);
                 $resource->setAttribute(
                     'assigned_customers',
                     $user->qbo_all_customers_access

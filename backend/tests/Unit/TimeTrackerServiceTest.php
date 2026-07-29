@@ -254,6 +254,34 @@ it('rejects logging when elapsed time is zero', function () {
         ->toThrow(HttpResponseException::class);
 });
 
+it('logs timer sessions with a single elapsed second', function () {
+    CarbonImmutable::setTestNow('2026-07-28 12:00:01');
+
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    ActiveTimeSession::factory()->for($user)->create([
+        'accumulated_seconds' => 1,
+        'running_since' => null,
+    ]);
+
+    $this->mock(QboPickerValidationService::class, function ($mock) {
+        $mock->shouldReceive('assertValidSelections')->once();
+    });
+
+    $this->mock(TimeActivityService::class, function ($mock) {
+        $mock->shouldReceive('createForUser')->once()->andReturn((object) ['Id' => '99']);
+    });
+
+    app(TimeTrackerService::class)->logForUser($user, $token);
+
+    CarbonImmutable::setTestNow();
+});
+
 it('maps active sessions to api payloads and null when absent', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
@@ -333,11 +361,81 @@ it('persists sanitized picker selections for active sessions', function () {
         'service_name' => 'Consulting',
     ]);
 
+    $this->mock(QboPickerValidationService::class, function ($mock) use ($user, $token) {
+        $mock->shouldReceive('sanitizeSessionSelections')
+            ->once()
+            ->with($user, $token, [
+                'customer_ref' => '11',
+                'customer_name' => 'Acme Corp',
+                'project_ref' => '22',
+                'project_name' => 'Website redesign',
+                'service_ref' => '33',
+                'service_name' => 'Consulting',
+            ])
+            ->andReturn([
+                'customer_ref' => null,
+                'customer_name' => null,
+                'project_ref' => null,
+                'project_name' => null,
+                'service_ref' => '33',
+                'service_name' => 'Consulting',
+            ]);
+    });
+
     $sanitized = app(TimeTrackerService::class)->sanitizeForUser($user, $token, $session);
 
     expect($sanitized->customer_ref)->toBeNull()
+        ->and($sanitized->customer_name)->toBeNull()
         ->and($sanitized->project_ref)->toBeNull()
-        ->and($sanitized->service_ref)->toBe('33');
+        ->and($sanitized->project_name)->toBeNull()
+        ->and($sanitized->service_ref)->toBe('33')
+        ->and($sanitized->service_name)->toBe('Consulting');
+});
+
+it('returns the same session when sanitize makes no changes', function () {
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '12',
+        'qbo_customer_name' => 'Beta LLC',
+    ]);
+
+    $session = ActiveTimeSession::factory()->for($user)->create([
+        'customer_ref' => '12',
+        'customer_name' => 'Beta LLC',
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+    ]);
+
+    $this->mock(QboPickerValidationService::class, function ($mock) {
+        $mock->shouldReceive('sanitizeSessionSelections')
+            ->once()
+            ->andReturnUsing(fn ($userArg, $tokenArg, array $selections) => $selections);
+    });
+
+    $sanitized = app(TimeTrackerService::class)->sanitizeForUser($user, $token, $session);
+
+    expect($sanitized->is($session))->toBeTrue()
+        ->and($sanitized->customer_ref)->toBe('12');
+});
+
+it('does nothing when sanitizeActiveSessionIfExists has no active session', function () {
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    app(TimeTrackerService::class)->sanitizeActiveSessionIfExists($user, $token);
+
+    expect(ActiveTimeSession::query()->where('user_id', $user->id)->exists())->toBeFalse();
 });
 
 it('caps paused timers through timer elapsed helpers during api mapping', function () {
@@ -629,6 +727,31 @@ it('casts string is_running values to booleans during upsert', function () {
     CarbonImmutable::setTestNow();
 });
 
+it('casts truthy is_running integers to booleans during upsert', function () {
+    CarbonImmutable::setTestNow('2026-07-28 12:00:00');
+
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    $session = app(TimeTrackerService::class)->upsertForUser($user, null, [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => 1,
+    ]);
+
+    expect($session->isRunning())->toBeTrue()
+        ->and($session->running_since?->toIso8601String())->toBe('2026-07-28T12:00:00+00:00');
+
+    CarbonImmutable::setTestNow();
+});
+
 it('persists optional picker names independently from refs', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
@@ -638,13 +761,15 @@ it('persists optional picker names independently from refs', function () {
     $session = app(TimeTrackerService::class)->upsertForUser($user, null, [
         'customer_ref' => '11',
         'customer_name' => 'Acme Corp',
-        'project_ref' => null,
-        'project_name' => null,
-        'service_ref' => null,
-        'service_name' => null,
+        'project_ref' => '22',
+        'project_name' => 'Website',
+        'service_ref' => '33',
+        'service_name' => 'Consulting',
         'description' => null,
         'is_running' => false,
     ]);
 
-    expect($session->customer_name)->toBe('Acme Corp');
+    expect($session->customer_name)->toBe('Acme Corp')
+        ->and($session->project_name)->toBe('Website')
+        ->and($session->service_name)->toBe('Consulting');
 });

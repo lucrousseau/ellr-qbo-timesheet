@@ -217,6 +217,25 @@ it('lists all quickbooks customers for administrators', function () {
         ->assertJsonPath('data.0.id', '11');
 });
 
+it('lists quickbooks customers for administrators without forcing refresh', function () {
+    $admin = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($admin)->create();
+
+    $this->mock(QboCustomerListService::class, function ($mock) {
+        $mock->shouldReceive('listAllActive')
+            ->once()
+            ->with(Mockery::any(), false)
+            ->andReturn([
+                ['id' => '11', 'display_name' => 'Acme Corp'],
+            ]);
+    });
+
+    $this->actingAs($admin)
+        ->getJson('/api/admin/quickbooks/customers', frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.0.display_name', 'Acme Corp');
+});
+
 it('includes assigned customers when listing provisioned users', function () {
     $admin = actingAsAdmin();
     $timesheetUser = User::factory()->create([

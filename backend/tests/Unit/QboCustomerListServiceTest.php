@@ -51,6 +51,32 @@ it('returns an empty customer list when no assignments exist', function () {
     expect(makeQboCustomerListService(Mockery::mock(QuickBooksService::class))->listForUser($user, $token))->toBe([]);
 });
 
+it('resolves the employee ref before returning customer lists', function () {
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '11',
+        'qbo_customer_name' => 'Acme Corp',
+    ]);
+
+    $authorization = Mockery::mock(QboEmployeeAuthorizationService::class);
+    $authorization->shouldReceive('resolveEmployeeRef')
+        ->once()
+        ->with($user)
+        ->andReturn('7');
+
+    $service = new QboCustomerListService(
+        Mockery::mock(QuickBooksService::class),
+        new QboListCacheService,
+        new QuickBooksApiErrorFormatterService,
+        $authorization,
+    );
+
+    expect($service->listForUser($user, $token))->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ]);
+});
+
 it('returns all active customers when all-customers access is enabled', function () {
     config(['quickbooks.list_cache_ttl_minutes' => 0]);
 
@@ -118,4 +144,24 @@ it('lists all active customers for administrators', function () {
         ['id' => '12', 'display_name' => 'Alpha'],
         ['id' => '11', 'display_name' => 'Beta'],
     ]);
+});
+
+it('casts quickbooks customer identifiers to strings', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0]);
+
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn([
+        (object) ['Id' => 11, 'DisplayName' => 'Acme Corp'],
+    ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
+
+    $rows = makeQboCustomerListService($quickBooks)->listAllActive($token);
+
+    expect($rows)->toBe([['id' => '11', 'display_name' => 'Acme Corp']])
+        ->and($rows[0]['id'])->toBeString()
+        ->and($rows[0]['display_name'])->toBeString();
 });

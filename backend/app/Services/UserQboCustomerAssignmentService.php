@@ -36,7 +36,7 @@ class UserQboCustomerAssignmentService
     public function describeAccess(User $user): array
     {
         return [
-            'all_customers_access' => (bool) $user->qbo_all_customers_access,
+            'all_customers_access' => $user->qbo_all_customers_access,
             'data' => $user->qbo_all_customers_access ? [] : $user->assignedQboCustomerPickerRows(),
         ];
     }

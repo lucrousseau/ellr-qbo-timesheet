@@ -75,3 +75,28 @@ it('defaults preferredLocale to english for unsupported values', function () {
 
     expect($user->preferredLocale())->toBe('en');
 });
+
+it('returns assigned quickbooks customers as sorted picker rows', function () {
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '12',
+        'qbo_customer_name' => 'Beta LLC',
+    ]);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '11',
+        'qbo_customer_name' => 'Acme Corp',
+    ]);
+
+    expect($user->assignedQboCustomerPickerRows())->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+        ['id' => '12', 'display_name' => 'Beta LLC'],
+    ]);
+
+    expect($user->assignedQboCustomerPickerRows()[0]['id'])->toBeString();
+});
+
+it('casts quickbooks all-customers access to a boolean', function () {
+    $user = User::factory()->create(['qbo_all_customers_access' => 1]);
+
+    expect($user->qbo_all_customers_access)->toBeBool()->toBeTrue();
+});

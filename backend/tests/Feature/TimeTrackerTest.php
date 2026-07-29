@@ -124,6 +124,55 @@ it('persists and restores active timer sessions per user', function () {
     expect(ActiveTimeSession::query()->where('user_id', $user->id)->count())->toBe(1);
 });
 
+it('returns timer sessions without picker refs without quickbooks sanitization', function () {
+    $user = actingAsWithQboEmployee();
+
+    ActiveTimeSession::factory()->for($user)->create([
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => 'Support tickets',
+        'accumulated_seconds' => 45,
+        'running_since' => null,
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/time-tracker', frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.description', 'Support tickets')
+        ->assertJsonPath('data.customer_ref', null)
+        ->assertJsonPath('data.elapsed_seconds', 45);
+});
+
+it('does not sanitize timer sessions with blank picker refs on load', function () {
+    $user = actingAsWithQboEmployee();
+
+    ActiveTimeSession::factory()->for($user)->create([
+        'customer_ref' => '   ',
+        'customer_name' => 'Ignored',
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => 'Draft',
+        'accumulated_seconds' => 15,
+        'running_since' => null,
+    ]);
+
+    $this->mock(QboCustomerListService::class, function ($mock) {
+        $mock->shouldNotReceive('listForUser');
+    });
+
+    $this->actingAs($user)
+        ->getJson('/api/time-tracker', frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.customer_ref', '   ')
+        ->assertJsonPath('data.customer_name', 'Ignored');
+});
+
 it('clears unassigned customers from persisted timer sessions on load', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);

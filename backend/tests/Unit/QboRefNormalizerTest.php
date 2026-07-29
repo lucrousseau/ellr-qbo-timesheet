@@ -23,3 +23,22 @@ it('finds picker options using normalized identifiers', function () {
     expect(QboRefNormalizer::optionExists($options, 'Customer-11'))->toBeTrue()
         ->and(QboRefNormalizer::optionExists($options, '99'))->toBeFalse();
 });
+
+it('returns null for missing or non-numeric quickbooks identifiers', function () {
+    expect(QboRefNormalizer::normalize(null))->toBeNull()
+        ->and(QboRefNormalizer::normalize('abc'))->toBeNull()
+        ->and(QboRefNormalizer::optionExists([], null))->toBeFalse()
+        ->and(QboRefNormalizer::refsMatch(null, null))->toBeTrue();
+});
+
+it('matches picker options when quickbooks returns numeric ids', function () {
+    $options = [
+        ['id' => 11, 'display_name' => 'Acme Corp'],
+    ];
+
+    expect(QboRefNormalizer::optionExists($options, '11'))->toBeTrue();
+});
+
+it('preserves zero as a valid quickbooks identifier', function () {
+    expect(QboRefNormalizer::normalize('0'))->toBe('0');
+});

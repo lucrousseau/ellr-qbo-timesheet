@@ -101,7 +101,7 @@ class User extends Authenticatable implements MustVerifyEmail
             ->orderBy('qbo_customer_name')
             ->get()
             ->map(fn (UserQboCustomer $assignment): array => [
-                'id' => (string) $assignment->qbo_customer_ref,
+                'id' => $assignment->qbo_customer_ref,
                 'display_name' => $assignment->qbo_customer_name,
             ])
             ->values()
