@@ -25,6 +25,7 @@ type TimerState = {
   project: QboPickerOption | null
   service: QboPickerOption | null
   description: string
+  isBillable: boolean
   accumulatedSeconds: number
   runningSince: string | null
 }
@@ -34,6 +35,7 @@ const emptyTimerState = (): TimerState => ({
   project: null,
   service: null,
   description: '',
+  isBillable: false,
   accumulatedSeconds: 0,
   runningSince: null,
 })
@@ -64,6 +66,7 @@ function sessionToState(session: TimeTrackerSession): TimerState {
         }
       : null,
     description: session.description ?? '',
+    isBillable: session.is_billable,
     accumulatedSeconds: session.accumulated_seconds,
     runningSince: session.is_running ? session.running_since : null,
   }
@@ -74,7 +77,7 @@ function sessionToState(session: TimeTrackerSession): TimerState {
  * @param state Local timer state.
  * @returns Payload for PUT /time-tracker.
  */
-function stateToPayload(state: TimerState) {
+function stateToPayload(state: TimerState, options?: { accumulatedSeconds?: number }) {
   return {
     customer_ref: state.customer?.id ?? null,
     customer_name: state.customer?.display_name ?? null,
@@ -83,7 +86,11 @@ function stateToPayload(state: TimerState) {
     service_ref: state.service?.id ?? null,
     service_name: state.service?.display_name ?? null,
     description: state.description || null,
+    is_billable: state.isBillable,
     is_running: state.runningSince !== null,
+    ...(options?.accumulatedSeconds !== undefined
+      ? { accumulated_seconds: options.accumulatedSeconds }
+      : {}),
   }
 }
 
@@ -111,14 +118,21 @@ export function useTimeTracker(enabled = true) {
   stateRef.current = state
 
   const syncToServer = useCallback(
-    async (nextState: TimerState) => {
+    async (
+      nextState: TimerState,
+      options?: { accumulatedSeconds?: number },
+    ): Promise<boolean> => {
       try {
-        const session = await updateTimeTracker(stateToPayload(nextState))
+        const session = await updateTimeTracker(stateToPayload(nextState, options))
         const syncedState = applyServerSession(session)
         setState(syncedState)
         setElapsedSeconds(session.elapsed_seconds)
+
+        return true
       } catch (caught) {
         showError(getApiErrorMessage(caught, t('timesheet.syncFailed'), locale))
+
+        return false
       }
     },
     [locale, showError, t],
@@ -229,12 +243,45 @@ export function useTimeTracker(enabled = true) {
     void syncToServer(stateRef.current)
   }, [syncToServer])
 
+  const onBillableChange = useCallback(
+    (isBillable: boolean) => {
+      applyState((current) => ({ ...current, isBillable }))
+    },
+    [applyState],
+  )
+
   const onToggleTimer = useCallback(() => {
     applyState((current) => ({
       ...current,
       runningSince: current.runningSince ? null : new Date().toISOString(),
     }))
   }, [applyState])
+
+  const onElapsedChange = useCallback(
+    (seconds: number) => {
+      const previousState = stateRef.current
+      const previousElapsed = computeElapsedSeconds(
+        previousState.accumulatedSeconds,
+        previousState.runningSince,
+      )
+      const nextState: TimerState = {
+        ...previousState,
+        accumulatedSeconds: seconds,
+        runningSince: previousState.runningSince ? new Date().toISOString() : null,
+      }
+
+      setState(nextState)
+      setElapsedSeconds(seconds)
+
+      void syncToServer(nextState, { accumulatedSeconds: seconds }).then((synced) => {
+        if (!synced) {
+          setState(previousState)
+          setElapsedSeconds(previousElapsed)
+        }
+      })
+    },
+    [syncToServer],
+  )
 
   const pickerAvailability = useTimerPickerAvailability({
     enabled,
@@ -379,7 +426,9 @@ export function useTimeTracker(enabled = true) {
     onServiceChange,
     onDescriptionChange,
     onDescriptionBlur,
+    onBillableChange,
     onToggleTimer,
+    onElapsedChange,
     onLogTime,
     onDiscard,
   }

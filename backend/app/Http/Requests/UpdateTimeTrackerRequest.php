@@ -31,7 +31,14 @@ class UpdateTimeTrackerRequest extends FormRequest
             'service_ref' => ['nullable', 'string', 'max:255'],
             'service_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
+            'is_billable' => ['sometimes', 'boolean'],
             'is_running' => ['required', 'boolean'],
+            'accumulated_seconds' => [
+                'sometimes',
+                'integer',
+                'min:0',
+                'max:'.config('quickbooks.time_tracker_max_accumulated_seconds'),
+            ],
         ];
     }
 }

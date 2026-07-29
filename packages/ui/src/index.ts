@@ -3,6 +3,7 @@
  */
 
 export { Button } from './components/Button'
+export { CheckboxField } from './components/CheckboxField'
 export { AppDialog } from './components/AppDialog'
 export { ConfirmDialog } from './components/ConfirmDialog'
 export { TextAreaField } from './components/TextAreaField'
@@ -40,7 +41,7 @@ export {
   primaryButtonClass,
   secondaryButtonClass,
 } from './styles/tokens'
-export { fieldLabelClass } from './styles/formTokens'
+export { fieldLabelClass, checkboxClass, checkboxLabelClass } from './styles/formTokens'
 export {
   selectOptionClass,
   selectOptionsPanelClass,

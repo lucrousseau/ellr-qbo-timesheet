@@ -38,10 +38,12 @@ it('casts timer attributes for active sessions', function () {
     $session = ActiveTimeSession::factory()->create([
         'accumulated_seconds' => '45',
         'running_since' => '2026-07-28 12:00:00',
+        'is_billable' => true,
     ]);
 
     expect($session->accumulated_seconds)->toBeInt()->toBe(45)
-        ->and($session->running_since)->toBeInstanceOf(Carbon::class);
+        ->and($session->running_since)->toBeInstanceOf(Carbon::class)
+        ->and($session->is_billable)->toBeTrue();
 });
 
 it('reports running state from running_since', function () {

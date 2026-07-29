@@ -25,6 +25,48 @@ export function formatElapsedSeconds(totalSeconds: number): {
 }
 
 /**
+ * Formats elapsed seconds as HH:MM for editable timer inputs.
+ * @param totalSeconds Elapsed time in whole seconds.
+ * @returns Colon-separated hours and minutes.
+ */
+export function formatElapsedInput(totalSeconds: number): string {
+  const { hours, minutes } = formatElapsedSeconds(totalSeconds)
+
+  return `${hours}:${minutes}`
+}
+
+/**
+ * Parses HH:MM timer input into total seconds.
+ * @param value User-entered timer text.
+ * @returns Total seconds, or null when the value is invalid.
+ */
+export function parseElapsedInput(value: string): number | null {
+  const trimmed = value.trim()
+  if (trimmed === '') {
+    return 0
+  }
+
+  const parts = trimmed.split(':').map((part) => part.trim())
+  if (parts.length !== 2) {
+    return null
+  }
+
+  if (!parts.every((part) => /^\d{1,2}$/.test(part))) {
+    return null
+  }
+
+  const [hoursPart, minutesPart] = parts
+  const hours = Number(hoursPart)
+  const minutes = Number(minutesPart)
+
+  if (minutes > 59) {
+    return null
+  }
+
+  return hours * 3600 + minutes * 60
+}
+
+/**
  * Computes total elapsed seconds from accumulated time and an optional running segment.
  * @param accumulatedSeconds Seconds recorded while paused.
  * @param runningSince ISO timestamp when the timer resumed, or null when paused.

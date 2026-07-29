@@ -24,6 +24,7 @@ See also the [root README](../../README.md) and [root AGENTS.md](../../AGENTS.md
 | `TextAreaField` | `Field` + `Label` + `Textarea` | Multi-line text, notes, descriptions |
 | `StaticSelect` | `Listbox` | Short static lists (locale, enums) |
 | `LazySearchCombobox` | `Combobox` | API-backed lists with search (`useLazyApiSelect`) |
+| `CheckboxField` | `Checkbox` + `Field` | Boolean toggles (billable, settings) |
 | `ConfirmDialog` | `Dialog` | Destructive or irreversible confirmations |
 
 Select panels use `portal={false}` and absolute positioning inside a `relative` wrapper (CSS anchor positioning is not relied on).
@@ -34,7 +35,6 @@ Select panels use `portal={false}` and absolute positioning inside a `relative` 
 
 | Status | Planned Ellr name | Headless primitive | Notes |
 |--------|-------------------|-------------------|-------|
-| P1 | `CheckboxField` | `Checkbox` + `Field` | Multiple checkboxes: `Fieldset` + `Legend` + `Description` |
 | P1 | `RadioGroupField` | `RadioGroup` + `Radio` | Mutually exclusive options |
 | P1 | `SwitchField` | `Switch` + `Field` | Boolean toggles |
 | P2 | `NativeSelectField` | `Select` + `Field` | Styled native `<select>` |

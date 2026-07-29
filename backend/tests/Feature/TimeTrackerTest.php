@@ -437,3 +437,63 @@ it('rejects timer updates with project refs but no customer', function () {
         ->assertUnprocessable()
         ->assertJsonPath('message', __('api.time_tracker_invalid_project'));
 });
+
+it('updates accumulated seconds through the api', function () {
+    $user = actingAsWithQboEmployee();
+    ActiveTimeSession::factory()->for($user)->create([
+        'accumulated_seconds' => 120,
+        'running_since' => null,
+    ]);
+
+    $this->putJson('/api/time-tracker', [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => false,
+        'accumulated_seconds' => 300,
+    ], frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.accumulated_seconds', 300)
+        ->assertJsonPath('data.elapsed_seconds', 300);
+});
+
+it('updates billable flag through the api', function () {
+    actingAsWithQboEmployee();
+
+    $this->putJson('/api/time-tracker', [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => false,
+        'is_billable' => true,
+    ], frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.is_billable', true);
+});
+
+it('rejects accumulated seconds above the configured maximum', function () {
+    config(['quickbooks.time_tracker_max_accumulated_seconds' => 300]);
+    actingAsWithQboEmployee();
+
+    $this->putJson('/api/time-tracker', [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => false,
+        'accumulated_seconds' => 301,
+    ], frontendHeaders())
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['accumulated_seconds']);
+});

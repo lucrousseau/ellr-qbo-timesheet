@@ -15,6 +15,7 @@ const { mockActiveSession } = vi.hoisted(() => ({
     service_ref: null,
     service_name: null,
     description: null,
+    is_billable: false,
     accumulated_seconds: 3600,
     running_since: null,
     elapsed_seconds: 3600,
@@ -37,6 +38,7 @@ vi.mock('@ellr/api-client', async () =>
       running_since: payload.is_running ? new Date().toISOString() : null,
       elapsed_seconds: mockActiveSession.elapsed_seconds,
       is_running: payload.is_running,
+      is_billable: payload.is_billable ?? mockActiveSession.is_billable,
     })),
     fetchAppConfig: vi.fn().mockResolvedValue({ require_email_verification: false }),
     requestPasswordReset: vi.fn(),
@@ -61,6 +63,7 @@ describe('Timesheet App', () => {
       running_since: payload.is_running ? new Date().toISOString() : null,
       elapsed_seconds: mockActiveSession.elapsed_seconds,
       is_running: payload.is_running,
+      is_billable: payload.is_billable ?? mockActiveSession.is_billable,
     }))
     vi.mocked(fetchCurrentUser).mockReset()
     vi.mocked(fetchAppConfig).mockReset()
@@ -145,6 +148,23 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(updateTimeTracker).toHaveBeenCalled()
+    })
+  })
+
+  it('syncs billable checkbox changes to the timer session', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('checkbox', { name: /billable/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('checkbox', { name: /billable/i }))
+
+    await waitFor(() => {
+      expect(updateTimeTracker).toHaveBeenCalledWith(expect.objectContaining({ is_billable: true }))
     })
   })
 

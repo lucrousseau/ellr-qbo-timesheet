@@ -10,7 +10,7 @@ use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Support\TimerElapsed;
-use Carbon\CarbonImmutable;
+use App\Support\TimeTrackerLogPayload;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -123,6 +123,18 @@ class TimeTrackerService
             $runningSince = null;
         }
 
+        if (array_key_exists('accumulated_seconds', $validated)) {
+            $accumulated = TimerElapsed::cap((int) $validated['accumulated_seconds']);
+
+            if ($wantsRunning) {
+                $runningSince = now();
+            }
+        }
+
+        $isBillable = array_key_exists('is_billable', $validated)
+            ? (bool) $validated['is_billable']
+            : ($existing?->is_billable ?? false);
+
         return ActiveTimeSession::query()->updateOrCreate(
             ['user_id' => $user->id],
             [
@@ -133,6 +145,7 @@ class TimeTrackerService
                 'service_ref' => $validated['service_ref'] ?? null,
                 'service_name' => $validated['service_name'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'is_billable' => $isBillable,
                 'accumulated_seconds' => $accumulated,
                 'running_since' => $runningSince,
             ],
@@ -181,39 +194,7 @@ class TimeTrackerService
                 abort(response()->json(['message' => __('api.time_tracker_no_elapsed_time')], 422));
             }
 
-            $endTime = CarbonImmutable::now();
-            $startTime = $endTime->subSeconds($elapsedSeconds);
-
-            $payload = [
-                'start_time' => $startTime->toIso8601String(),
-                'end_time' => $endTime->toIso8601String(),
-            ];
-
-            if ($session->description !== null && $session->description !== '') {
-                $payload['description'] = $session->description;
-            }
-
-            if ($session->customer_ref) {
-                $payload['customer_ref'] = $session->customer_ref;
-                if ($session->customer_name) {
-                    $payload['customer_name'] = $session->customer_name;
-                }
-            }
-
-            if ($session->project_ref) {
-                $payload['project_ref'] = $session->project_ref;
-                if ($session->project_name) {
-                    $payload['project_name'] = $session->project_name;
-                }
-            }
-
-            if ($session->service_ref) {
-                $payload['item_ref'] = $session->service_ref;
-                if ($session->service_name) {
-                    $payload['item_name'] = $session->service_name;
-                }
-            }
-
+            $payload = TimeTrackerLogPayload::forSession($session, $elapsedSeconds);
             $activity = $this->timeActivities->createForUser($user, $token, $payload);
             $this->discardForUser($user);
 
@@ -241,6 +222,7 @@ class TimeTrackerService
             'service_ref' => $session->service_ref,
             'service_name' => $session->service_name,
             'description' => $session->description,
+            'is_billable' => $session->is_billable,
             'accumulated_seconds' => $session->accumulated_seconds,
             'running_since' => TimerElapsed::asCarbon($session->running_since)?->toIso8601String(),
             'elapsed_seconds' => TimerElapsed::forSession($session),

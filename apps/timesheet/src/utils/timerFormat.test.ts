@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { computeElapsedSeconds, formatElapsedSeconds } from './timerFormat'
+import {
+  computeElapsedSeconds,
+  formatElapsedInput,
+  formatElapsedSeconds,
+  parseElapsedInput,
+} from './timerFormat'
 
 describe('formatElapsedSeconds', () => {
   it('formats whole seconds as zero-padded HH:MM:SS', () => {
@@ -16,6 +21,31 @@ describe('formatElapsedSeconds', () => {
       minutes: '00',
       seconds: '00',
     })
+  })
+})
+
+describe('formatElapsedInput', () => {
+  it('formats elapsed seconds as HH:MM for editable inputs', () => {
+    expect(formatElapsedInput(3661)).toBe('01:01')
+  })
+})
+
+describe('parseElapsedInput', () => {
+  it('parses HH:MM values', () => {
+    expect(parseElapsedInput('01:30')).toBe(5400)
+  })
+
+  it('rejects HH:MM:SS values', () => {
+    expect(parseElapsedInput('01:02:03')).toBeNull()
+  })
+
+  it('returns null for invalid values', () => {
+    expect(parseElapsedInput('abc')).toBeNull()
+    expect(parseElapsedInput('01:99')).toBeNull()
+  })
+
+  it('treats blank input as zero seconds', () => {
+    expect(parseElapsedInput('   ')).toBe(0)
   })
 })
 

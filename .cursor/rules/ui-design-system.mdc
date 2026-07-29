@@ -29,6 +29,7 @@ Headless UI is the **primitive layer** for interactive controls. Apps consume **
 | `TextAreaField` | `Field` + `Label` + `Textarea` | — |
 | `StaticSelect` | `Listbox` | — |
 | `LazySearchCombobox` | `Combobox` | `useLazyApiSelect` |
+| `CheckboxField` | `Checkbox` + `Field` | Boolean toggles (billable, settings) |
 | `ConfirmDialog` | `Dialog` | `useGuardedAction` |
 
 QBO picker economy: see `.cursor/rules/quickbooks-api.mdc` (`?refresh=1` on open).
@@ -41,7 +42,6 @@ Adopt **progressively** when a real screen needs the control. Do not bulk-wrap o
 
 | Priority | Planned Ellr name | Headless primitive | Notes |
 |----------|-------------------|-------------------|-------|
-| P1 | `CheckboxField` | `Checkbox` + `Field` | Group via `Fieldset` + `Legend` (no `CheckboxGroup` in Headless) |
 | P1 | `RadioGroupField` | `RadioGroup` + `Radio` + `Fieldset` | Mutually exclusive choices |
 | P1 | `SwitchField` | `Switch` + `Field` | Boolean settings |
 | P2 | `NativeSelectField` | `Select` + `Field` | Native `<select>` styling |

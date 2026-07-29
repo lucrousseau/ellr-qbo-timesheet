@@ -161,6 +161,44 @@ it('omits optional customer and description fields when absent', function () {
         ->and(isset($payload->CustomerRef))->toBeFalse();
 });
 
+it('maps billable status to quickbooks billable status values', function () {
+    $captured = null;
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')->once()->with(Mockery::capture($captured))->andReturn((object) ['Id' => '57']);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $service = makeTimeActivityService($dataService);
+    $user = makeUserWithEmployee();
+    $token = QuickBooksToken::factory()->make();
+
+    $service->createForUser($user, $token, [
+        'start_time' => '2026-07-27T09:00:00',
+        'end_time' => '2026-07-27T17:00:00',
+        'is_billable' => true,
+    ]);
+
+    expect(MockeryCapture::unwrap($captured)->BillableStatus->value)->toBe('Billable');
+});
+
+it('maps non-billable status to quickbooks billable status values', function () {
+    $captured = null;
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')->once()->with(Mockery::capture($captured))->andReturn((object) ['Id' => '58']);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $service = makeTimeActivityService($dataService);
+    $user = makeUserWithEmployee();
+    $token = QuickBooksToken::factory()->make();
+
+    $service->createForUser($user, $token, [
+        'start_time' => '2026-07-27T09:00:00',
+        'end_time' => '2026-07-27T17:00:00',
+        'is_billable' => false,
+    ]);
+
+    expect(MockeryCapture::unwrap($captured)->BillableStatus->value)->toBe('NotBillable');
+});
+
 it('finds a time activity for a user', function () {
     $activity = (object) [
         'Id' => '10',

@@ -110,6 +110,7 @@ export type TimeTrackerSession = {
   service_ref: string | null
   service_name: string | null
   description: string | null
+  is_billable: boolean
   accumulated_seconds: number
   running_since: string | null
   elapsed_seconds: number
@@ -127,7 +128,9 @@ export type TimeTrackerPayload = {
   service_ref?: string | null
   service_name?: string | null
   description?: string | null
+  is_billable?: boolean
   is_running: boolean
+  accumulated_seconds?: number
 }
 
 /**

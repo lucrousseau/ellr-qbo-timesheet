@@ -773,3 +773,98 @@ it('persists optional picker names independently from refs', function () {
         ->and($session->project_name)->toBe('Website')
         ->and($session->service_name)->toBe('Consulting');
 });
+
+it('applies manual accumulated seconds while keeping a running timer aligned', function () {
+    CarbonImmutable::setTestNow('2026-07-28 12:00:00');
+
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    ActiveTimeSession::factory()->for($user)->create([
+        'accumulated_seconds' => 120,
+        'running_since' => now()->subMinute(),
+    ]);
+
+    $session = app(TimeTrackerService::class)->upsertForUser($user, null, [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => true,
+        'accumulated_seconds' => 300,
+    ]);
+
+    expect($session->accumulated_seconds)->toBe(300)
+        ->and($session->running_since?->toIso8601String())->toBe('2026-07-28T12:00:00+00:00');
+
+    CarbonImmutable::setTestNow();
+});
+
+it('persists billable flag updates on timer sessions', function () {
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    $session = app(TimeTrackerService::class)->upsertForUser($user, null, [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => false,
+        'is_billable' => true,
+    ]);
+
+    expect($session->is_billable)->toBeTrue();
+});
+
+it('logs billable status when creating a quickbooks time activity', function () {
+    CarbonImmutable::setTestNow('2026-07-28 12:00:00');
+
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    ActiveTimeSession::factory()->for($user)->create([
+        'customer_ref' => '11',
+        'customer_name' => 'Acme Corp',
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => 'Support',
+        'is_billable' => true,
+        'accumulated_seconds' => 60,
+        'running_since' => null,
+    ]);
+
+    $this->mock(QboPickerValidationService::class, function ($mock) {
+        $mock->shouldReceive('assertValidSelections')->once();
+    });
+
+    $this->mock(TimeActivityService::class, function ($mock) use ($user, $token) {
+        $mock->shouldReceive('createForUser')
+            ->once()
+            ->with(
+                $user,
+                $token,
+                Mockery::on(fn (array $payload): bool => $payload['is_billable'] === true),
+            )
+            ->andReturn((object) ['Id' => '99']);
+    });
+
+    app(TimeTrackerService::class)->logForUser($user, $token);
+
+    CarbonImmutable::setTestNow();
+});

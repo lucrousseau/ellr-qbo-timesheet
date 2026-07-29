@@ -33,6 +33,7 @@ class ActiveTimeSessionFactory extends Factory
             'service_ref' => null,
             'service_name' => null,
             'description' => null,
+            'is_billable' => false,
             'accumulated_seconds' => 0,
             'running_since' => now(),
         ];

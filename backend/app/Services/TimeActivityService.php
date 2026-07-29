@@ -71,6 +71,10 @@ class TimeActivityService
             $timeActivityPayload['ItemRef'] = $itemRef;
         }
 
+        if (array_key_exists('is_billable', $validated)) {
+            $timeActivityPayload['BillableStatus'] = $validated['is_billable'] ? 'Billable' : 'NotBillable';
+        }
+
         $timeActivity = TimeActivity::create($timeActivityPayload);
         $result = $dataService->Add($timeActivity);
 

@@ -107,6 +107,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
               project={tracker.state.project}
               service={tracker.state.service}
               description={tracker.state.description}
+              isBillable={tracker.state.isBillable}
               elapsedSeconds={tracker.elapsedSeconds}
               isRunning={tracker.isRunning}
               logging={tracker.logging}
@@ -123,7 +124,9 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
               onServiceChange={tracker.onServiceChange}
               onDescriptionChange={tracker.onDescriptionChange}
               onDescriptionBlur={tracker.onDescriptionBlur}
+              onBillableChange={tracker.onBillableChange}
               onToggleTimer={tracker.onToggleTimer}
+              onElapsedChange={tracker.onElapsedChange}
               onLogTime={tracker.onLogTime}
               onDiscard={tracker.onDiscard}
             />

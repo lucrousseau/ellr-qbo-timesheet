@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
     'service_ref',
     'service_name',
     'description',
+    'is_billable',
     'accumulated_seconds',
     'running_since',
 ])]
@@ -29,6 +30,7 @@ use Illuminate\Support\Carbon;
  * Stores running or paused timer metadata for cross-session persistence.
  *
  * @property int $accumulated_seconds
+ * @property bool $is_billable
  * @property Carbon|null $running_since
  */
 class ActiveTimeSession extends Model
@@ -45,6 +47,7 @@ class ActiveTimeSession extends Model
     {
         return [
             'accumulated_seconds' => 'integer',
+            'is_billable' => 'boolean',
             'running_since' => 'datetime',
         ];
     }

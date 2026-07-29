@@ -7,6 +7,7 @@ import {
   Alert,
   Button,
   cardClass,
+  CheckboxField,
   LazySearchCombobox,
   LoadingScreen,
   TextAreaField,
@@ -30,6 +31,7 @@ type TimeTrackerPanelProps = {
   project: QboPickerOption | null
   service: QboPickerOption | null
   description: string
+  isBillable: boolean
   elapsedSeconds: number
   isRunning: boolean
   logging: boolean
@@ -46,7 +48,9 @@ type TimeTrackerPanelProps = {
   onServiceChange: (value: QboPickerOption | null) => void
   onDescriptionChange: (value: string) => void
   onDescriptionBlur: () => void
+  onBillableChange: (value: boolean) => void
   onToggleTimer: () => void
+  onElapsedChange: (seconds: number) => void
   onLogTime: () => void | Promise<void>
   onDiscard: () => void | Promise<void>
 }
@@ -63,6 +67,7 @@ export function TimeTrackerPanel({
   project,
   service,
   description,
+  isBillable,
   elapsedSeconds,
   isRunning,
   logging,
@@ -79,7 +84,9 @@ export function TimeTrackerPanel({
   onServiceChange,
   onDescriptionChange,
   onDescriptionBlur,
+  onBillableChange,
   onToggleTimer,
+  onElapsedChange,
   onLogTime,
   onDiscard,
 }: TimeTrackerPanelProps) {
@@ -95,7 +102,12 @@ export function TimeTrackerPanel({
         {headerLabel}
       </header>
 
-      <TimerDisplay elapsedSeconds={elapsedSeconds} isRunning={isRunning} onToggle={onToggleTimer} />
+      <TimerDisplay
+        elapsedSeconds={elapsedSeconds}
+        isRunning={isRunning}
+        onToggle={onToggleTimer}
+        onElapsedChange={onElapsedChange}
+      />
 
       {showCustomerPicker && (
         <LazySearchCombobox
@@ -164,6 +176,12 @@ export function TimeTrackerPanel({
         value={description}
         onChange={(event) => onDescriptionChange(event.target.value)}
         onBlur={onDescriptionBlur}
+      />
+
+      <CheckboxField
+        label={t('timesheet.billable')}
+        checked={isBillable}
+        onChange={onBillableChange}
       />
 
       <Button type="button" disabled={logging || elapsedSeconds <= 0} onClick={() => void onLogTime()}>
