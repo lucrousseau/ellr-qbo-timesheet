@@ -209,3 +209,19 @@ it('defaults list pagination helpers to one and the configured maximum', functio
     expect($request->listStartPosition())->toBe(1)
         ->and($request->listMaxResults())->toBe(100);
 });
+
+it('returns the refresh flag from validated query parameters', function () {
+    $request = ListTimeActivityRequest::create('/api/time-activities?refresh=1', 'GET', [
+        'refresh' => true,
+    ]);
+    $request->setContainer(app());
+    $request->validateResolved();
+
+    expect($request->listRefresh())->toBeTrue();
+
+    $withoutRefresh = ListTimeActivityRequest::create('/api/time-activities', 'GET');
+    $withoutRefresh->setContainer(app());
+    $withoutRefresh->validateResolved();
+
+    expect($withoutRefresh->listRefresh())->toBeFalse();
+});

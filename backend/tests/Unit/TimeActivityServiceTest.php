@@ -166,6 +166,33 @@ it('syncs the local snapshot after creating a time activity', function () {
     ]);
 });
 
+it('casts numeric quickbooks ids before syncing snapshots', function () {
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => 99]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
+    $quickBooks->shouldReceive('dataService')->andReturn($dataService);
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with(Mockery::type(QuickBooksToken::class), '99');
+
+    $service = new TimeActivityService(
+        $quickBooks,
+        new QboEmployeeAuthorizationService,
+        new QuickBooksApiErrorFormatterService,
+        Mockery::mock(TimeActivitySnapshotService::class),
+        $sync,
+    );
+
+    $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [
+        'start_time' => '2026-07-27T09:00:00',
+        'end_time' => '2026-07-27T17:00:00',
+    ]);
+});
+
 it('omits optional customer and description fields when absent', function () {
     $captured = null;
     $dataService = Mockery::mock(DataService::class);
@@ -403,13 +430,60 @@ it('deletes a time activity for a user', function () {
     $dataService->shouldReceive('Delete')->once()->with($existing);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
-    $service = makeTimeActivityService($dataService);
+    $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
+    $quickBooks->shouldReceive('dataService')->andReturn($dataService);
+
+    $snapshots = Mockery::mock(TimeActivitySnapshotService::class);
+    $snapshots->shouldReceive('softDeleteByQboId')
+        ->once()
+        ->with('realm-1', '10');
+
+    $service = new TimeActivityService(
+        $quickBooks,
+        new QboEmployeeAuthorizationService,
+        new QuickBooksApiErrorFormatterService,
+        $snapshots,
+        Mockery::mock(TimeActivitySyncService::class),
+    );
+
     $user = makeUserWithEmployee();
-    $token = QuickBooksToken::factory()->make();
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-1']);
 
     $service->deleteForUser($user, $token, '10');
+});
 
-    expect(true)->toBeTrue();
+it('syncs the local snapshot after updating a time activity', function () {
+    $existing = new IPPTimeActivity;
+    $existing->Id = '10';
+    $existing->SyncToken = '0';
+    $existing->StartTime = '2026-07-27T09:00:00';
+    $existing->EndTime = '2026-07-27T17:00:00';
+    $existing->EmployeeRef = (object) ['value' => '7'];
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('FindById')->once()->andReturn($existing);
+    $dataService->shouldReceive('Update')->once()->andReturn((object) ['Id' => '10']);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
+    $quickBooks->shouldReceive('dataService')->andReturn($dataService);
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with(Mockery::type(QuickBooksToken::class), '10');
+
+    $service = new TimeActivityService(
+        $quickBooks,
+        new QboEmployeeAuthorizationService,
+        new QuickBooksApiErrorFormatterService,
+        Mockery::mock(TimeActivitySnapshotService::class),
+        $sync,
+    );
+
+    $service->updateForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), '10', [
+        'description' => 'Updated notes',
+    ]);
 });
 
 it('creates a time activity without optional fields', function () {
@@ -430,6 +504,33 @@ it('creates a time activity without optional fields', function () {
     ]);
 
     expect($result->Id)->toBe('55');
+});
+
+it('syncs snapshots after create using string quickbooks ids', function () {
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => 77]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
+    $quickBooks->shouldReceive('dataService')->andReturn($dataService);
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with(Mockery::type(QuickBooksToken::class), '77');
+
+    $service = new TimeActivityService(
+        $quickBooks,
+        new QboEmployeeAuthorizationService,
+        new QuickBooksApiErrorFormatterService,
+        Mockery::mock(TimeActivitySnapshotService::class),
+        $sync,
+    );
+
+    $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [
+        'start_time' => '2026-07-27T09:00:00',
+        'end_time' => '2026-07-27T17:00:00',
+    ]);
 });
 
 it('aborts when creating a time activity fails in quickbooks', function () {

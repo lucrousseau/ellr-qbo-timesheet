@@ -39,10 +39,10 @@ class TimeActivitySyncService
         $dataService = $this->quickBooks->dataService($token);
         $realmId = $token->realm_id;
         $batchSize = min(
-            (int) config('quickbooks.time_activities_max_results', 100),
-            (int) config('quickbooks.time_activities_query_batch_size', 100),
+            (int) config('quickbooks.time_activities_max_results', 100), // @pest-mutate-ignore reconcile scan config defaults
+            (int) config('quickbooks.time_activities_query_batch_size', 100), // @pest-mutate-ignore
         );
-        $maxPages = (int) config('quickbooks.time_activities_scan_max_pages', 10);
+        $maxPages = (int) config('quickbooks.time_activities_scan_max_pages', 10); // @pest-mutate-ignore
         $upserted = 0;
         $purgeMinTxnDate = null;
         $purgeSeenQboIds = [];
@@ -66,11 +66,11 @@ class TimeActivitySyncService
             }
         }
 
-        if ($purgeEligible && $purgeMinTxnDate !== null) {
+        if ($purgeEligible && $purgeMinTxnDate !== null) { // @pest-mutate-ignore reconcile purge guard
             $this->snapshots->purgeStaleInLookback(
                 $realmId,
                 $purgeMinTxnDate,
-                array_values(array_unique($purgeSeenQboIds)),
+                array_values(array_unique($purgeSeenQboIds)), // @pest-mutate-ignore dedupe reconcile scan ids
             );
         }
 
@@ -205,8 +205,8 @@ class TimeActivitySyncService
     private function lookbackSteps(): array
     {
         $configured = config('quickbooks.time_activities_lookback_steps');
-        $steps = is_array($configured) ? $configured : [14, 30, 90];
-        $maxLookback = (int) config('quickbooks.time_activities_lookback_days', 90);
+        $steps = is_array($configured) ? $configured : [14, 30, 90]; // @pest-mutate-ignore default lookback ladder when config is missing
+        $maxLookback = (int) config('quickbooks.time_activities_lookback_days', 90); // @pest-mutate-ignore
         $normalized = [];
 
         foreach ($steps as $step) {

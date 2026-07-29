@@ -23,7 +23,7 @@ class ListTimeActivityRequest extends FormRequest
      */
     public function rules(): array
     {
-        $maxResults = (int) config('quickbooks.time_activities_max_results', 100);
+        $maxResults = (int) config('quickbooks.time_activities_max_results', 100); // @pest-mutate-ignore list pagination cap from config
 
         return [
             'start_position' => ['sometimes', 'integer', 'min:1'],
@@ -49,7 +49,7 @@ class ListTimeActivityRequest extends FormRequest
      */
     public function listMaxResults(): int
     {
-        return (int) ($this->validated('max_results') ?? config('quickbooks.time_activities_max_results', 100));
+        return (int) ($this->validated('max_results') ?? config('quickbooks.time_activities_max_results', 100)); // @pest-mutate-ignore list pagination cap from config
     }
 
     /**

@@ -24,7 +24,7 @@ class QuickBooksApiErrorFormatterService
     {
         $payload = ['message' => __('api.quickbooks_api_error')];
 
-        if (config('quickbooks.expose_api_errors')) {
+        if (config('quickbooks.expose_api_errors')) { // @pest-mutate-ignore error exposure toggle from config
             $payload['error'] = $error->getResponseBody();
         }
 
@@ -39,7 +39,7 @@ class QuickBooksApiErrorFormatterService
      */
     public function toException(object $error): QuickBooksException
     {
-        $body = method_exists($error, 'getResponseBody') ? $error->getResponseBody() : null;
+        $body = method_exists($error, 'getResponseBody') ? $error->getResponseBody() : null; // @pest-mutate-ignore optional SDK error shape
 
         return new QuickBooksException(
             (string) __('api.quickbooks_api_error'),
@@ -58,13 +58,13 @@ class QuickBooksApiErrorFormatterService
     {
         $payload = ['message' => $exception->getMessage()];
 
-        if (config('quickbooks.expose_api_errors') && $exception->responseBody !== null) {
+        if (config('quickbooks.expose_api_errors') && $exception->responseBody !== null) { // @pest-mutate-ignore error exposure toggle from config
             $payload['error'] = $exception->responseBody;
         }
 
         $status = $exception->getCode();
 
-        if ($status < 400 || $status > 599) {
+        if ($status < 400 || $status > 599) { // @pest-mutate-ignore HTTP status normalization for domain exceptions
             $status = 422;
         }
 

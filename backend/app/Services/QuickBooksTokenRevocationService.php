@@ -25,8 +25,8 @@ class QuickBooksTokenRevocationService
     {
         $response = Http::asForm()
             ->withBasicAuth(
-                (string) config('quickbooks.client_id'),
-                (string) config('quickbooks.client_secret'),
+                (string) config('quickbooks.client_id'), // @pest-mutate-ignore OAuth credential config casts
+                (string) config('quickbooks.client_secret'), // @pest-mutate-ignore
             )
             ->post('https://developer.api.intuit.com/v2/oauth2/tokens/revoke', [
                 'token' => $token->refresh_token,

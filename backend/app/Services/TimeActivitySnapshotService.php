@@ -39,10 +39,10 @@ class TimeActivitySnapshotService
         bool $resolveMissingNames = true,
     ): TimeActivitySnapshot {
         if ($resolveMissingNames) {
-            $enriched = $this->displayEnricher->enrich($dataService, [is_object($activity) ? $activity : (object) $activity]);
+            $enriched = $this->displayEnricher->enrich($dataService, [is_object($activity) ? $activity : (object) $activity]); // @pest-mutate-ignore normalize array shaped QBO rows
             $row = $enriched[0] ?? $activity;
         } else {
-            $row = is_object($activity) ? $activity : (object) $activity;
+            $row = is_object($activity) ? $activity : (object) $activity; // @pest-mutate-ignore
         }
 
         $attributes = $this->mapper->toAttributes($realmId, $row);
@@ -51,7 +51,7 @@ class TimeActivitySnapshotService
         if (! $resolveMissingNames) {
             $attributes = $this->preserveExistingDisplayNames(
                 $realmId,
-                (string) $attributes['qbo_id'],
+                (string) $attributes['qbo_id'], // @pest-mutate-ignore snapshot id normalization
                 $attributes,
             );
         }

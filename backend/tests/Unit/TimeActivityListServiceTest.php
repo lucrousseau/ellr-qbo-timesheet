@@ -331,3 +331,16 @@ it('clamps max results to the configured quickbooks maximum', function () {
     expect($result['meta']['max_results'])->toBe(25)
         ->and($result['meta']['count'])->toBe(25);
 });
+
+it('does not mark the final full page as truncated', function () {
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+    $token = quickBooksTokenWithListedActivities($user, '7', 100);
+
+    $result = makeTimeActivityListService()->listForUser($user, $token, 1, 100);
+
+    expect($result['meta']['count'])->toBe(100)
+        ->and($result['meta']['truncated'])->toBeFalse();
+});

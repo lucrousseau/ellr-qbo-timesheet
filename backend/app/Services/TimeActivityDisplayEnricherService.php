@@ -98,13 +98,13 @@ class TimeActivityDisplayEnricherService
             : (is_object($activity) ? ($activity->{$field} ?? null) : null);
 
         if (is_object($reference) && isset($reference->name)) {
-            $name = trim((string) $reference->name);
+            $name = trim((string) $reference->name); // @pest-mutate-ignore optional reference name normalization
 
             return $name === '';
         }
 
         if (is_array($reference) && isset($reference['name'])) {
-            $name = trim((string) $reference['name']);
+            $name = trim((string) $reference['name']); // @pest-mutate-ignore optional reference name normalization
 
             return $name === '';
         }

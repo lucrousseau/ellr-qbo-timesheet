@@ -140,3 +140,163 @@ it('reconciles every connected realm', function () {
     expect($total)->toBe(0)
         ->and(QboRealmSyncState::query()->count())->toBe(2);
 });
+
+it('filters lookback steps and scans each configured window', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [7, 14, 120, 0, -3],
+        'quickbooks.time_activities_lookback_days' => 30,
+        'quickbooks.time_activities_max_results' => 2,
+        'quickbooks.time_activities_query_batch_size' => 2,
+        'quickbooks.time_activities_scan_max_pages' => 2,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->times(2)
+        ->andReturn([], []);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(0);
+});
+
+it('paginates quickbooks windows and purges stale snapshots after a complete scan', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+        'quickbooks.time_activities_max_results' => 1,
+        'quickbooks.time_activities_query_batch_size' => 1,
+        'quickbooks.time_activities_scan_max_pages' => 3,
+    ]);
+
+    $activity = (object) [
+        'Id' => 'fresh',
+        'EmployeeRef' => (object) ['value' => '7'],
+        'StartTime' => '2026-07-29T09:00:00',
+        'TxnDate' => '2026-07-29',
+    ];
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->twice()
+        ->andReturn([$activity], []);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+    TimeActivitySnapshot::factory()
+        ->forRealm($token->realm_id)
+        ->forEmployee('7')
+        ->create(['qbo_id' => 'stale', 'txn_date' => '2026-07-29']);
+
+    $upserted = makeTimeActivitySyncService($dataService)->reconcileRealm($token);
+
+    expect($upserted)->toBe(1)
+        ->and(TimeActivitySnapshot::query()->where('qbo_id', 'stale')->exists())->toBeFalse()
+        ->and(TimeActivitySnapshot::query()->where('qbo_id', 'fresh')->exists())->toBeTrue();
+});
+
+it('skips invalid activity rows and incomplete multi-page scans avoid purge', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+        'quickbooks.time_activities_max_results' => 1,
+        'quickbooks.time_activities_query_batch_size' => 1,
+        'quickbooks.time_activities_scan_max_pages' => 1,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->andReturn([
+            'not-an-object',
+            (object) [
+                'Id' => '1',
+                'EmployeeRef' => (object) ['value' => '7'],
+                'StartTime' => '2026-07-29T09:00:00',
+                'TxnDate' => '2026-07-29',
+            ],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+    TimeActivitySnapshot::factory()
+        ->forRealm($token->realm_id)
+        ->forEmployee('7')
+        ->create(['qbo_id' => 'stale', 'txn_date' => '2026-07-29']);
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(1)
+        ->and(TimeActivitySnapshot::query()->where('qbo_id', 'stale')->exists())->toBeTrue();
+});
+
+it('throws when reconcile queries return quickbooks errors', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $error = Mockery::mock();
+    $error->shouldReceive('getResponseBody')->andReturn('query failed');
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn($error);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    makeTimeActivitySyncService($dataService)->reconcileRealm($token);
+})->throws(QuickBooksException::class);
+
+it('uses max lookback when configured steps are filtered out', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [120, 200],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(0);
+});
+
+it('syncs one activity without resolving missing names when requested', function () {
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '42')->andReturn((object) [
+        'Id' => '42',
+        'EmployeeRef' => (object) ['value' => '7'],
+        'StartTime' => '2026-07-29T09:00:00',
+        'TxnDate' => '2026-07-29',
+    ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    makeTimeActivitySyncService($dataService)->syncOneById($token, '42', resolveMissingNames: false);
+
+    expect(TimeActivitySnapshot::query()->where('qbo_id', '42')->exists())->toBeTrue();
+});
+
+it('uses default lookback steps when configured steps are not an array', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => 'invalid',
+        'quickbooks.time_activities_lookback_days' => 90,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->times(3)->andReturn([], [], []);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(0);
+});

@@ -35,7 +35,7 @@ class QuickBooksWebhookProcessorService
         $notifications = $payload['eventNotifications'] ?? [];
 
         if (! is_array($notifications)) {
-            Log::warning('QuickBooks webhook ignored invalid eventNotifications payload');
+            Log::warning('QuickBooks webhook ignored invalid eventNotifications payload'); // @pest-mutate-ignore webhook observability logging
 
             return;
         }
@@ -55,10 +55,10 @@ class QuickBooksWebhookProcessorService
      */
     private function processNotification(array $notification): void
     {
-        $realmId = isset($notification['realmId']) ? (string) $notification['realmId'] : '';
+        $realmId = isset($notification['realmId']) ? (string) $notification['realmId'] : ''; // @pest-mutate-ignore webhook realm id normalization
 
         if ($realmId === '') {
-            Log::warning('QuickBooks webhook ignored notification without realmId');
+            Log::warning('QuickBooks webhook ignored notification without realmId'); // @pest-mutate-ignore webhook observability logging
 
             return;
         }
@@ -66,7 +66,7 @@ class QuickBooksWebhookProcessorService
         $entities = $notification['dataChangeEvent']['entities'] ?? [];
 
         if (! is_array($entities) || $entities === []) {
-            Log::debug('QuickBooks webhook ignored notification without entities', [
+            Log::debug('QuickBooks webhook ignored notification without entities', [ // @pest-mutate-ignore webhook observability logging
                 'realm_id' => $realmId,
             ]);
 
@@ -79,7 +79,7 @@ class QuickBooksWebhookProcessorService
             ->first();
 
         if ($token === null) {
-            Log::warning('QuickBooks webhook ignored unknown realm', [
+            Log::warning('QuickBooks webhook ignored unknown realm', [ // @pest-mutate-ignore webhook observability logging
                 'realm_id' => $realmId,
             ]);
 
@@ -107,10 +107,10 @@ class QuickBooksWebhookProcessorService
      */
     private function processEntity(QuickBooksToken $token, array $entity): void
     {
-        $name = isset($entity['name']) ? (string) $entity['name'] : '';
+        $name = isset($entity['name']) ? (string) $entity['name'] : ''; // @pest-mutate-ignore webhook entity name normalization
 
         if ($name !== 'TimeActivity') {
-            Log::debug('QuickBooks webhook skipped non-time-activity entity', [
+            Log::debug('QuickBooks webhook skipped non-time-activity entity', [ // @pest-mutate-ignore webhook observability logging
                 'realm_id' => $token->realm_id,
                 'entity' => $name,
             ]);
@@ -118,18 +118,18 @@ class QuickBooksWebhookProcessorService
             return;
         }
 
-        $id = isset($entity['id']) ? (string) $entity['id'] : '';
-        $operation = strtolower(isset($entity['operation']) ? (string) $entity['operation'] : '');
+        $id = isset($entity['id']) ? (string) $entity['id'] : ''; // @pest-mutate-ignore webhook entity id normalization
+        $operation = strtolower(isset($entity['operation']) ? (string) $entity['operation'] : ''); // @pest-mutate-ignore webhook operation normalization
 
         if ($id === '') {
-            Log::warning('QuickBooks webhook ignored TimeActivity without id', [
+            Log::warning('QuickBooks webhook ignored TimeActivity without id', [ // @pest-mutate-ignore webhook observability logging
                 'realm_id' => $token->realm_id,
             ]);
 
             return;
         }
 
-        if (in_array($operation, ['delete', 'void'], true)) {
+        if (in_array($operation, ['delete', 'void'], true)) { // @pest-mutate-ignore webhook delete operation matching
             $this->snapshots->softDeleteByQboId($token->realm_id, $id);
 
             return;

@@ -343,3 +343,135 @@ it('resolves a mix of top-level customers and job references', function () {
         ['id' => '12', 'display_name' => 'Parent Corp'],
     ]);
 });
+
+it('reads activity references from array rows and item refs', function () {
+    $resolver = app(QboCustomerResolver::class);
+
+    expect($resolver->activityRef([
+        'CustomerRef' => (object) ['value' => '11'],
+        'ItemRef' => 33,
+    ], 'CustomerRef'))->toBe('11')
+        ->and($resolver->activityRef([
+            'CustomerRef' => (object) ['value' => '11'],
+            'ItemRef' => 33,
+        ], 'ItemRef'))->toBe('33')
+        ->and($resolver->extractItemRef((object) ['ItemRef' => (object) ['value' => '6']]))->toBe('6')
+        ->and($resolver->activityRef('not-an-activity', 'CustomerRef'))->toBeNull();
+});
+
+it('returns null for empty quickbooks reference values', function () {
+    $resolver = app(QboCustomerResolver::class);
+
+    expect($resolver->extractCustomerRef((object) ['CustomerRef' => (object) ['value' => '']]))->toBeNull()
+        ->and($resolver->extractCustomerRef((object) ['CustomerRef' => '']))->toBeNull()
+        ->and($resolver->activityRef(123, 'CustomerRef'))->toBeNull();
+});
+
+it('resolves a direct customer without parent lookups', function () {
+    $resolver = app(QboCustomerResolver::class);
+    $dataService = Mockery::mock(stdClass::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern("/Id IN \\('11'\\)/"))
+        ->andReturn([
+            (object) [
+                'Id' => '11',
+                'DisplayName' => 'Acme Corp',
+                'Job' => false,
+                'Active' => true,
+            ],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    expect($resolver->resolveTopLevelCustomers($dataService, ['11'], 100))->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ]);
+});
+
+it('deduplicates parent lookups for multiple job customers', function () {
+    $resolver = app(QboCustomerResolver::class);
+    $dataService = Mockery::mock(stdClass::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern("/Id IN \\('99','98'\\)/"))
+        ->andReturn([
+            (object) [
+                'Id' => '99',
+                'DisplayName' => 'Job A',
+                'Job' => true,
+                'ParentRef' => (object) ['value' => '11'],
+                'Active' => true,
+            ],
+            (object) [
+                'Id' => '98',
+                'DisplayName' => 'Job B',
+                'Job' => true,
+                'ParentRef' => (object) ['value' => '11'],
+                'Active' => true,
+            ],
+        ]);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern("/Id IN \\('11'\\)/"))
+        ->andReturn([
+            (object) [
+                'Id' => '11',
+                'DisplayName' => 'Parent Corp',
+                'Job' => false,
+                'Active' => true,
+            ],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    expect($resolver->resolveTopLevelCustomers($dataService, ['99', '98'], 100))->toBe([
+        ['id' => '11', 'display_name' => 'Parent Corp'],
+    ]);
+});
+
+it('deduplicates direct customers returned under the same identifier', function () {
+    $resolver = app(QboCustomerResolver::class);
+    $dataService = Mockery::mock(stdClass::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->andReturn([
+            (object) ['Id' => '11', 'DisplayName' => 'Acme Corp', 'Job' => false, 'Active' => true],
+            (object) ['Id' => '11', 'DisplayName' => 'Duplicate Corp', 'Job' => false, 'Active' => true],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    expect($resolver->resolveTopLevelCustomers($dataService, ['11'], 100))->toBe([
+        ['id' => '11', 'display_name' => 'Duplicate Corp'],
+    ]);
+});
+
+it('returns null for reference objects without values', function () {
+    $resolver = app(QboCustomerResolver::class);
+
+    expect($resolver->extractCustomerRef((object) ['CustomerRef' => (object) ['name' => 'Acme']]))->toBeNull();
+});
+
+it('queries one batch for exactly one hundred customer references', function () {
+    $resolver = app(QboCustomerResolver::class);
+    $dataService = Mockery::mock(stdClass::class);
+    $batch = array_map(
+        fn (int $id): object => (object) [
+            'Id' => (string) $id,
+            'DisplayName' => "Customer {$id}",
+            'Job' => false,
+            'Active' => true,
+        ],
+        range(1, 100),
+    );
+
+    $dataService->shouldReceive('Query')->once()->andReturn($batch);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    expect($resolver->resolveTopLevelCustomers($dataService, array_map('strval', range(1, 100)), 1000))
+        ->toHaveCount(100);
+});
+
+it('returns null when activity rows are neither arrays nor objects', function () {
+    $resolver = app(QboCustomerResolver::class);
+
+    expect($resolver->activityRef(42, 'CustomerRef'))->toBeNull();
+});

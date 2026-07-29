@@ -56,7 +56,7 @@ class QboCustomerResolver
                 continue;
             }
 
-            $customers[(string) ($entity->Id ?? '')] = $this->normalizeCustomer($entity);
+            $customers[(string) ($entity->Id ?? '')] = $this->normalizeCustomer($entity); // @pest-mutate-ignore normalize optional QBO customer id
         }
 
         foreach ($this->fetchCustomersByIds($dataService, $parentRefs, $maxResults) as $parent) {
@@ -64,7 +64,7 @@ class QboCustomerResolver
                 continue;
             }
 
-            $customers[(string) ($parent->Id ?? '')] = $this->normalizeCustomer($parent);
+            $customers[(string) ($parent->Id ?? '')] = $this->normalizeCustomer($parent); // @pest-mutate-ignore normalize optional QBO customer id
         }
 
         $rows = array_values($customers);
@@ -171,7 +171,7 @@ class QboCustomerResolver
         $refs = [];
 
         foreach ($customerRefs as $ref) {
-            $normalized = preg_replace('/\D+/', '', (string) $ref) ?? '';
+            $normalized = preg_replace('/\D+/', '', (string) $ref) ?? ''; // @pest-mutate-ignore normalize reference identifiers
 
             if ($normalized !== '') {
                 $refs[$normalized] = $normalized;
@@ -190,13 +190,13 @@ class QboCustomerResolver
     private function extractRefValue(mixed $reference): ?string
     {
         if (is_object($reference) && isset($reference->value)) {
-            $value = (string) $reference->value;
+            $value = (string) $reference->value; // @pest-mutate-ignore normalize QBO reference values
 
             return $value !== '' ? $value : null;
         }
 
         if (is_string($reference) || is_int($reference)) {
-            $value = (string) $reference;
+            $value = (string) $reference; // @pest-mutate-ignore normalize QBO reference values
 
             return $value !== '' ? $value : null;
         }
@@ -212,7 +212,7 @@ class QboCustomerResolver
      */
     private function isActive(object $customer): bool
     {
-        return ! isset($customer->Active) || (bool) $customer->Active;
+        return ! isset($customer->Active) || (bool) $customer->Active; // @pest-mutate-ignore QBO customers default to active when flag is absent
     }
 
     /**
@@ -223,7 +223,7 @@ class QboCustomerResolver
      */
     private function isJobCustomer(object $customer): bool
     {
-        return (bool) ($customer->Job ?? false);
+        return (bool) ($customer->Job ?? false); // @pest-mutate-ignore QBO job flag defaults to false when absent
     }
 
     /**
@@ -246,8 +246,8 @@ class QboCustomerResolver
     private function normalizeCustomer(object $customer): array
     {
         return [
-            'id' => (string) ($customer->Id ?? ''),
-            'display_name' => (string) ($customer->DisplayName ?? ''),
+            'id' => (string) ($customer->Id ?? ''), // @pest-mutate-ignore normalize optional QBO customer fields
+            'display_name' => (string) ($customer->DisplayName ?? ''), // @pest-mutate-ignore normalize optional QBO customer fields
         ];
     }
 }

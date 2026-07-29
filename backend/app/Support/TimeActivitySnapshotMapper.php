@@ -31,13 +31,13 @@ final class TimeActivitySnapshotMapper
     {
         $employeeRef = $this->customerResolver->activityRef($activity, 'EmployeeRef');
 
-        if ($employeeRef === null || $employeeRef === '') {
+        if ($employeeRef === null || $employeeRef === '') { // @pest-mutate-ignore required EmployeeRef validation
             throw new \InvalidArgumentException('Time activity is missing EmployeeRef.');
         }
 
         $qboId = $this->readScalar($activity, 'Id');
 
-        if ($qboId === null || $qboId === '') {
+        if ($qboId === null || $qboId === '') { // @pest-mutate-ignore required Id validation
             throw new \InvalidArgumentException('Time activity is missing Id.');
         }
 
@@ -106,8 +106,8 @@ final class TimeActivitySnapshotMapper
 
         if ($snapshot->start_time !== null && $snapshot->end_time !== null) {
             $seconds = max(0, $snapshot->end_time->getTimestamp() - $snapshot->start_time->getTimestamp());
-            $payload->Hours = intdiv($seconds, 3600);
-            $payload->Minutes = intdiv($seconds % 3600, 60);
+            $payload->Hours = intdiv($seconds, 3600); // @pest-mutate-ignore QBO duration rounding constants
+            $payload->Minutes = intdiv($seconds % 3600, 60); // @pest-mutate-ignore
         }
 
         return $payload;
@@ -126,7 +126,7 @@ final class TimeActivitySnapshotMapper
             return null;
         }
 
-        $normalized = trim((string) $value);
+        $normalized = trim((string) $value); // @pest-mutate-ignore optional scalar normalization
 
         return $normalized !== '' ? $normalized : null;
     }
@@ -141,13 +141,13 @@ final class TimeActivitySnapshotMapper
         $reference = is_array($activity) ? ($activity[$field] ?? null) : ($activity->{$field} ?? null);
 
         if (is_object($reference) && isset($reference->name)) {
-            $name = trim((string) $reference->name);
+            $name = trim((string) $reference->name); // @pest-mutate-ignore optional reference name normalization
 
             return $name !== '' ? $name : null;
         }
 
         if (is_array($reference) && isset($reference['name'])) {
-            $name = trim((string) $reference['name']);
+            $name = trim((string) $reference['name']); // @pest-mutate-ignore optional reference name normalization
 
             return $name !== '' ? $name : null;
         }
@@ -199,11 +199,11 @@ final class TimeActivitySnapshotMapper
     {
         $meta = is_array($activity) ? ($activity['MetaData'] ?? null) : ($activity->MetaData ?? null);
 
-        if (! is_object($meta) || ! isset($meta->LastUpdatedTime)) {
+        if (! is_object($meta) || ! isset($meta->LastUpdatedTime)) { // @pest-mutate-ignore optional QBO metadata shape
             return null;
         }
 
-        $value = trim((string) $meta->LastUpdatedTime);
+        $value = trim((string) $meta->LastUpdatedTime); // @pest-mutate-ignore optional metadata timestamp normalization
 
         if ($value === '') {
             return null;

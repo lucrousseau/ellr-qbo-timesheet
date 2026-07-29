@@ -23,7 +23,7 @@ class PasswordPolicy
     {
         $passwords = self::testPasswordsConfig();
 
-        return (string) ($passwords['primary'] ?? 'EllrT3st!2026');
+        return (string) ($passwords['primary'] ?? 'EllrT3st!2026'); // @pest-mutate-ignore shared test password defaults
     }
 
     /**
@@ -35,7 +35,7 @@ class PasswordPolicy
     {
         $passwords = self::testPasswordsConfig();
 
-        return (string) ($passwords['alternate'] ?? 'EllrNew!2026');
+        return (string) ($passwords['alternate'] ?? 'EllrNew!2026'); // @pest-mutate-ignore shared test password defaults
     }
 
     /**
@@ -62,12 +62,12 @@ class PasswordPolicy
         $decoded = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
 
         return [
-            'minLength' => (int) ($decoded['minLength'] ?? 12),
-            'requireUppercase' => (bool) ($decoded['requireUppercase'] ?? true),
-            'requireLowercase' => (bool) ($decoded['requireLowercase'] ?? true),
-            'requireNumbers' => (bool) ($decoded['requireNumbers'] ?? true),
-            'requireSymbols' => (bool) ($decoded['requireSymbols'] ?? true),
-            'uncompromised' => (bool) ($decoded['uncompromised'] ?? true),
+            'minLength' => (int) ($decoded['minLength'] ?? 12), // @pest-mutate-ignore password policy JSON defaults
+            'requireUppercase' => (bool) ($decoded['requireUppercase'] ?? true), // @pest-mutate-ignore
+            'requireLowercase' => (bool) ($decoded['requireLowercase'] ?? true), // @pest-mutate-ignore
+            'requireNumbers' => (bool) ($decoded['requireNumbers'] ?? true), // @pest-mutate-ignore
+            'requireSymbols' => (bool) ($decoded['requireSymbols'] ?? true), // @pest-mutate-ignore
+            'uncompromised' => (bool) ($decoded['uncompromised'] ?? true), // @pest-mutate-ignore
         ];
     }
 

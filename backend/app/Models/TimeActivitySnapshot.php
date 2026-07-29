@@ -62,6 +62,7 @@ class TimeActivitySnapshot extends Model
         'qbo_sync_token',
         'qbo_last_updated_at',
         'last_synced_at',
+        'deleted_at',
     ];
 
     /**

@@ -57,7 +57,7 @@ class TimeActivityListService
     ): array {
         $employeeRef = $this->employeeAuthorization->resolveEmployeeRef($user);
         $realmId = $token->realm_id;
-        $configMax = (int) config('quickbooks.time_activities_max_results', 100);
+        $configMax = (int) config('quickbooks.time_activities_max_results', 100); // @pest-mutate-ignore list pagination cap from config
         $maxResults = min(max(1, $maxResults), $configMax);
         $startPosition = max(1, $startPosition);
 

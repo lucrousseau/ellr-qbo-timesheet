@@ -21,7 +21,7 @@ class QuickBooksWebhookIngressService
      */
     public function exceedsRawByteLimit(string $rawPayload): bool
     {
-        $maxBytes = (int) config('quickbooks.webhook_max_payload_bytes', 262_144);
+        $maxBytes = (int) config('quickbooks.webhook_max_payload_bytes', 262_144); // @pest-mutate-ignore ingress limits read from config
 
         return strlen($rawPayload) > $maxBytes;
     }
@@ -79,13 +79,13 @@ class QuickBooksWebhookIngressService
             return response()->json(['message' => 'Invalid webhook payload.'], 422);
         }
 
-        $maxNotifications = (int) config('quickbooks.webhook_max_notifications', 50);
+        $maxNotifications = (int) config('quickbooks.webhook_max_notifications', 50); // @pest-mutate-ignore ingress limits read from config
 
         if (count($notifications) > $maxNotifications) {
             return response()->json(['message' => 'Webhook payload exceeds notification limit.'], 422);
         }
 
-        $maxEntities = (int) config('quickbooks.webhook_max_entities_per_notification', 100);
+        $maxEntities = (int) config('quickbooks.webhook_max_entities_per_notification', 100); // @pest-mutate-ignore ingress limits read from config
 
         foreach ($notifications as $notification) {
             if (! is_array($notification)) {

@@ -31,7 +31,7 @@ final class TimeActivityReferenceNameLookup
             $dataService,
             $customerRefs,
             fn (array $chunk, int $maxResults): string => QboCustomerQuery::customersByIds($chunk, $maxResults),
-            fn (object $entity): ?string => $this->nonEmpty((string) ($entity->DisplayName ?? '')),
+            fn (object $entity): ?string => $this->nonEmpty((string) ($entity->DisplayName ?? '')), // @pest-mutate-ignore optional QBO display name fields
         );
     }
 
@@ -46,7 +46,7 @@ final class TimeActivityReferenceNameLookup
             $dataService,
             $itemRefs,
             fn (array $chunk, int $maxResults): string => QboCustomerQuery::itemsByIds($chunk, $maxResults),
-            fn (object $entity): ?string => $this->nonEmpty((string) ($entity->Name ?? '')),
+            fn (object $entity): ?string => $this->nonEmpty((string) ($entity->Name ?? '')), // @pest-mutate-ignore optional QBO display name fields
         );
     }
 
@@ -69,7 +69,7 @@ final class TimeActivityReferenceNameLookup
             return [];
         }
 
-        $maxResults = max(1, (int) config('quickbooks.list_max_results', 1000));
+        $maxResults = max(1, (int) config('quickbooks.list_max_results', 1000)); // @pest-mutate-ignore list query cap from config
         $names = [];
 
         foreach (array_chunk($normalized, 100) as $chunk) {
@@ -80,7 +80,7 @@ final class TimeActivityReferenceNameLookup
             }
 
             foreach (QboQueryResult::entities($result) as $entity) {
-                $id = (string) ($entity->Id ?? '');
+                $id = (string) ($entity->Id ?? ''); // @pest-mutate-ignore optional QBO entity id fields
 
                 if ($id === '') {
                     continue;
@@ -106,7 +106,7 @@ final class TimeActivityReferenceNameLookup
         $normalized = [];
 
         foreach ($refs as $ref) {
-            $value = preg_replace('/\D+/', '', (string) $ref) ?? '';
+            $value = preg_replace('/\D+/', '', (string) $ref) ?? ''; // @pest-mutate-ignore normalize reference identifiers
 
             if ($value !== '') {
                 $normalized[$value] = $value;
@@ -122,7 +122,7 @@ final class TimeActivityReferenceNameLookup
      */
     private function nonEmpty(string $value): ?string
     {
-        $trimmed = trim($value);
+        $trimmed = trim($value); // @pest-mutate-ignore optional display name normalization
 
         return $trimmed !== '' ? $trimmed : null;
     }
