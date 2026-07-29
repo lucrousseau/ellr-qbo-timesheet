@@ -36,10 +36,14 @@ npm run build --workspace=admin
 
 ```
 apps/admin/src/
-  App.tsx                    # Composition root (auth gate + layout)
-  hooks/useQuickBooksAdmin.ts
-  components/QuickBooksAdminPanel.tsx
-  App.test.tsx               # Component tests (mock @ellr/api-client)
+  App.tsx                              # Composition root (auth gate + layout)
+  hooks/useQuickBooksAdmin.ts          # Auth, locale, QuickBooks OAuth state
+  hooks/useTimesheetProvisioning.ts    # QBO employee invite/remove
+  components/AdminDashboard.tsx        # Preferences + Integrations tabs
+  components/AccountPanel.tsx          # Preferences tab (locale, password)
+  components/QuickBooksConnectionPanel.tsx
+  components/TimesheetUserProvisioningPanel.tsx
+  App.test.tsx                         # Component tests (mock @ellr/api-client)
   test/setup.ts
 ```
 

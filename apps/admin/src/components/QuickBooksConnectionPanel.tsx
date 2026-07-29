@@ -4,12 +4,10 @@
 
 import { useState } from 'react'
 import {
-  Alert,
   Button,
   cardClass,
   ConfirmDialog,
   useLocale,
-  type FlashMessage,
 } from '@ellr/ui'
 
 type QuickBooksConnectionStatus = {
@@ -20,8 +18,6 @@ type QuickBooksConnectionStatus = {
 }
 
 type QuickBooksConnectionPanelProps = {
-  bootstrapError: string | null
-  message: FlashMessage | null
   status: QuickBooksConnectionStatus | null
   connecting: boolean
   disconnecting: boolean
@@ -35,8 +31,6 @@ type QuickBooksConnectionPanelProps = {
  * @returns QuickBooks connection card content.
  */
 export function QuickBooksConnectionPanel({
-  bootstrapError,
-  message,
   status,
   connecting,
   disconnecting,
@@ -75,18 +69,6 @@ export function QuickBooksConnectionPanel({
     <section className={cardClass}>
       <h2 className="text-xl font-medium text-slate-900">{t('admin.quickbooksTitle')}</h2>
       <p className="mt-2 text-sm text-slate-600">{t('admin.quickbooksConnectionHelp')}</p>
-
-      {message && (
-        <div className="mt-4">
-          <Alert variant={message.type}>{message.text}</Alert>
-        </div>
-      )}
-
-      {bootstrapError && (
-        <div className="mt-4">
-          <Alert variant="error">{bootstrapError}</Alert>
-        </div>
-      )}
 
       {statusLabel && (
         <p className="mt-4 text-sm text-slate-600">

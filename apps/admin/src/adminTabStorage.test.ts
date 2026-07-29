@@ -8,6 +8,9 @@ import {
   clearAdminActiveTabStorage,
   isAdminTab,
   LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY,
+  LEGACY_ADMIN_TAB_ID,
+  parseStoredAdminTab,
+  readAdminActiveTab,
 } from './adminTabStorage'
 
 describe('adminTabStorage', () => {
@@ -21,13 +24,29 @@ describe('adminTabStorage', () => {
 
   it('validates known admin tab ids', () => {
     expect(isAdminTab('preferences')).toBe(true)
-    expect(isAdminTab('administrator')).toBe(true)
+    expect(isAdminTab('integrations')).toBe(true)
+    expect(isAdminTab(LEGACY_ADMIN_TAB_ID)).toBe(false)
     expect(isAdminTab('invalid')).toBe(false)
   })
 
+  it('parses legacy administrator tab ids as integrations', () => {
+    expect(parseStoredAdminTab(LEGACY_ADMIN_TAB_ID)).toBe('integrations')
+    expect(parseStoredAdminTab('integrations')).toBe('integrations')
+    expect(parseStoredAdminTab('preferences')).toBe('preferences')
+    expect(parseStoredAdminTab('invalid')).toBeNull()
+  })
+
+  it('migrates legacy administrator values when reading storage', () => {
+    const key = adminActiveTabStorageKey(7)
+    sessionStorage.setItem(key, LEGACY_ADMIN_TAB_ID)
+
+    expect(readAdminActiveTab(key)).toBe('integrations')
+    expect(sessionStorage.getItem(key)).toBe('integrations')
+  })
+
   it('clears scoped and legacy storage entries', () => {
-    sessionStorage.setItem(adminActiveTabStorageKey(7), 'administrator')
-    sessionStorage.setItem(LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY, 'administrator')
+    sessionStorage.setItem(adminActiveTabStorageKey(7), 'integrations')
+    sessionStorage.setItem(LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY, LEGACY_ADMIN_TAB_ID)
 
     clearAdminActiveTabStorage(7)
 

@@ -4,7 +4,7 @@ import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
 import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { adminActiveTabStorageKey } from './adminTabStorage'
+import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
 
 vi.mock('@ellr/api-client', async () =>
@@ -32,8 +32,8 @@ describe('Admin App', () => {
     is_admin: true,
   }
 
-  async function openAdministratorTab(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(screen.getByRole('tab', { name: /administrat/i }))
+  async function openIntegrationsTab(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole('tab', { name: /int[eé]grations/i }))
   }
 
   async function openEmployeeDropdown(user: ReturnType<typeof userEvent.setup>) {
@@ -141,16 +141,16 @@ describe('Admin App', () => {
     const { unmount } = render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
     })
 
-    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('administrator')
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('integrations')
 
     unmount()
     render(<App />)
@@ -159,11 +159,11 @@ describe('Admin App', () => {
       expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
     })
 
-    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('administrator')
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('integrations')
   })
 
-  it('does not restore another user administrator tab', async () => {
-    sessionStorage.setItem(adminActiveTabStorageKey(99), 'administrator')
+  it('does not restore another user integrations tab', async () => {
+    sessionStorage.setItem(adminActiveTabStorageKey(99), 'integrations')
     vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({
       connected: true,
@@ -173,13 +173,13 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
     })
 
     expect(screen.queryByText(/Connected \(realm realm-42\)/i)).not.toBeInTheDocument()
-    expect(sessionStorage.getItem(adminActiveTabStorageKey(99))).toBe('administrator')
-    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).not.toBe('administrator')
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(99))).toBe('integrations')
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).not.toBe('integrations')
   })
 
   it('falls back to preferences when stored tab value is invalid', async () => {
@@ -211,10 +211,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
@@ -231,10 +231,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
@@ -264,10 +264,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
@@ -293,10 +293,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
@@ -324,10 +324,10 @@ describe('Admin App', () => {
     await fillLoginForm(user)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(login).toHaveBeenCalledWith('test@example.com', VALID_TEST_PASSWORD)
@@ -344,8 +344,62 @@ describe('Admin App', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/quickbooks connected successfully/i)).toBeInTheDocument()
+      expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
       expect(replaceState).toHaveBeenCalled()
     })
+
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('integrations')
+  })
+
+  it('switches to integrations after oauth error for admin users', async () => {
+    mockLocation('?quickbooks=error&reason=oauth')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/quickbooks connection denied/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
+    })
+
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('integrations')
+  })
+
+  it('lets admins stay on preferences after oauth success focus is consumed', async () => {
+    const user = userEvent.setup()
+    mockLocation('?quickbooks=connected')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/Connected \(realm realm-42\)/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('tab', { name: /preferences/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
+      expect(screen.queryByText(/Connected \(realm realm-42\)/i)).not.toBeInTheDocument()
+    })
+
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('preferences')
+  })
+
+  it('migrates legacy administrator tab storage on reload', async () => {
+    sessionStorage.setItem(adminActiveTabStorageKey(adminUser.id), LEGACY_ADMIN_TAB_ID)
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
+    })
+
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(adminUser.id))).toBe('integrations')
   })
 
   it('shows missing oauth params error from callback redirect', async () => {
@@ -447,10 +501,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -472,10 +526,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /connect quickbooks/i })).toBeInTheDocument()
@@ -499,10 +553,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -545,10 +599,10 @@ describe('Admin App', () => {
     await fillLoginForm(user)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByText(/Not connected/i)).toBeInTheDocument()
@@ -565,10 +619,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -599,7 +653,7 @@ describe('Admin App', () => {
       expect(fetchQuickBooksStatus).toHaveBeenCalled()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByText(/Connected \(realm realm-99\)/i)).toBeInTheDocument()
@@ -643,10 +697,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /create timesheet access/i })).toBeInTheDocument()
@@ -668,7 +722,7 @@ describe('Admin App', () => {
     })
   })
 
-  it('does not fetch employees until the administrator dropdown is opened', async () => {
+  it('does not fetch employees until the integrations dropdown is opened', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
@@ -680,12 +734,12 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
     expect(fetchQboEmployees).not.toHaveBeenCalled()
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(fetchTimesheetUsers).toHaveBeenCalled()
@@ -715,10 +769,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
     await openEmployeeDropdown(user)
 
     expect(screen.getByText(/loading employees/i)).toBeInTheDocument()
@@ -742,10 +796,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
     await openEmployeeDropdown(user)
 
     await waitFor(() => {
@@ -772,10 +826,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /choose an employee/i })).toBeInTheDocument()
@@ -816,10 +870,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /remove timesheet access for jane doe/i })).toBeInTheDocument()
@@ -859,10 +913,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /remove timesheet access for jane doe/i })).toBeInTheDocument()
@@ -892,10 +946,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /choose an employee/i })).toBeInTheDocument()
@@ -921,10 +975,10 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /disconnect quickbooks/i })).toBeInTheDocument()
@@ -1183,14 +1237,14 @@ describe('Admin App', () => {
       expect(screen.getByRole('heading', { name: /préférences/i })).toBeInTheDocument()
     })
 
-    await openAdministratorTab(user)
+    await openIntegrationsTab(user)
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /connexion quickbooks online/i })).toBeInTheDocument()
     })
   })
 
-  it('shows preferences and administrator tabs for admin users', async () => {
+  it('shows preferences and integrations tabs for admin users', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
 
@@ -1198,7 +1252,7 @@ describe('Admin App', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('tab', { name: /preferences/i })).toBeInTheDocument()
-      expect(screen.getByRole('tab', { name: /administrat/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
     })
   })
@@ -1230,8 +1284,8 @@ describe('Admin App', () => {
     })
   })
 
-  it('hides the administrator tab and skips quickbooks status for non-admin users', async () => {
-    sessionStorage.setItem(adminActiveTabStorageKey(2), 'administrator')
+  it('hides the integrations tab and skips quickbooks status for non-admin users', async () => {
+    sessionStorage.setItem(adminActiveTabStorageKey(2), 'integrations')
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       id: 2,
       name: 'Timesheet User',
@@ -1243,7 +1297,7 @@ describe('Admin App', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /preferences/i })).toBeInTheDocument()
-      expect(screen.queryByRole('tab', { name: /administrat/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: /integrations/i })).not.toBeInTheDocument()
     })
 
     expect(fetchQuickBooksStatus).not.toHaveBeenCalled()

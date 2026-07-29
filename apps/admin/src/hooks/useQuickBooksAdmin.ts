@@ -55,6 +55,7 @@ export function useQuickBooksAdmin() {
   const { message, showError, showSuccess, clearMessage } = useFlashMessage()
   const [status, setStatus] = useState<QuickBooksStatus | null>(null)
   const [connecting, setConnecting] = useState(false)
+  const [focusIntegrationsTab, setFocusIntegrationsTab] = useState(false)
   const connectInFlightRef = useRef(false)
 
   const loadQuickBooksStatus = useCallback(async (currentUser: User | null) => {
@@ -109,14 +110,20 @@ export function useQuickBooksAdmin() {
 
     if (result === 'connected') {
       showSuccess(t('admin.connectedSuccess'))
+      setFocusIntegrationsTab(true)
       window.history.replaceState({}, '', window.location.pathname)
     }
 
     if (result === 'error') {
       showError(t(quickBooksOAuthMessageKey(reason)))
+      setFocusIntegrationsTab(true)
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [showError, showSuccess, t])
+
+  const clearFocusIntegrationsTab = useCallback(() => {
+    setFocusIntegrationsTab(false)
+  }, [])
 
   const onLogin = async (event: React.FormEvent) => {
     clearMessage()
@@ -170,6 +177,8 @@ export function useQuickBooksAdmin() {
     onLogin,
     onLogout,
     message,
+    focusIntegrationsTab,
+    clearFocusIntegrationsTab,
     status,
     connecting,
     disconnecting,

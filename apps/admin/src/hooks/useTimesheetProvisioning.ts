@@ -19,20 +19,20 @@ export type { QboEmployeeOption, User } from '@ellr/api-client'
 type UseTimesheetProvisioningOptions = {
   status: QuickBooksStatus | null
   isAdministrator: boolean
-  administratorTabActive: boolean
+  integrationsTabActive: boolean
   onError: (message: string) => void
   onSuccess: (message: string) => void
 }
 
 /**
  * Loads QBO employees on dropdown interaction, provisioned users on tab focus, and handles account creation.
- * @param options QuickBooks connection status, admin flag, and active administrator tab.
- * @returns Provisioning data and handlers for the administrator tab.
+ * @param options QuickBooks connection status, admin flag, and active integrations tab.
+ * @returns Provisioning data and handlers for the integrations tab.
  */
 export function useTimesheetProvisioning({
   status,
   isAdministrator,
-  administratorTabActive,
+  integrationsTabActive,
   onError,
   onSuccess,
 }: UseTimesheetProvisioningOptions) {
@@ -43,7 +43,7 @@ export function useTimesheetProvisioning({
   const [removingUserId, setRemovingUserId] = useState<number | null>(null)
 
   const employeesEnabled =
-    isAdministrator && status?.connected === true && administratorTabActive
+    isAdministrator && status?.connected === true && integrationsTabActive
 
   const fetchEmployees = useCallback(
     (refresh: boolean, signal: AbortSignal) => fetchQboEmployees({ refresh, signal }),

@@ -58,7 +58,7 @@ export const frMessages: Messages = {
     appTitle: 'Ellr QBO Timesheet',
     tabsLabel: 'Sections d\'administration',
     tabPreferences: 'Préférences',
-    tabAdministrator: 'Administrateur',
+    tabIntegrations: 'Intégrations',
     quickbooksTitle: 'Connexion QuickBooks Online',
     quickbooksConnectionHelp: 'Connectez-vous avec un compte administrateur QuickBooks pour gérer les employés.',
     quickbooksEmployeeTitle: 'Employé QuickBooks',

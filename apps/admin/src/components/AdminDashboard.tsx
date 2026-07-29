@@ -2,12 +2,11 @@
  * @file Tabbed admin dashboard grouped by responsibility.
  */
 
-import { Alert, TabNav, tabPanelId, useLocale, useSessionStorageState } from '@ellr/ui'
+import { Alert, TabNav, tabPanelId, useLocale } from '@ellr/ui'
 import { useEffect, useMemo } from 'react'
 import {
-  adminActiveTabStorageKey,
-  isAdminTab,
   LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY,
+  useAdminActiveTab,
   type AdminTab,
 } from '../adminTabStorage'
 import { AccountPanel } from './AccountPanel'
@@ -23,18 +22,14 @@ type AdminDashboardProps = {
 }
 
 /**
- * Authenticated admin workspace with preferences and administrator tabs.
+ * Authenticated admin workspace with preferences and integrations tabs.
  * @param props QuickBooks admin hook state and handlers.
  * @returns Tabbed dashboard content.
  */
 export function AdminDashboard({ admin }: AdminDashboardProps) {
   const { t } = useLocale()
   const userId = admin.user!.id
-  const [activeTab, setActiveTab] = useSessionStorageState<AdminTab>(
-    adminActiveTabStorageKey(userId),
-    'preferences',
-    { isValid: isAdminTab },
-  )
+  const [activeTab, setActiveTab] = useAdminActiveTab(userId)
   const isAdministrator = admin.user?.is_admin === true
 
   useEffect(() => {
@@ -51,7 +46,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
     ]
 
     if (isAdministrator) {
-      items.push({ id: 'administrator', label: t('admin.tabAdministrator') })
+      items.push({ id: 'integrations', label: t('admin.tabIntegrations') })
     }
 
     return items
@@ -65,10 +60,22 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
     }
   }, [activeTab, activeTabId, setActiveTab])
 
+  const {
+    focusIntegrationsTab,
+    clearFocusIntegrationsTab,
+  } = admin
+
+  useEffect(() => {
+    if (focusIntegrationsTab && isAdministrator) {
+      setActiveTab('integrations')
+      clearFocusIntegrationsTab()
+    }
+  }, [focusIntegrationsTab, clearFocusIntegrationsTab, isAdministrator, setActiveTab])
+
   const provisioning = useTimesheetProvisioning({
     status: admin.status,
     isAdministrator,
-    administratorTabActive: activeTabId === 'administrator',
+    integrationsTabActive: activeTabId === 'integrations',
     onError: admin.showError,
     onSuccess: admin.showSuccess,
   })
@@ -103,14 +110,12 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
         />
       ) : (
         <div
-          id={tabPanelId(TAB_ID_PREFIX, 'administrator')}
+          id={tabPanelId(TAB_ID_PREFIX, 'integrations')}
           role="tabpanel"
-          aria-labelledby={`${TAB_ID_PREFIX}-tab-administrator`}
+          aria-labelledby={`${TAB_ID_PREFIX}-tab-integrations`}
           className="space-y-6"
         >
           <QuickBooksConnectionPanel
-            bootstrapError={null}
-            message={null}
             status={admin.status}
             connecting={admin.connecting}
             disconnecting={admin.disconnecting}
