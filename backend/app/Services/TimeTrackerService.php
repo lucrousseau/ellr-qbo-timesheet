@@ -133,7 +133,7 @@ class TimeTrackerService
 
         $isBillable = array_key_exists('is_billable', $validated)
             ? (bool) $validated['is_billable']
-            : ($existing?->is_billable ?? false);
+            : ($existing !== null ? $existing->is_billable : false);
 
         return ActiveTimeSession::query()->updateOrCreate(
             ['user_id' => $user->id],
