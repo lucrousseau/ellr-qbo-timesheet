@@ -2,7 +2,7 @@
  * @file Lazy-loaded options for API-backed select controls.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getApiErrorMessage } from '../i18n/apiErrorMessages'
 import { useLocale } from '../i18n/LocaleProvider'
 import { isAbortError } from '../utils/isAbortError'
@@ -12,6 +12,7 @@ type UseLazyApiSelectOptions<T> = {
   fetch: (refresh: boolean, signal: AbortSignal) => Promise<T[]>
   onError: (message: string) => void
   errorMessage: string
+  seedItems?: T[]
 }
 
 /**
@@ -25,6 +26,7 @@ export function useLazyApiSelect<T>({
   fetch,
   onError,
   errorMessage,
+  seedItems,
 }: UseLazyApiSelectOptions<T>) {
   const { locale } = useLocale()
   const [items, setItems] = useState<T[]>([])
@@ -32,6 +34,10 @@ export function useLazyApiSelect<T>({
   const [loaded, setLoaded] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const requestIdRef = useRef(0)
+  const seedKey = useMemo(
+    () => (seedItems === undefined ? '' : JSON.stringify(seedItems)),
+    [seedItems],
+  )
 
   const cancelInFlight = useCallback(() => {
     abortControllerRef.current?.abort()
@@ -44,8 +50,15 @@ export function useLazyApiSelect<T>({
       setItems([])
       setLoaded(false)
       setLoading(false)
+
+      return
     }
-  }, [cancelInFlight, enabled])
+
+    if (seedItems !== undefined) {
+      setItems(seedItems)
+      setLoaded(seedItems.length > 0)
+    }
+  }, [cancelInFlight, enabled, seedItems, seedKey])
 
   useEffect(() => {
     return () => {

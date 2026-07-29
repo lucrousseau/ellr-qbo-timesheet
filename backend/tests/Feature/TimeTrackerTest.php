@@ -53,9 +53,9 @@ it('lists quickbooks projects for a parent customer', function () {
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')
         ->once()
-        ->with(Mockery::pattern("/ParentRef = '11'/"))
+        ->with(Mockery::pattern('/Job = true/'))
         ->andReturn([
-            (object) ['Id' => '22', 'DisplayName' => 'Website redesign'],
+            (object) ['Id' => '22', 'DisplayName' => 'Website redesign', 'ParentRef' => (object) ['value' => '11']],
         ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 

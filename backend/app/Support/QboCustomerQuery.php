@@ -49,18 +49,20 @@ class QboCustomerQuery
     }
 
     /**
-     * Lists active projects (job customers) for a parent customer.
+     * Lists active job customers (projects/sub-customers).
      *
-     * @param  string  $customerRef  Parent customer QuickBooks identifier.
-     * @param  int  $maxResults  QuickBooks MAXRESULTS cap.
+     * ParentRef is not queryable in QuickBooks Online; callers filter by parent in PHP.
+     *
+     * @param  int  $maxResults  QuickBooks MAXRESULTS cap per page.
+     * @param  int  $startPosition  QuickBooks STARTPOSITION (1-based).
      * @return string
      */
-    public static function listProjectsForCustomer(string $customerRef, int $maxResults): string
+    public static function listActiveJobCustomers(int $maxResults, int $startPosition = 1): string
     {
-        $customerRef = self::sanitizeRef($customerRef);
         $maxResults = max(1, $maxResults);
+        $startPosition = max(1, $startPosition);
 
-        return "SELECT Id, DisplayName, ParentRef FROM Customer WHERE Active = true AND Job = true AND ParentRef = '{$customerRef}' MAXRESULTS {$maxResults}";
+        return "SELECT Id, DisplayName, ParentRef FROM Customer WHERE Active = true AND Job = true STARTPOSITION {$startPosition} MAXRESULTS {$maxResults}";
     }
 
     /**
@@ -74,16 +76,5 @@ class QboCustomerQuery
         $maxResults = max(1, $maxResults);
 
         return "SELECT Id, Name FROM Item WHERE Active = true AND Type = 'Service' MAXRESULTS {$maxResults}";
-    }
-
-    /**
-     * Restricts a QuickBooks entity reference to safe numeric characters.
-     *
-     * @param  string  $ref  Raw reference value from the client.
-     * @return string
-     */
-    private static function sanitizeRef(string $ref): string
-    {
-        return preg_replace('/\D+/', '', $ref) ?? '';
     }
 }

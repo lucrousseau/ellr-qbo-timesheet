@@ -10,12 +10,12 @@ import {
   fetchQboServices,
   fetchTimeTracker,
   logTimeTracker,
-  qboRefsMatch,
   updateTimeTracker,
   type QboPickerOption,
   type TimeTrackerSession,
 } from '@ellr/api-client'
 import { getApiErrorMessage, useFlashMessage, useGuardedAction, useLazyApiSelect, useLocale } from '@ellr/ui'
+import { useTimerPickerAvailability } from './useTimerPickerAvailability'
 import { computeElapsedSeconds } from '../utils/timerFormat'
 
 export type { QboPickerOption } from '@ellr/api-client'
@@ -236,6 +236,53 @@ export function useTimeTracker(enabled = true) {
     }))
   }, [applyState])
 
+  const pickerAvailability = useTimerPickerAvailability({
+    enabled,
+    loading,
+    customer: state.customer,
+    project: state.project,
+    service: state.service,
+    onError: showError,
+    loadCustomersFailedMessage: t('timesheet.loadCustomersFailed'),
+    loadProjectsFailedMessage: t('timesheet.loadProjectsFailed'),
+    loadServicesFailedMessage: t('timesheet.loadServicesFailed'),
+    locale,
+  })
+
+  useEffect(() => {
+    if (pickerAvailability.isCustomerAllowed || state.customer === null) {
+      return
+    }
+
+    applyState((current) => ({
+      ...current,
+      customer: null,
+      project: null,
+    }))
+  }, [applyState, pickerAvailability.isCustomerAllowed, state.customer])
+
+  useEffect(() => {
+    if (pickerAvailability.isProjectAllowed || state.project === null) {
+      return
+    }
+
+    applyState((current) => ({
+      ...current,
+      project: null,
+    }))
+  }, [applyState, pickerAvailability.isProjectAllowed, state.project])
+
+  useEffect(() => {
+    if (pickerAvailability.isServiceAllowed || state.service === null) {
+      return
+    }
+
+    applyState((current) => ({
+      ...current,
+      service: null,
+    }))
+  }, [applyState, pickerAvailability.isServiceAllowed, state.service])
+
   const fetchCustomers = useCallback(
     (refresh: boolean, signal: AbortSignal) => fetchQboCustomers({ refresh, signal }),
     [],
@@ -259,43 +306,27 @@ export function useTimeTracker(enabled = true) {
   )
 
   const customersSelect = useLazyApiSelect({
-    enabled: enabled && !loading,
+    enabled: enabled && !loading && pickerAvailability.showCustomerPicker,
     fetch: fetchCustomers,
     onError: (errorMessage) => showError(errorMessage),
     errorMessage: t('timesheet.loadCustomersFailed'),
+    seedItems: pickerAvailability.customers,
   })
 
-  useEffect(() => {
-    if (!customersSelect.loaded || state.customer === null) {
-      return
-    }
-
-    const selectedCustomerId = state.customer.id
-    const isAllowed = customersSelect.items.some((item) =>
-      qboRefsMatch(item.id, selectedCustomerId),
-    )
-
-    if (!isAllowed) {
-      applyState((current) => ({
-        ...current,
-        customer: null,
-        project: null,
-      }))
-    }
-  }, [applyState, customersSelect.items, customersSelect.loaded, state.customer])
-
   const projectsSelect = useLazyApiSelect({
-    enabled: enabled && !loading && state.customer !== null,
+    enabled: enabled && !loading && pickerAvailability.showProjectPicker,
     fetch: fetchProjects,
     onError: (errorMessage) => showError(errorMessage),
     errorMessage: t('timesheet.loadProjectsFailed'),
+    seedItems: pickerAvailability.projects,
   })
 
   const servicesSelect = useLazyApiSelect({
-    enabled: enabled && !loading,
+    enabled: enabled && !loading && pickerAvailability.showServicePicker,
     fetch: fetchServices,
     onError: (errorMessage) => showError(errorMessage),
     errorMessage: t('timesheet.loadServicesFailed'),
+    seedItems: pickerAvailability.services,
   })
 
   const { run: onLogTime, pending: logging } = useGuardedAction(async () => {
@@ -340,6 +371,9 @@ export function useTimeTracker(enabled = true) {
     customersSelect,
     projectsSelect,
     servicesSelect,
+    showCustomerPicker: pickerAvailability.showCustomerPicker,
+    showProjectPicker: pickerAvailability.showProjectPicker,
+    showServicePicker: pickerAvailability.showServicePicker,
     onCustomerChange,
     onProjectChange,
     onServiceChange,

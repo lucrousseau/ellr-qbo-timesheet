@@ -256,4 +256,23 @@ describe('useLazyApiSelect', () => {
     expect(result.current.items).toEqual([])
     expect(result.current.loaded).toBe(false)
   })
+
+  it('seeds options from prefetched items when enabled', async () => {
+    const seedItems = [{ id: 'seed' }]
+    const { result } = renderHook(
+      () =>
+        useLazyApiSelect({
+          enabled: true,
+          fetch,
+          onError,
+          errorMessage: 'Load failed',
+          seedItems,
+        }),
+      { wrapper: createLocaleWrapper() },
+    )
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(result.current.items).toEqual([{ id: 'seed' }])
+    expect(result.current.loaded).toBe(true)
+  })
 })

@@ -764,7 +764,6 @@ describe('Timesheet App', () => {
   })
 
   it('clears a stale client after the picker loads allowed customers', async () => {
-    const user = userEvent.setup()
     const staleSession = {
       ...mockActiveSession,
       customer_ref: '99',
@@ -777,12 +776,6 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
-    })
-
-    await user.click(screen.getByLabelText(/^client$/i))
-
-    await waitFor(() => {
       expect(fetchQboCustomers).toHaveBeenCalled()
       expect(updateTimeTracker).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -790,7 +783,6 @@ describe('Timesheet App', () => {
           customer_name: null,
         }),
       )
-      expect(screen.getByRole('button', { name: /add a client/i })).toBeInTheDocument()
     })
   })
 
@@ -802,15 +794,42 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
+      expect(fetchQboCustomers).toHaveBeenCalled()
       expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
     })
 
     await user.click(screen.getByLabelText(/^client$/i))
 
     await waitFor(() => {
-      expect(fetchQboCustomers).toHaveBeenCalled()
       expect(screen.getByText('Acme Corp')).toBeInTheDocument()
     })
+  })
+
+  it('hides the client picker when quickbooks has no customers', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchQboCustomers).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(fetchQboCustomers).toHaveBeenCalled()
+    })
+
+    expect(screen.queryByLabelText(/^client$/i)).not.toBeInTheDocument()
+  })
+
+  it('shows an error when quickbooks customer availability fails', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchQboCustomers).mockRejectedValue(new Error('offline'))
+    vi.mocked(fetchQboServices).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/unable to load quickbooks clients/i)).toBeInTheDocument()
+    })
+
+    expect(screen.queryByLabelText(/^client$/i)).not.toBeInTheDocument()
   })
 
   it('shows an error when the timer session fails to load', async () => {
@@ -865,12 +884,17 @@ describe('Timesheet App', () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
     vi.mocked(fetchQboProjects).mockResolvedValue([{ id: '22', display_name: 'Website' }])
+    vi.mocked(fetchQboServices).mockResolvedValue([])
 
     render(<App />)
 
     await waitFor(() => {
+      expect(fetchQboCustomers).toHaveBeenCalled()
       expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
     })
+
+    expect(screen.queryByLabelText(/^project$/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^service$/i)).not.toBeInTheDocument()
 
     await user.click(screen.getByLabelText(/^client$/i))
     await waitFor(() => {
@@ -879,15 +903,47 @@ describe('Timesheet App', () => {
     await user.click(screen.getByText('Acme Corp'))
 
     await waitFor(() => {
+      expect(fetchQboProjects).toHaveBeenCalled()
       expect(screen.getByLabelText(/^project$/i)).toBeInTheDocument()
     })
+
+    expect(screen.queryByLabelText(/^service$/i)).not.toBeInTheDocument()
 
     await user.click(screen.getByLabelText(/^project$/i))
 
     await waitFor(() => {
-      expect(fetchQboProjects).toHaveBeenCalled()
       expect(screen.getByText('Website')).toBeInTheDocument()
     })
+  })
+
+  it('hides the project picker when the selected client has no active projects', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
+    vi.mocked(fetchQboProjects).mockResolvedValue([])
+    vi.mocked(fetchQboServices).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(fetchQboCustomers).toHaveBeenCalled()
+      expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
+      expect(fetchQboServices).toHaveBeenCalled()
+    })
+
+    expect(screen.queryByLabelText(/^service$/i)).not.toBeInTheDocument()
+
+    await user.click(screen.getByLabelText(/^client$/i))
+    await waitFor(() => {
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+    })
+    await user.click(screen.getByText('Acme Corp'))
+
+    await waitFor(() => {
+      expect(fetchQboProjects).toHaveBeenCalled()
+    })
+
+    expect(screen.queryByLabelText(/^project$/i)).not.toBeInTheDocument()
   })
 
   it('loads services when the service picker opens', async () => {
@@ -898,13 +954,13 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
+      expect(fetchQboServices).toHaveBeenCalled()
       expect(screen.getByLabelText(/^service$/i)).toBeInTheDocument()
     })
 
     await user.click(screen.getByLabelText(/^service$/i))
 
     await waitFor(() => {
-      expect(fetchQboServices).toHaveBeenCalled()
       expect(screen.getByText('Consulting')).toBeInTheDocument()
     })
   })

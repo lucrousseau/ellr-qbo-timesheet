@@ -115,6 +115,9 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
               customersSelect={tracker.customersSelect}
               projectsSelect={tracker.projectsSelect}
               servicesSelect={tracker.servicesSelect}
+              showCustomerPicker={tracker.showCustomerPicker}
+              showProjectPicker={tracker.showProjectPicker}
+              showServicePicker={tracker.showServicePicker}
               onCustomerChange={tracker.onCustomerChange}
               onProjectChange={tracker.onProjectChange}
               onServiceChange={tracker.onServiceChange}

@@ -29,9 +29,9 @@ it('caches project lists per customer and quickbooks realm', function () {
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')
         ->once()
-        ->with(Mockery::pattern("/ParentRef = '11'/"))
+        ->with(Mockery::pattern('/Job = true/'))
         ->andReturn([
-            (object) ['Id' => '22', 'DisplayName' => 'Website redesign'],
+            (object) ['Id' => '22', 'DisplayName' => 'Website redesign', 'ParentRef' => (object) ['value' => '11']],
         ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
@@ -62,12 +62,37 @@ it('bypasses the cache when refresh is requested', function () {
     $service->listForCustomer($token, '11', true);
 });
 
+it('filters projects by parent customer after querying quickbooks', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0]);
+
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->andReturn([
+            (object) ['Id' => '22', 'DisplayName' => 'Website redesign', 'ParentRef' => (object) ['value' => '11']],
+            (object) ['Id' => '23', 'DisplayName' => 'Other job', 'ParentRef' => (object) ['value' => '99']],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
+
+    $service = makeQboProjectListService($quickBooks);
+
+    expect($service->listForCustomer($token, '11'))->toBe([
+        ['id' => '22', 'display_name' => 'Website redesign'],
+    ]);
+});
+
 it('normalizes projects missing optional quickbooks fields', function () {
     config(['quickbooks.list_cache_ttl_minutes' => 0]);
 
     $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
     $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn([(object) []]);
+    $dataService->shouldReceive('Query')->once()->andReturn([
+        (object) ['ParentRef' => (object) ['value' => '11']],
+    ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
     $quickBooks = Mockery::mock(QuickBooksService::class);
@@ -77,6 +102,49 @@ it('normalizes projects missing optional quickbooks fields', function () {
 
     expect($service->listForCustomer($token, '11'))->toBe([
         ['id' => '', 'display_name' => ''],
+    ]);
+});
+
+it('returns no projects when the parent customer reference is empty', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0]);
+
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->never();
+
+    $service = makeQboProjectListService($quickBooks);
+
+    expect($service->listForCustomer($token, ''))->toBe([]);
+});
+
+it('paginates quickbooks job customer queries until the last page', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0, 'quickbooks.list_max_results' => 2]);
+
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern('/STARTPOSITION 1/'))
+        ->andReturn([
+            (object) ['Id' => '22', 'DisplayName' => 'Website redesign', 'ParentRef' => (object) ['value' => '11']],
+            (object) ['Id' => '23', 'DisplayName' => 'Other job', 'ParentRef' => (object) ['value' => '99']],
+        ]);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern('/STARTPOSITION 3/'))
+        ->andReturn([
+            (object) ['Id' => '24', 'DisplayName' => 'Final job', 'ParentRef' => (object) ['value' => '11']],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
+
+    $service = makeQboProjectListService($quickBooks);
+
+    expect($service->listForCustomer($token, '11'))->toBe([
+        ['id' => '22', 'display_name' => 'Website redesign'],
+        ['id' => '24', 'display_name' => 'Final job'],
     ]);
 });
 
