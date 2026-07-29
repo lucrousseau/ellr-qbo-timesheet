@@ -46,6 +46,14 @@ it('casts timer attributes for active sessions', function () {
         ->and($session->is_billable)->toBeTrue();
 });
 
+it('casts is_billable to a boolean attribute', function () {
+    $billable = ActiveTimeSession::factory()->create(['is_billable' => 1]);
+    $nonBillable = ActiveTimeSession::factory()->create(['is_billable' => 0]);
+
+    expect($billable->is_billable)->toBeBool()->toBeTrue()
+        ->and($nonBillable->is_billable)->toBeBool()->toBeFalse();
+});
+
 it('reports running state from running_since', function () {
     $session = ActiveTimeSession::factory()->make([
         'running_since' => null,

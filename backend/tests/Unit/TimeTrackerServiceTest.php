@@ -420,9 +420,13 @@ it('returns the same session when sanitize makes no changes', function () {
     });
 
     $sanitized = app(TimeTrackerService::class)->sanitizeForUser($user, $token, $session);
+    $originalUpdatedAt = $session->updated_at;
 
     expect($sanitized->is($session))->toBeTrue()
         ->and($sanitized->customer_ref)->toBe('12');
+
+    $session->refresh();
+    expect($session->updated_at?->eq($originalUpdatedAt))->toBeTrue();
 });
 
 it('does nothing when sanitizeActiveSessionIfExists has no active session', function () {
@@ -805,6 +809,27 @@ it('applies manual accumulated seconds while keeping a running timer aligned', f
     CarbonImmutable::setTestNow();
 });
 
+it('truncates decimal accumulated seconds during manual timer updates', function () {
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    $session = app(TimeTrackerService::class)->upsertForUser($user, null, [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => false,
+        'accumulated_seconds' => '300.9',
+    ]);
+
+    expect($session->accumulated_seconds)->toBe(300);
+});
+
 it('persists billable flag updates on timer sessions', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
@@ -824,6 +849,53 @@ it('persists billable flag updates on timer sessions', function () {
     ]);
 
     expect($session->is_billable)->toBeTrue();
+});
+
+it('defaults billable flag to false for new timer sessions', function () {
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    $session = app(TimeTrackerService::class)->upsertForUser($user, null, [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => false,
+    ]);
+
+    expect($session->is_billable)->toBeFalse();
+});
+
+it('preserves existing billable flag when upsert omits is_billable', function () {
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    ActiveTimeSession::factory()->for($user)->create([
+        'is_billable' => true,
+        'accumulated_seconds' => 30,
+        'running_since' => null,
+    ]);
+
+    $session = app(TimeTrackerService::class)->upsertForUser($user, null, [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => 'Updated',
+        'is_running' => false,
+    ]);
+
+    expect($session->is_billable)->toBeTrue()
+        ->and($session->description)->toBe('Updated');
 });
 
 it('logs billable status when creating a quickbooks time activity', function () {

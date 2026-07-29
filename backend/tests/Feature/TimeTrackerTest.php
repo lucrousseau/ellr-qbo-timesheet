@@ -479,6 +479,38 @@ it('updates billable flag through the api', function () {
         ->assertJsonPath('data.is_billable', true);
 });
 
+it('preserves billable flag when update omits is_billable', function () {
+    $user = actingAsWithQboEmployee();
+
+    $this->putJson('/api/time-tracker', [
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => null,
+        'service_name' => null,
+        'description' => null,
+        'is_running' => false,
+        'is_billable' => true,
+    ], frontendHeaders())
+        ->assertOk();
+
+    $this->actingAs($user)
+        ->putJson('/api/time-tracker', [
+            'customer_ref' => null,
+            'customer_name' => null,
+            'project_ref' => null,
+            'project_name' => null,
+            'service_ref' => null,
+            'service_name' => null,
+            'description' => 'Support',
+            'is_running' => false,
+        ], frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.is_billable', true)
+        ->assertJsonPath('data.description', 'Support');
+});
+
 it('rejects accumulated seconds above the configured maximum', function () {
     config(['quickbooks.time_tracker_max_accumulated_seconds' => 300]);
     actingAsWithQboEmployee();
