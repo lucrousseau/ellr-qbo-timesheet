@@ -15,12 +15,13 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'locale', 'qbo_employee_ref', 'qbo_employee_name'])]
+#[Fillable(['name', 'email', 'password', 'locale', 'qbo_employee_ref', 'qbo_employee_name', 'qbo_all_customers_access'])]
 #[Hidden(['password', 'remember_token', 'is_admin'])]
 /**
  * Eloquent user with Sanctum auth and optional QBO employee fields.
@@ -41,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'qbo_all_customers_access' => 'boolean',
         ];
     }
 
@@ -76,6 +78,34 @@ class User extends Authenticatable implements MustVerifyEmail
     public function quickBooksToken(): HasOne
     {
         return $this->hasOne(QuickBooksToken::class)->latestOfMany();
+    }
+
+    /**
+     * Relationship to administrator-assigned QuickBooks customers.
+     *
+     * @return HasMany<UserQboCustomer, $this>
+     */
+    public function qboCustomers(): HasMany
+    {
+        return $this->hasMany(UserQboCustomer::class);
+    }
+
+    /**
+     * Returns assigned QuickBooks customer picker rows for timesheet users.
+     *
+     * @return array<int, array{id: string, display_name: string}>
+     */
+    public function assignedQboCustomerPickerRows(): array
+    {
+        return $this->qboCustomers()
+            ->orderBy('qbo_customer_name')
+            ->get()
+            ->map(fn (UserQboCustomer $assignment): array => [
+                'id' => (string) $assignment->qbo_customer_ref,
+                'display_name' => $assignment->qbo_customer_name,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

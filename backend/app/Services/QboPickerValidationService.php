@@ -8,6 +8,7 @@ namespace App\Services;
 
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Support\QboRefNormalizer;
 
 /**
  * Ensures timer session selections reference allowed QuickBooks customers, projects, and services.
@@ -37,56 +38,97 @@ class QboPickerValidationService
      */
     public function assertValidSelections(User $user, QuickBooksToken $token, array $validated): void
     {
-        $customerRef = $this->normalizedRef($validated['customer_ref'] ?? null);
+        $sanitized = $this->sanitizeSessionSelections($user, $token, $validated);
 
-        if ($customerRef !== null && ! $this->optionExists(
-            $this->customers->listForUser($user, $token),
-            $customerRef,
+        if (! QboRefNormalizer::refsMatch(
+            $this->normalizedRef($validated['customer_ref'] ?? null),
+            $sanitized['customer_ref'],
         )) {
             abort(response()->json(['message' => __('api.time_tracker_invalid_customer')], 422));
         }
 
-        $projectRef = $this->normalizedRef($validated['project_ref'] ?? null);
-
-        if ($projectRef !== null) {
-            if ($customerRef === null) {
-                abort(response()->json(['message' => __('api.time_tracker_invalid_project')], 422));
-            }
-
-            if (! $this->optionExists(
-                $this->projects->listForCustomer($token, $customerRef),
-                $projectRef,
-            )) {
-                abort(response()->json(['message' => __('api.time_tracker_invalid_project')], 422));
-            }
+        if (! QboRefNormalizer::refsMatch(
+            $this->normalizedRef($validated['project_ref'] ?? null),
+            $sanitized['project_ref'],
+        )) {
+            abort(response()->json(['message' => __('api.time_tracker_invalid_project')], 422));
         }
 
-        $serviceRef = $this->normalizedRef($validated['service_ref'] ?? null);
-
-        if ($serviceRef !== null && ! $this->optionExists(
-            $this->services->listActive($token),
-            $serviceRef,
+        if (! QboRefNormalizer::refsMatch(
+            $this->normalizedRef($validated['service_ref'] ?? null),
+            $sanitized['service_ref'],
         )) {
             abort(response()->json(['message' => __('api.time_tracker_invalid_service')], 422));
         }
     }
 
     /**
-     * Returns whether a picker option list contains the given QuickBooks identifier.
+     * Clears picker references that are no longer allowed for the user.
      *
-     * @param  array<int, array{id: string, display_name: string}>  $options  Picker rows.
-     * @param  string  $ref  QuickBooks entity identifier.
-     * @return bool
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  array<string, mixed>  $selections  Stored timer picker fields.
+     * @return array{
+     *     customer_ref: string|null,
+     *     customer_name: string|null,
+     *     project_ref: string|null,
+     *     project_name: string|null,
+     *     service_ref: string|null,
+     *     service_name: string|null
+     * }
      */
-    private function optionExists(array $options, string $ref): bool
+    public function sanitizeSessionSelections(User $user, QuickBooksToken $token, array $selections): array
     {
-        foreach ($options as $option) {
-            if ($option['id'] === $ref) {
-                return true;
+        $sanitized = [
+            'customer_ref' => $this->nullableString($selections['customer_ref'] ?? null),
+            'customer_name' => $this->nullableString($selections['customer_name'] ?? null),
+            'project_ref' => $this->nullableString($selections['project_ref'] ?? null),
+            'project_name' => $this->nullableString($selections['project_name'] ?? null),
+            'service_ref' => $this->nullableString($selections['service_ref'] ?? null),
+            'service_name' => $this->nullableString($selections['service_name'] ?? null),
+        ];
+
+        $customerRef = QboRefNormalizer::normalize($sanitized['customer_ref']);
+
+        if ($customerRef !== null && ! QboRefNormalizer::optionExists(
+            $this->customers->listForUser($user, $token),
+            $customerRef,
+        )) {
+            return $this->withoutCustomerAndProject($sanitized);
+        }
+
+        $sanitized['customer_ref'] = $customerRef;
+
+        $projectRef = QboRefNormalizer::normalize($sanitized['project_ref']);
+
+        if ($projectRef !== null) {
+            if ($customerRef === null) {
+                $sanitized['project_ref'] = null;
+                $sanitized['project_name'] = null;
+            } elseif (! QboRefNormalizer::optionExists(
+                $this->projects->listForCustomer($token, $customerRef),
+                $projectRef,
+            )) {
+                $sanitized['project_ref'] = null;
+                $sanitized['project_name'] = null;
+            } else {
+                $sanitized['project_ref'] = $projectRef;
             }
         }
 
-        return false;
+        $serviceRef = QboRefNormalizer::normalize($sanitized['service_ref']);
+
+        if ($serviceRef !== null && ! QboRefNormalizer::optionExists(
+            $this->services->listActive($token),
+            $serviceRef,
+        )) {
+            $sanitized['service_ref'] = null;
+            $sanitized['service_name'] = null;
+        } else {
+            $sanitized['service_ref'] = $serviceRef;
+        }
+
+        return $sanitized;
     }
 
     /**
@@ -104,5 +146,39 @@ class QboPickerValidationService
         $value = trim((string) $ref);
 
         return $value !== '' ? $value : null;
+    }
+
+    /**
+     * Returns a nullable trimmed string for persisted picker labels and refs.
+     *
+     * @param  mixed  $value  Raw stored value.
+     * @return string|null
+     */
+    private function nullableString(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    /**
+     * Clears customer and dependent project selections.
+     *
+     * @param  array<string, string|null>  $selections  Stored timer picker fields.
+     * @return array<string, string|null>
+     */
+    private function withoutCustomerAndProject(array $selections): array
+    {
+        return [
+            ...$selections,
+            'customer_ref' => null,
+            'customer_name' => null,
+            'project_ref' => null,
+            'project_name' => null,
+        ];
     }
 }

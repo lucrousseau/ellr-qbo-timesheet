@@ -265,3 +265,51 @@ it('returns 422 for invalid service selections', function () {
             ->toBe(__('api.time_tracker_invalid_service'));
     }
 });
+
+it('clears customer and project selections that are no longer allowed', function () {
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $token = QuickBooksToken::factory()->create();
+
+    $this->mock(QboCustomerListService::class, function ($mock) {
+        $mock->shouldReceive('listForUser')->once()->andReturn([
+            ['id' => '12', 'display_name' => 'Beta LLC'],
+        ]);
+    });
+
+    $service = app(QboPickerValidationService::class);
+
+    expect($service->sanitizeSessionSelections($user, $token, [
+        'customer_ref' => '11',
+        'customer_name' => 'Acme Corp',
+        'project_ref' => '22',
+        'project_name' => 'Website',
+        'service_ref' => '33',
+        'service_name' => 'Consulting',
+    ]))->toBe([
+        'customer_ref' => null,
+        'customer_name' => null,
+        'project_ref' => null,
+        'project_name' => null,
+        'service_ref' => '33',
+        'service_name' => 'Consulting',
+    ]);
+});
+
+it('accepts customer refs that match after identifier normalization', function () {
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $token = QuickBooksToken::factory()->create();
+
+    $this->mock(QboCustomerListService::class, function ($mock) {
+        $mock->shouldReceive('listForUser')->once()->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+    });
+
+    app(QboPickerValidationService::class)->assertValidSelections($user, $token, [
+        'customer_ref' => 'Customer-11',
+        'project_ref' => null,
+        'service_ref' => null,
+    ]);
+
+    expect(true)->toBeTrue();
+});

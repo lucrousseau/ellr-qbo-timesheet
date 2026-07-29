@@ -6,8 +6,11 @@ const VALID_TEST_PASSWORD_ALT = 'EllrNew!2026'
 import {
   createTimesheetUser,
   deleteTimesheetUser,
+  fetchAdminQboCustomers,
   fetchQboEmployees,
+  fetchTimesheetUserCustomers,
   fetchTimesheetUsers,
+  syncTimesheetUserCustomers,
 } from './admin'
 import { fetchAppConfig } from './appConfig'
 import {
@@ -1427,6 +1430,60 @@ describe('admin api helpers', () => {
       'http://localhost:8000/api/admin/users/2',
       expect.objectContaining({ method: 'DELETE' }),
     )
+  })
+
+  it('loads quickbooks customers for administrator assignment pickers', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: [{ id: '11', display_name: 'Acme Corp' }],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchAdminQboCustomers({ refresh: true })).resolves.toEqual([
+      { id: '11', display_name: 'Acme Corp' },
+    ])
+  })
+
+  it('loads and syncs timesheet user customer assignments', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          all_customers_access: false,
+          data: [{ id: '11', display_name: 'Acme Corp' }],
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          all_customers_access: false,
+          data: [{ id: '11', display_name: 'Acme Corp' }],
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchTimesheetUserCustomers(2)).resolves.toEqual({
+      all_customers_access: false,
+      data: [{ id: '11', display_name: 'Acme Corp' }],
+    })
+
+    await expect(
+      syncTimesheetUserCustomers(2, {
+        all_customers_access: false,
+        customer_refs: ['11'],
+      }),
+    ).resolves.toEqual({
+      all_customers_access: false,
+      data: [{ id: '11', display_name: 'Acme Corp' }],
+    })
   })
 })
 

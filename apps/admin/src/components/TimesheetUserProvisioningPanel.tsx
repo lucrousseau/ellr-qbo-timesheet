@@ -3,10 +3,11 @@
  */
 
 import { Button, cardClass, LazySearchCombobox, useLocale } from '@ellr/ui'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { RemoveTimesheetAccessDialog } from './RemoveTimesheetAccessDialog'
+import { ManageTimesheetUserClientsDialog } from './ManageTimesheetUserClientsDialog'
 import { TimesheetProvisionedUserRow } from './TimesheetProvisionedUserRow'
-import type { QboEmployeeOption, User } from '../hooks/useTimesheetProvisioning'
+import type { QboEmployeeOption, TimesheetUserCustomerAccess, User } from '../hooks/useTimesheetProvisioning'
 
 type TimesheetUserProvisioningPanelProps = {
   connected: boolean
@@ -24,6 +25,9 @@ type TimesheetUserProvisioningPanelProps = {
   onEmployeeDropdownClose: () => void
   onSubmit: (event: React.FormEvent) => void
   onRemoveTimesheetUser: (userId: number) => Promise<boolean>
+  onClientAssignmentsSaved: (userId: number, access: TimesheetUserCustomerAccess) => void
+  onError: (message: string) => void
+  onSuccess: (message: string) => void
 }
 
 /**
@@ -47,9 +51,14 @@ export function TimesheetUserProvisioningPanel({
   onEmployeeDropdownClose,
   onSubmit,
   onRemoveTimesheetUser,
+  onClientAssignmentsSaved,
+  onError,
+  onSuccess,
 }: TimesheetUserProvisioningPanelProps) {
   const { t } = useLocale()
   const [userToRemove, setUserToRemove] = useState<User | null>(null)
+  const [userToManageClients, setUserToManageClients] = useState<User | null>(null)
+  const closeClientDialog = useCallback(() => setUserToManageClients(null), [])
 
   if (!connected) {
     return (
@@ -127,6 +136,7 @@ export function TimesheetUserProvisioningPanel({
                 removing={removing}
                 removingUserId={removingUserId}
                 onRequestRemove={setUserToRemove}
+                onManageClients={setUserToManageClients}
               />
             ))}
           </ul>
@@ -138,6 +148,14 @@ export function TimesheetUserProvisioningPanel({
         confirming={removing}
         onConfirm={onRemoveTimesheetUser}
         onClose={() => setUserToRemove(null)}
+      />
+
+      <ManageTimesheetUserClientsDialog
+        user={userToManageClients}
+        onClose={closeClientDialog}
+        onSaved={onClientAssignmentsSaved}
+        onError={onError}
+        onSuccess={onSuccess}
       />
     </section>
   )

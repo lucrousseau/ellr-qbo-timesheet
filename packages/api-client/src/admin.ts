@@ -6,6 +6,22 @@ import { apiFetch } from './api'
 import type { User } from './auth'
 
 /**
+ * QuickBooks customer option for administrator and timesheet pickers.
+ */
+export type QboCustomerOption = {
+  id: string
+  display_name: string
+}
+
+/**
+ * Customer access settings for a provisioned timesheet user.
+ */
+export type TimesheetUserCustomerAccess = {
+  all_customers_access: boolean
+  data: QboCustomerOption[]
+}
+
+/**
  * QuickBooks employee option for administrator pickers.
  */
 export type QboEmployeeOption = {
@@ -69,5 +85,50 @@ export async function createTimesheetUser(payload: CreateTimesheetUserPayload): 
 export async function deleteTimesheetUser(userId: number): Promise<void> {
   await apiFetch(`/admin/users/${userId}`, {
     method: 'DELETE',
+  })
+}
+
+/**
+ * Lists all active QuickBooks customers for administrator assignment pickers.
+ * @param options Optional fetch options (`refresh` bypasses server cache).
+ * @returns Customer id and display name rows.
+ */
+export async function fetchAdminQboCustomers(options?: {
+  refresh?: boolean
+  signal?: AbortSignal
+}): Promise<QboCustomerOption[]> {
+  const query = options?.refresh ? '?refresh=1' : ''
+  const response = await apiFetch<{ data: QboCustomerOption[] }>(`/admin/quickbooks/customers${query}`, {
+    signal: options?.signal,
+  })
+
+  return response.data
+}
+
+/**
+ * Loads customer access settings for a provisioned timesheet user.
+ * @param userId Application user id.
+ * @returns All-clients flag and assigned QuickBooks customer rows.
+ */
+export async function fetchTimesheetUserCustomers(userId: number): Promise<TimesheetUserCustomerAccess> {
+  return apiFetch<TimesheetUserCustomerAccess>(`/admin/users/${userId}/customers`)
+}
+
+/**
+ * Replaces customer access for a provisioned timesheet user.
+ * @param userId Application user id.
+ * @param payload All-clients flag and optional customer identifiers.
+ * @returns Updated customer access settings.
+ */
+export async function syncTimesheetUserCustomers(
+  userId: number,
+  payload: {
+    all_customers_access: boolean
+    customer_refs: string[]
+  },
+): Promise<TimesheetUserCustomerAccess> {
+  return apiFetch<TimesheetUserCustomerAccess>(`/admin/users/${userId}/customers`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
   })
 }

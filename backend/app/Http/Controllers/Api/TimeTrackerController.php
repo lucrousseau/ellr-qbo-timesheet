@@ -38,7 +38,13 @@ class TimeTrackerController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
-        $session = $this->timeTracker->findForUser($request->user());
+        $user = $request->user();
+        $session = $this->timeTracker->findForUser($user);
+
+        if ($session !== null && $session->hasPickerSelections()) {
+            $token = $this->tokenResolver->resolve($user);
+            $session = $this->timeTracker->sanitizeForUser($user, $token, $session);
+        }
 
         return response()->json(['data' => $this->timeTracker->toApi($session)]);
     }

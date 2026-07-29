@@ -19,6 +19,7 @@ return [
     'qbo_employee_removed' => 'Votre accès employé QuickBooks a été retiré. Contactez un administrateur.',
     'qbo_employee_email_missing' => 'L\'employé QuickBooks n\'a pas d\'adresse courriel configurée.',
     'qbo_employee_email_conflict' => 'Le courriel de l\'employé QuickBooks est déjà utilisé par un autre compte.',
+    'admin_invalid_customer_assignment' => 'Un ou plusieurs clients sélectionnés ne sont pas disponibles dans QuickBooks.',
     'time_activity_not_found' => 'Activité de temps introuvable',
     'time_tracker_empty' => 'Aucune session de minuterie active à enregistrer.',
     'time_tracker_no_elapsed_time' => 'La minuterie n\'a pas de temps écoulé à enregistrer.',

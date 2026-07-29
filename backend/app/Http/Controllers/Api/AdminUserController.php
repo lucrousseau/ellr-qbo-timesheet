@@ -38,7 +38,27 @@ class AdminUserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $users = $this->provisioning->listTimesheetUsers()
-            ->map(fn ($user) => UserApiResponse::resource($user))
+            ->load('qboCustomers')
+            ->map(function ($user) {
+                $resource = UserApiResponse::resource($user);
+                $resource->setAttribute('all_customers_access', (bool) $user->qbo_all_customers_access);
+                $resource->setAttribute(
+                    'assigned_customers',
+                    $user->qbo_all_customers_access
+                        ? []
+                        : $user->qboCustomers
+                            ->sortBy('qbo_customer_name')
+                            ->map(fn ($assignment) => [
+                                'id' => $assignment->qbo_customer_ref,
+                                'display_name' => $assignment->qbo_customer_name,
+                            ])
+                            ->values()
+                            ->all(),
+                );
+                $resource->unsetRelation('qboCustomers');
+
+                return $resource;
+            })
             ->values();
 
         return response()->json(['data' => $users]);

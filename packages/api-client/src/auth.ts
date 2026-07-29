@@ -17,6 +17,8 @@ export type User = {
   is_admin?: boolean
   qbo_employee_ref?: string | null
   qbo_employee_name?: string | null
+  assigned_customers?: Array<{ id: string; display_name: string }>
+  all_customers_access?: boolean
 }
 
 /**

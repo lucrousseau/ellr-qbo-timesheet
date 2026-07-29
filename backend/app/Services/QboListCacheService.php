@@ -17,6 +17,8 @@ class QboListCacheService
 
     public const RESOURCE_CUSTOMERS = 'customers';
 
+    public const RESOURCE_ALL_CUSTOMERS = 'customers_all';
+
     public const RESOURCE_PROJECTS = 'projects';
 
     public const RESOURCE_SERVICES = 'services';
@@ -163,6 +165,7 @@ class QboListCacheService
         return [
             self::RESOURCE_EMPLOYEES,
             self::RESOURCE_CUSTOMERS,
+            self::RESOURCE_ALL_CUSTOMERS,
             self::RESOURCE_PROJECTS,
             self::RESOURCE_SERVICES,
         ];

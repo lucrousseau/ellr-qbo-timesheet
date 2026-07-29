@@ -5,10 +5,15 @@
 export {
   createTimesheetUser,
   deleteTimesheetUser,
+  fetchAdminQboCustomers,
   fetchQboEmployees,
+  fetchTimesheetUserCustomers,
   fetchTimesheetUsers,
+  syncTimesheetUserCustomers,
   type CreateTimesheetUserPayload,
+  type QboCustomerOption,
   type QboEmployeeOption,
+  type TimesheetUserCustomerAccess,
 } from './admin'
 export { ApiError, API_URL, apiFetch, ensureCsrfCookie, resetCsrfStateForTests } from './api'
 export {
@@ -18,6 +23,7 @@ export {
   type ApiErrorResolution,
 } from './apiErrorResolution'
 export { fetchAppConfig, type AppConfig } from './appConfig'
+export { normalizeQboRef, qboRefsMatch } from './qboRef'
 export { normalizeUserLocale, SUPPORTED_LOCALES, type UserLocale } from './locale'
 export {
   changePassword,

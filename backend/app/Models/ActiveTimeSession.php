@@ -68,4 +68,22 @@ class ActiveTimeSession extends Model
     {
         return $this->running_since !== null;
     }
+
+    /**
+     * Indicates whether the session stores any QuickBooks picker reference.
+     *
+     * @return bool
+     */
+    public function hasPickerSelections(): bool
+    {
+        foreach (['customer_ref', 'project_ref', 'service_ref'] as $field) {
+            $value = $this->{$field};
+
+            if (is_string($value) && trim($value) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

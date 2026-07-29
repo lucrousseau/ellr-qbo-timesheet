@@ -156,6 +156,26 @@ class FeatureContext implements Context
     }
 
     /**
+     * @Given the timesheet user is assigned quickbooks customer :ref named :name
+     * @param  string  $ref  QuickBooks customer reference.
+     * @param  string  $name  QuickBooks customer display name.
+     * @return void
+     */
+    public function theTimesheetUserIsAssignedQuickbooksCustomer(string $ref, string $name): void
+    {
+        if ($this->timesheetUserId === null) {
+            throw new RuntimeException('No timesheet user id was captured.');
+        }
+
+        $user = User::query()->findOrFail($this->timesheetUserId);
+        $user->forceFill(['qbo_all_customers_access' => false])->save();
+        $user->qboCustomers()->create([
+            'qbo_customer_ref' => $ref,
+            'qbo_customer_name' => $name,
+        ]);
+    }
+
+    /**
      * @Then the timesheet user should no longer exist
      * @return void
      */
@@ -333,6 +353,16 @@ class FeatureContext implements Context
     {
         if ($this->timesheetUserId !== null) {
             $path = str_replace('{timesheet_user_id}', (string) $this->timesheetUserId, $path);
+        }
+
+        if (str_contains($path, '{admin_user_id}')) {
+            $user = auth()->user();
+
+            if ($user === null) {
+                throw new RuntimeException('No authenticated user is available for admin_user_id substitution.');
+            }
+
+            $path = str_replace('{admin_user_id}', (string) $user->id, $path);
         }
 
         $server = $this->requestServerHeaders($method, $body !== null);

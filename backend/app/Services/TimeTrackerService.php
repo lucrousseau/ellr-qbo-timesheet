@@ -41,6 +41,54 @@ class TimeTrackerService
     }
 
     /**
+     * Removes picker references that are no longer allowed for the user.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  ActiveTimeSession  $session  Active timer session.
+     * @return ActiveTimeSession
+     */
+    public function sanitizeForUser(User $user, QuickBooksToken $token, ActiveTimeSession $session): ActiveTimeSession
+    {
+        $current = [
+            'customer_ref' => $session->customer_ref,
+            'customer_name' => $session->customer_name,
+            'project_ref' => $session->project_ref,
+            'project_name' => $session->project_name,
+            'service_ref' => $session->service_ref,
+            'service_name' => $session->service_name,
+        ];
+
+        $sanitized = $this->pickerValidation->sanitizeSessionSelections($user, $token, $current);
+
+        if ($sanitized === $current) {
+            return $session;
+        }
+
+        $session->fill($sanitized)->save();
+
+        return $session->refresh();
+    }
+
+    /**
+     * Sanitizes the active timer session when picker selections are no longer allowed.
+     *
+     * @param  User  $user  Authenticated application user.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @return void
+     */
+    public function sanitizeActiveSessionIfExists(User $user, QuickBooksToken $token): void
+    {
+        $session = $this->findForUser($user);
+
+        if ($session === null) {
+            return;
+        }
+
+        $this->sanitizeForUser($user, $token, $session);
+    }
+
+    /**
      * Creates or updates the active timer session for a user.
      *
      * @param  User  $user  Authenticated application user.

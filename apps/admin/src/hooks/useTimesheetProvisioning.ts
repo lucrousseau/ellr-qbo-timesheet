@@ -10,11 +10,12 @@ import {
   fetchTimesheetUsers,
   type QboEmployeeOption,
   type QuickBooksStatus,
+  type TimesheetUserCustomerAccess,
   type User,
 } from '@ellr/api-client'
 import { getApiErrorMessage, useGuardedAction, useLazyApiSelect, useLocale } from '@ellr/ui'
 
-export type { QboEmployeeOption, User } from '@ellr/api-client'
+export type { QboEmployeeOption, TimesheetUserCustomerAccess, User } from '@ellr/api-client'
 
 type UseTimesheetProvisioningOptions = {
   status: QuickBooksStatus | null
@@ -150,6 +151,23 @@ export function useTimesheetProvisioning({
     [removeTimesheetUserGuarded],
   )
 
+  const onClientAssignmentsSaved = useCallback(
+    (userId: number, access: TimesheetUserCustomerAccess) => {
+      setUsers((current) =>
+        current.map((user) =>
+          user.id === userId
+            ? {
+                ...user,
+                all_customers_access: access.all_customers_access,
+                assigned_customers: access.data,
+              }
+            : user,
+        ),
+      )
+    },
+    [],
+  )
+
   return {
     employees: availableEmployees,
     users,
@@ -165,5 +183,6 @@ export function useTimesheetProvisioning({
     onEmployeeDropdownClose,
     onCreateTimesheetUser,
     onRemoveTimesheetUser,
+    onClientAssignmentsSaved,
   }
 }

@@ -312,6 +312,34 @@ it('finds the active session for a user', function () {
     expect(app(TimeTrackerService::class)->findForUser($user)?->description)->toBe('Support');
 });
 
+it('persists sanitized picker selections for active sessions', function () {
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '12',
+        'qbo_customer_name' => 'Beta LLC',
+    ]);
+
+    $session = ActiveTimeSession::factory()->for($user)->create([
+        'customer_ref' => '11',
+        'customer_name' => 'Acme Corp',
+        'project_ref' => '22',
+        'project_name' => 'Website redesign',
+        'service_ref' => '33',
+        'service_name' => 'Consulting',
+    ]);
+
+    $sanitized = app(TimeTrackerService::class)->sanitizeForUser($user, $token, $session);
+
+    expect($sanitized->customer_ref)->toBeNull()
+        ->and($sanitized->project_ref)->toBeNull()
+        ->and($sanitized->service_ref)->toBe('33');
+});
+
 it('caps paused timers through timer elapsed helpers during api mapping', function () {
     config(['quickbooks.time_tracker_max_accumulated_seconds' => 30]);
 

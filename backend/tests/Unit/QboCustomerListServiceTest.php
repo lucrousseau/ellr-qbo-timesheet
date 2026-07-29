@@ -7,9 +7,10 @@ use App\Services\QboEmployeeAuthorizationService;
 use App\Services\QboListCacheService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
-use App\Support\QboCustomerResolver;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use QuickBooksOnline\API\DataService\DataService;
+
+uses(RefreshDatabase::class);
 
 covers(QboCustomerListService::class);
 
@@ -22,49 +23,66 @@ function makeQboCustomerListService(QuickBooksService $quickBooks): QboCustomerL
         $quickBooks,
         new QboListCacheService,
         new QuickBooksApiErrorFormatterService,
-        app(QboCustomerResolver::class),
         new QboEmployeeAuthorizationService,
     );
 }
 
-it('caches customer lists per employee and quickbooks realm', function () {
-    config(['quickbooks.list_cache_ttl_minutes' => 15]);
+it('returns assigned customers for a timesheet user from stored assignments', function () {
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '11',
+        'qbo_customer_name' => 'Acme Corp',
+    ]);
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
 
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
+    $service = makeQboCustomerListService(Mockery::mock(QuickBooksService::class));
+
+    expect($service->listForUser($user, $token))->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ])->and($service->listForUser($user, $token, true))->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ]);
+});
+
+it('returns an empty customer list when no assignments exist', function () {
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+
+    expect(makeQboCustomerListService(Mockery::mock(QuickBooksService::class))->listForUser($user, $token))->toBe([]);
+});
+
+it('returns all active customers when all-customers access is enabled', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0]);
+
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_all_customers_access' => true,
+    ]);
     $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')
         ->once()
-        ->with(Mockery::pattern("/FROM TimeActivity WHERE EmployeeRef = '7'/"))
+        ->with(Mockery::pattern('/FROM Customer WHERE Active = true AND Job = false/'))
         ->andReturn([
-            (object) ['CustomerRef' => (object) ['value' => '11']],
-        ]);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern("/FROM Customer WHERE Id IN \\('11'\\)/"))
-        ->andReturn([
-            (object) [
-                'Id' => '11',
-                'DisplayName' => 'Acme Corp',
-                'Job' => false,
-                'Active' => true,
-            ],
+            (object) ['Id' => '11', 'DisplayName' => 'Acme Corp'],
         ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    $service = makeQboCustomerListService($quickBooks);
-
-    expect($service->listForUser($user, $token))->toHaveCount(1)
-        ->and($service->listForUser($user, $token))->toHaveCount(1);
+    expect(makeQboCustomerListService($quickBooks)->listForUser($user, $token))->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ]);
 });
 
-it('bypasses the cache when refresh is requested', function () {
+it('bypasses the cache when refresh is requested for all-customers access', function () {
     config(['quickbooks.list_cache_ttl_minutes' => 15]);
 
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_all_customers_access' => true,
+    ]);
     $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')->twice()->andReturn([]);
@@ -79,200 +97,25 @@ it('bypasses the cache when refresh is requested', function () {
     $service->listForUser($user, $token, true);
 });
 
-it('collects project references from time activities', function () {
-    config([
-        'quickbooks.list_cache_ttl_minutes' => 0,
-        'quickbooks.employee_customer_scan_max_pages' => 1,
-        'quickbooks.time_activities_max_results' => 100,
-    ]);
-
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
-    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->andReturn([
-            (object) ['ProjectRef' => (object) ['value' => '22']],
-        ]);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern("/FROM Customer WHERE Id IN \\('22'\\)/"))
-        ->andReturn([
-            (object) [
-                'Id' => '22',
-                'DisplayName' => 'Website redesign',
-                'Job' => true,
-                'ParentRef' => (object) ['value' => '11'],
-                'Active' => true,
-            ],
-        ]);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern("/FROM Customer WHERE Id IN \\('11'\\)/"))
-        ->andReturn([
-            (object) [
-                'Id' => '11',
-                'DisplayName' => 'Acme Corp',
-                'Job' => false,
-                'Active' => true,
-            ],
-        ]);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
-
-    $quickBooks = Mockery::mock(QuickBooksService::class);
-    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
-
-    $service = makeQboCustomerListService($quickBooks);
-
-    expect($service->listForUser($user, $token))->toBe([
-        ['id' => '11', 'display_name' => 'Acme Corp'],
-    ]);
-});
-
-it('paginates time activities until a short page is returned', function () {
-    config([
-        'quickbooks.list_cache_ttl_minutes' => 0,
-        'quickbooks.employee_customer_scan_max_pages' => 3,
-        'quickbooks.time_activities_max_results' => 1,
-        'quickbooks.list_max_results' => 1000,
-    ]);
-
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
-    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern('/STARTPOSITION 1 MAXRESULTS 1/'))
-        ->andReturn([
-            (object) ['CustomerRef' => (object) ['value' => '11']],
-        ]);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern('/STARTPOSITION 2 MAXRESULTS 1/'))
-        ->andReturn([]);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern("/FROM Customer WHERE Id IN \\('11'\\)/"))
-        ->andReturn([
-            (object) [
-                'Id' => '11',
-                'DisplayName' => 'Acme Corp',
-                'Job' => false,
-                'Active' => true,
-            ],
-        ]);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
-
-    $quickBooks = Mockery::mock(QuickBooksService::class);
-    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
-
-    $service = makeQboCustomerListService($quickBooks);
-
-    expect($service->listForUser($user, $token))->toHaveCount(1);
-});
-
-it('aborts when quickbooks customer scan query fails', function () {
+it('lists all active customers for administrators', function () {
     config(['quickbooks.list_cache_ttl_minutes' => 0]);
 
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
-    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
-    $error = Mockery::mock();
-    $error->shouldReceive('getHttpStatusCode')->andReturn(400);
-    $error->shouldReceive('getResponseBody')->andReturn('query failed');
-
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn([]);
-    $dataService->shouldReceive('getLastError')->andReturn($error);
-
-    $quickBooks = Mockery::mock(QuickBooksService::class);
-    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
-
-    $service = makeQboCustomerListService($quickBooks);
-
-    expect(fn () => $service->listForUser($user, $token))
-        ->toThrow(HttpResponseException::class);
-});
-
-it('returns an empty customer list when no time activities exist', function () {
-    config(['quickbooks.list_cache_ttl_minutes' => 0]);
-
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
     $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
     $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn([]);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern('/FROM Customer WHERE Active = true AND Job = false/'))
+        ->andReturn([
+            (object) ['Id' => '11', 'DisplayName' => 'Beta'],
+            (object) ['Id' => '12', 'DisplayName' => 'Alpha'],
+        ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    expect(makeQboCustomerListService($quickBooks)->listForUser($user, $token))->toBe([]);
-});
-
-it('stops scanning after the configured maximum number of pages', function () {
-    config([
-        'quickbooks.list_cache_ttl_minutes' => 0,
-        'quickbooks.employee_customer_scan_max_pages' => 2,
-        'quickbooks.time_activities_max_results' => 1,
-        'quickbooks.list_max_results' => 1000,
+    expect(makeQboCustomerListService($quickBooks)->listAllActive($token))->toBe([
+        ['id' => '12', 'display_name' => 'Alpha'],
+        ['id' => '11', 'display_name' => 'Beta'],
     ]);
-
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
-    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')
-        ->twice()
-        ->andReturn(
-            [(object) ['CustomerRef' => (object) ['value' => '11']]],
-            [(object) ['CustomerRef' => (object) ['value' => '12']]],
-        );
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern('/FROM Customer WHERE Id IN/'))
-        ->andReturn([
-            (object) ['Id' => '11', 'DisplayName' => 'Alpha', 'Job' => false, 'Active' => true],
-            (object) ['Id' => '12', 'DisplayName' => 'Beta', 'Job' => false, 'Active' => true],
-        ]);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
-
-    $quickBooks = Mockery::mock(QuickBooksService::class);
-    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
-
-    expect(makeQboCustomerListService($quickBooks)->listForUser($user, $token))->toHaveCount(2);
-});
-
-it('uses configured page size and start positions when scanning activities', function () {
-    config([
-        'quickbooks.list_cache_ttl_minutes' => 0,
-        'quickbooks.time_activities_max_results' => 2,
-        'quickbooks.employee_customer_scan_max_pages' => 2,
-        'quickbooks.list_max_results' => 5,
-    ]);
-
-    $user = User::factory()->make(['qbo_employee_ref' => '7']);
-    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern('/STARTPOSITION 1 MAXRESULTS 2/'))
-        ->andReturn([
-            (object) ['CustomerRef' => (object) ['value' => '11']],
-            (object) ['CustomerRef' => (object) ['value' => '12']],
-        ]);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern('/STARTPOSITION 3 MAXRESULTS 2/'))
-        ->andReturn([]);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(Mockery::pattern('/FROM Customer WHERE Id IN/'))
-        ->andReturn([
-            (object) ['Id' => '11', 'DisplayName' => 'Alpha', 'Job' => false, 'Active' => true],
-            (object) ['Id' => '12', 'DisplayName' => 'Beta', 'Job' => false, 'Active' => true],
-        ]);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
-
-    $quickBooks = Mockery::mock(QuickBooksService::class);
-    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
-
-    expect(makeQboCustomerListService($quickBooks)->listForUser($user, $token))->toHaveCount(2);
 });

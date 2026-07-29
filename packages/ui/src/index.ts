@@ -3,6 +3,7 @@
  */
 
 export { Button } from './components/Button'
+export { AppDialog } from './components/AppDialog'
 export { ConfirmDialog } from './components/ConfirmDialog'
 export { TextAreaField } from './components/TextAreaField'
 export { LazySearchCombobox } from './components/LazySearchCombobox'

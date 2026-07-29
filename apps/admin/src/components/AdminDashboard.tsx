@@ -138,6 +138,9 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             onEmployeeDropdownClose={provisioning.onEmployeeDropdownClose}
             onSubmit={provisioning.onCreateTimesheetUser}
             onRemoveTimesheetUser={provisioning.onRemoveTimesheetUser}
+            onClientAssignmentsSaved={provisioning.onClientAssignmentsSaved}
+            onError={admin.showError}
+            onSuccess={admin.showSuccess}
           />
         </div>
       )}

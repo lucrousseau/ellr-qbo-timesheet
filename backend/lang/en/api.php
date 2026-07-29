@@ -19,6 +19,7 @@ return [
     'qbo_employee_removed' => 'Your QuickBooks employee access was removed. Contact an administrator.',
     'qbo_employee_email_missing' => 'QuickBooks employee has no email address configured.',
     'qbo_employee_email_conflict' => 'QuickBooks employee email is already used by another account.',
+    'admin_invalid_customer_assignment' => 'One or more selected clients are not available in QuickBooks.',
     'time_activity_not_found' => 'Time activity not found',
     'time_tracker_empty' => 'No active timer session to log.',
     'time_tracker_no_elapsed_time' => 'Timer has no elapsed time to log.',

@@ -10,6 +10,7 @@ import {
   fetchQboServices,
   fetchTimeTracker,
   logTimeTracker,
+  qboRefsMatch,
   updateTimeTracker,
   type QboPickerOption,
   type TimeTrackerSession,
@@ -261,6 +262,25 @@ export function useTimeTracker(enabled = true) {
     onError: (errorMessage) => showError(errorMessage),
     errorMessage: t('timesheet.loadCustomersFailed'),
   })
+
+  useEffect(() => {
+    if (!customersSelect.loaded || state.customer === null) {
+      return
+    }
+
+    const selectedCustomerId = state.customer.id
+    const isAllowed = customersSelect.items.some((item) =>
+      qboRefsMatch(item.id, selectedCustomerId),
+    )
+
+    if (!isAllowed) {
+      applyState((current) => ({
+        ...current,
+        customer: null,
+        project: null,
+      }))
+    }
+  }, [applyState, customersSelect.items, customersSelect.loaded, state.customer])
 
   const projectsSelect = useLazyApiSelect({
     enabled: enabled && !loading && state.customer !== null,
