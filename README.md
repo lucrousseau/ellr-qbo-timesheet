@@ -110,6 +110,8 @@ npm run docker:smoke     # wait for API/admin/timesheet, health, and login via a
 npm run docker:logs      # follow all service logs
 npm run docker:down      # stop containers
 npm run docker:reset     # stop and remove volumes (fresh node_modules vendor cache)
+npm run docker:cache:clear  # reset volumes, remove local images, prune npm BuildKit cache mounts
+npm run docker:test:scripts  # shell tests for docker/node/sync-deps.sh
 ```
 
 Docker and local non-Docker dev both use **SQLite** (`backend/database/database.sqlite`, configured in `backend/.env`). **MySQL is for production only** (see Production below). Tests always use in-memory SQLite.
@@ -127,7 +129,9 @@ For backend-only deploys, run `sh scripts/sync-password-policy.sh` so `backend/c
 
 Frontends call the API through the Vite dev proxy (`VITE_API_URL=/api` in Docker) so Sanctum session cookies work on `localhost:5173` and `localhost:5174`. If you have an existing `apps/admin/.env` or `apps/timesheet/.env` with `VITE_API_URL=http://localhost:8000/api`, update it to `VITE_API_URL=/api` (see `apps/*/.env.example`). Optional port overrides: `API_PORT`, `ADMIN_PORT`, `TIMESHEET_PORT` in `docker/.env` (copy from `docker/.env.example`).
 
-`node-init` installs npm dependencies once before admin and timesheet start. Lock file changes (`package-lock.json`, `composer.lock`) trigger a fresh install on the next container start.
+`node-init` seeds `node_modules` from the image before admin and timesheet start (fast copy instead of a second `npm ci` when the lock file matches the build). If `package-lock.json` changes without rebuilding, the next start runs `npm ci` using a persistent npm cache volume. Rebuild images after lock file changes (`npm run docker:up:build`). Composer lock changes trigger a fresh `composer install` on the next API start.
+
+`docker:cache:clear` removes project volumes and local images, then prunes npm BuildKit cache mounts only. Set `DOCKER_CACHE_CLEAR_ALL=1` before running it to prune the entire Docker builder cache on your machine.
 
 ### Local (without Docker)
 

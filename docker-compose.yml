@@ -33,6 +33,7 @@ services:
     volumes:
       - .:/app
       - node_modules:/app/node_modules
+      - npm_cache:/root/.npm
     entrypoint: ["/usr/local/bin/sync-node-deps.sh"]
     restart: "no"
 
@@ -51,6 +52,7 @@ services:
     volumes:
       - .:/app
       - node_modules:/app/node_modules
+      - npm_cache:/root/.npm
     command: npm run dev --workspace=admin -- --host 0.0.0.0
     depends_on:
       api:
@@ -73,6 +75,7 @@ services:
     volumes:
       - .:/app
       - node_modules:/app/node_modules
+      - npm_cache:/root/.npm
     command: npm run dev --workspace=timesheet -- --host 0.0.0.0
     depends_on:
       api:
@@ -83,3 +86,4 @@ services:
 volumes:
   api_vendor:
   node_modules:
+  npm_cache:
