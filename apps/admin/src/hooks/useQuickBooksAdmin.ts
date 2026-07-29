@@ -83,6 +83,7 @@ export function useQuickBooksAdmin() {
     user,
     setUser,
     authLoading,
+    apiUnavailable,
     email,
     setEmail,
     password,
@@ -92,6 +93,7 @@ export function useQuickBooksAdmin() {
     handleLogout,
     loggingIn,
     loggingOut,
+    bootstrap,
   } = useAuth({
     onUserLoaded: loadQuickBooksStatus,
   })
@@ -167,6 +169,8 @@ export function useQuickBooksAdmin() {
   return {
     user,
     authLoading,
+    apiUnavailable,
+    bootstrap,
     email,
     setEmail,
     password,

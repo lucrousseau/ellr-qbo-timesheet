@@ -71,10 +71,12 @@ elif [ "$DB_CONNECTION" = "mysql" ]; then
   done
 fi
 
-php artisan migrate --force
+if [ "${CONTAINER_ROLE:-api}" != "queue" ]; then
+  php artisan migrate --force
 
-if [ "$APP_ENV" = "local" ] && [ "$DEV_SEED_ENABLED" = "true" ]; then
-  php artisan db:seed --force
+  if [ "$APP_ENV" = "local" ] && [ "$DEV_SEED_ENABLED" = "true" ]; then
+    php artisan db:seed --force
+  fi
 fi
 
 mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache

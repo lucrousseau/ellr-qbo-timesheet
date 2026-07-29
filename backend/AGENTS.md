@@ -43,6 +43,7 @@ composer qa                # format + analyse + coverage + arch + behat
 - Protected routes: `auth:sanctum` middleware.
 - Mock `QuickBooksService` in tests; never call the Intuit API in tests.
 - **QBO API economy**: cache read-heavy lists (`QboEmployeeListService`), manual `?refresh=1` bypass, invalidate on disconnect. See `.cursor/rules/quickbooks-api.mdc`.
+- **Time activity read model (Phase 2)**: webhooks, reconcile, local snapshots. See `docs/quickbooks-time-activity-sync.md`.
 - Avoid bloated controllers: extract a service if auth, QBO mapping, or employee rules grow.
 - **PHPDoc** on all code in `app/`; see `.cursor/rules/phpdoc.mdc` and `.cursor/rules/language.mdc`.
 

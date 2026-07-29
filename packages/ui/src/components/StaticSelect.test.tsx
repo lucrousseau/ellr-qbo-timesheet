@@ -28,4 +28,20 @@ describe('StaticSelect', () => {
 
     expect(onChange).toHaveBeenCalledWith('fr')
   })
+
+  it('shows placeholder when value is null', () => {
+    render(
+      <StaticSelect
+        label="Language"
+        placeholder="Pick one"
+        value={null}
+        options={['en', 'fr'] as const}
+        onChange={vi.fn()}
+        getOptionValue={(locale) => locale}
+        getOptionLabel={(locale) => (locale === 'en' ? 'English' : 'French')}
+      />,
+    )
+
+    expect(screen.getByText('Pick one')).toBeInTheDocument()
+  })
 })

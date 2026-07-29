@@ -1,20 +1,25 @@
 <?php
 
 use App\Exceptions\QuickBooksOAuthException;
+use App\Jobs\ReconcileRealmTimeActivitiesJob;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QuickBooksConnectionValidationService;
 use App\Services\QuickBooksOAuthCallbackService;
 use App\Services\QuickBooksService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 
 covers(QuickBooksOAuthCallbackService::class);
+covers(ReconcileRealmTimeActivitiesJob::class);
 
 uses(RefreshDatabase::class);
 
 it('exchanges oauth code for the user encoded in state', function () {
+    Queue::fake();
+
     $user = User::factory()->create();
-    $token = QuickBooksToken::factory()->forUser($user)->make(['realm_id' => '1234567890']);
+    $token = QuickBooksToken::factory()->forUser($user)->create(['realm_id' => '1234567890']);
 
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('consumeAuthorizationState')
@@ -37,6 +42,8 @@ it('exchanges oauth code for the user encoded in state', function () {
         'secure-state',
         null,
     );
+
+    Queue::assertPushed(ReconcileRealmTimeActivitiesJob::class, fn (ReconcileRealmTimeActivitiesJob $job) => $job->tokenId === $token->id);
 });
 
 it('rejects oauth callback when session user differs from state user', function () {

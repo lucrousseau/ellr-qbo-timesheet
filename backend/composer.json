@@ -60,7 +60,7 @@
         ],
         "test:coverage": [
             "@php artisan config:clear --ansi",
-            "XDEBUG_MODE=off php -d pcov.enabled=1 vendor/bin/pest --coverage --min=85"
+            "XDEBUG_MODE=off php -d memory_limit=512M -d pcov.enabled=1 vendor/bin/pest --coverage --min=85"
         ],
         "test:arch": "vendor/bin/pest tests/Arch",
         "test:unit": "vendor/bin/pest tests/Unit",

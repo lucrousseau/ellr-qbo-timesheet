@@ -33,6 +33,8 @@ class FeatureContext implements Context
 
     private ?int $timesheetUserId = null;
 
+    private ?string $webhookVerifier = null;
+
     /**
      * @BeforeScenario
      * @return void
@@ -46,6 +48,7 @@ class FeatureContext implements Context
         $this->cookies = [];
         $this->statefulClient = false;
         $this->timesheetUserId = null;
+        $this->webhookVerifier = null;
     }
 
     /**
@@ -58,6 +61,7 @@ class FeatureContext implements Context
         $this->cookies = [];
         $this->statefulClient = false;
         $this->timesheetUserId = null;
+        $this->webhookVerifier = null;
         $this->resetAuthenticationState();
         self::$app = null;
     }
@@ -223,6 +227,57 @@ class FeatureContext implements Context
     }
 
     /**
+     * @Given the quickbooks webhook verifier is :token
+     * @param  string  $token  Intuit webhook verifier token.
+     * @return void
+     */
+    public function theQuickbooksWebhookVerifierIs(string $token): void
+    {
+        config(['quickbooks.webhook_verifier' => $token]);
+        $this->webhookVerifier = $token;
+    }
+
+    /**
+     * @Given the quickbooks webhook max payload bytes is :bytes
+     * @param  int  $bytes  Maximum raw webhook body size.
+     * @return void
+     */
+    public function theQuickbooksWebhookMaxPayloadBytesIs(int $bytes): void
+    {
+        config(['quickbooks.webhook_max_payload_bytes' => $bytes]);
+    }
+
+    /**
+     * @When I post a signed quickbooks webhook with JSON:
+     * @param  string  $body  JSON request body.
+     * @return void
+     */
+    public function iPostASignedQuickbooksWebhookWithJson(string $body): void
+    {
+        $verifier = $this->webhookVerifier ?? (string) config('quickbooks.webhook_verifier');
+
+        if ($verifier === '') {
+            throw new RuntimeException('QuickBooks webhook verifier is not configured.');
+        }
+
+        $signature = base64_encode(hash_hmac('sha256', $body, $verifier, true));
+
+        $this->dispatchRequest('POST', '/api/quickbooks/webhook', $body, [
+            'HTTP_INTUIT_SIGNATURE' => $signature,
+        ]);
+    }
+
+    /**
+     * @When I post an unsigned quickbooks webhook with JSON:
+     * @param  string  $body  JSON request body.
+     * @return void
+     */
+    public function iPostAnUnsignedQuickbooksWebhookWithJson(string $body): void
+    {
+        $this->dispatchRequest('POST', '/api/quickbooks/webhook', $body);
+    }
+
+    /**
      * @Then the response status should be :status
      * @param  int  $status  Expected HTTP status code.
      * @return void
@@ -347,9 +402,10 @@ class FeatureContext implements Context
      * @param  string  $method  HTTP method.
      * @param  string  $path  Request path.
      * @param  string|null  $body  Optional JSON request body.
+     * @param  array<string, string>  $extraHeaders  Additional server headers.
      * @return void
      */
-    private function dispatchRequest(string $method, string $path, ?string $body = null): void
+    private function dispatchRequest(string $method, string $path, ?string $body = null, array $extraHeaders = []): void
     {
         if ($this->timesheetUserId !== null) {
             $path = str_replace('{timesheet_user_id}', (string) $this->timesheetUserId, $path);
@@ -365,7 +421,10 @@ class FeatureContext implements Context
             $path = str_replace('{admin_user_id}', (string) $user->id, $path);
         }
 
-        $server = $this->requestServerHeaders($method, $body !== null);
+        $server = array_merge(
+            $this->requestServerHeaders($method, $body !== null),
+            $extraHeaders,
+        );
 
         $request = Request::create($path, $method, [], $this->cookies, [], $server, $body);
 

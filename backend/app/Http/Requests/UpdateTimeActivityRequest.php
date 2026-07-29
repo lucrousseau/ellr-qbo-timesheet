@@ -34,6 +34,7 @@ class UpdateTimeActivityRequest extends FormRequest
                 Rule::when($this->filled('start_time'), 'after:start_time'),
             ],
             'description' => ['nullable', 'string', 'max:4000'],
+            'is_billable' => ['sometimes', 'boolean'],
         ];
     }
 }

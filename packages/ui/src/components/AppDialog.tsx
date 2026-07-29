@@ -36,7 +36,7 @@ export function AppDialog({
     <Dialog open={open} onClose={onClose}>
       <DialogBackdrop className={dialogBackdropClass} />
       <div className={dialogContainerClass}>
-        <DialogPanel className={`${panelClassName} max-w-lg`}>
+        <DialogPanel className={panelClassName}>
           <DialogTitle className={dialogTitleClass}>{title}</DialogTitle>
           <div className="mt-4">{children}</div>
           {footer ? <div className="mt-6 flex justify-end gap-3">{footer}</div> : null}

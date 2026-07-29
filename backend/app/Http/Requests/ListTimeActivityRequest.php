@@ -28,6 +28,7 @@ class ListTimeActivityRequest extends FormRequest
         return [
             'start_position' => ['sometimes', 'integer', 'min:1'],
             'max_results' => ['sometimes', 'integer', 'min:1', 'max:'.$maxResults],
+            'refresh' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -49,5 +50,15 @@ class ListTimeActivityRequest extends FormRequest
     public function listMaxResults(): int
     {
         return (int) ($this->validated('max_results') ?? config('quickbooks.time_activities_max_results', 100));
+    }
+
+    /**
+     * Returns whether the client requested a fresh QuickBooks scan.
+     *
+     * @return bool
+     */
+    public function listRefresh(): bool
+    {
+        return $this->boolean('refresh');
     }
 }

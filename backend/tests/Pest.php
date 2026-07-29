@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\QuickBooksToken;
+use App\Models\TimeActivitySnapshot;
 use App\Models\User;
 use App\Support\PasswordPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -93,6 +95,55 @@ function validTestPassword(): string
 function validTestPasswordAlt(): string
 {
     return PasswordPolicy::validTestPasswordAlt();
+}
+
+/**
+ * Builds a QuickBooks-shaped time activity entity for mocks and sync stubs.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function timeActivityQboEntity(string $id, string $employeeRef = '7', array $overrides = []): object
+{
+    return (object) array_merge([
+        'Id' => $id,
+        'SyncToken' => '0',
+        'EmployeeRef' => (object) ['value' => $employeeRef],
+        'StartTime' => '2026-07-29T09:00:00',
+        'EndTime' => '2026-07-29T10:00:00',
+        'TxnDate' => '2026-07-29',
+    ], $overrides);
+}
+
+/**
+ * Seeds snapshot rows for list endpoint tests without calling QuickBooks.
+ */
+function seedListedTimeActivities(QuickBooksToken $token, string $employeeRef, int $count, int $startId = 1): void
+{
+    for ($index = 0; $index < $count; $index++) {
+        $id = (string) ($startId + $index);
+        $start = now()->subHours($count - $index);
+
+        TimeActivitySnapshot::factory()
+            ->forRealm($token->realm_id)
+            ->forEmployee($employeeRef)
+            ->create([
+                'qbo_id' => $id,
+                'start_time' => $start,
+                'end_time' => $start->copy()->addHour(),
+                'txn_date' => $start->toDateString(),
+            ]);
+    }
+}
+
+/**
+ * Returns a token with pre-seeded snapshots so list reads skip reconcile.
+ */
+function quickBooksTokenWithListedActivities(User $user, string $employeeRef = '7', int $count = 1): QuickBooksToken
+{
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+    seedListedTimeActivities($token, $employeeRef, $count);
+
+    return $token;
 }
 
 /**

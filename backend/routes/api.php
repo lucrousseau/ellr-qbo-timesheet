@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AdminQboEmployeeController;
 use App\Http\Controllers\Api\AdminQuickBooksPickerController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AdminUserCustomerController;
+use App\Http\Controllers\Api\AdminUserTimeActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\HealthController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\QboEmployeeController;
 use App\Http\Controllers\Api\QuickBooksAuthController;
 use App\Http\Controllers\Api\QuickBooksEmployeeController;
 use App\Http\Controllers\Api\QuickBooksPickerController;
+use App\Http\Controllers\Api\QuickBooksWebhookController;
 use App\Http\Controllers\Api\TimeActivityController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Http\Controllers\Api\UserLocaleController;
@@ -39,6 +41,7 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
 // Intuit OAuth redirect (no session required; validated in QuickBooksAuthController).
 Route::middleware('throttle:30,1')->group(function () {
     Route::get('/quickbooks/callback', [QuickBooksAuthController::class, 'callback']);
+    Route::post('/quickbooks/webhook', [QuickBooksWebhookController::class, 'store']);
 });
 
 // Sanctum session required for profile, QBO link, and time activities.
@@ -57,6 +60,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
             Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
             Route::get('/admin/users/{user}/customers', [AdminUserCustomerController::class, 'show']);
             Route::put('/admin/users/{user}/customers', [AdminUserCustomerController::class, 'update']);
+            Route::get('/admin/users/{user}/time-activities', [AdminUserTimeActivityController::class, 'index']);
+            Route::patch('/admin/users/{user}/time-activities/{id}', [AdminUserTimeActivityController::class, 'update']);
             Route::get('/admin/quickbooks/customers', [AdminQuickBooksPickerController::class, 'customers']);
             Route::patch('/user/qbo-employee', [QboEmployeeController::class, 'update']);
             Route::patch('/admin/users/{user}/qbo-employee', [AdminQboEmployeeController::class, 'update']);

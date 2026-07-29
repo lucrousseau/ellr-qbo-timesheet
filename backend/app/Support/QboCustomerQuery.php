@@ -77,4 +77,28 @@ class QboCustomerQuery
 
         return "SELECT Id, Name FROM Item WHERE Active = true AND Type = 'Service' MAXRESULTS {$maxResults}";
     }
+
+    /**
+     * Loads service item entities for a bounded list of identifiers.
+     *
+     * @param  list<string>  $itemRefs  QuickBooks item identifiers.
+     * @param  int  $maxResults  QuickBooks MAXRESULTS cap.
+     * @return string
+     */
+    public static function itemsByIds(array $itemRefs, int $maxResults): string
+    {
+        $ids = array_values(array_filter(array_map(
+            fn (string $ref): string => preg_replace('/\D+/', '', $ref) ?? '',
+            $itemRefs,
+        )));
+
+        if ($ids === []) {
+            return "SELECT Id, Name FROM Item WHERE Id = '0' MAXRESULTS 1";
+        }
+
+        $quotedIds = implode("','", $ids);
+        $maxResults = max(1, $maxResults);
+
+        return "SELECT Id, Name FROM Item WHERE Id IN ('{$quotedIds}') MAXRESULTS {$maxResults}";
+    }
 }

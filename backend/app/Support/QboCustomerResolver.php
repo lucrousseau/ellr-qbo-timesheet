@@ -56,7 +56,7 @@ class QboCustomerResolver
                 continue;
             }
 
-            $customers[$this->entityId($entity)] = $this->normalizeCustomer($entity);
+            $customers[(string) ($entity->Id ?? '')] = $this->normalizeCustomer($entity);
         }
 
         foreach ($this->fetchCustomersByIds($dataService, $parentRefs, $maxResults) as $parent) {
@@ -64,7 +64,7 @@ class QboCustomerResolver
                 continue;
             }
 
-            $customers[$this->entityId($parent)] = $this->normalizeCustomer($parent);
+            $customers[(string) ($parent->Id ?? '')] = $this->normalizeCustomer($parent);
         }
 
         $rows = array_values($customers);
@@ -96,6 +96,37 @@ class QboCustomerResolver
     public function extractProjectRef(object $activity): ?string
     {
         return $this->extractRefValue($activity->ProjectRef ?? null);
+    }
+
+    /**
+     * Extracts a service item reference from a QuickBooks time activity row.
+     *
+     * @param  object  $activity  QuickBooks TimeActivity entity.
+     * @return string|null
+     */
+    public function extractItemRef(object $activity): ?string
+    {
+        return $this->extractRefValue($activity->ItemRef ?? null);
+    }
+
+    /**
+     * Reads a QuickBooks reference value from a time activity field.
+     *
+     * @param  mixed  $activity  QuickBooks TimeActivity entity or array row.
+     * @param  string  $field  Reference field name (for example `CustomerRef`).
+     * @return string|null
+     */
+    public function activityRef(mixed $activity, string $field): ?string
+    {
+        if (is_array($activity)) {
+            return $this->extractRefValue($activity[$field] ?? null);
+        }
+
+        if (! is_object($activity)) {
+            return null;
+        }
+
+        return $this->extractRefValue($activity->{$field} ?? null);
     }
 
     /**
@@ -207,17 +238,6 @@ class QboCustomerResolver
     }
 
     /**
-     * Returns the QuickBooks identifier for a customer entity.
-     *
-     * @param  object  $customer  QuickBooks Customer entity.
-     * @return string
-     */
-    private function entityId(object $customer): string
-    {
-        return (string) ($customer->Id ?? '');
-    }
-
-    /**
      * Maps a QuickBooks customer entity to a JSON-friendly shape.
      *
      * @param  object  $customer  QuickBooks Customer entity.
@@ -226,7 +246,7 @@ class QboCustomerResolver
     private function normalizeCustomer(object $customer): array
     {
         return [
-            'id' => $this->entityId($customer),
+            'id' => (string) ($customer->Id ?? ''),
             'display_name' => (string) ($customer->DisplayName ?? ''),
         ];
     }

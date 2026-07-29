@@ -249,6 +249,10 @@ it('logs elapsed time to quickbooks and clears the session', function () {
     $dataService->shouldReceive('Add')
         ->once()
         ->andReturn((object) ['Id' => '99']);
+    $dataService->shouldReceive('FindById')
+        ->once()
+        ->with('TimeActivity', '99')
+        ->andReturn(timeActivityQboEntity('99'));
     $dataService->shouldReceive('getLastError')->andReturn(null);
 
     $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {

@@ -45,7 +45,13 @@ class TimeActivityController extends Controller
         $user = $request->user();
         $token = $this->tokenResolver->resolve($user);
 
-        return response()->json($this->timeActivityList->listForUser($user, $token, $request->listStartPosition(), $request->listMaxResults()));
+        return response()->json($this->timeActivityList->listForUser(
+            $user,
+            $token,
+            $request->listStartPosition(),
+            $request->listMaxResults(),
+            $request->listRefresh(),
+        ));
     }
 
     /**

@@ -4,6 +4,8 @@
 
 import { apiFetch } from './api'
 import type { User } from './auth'
+import type { ListTimeActivitiesParams, TimeActivity, TimeActivityListResponse } from './timesheet'
+import type { TimeActivityUpdatePayload } from './timeActivityFormat'
 
 /**
  * QuickBooks customer option for administrator and timesheet pickers.
@@ -131,4 +133,55 @@ export async function syncTimesheetUserCustomers(
     method: 'PUT',
     body: JSON.stringify(payload),
   })
+}
+
+/**
+ * Lists time activities for a provisioned timesheet user (administrator scope).
+ * @param userId Application user id.
+ * @param params Optional QuickBooks pagination parameters.
+ * @returns Activity rows and pagination metadata.
+ */
+export async function listAdminUserTimeActivities(
+  userId: number,
+  params: ListTimeActivitiesParams = {},
+): Promise<TimeActivityListResponse> {
+  const search = new URLSearchParams()
+
+  if (params.start_position !== undefined) {
+    search.set('start_position', String(params.start_position))
+  }
+
+  if (params.max_results !== undefined) {
+    search.set('max_results', String(params.max_results))
+  }
+
+  const query = search.toString()
+  const path = query
+    ? `/admin/users/${userId}/time-activities?${query}`
+    : `/admin/users/${userId}/time-activities`
+
+  return apiFetch(path)
+}
+
+/**
+ * Updates a time activity for a provisioned timesheet user (administrator scope).
+ * @param userId Application user id.
+ * @param activityId QuickBooks time activity identifier.
+ * @param payload Fields to update.
+ * @returns Updated QuickBooks activity data.
+ */
+export async function updateAdminUserTimeActivity(
+  userId: number,
+  activityId: string,
+  payload: TimeActivityUpdatePayload,
+): Promise<TimeActivity> {
+  const response = await apiFetch<{ data: TimeActivity }>(
+    `/admin/users/${userId}/time-activities/${activityId}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+  )
+
+  return response.data
 }

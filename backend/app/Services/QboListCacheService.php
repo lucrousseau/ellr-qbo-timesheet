@@ -23,6 +23,8 @@ class QboListCacheService
 
     public const RESOURCE_SERVICES = 'services';
 
+    public const RESOURCE_TIME_ACTIVITIES = 'time_activities';
+
     /**
      * Returns the configured cache TTL for QBO list endpoints in minutes.
      *

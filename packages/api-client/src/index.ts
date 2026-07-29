@@ -9,7 +9,9 @@ export {
   fetchQboEmployees,
   fetchTimesheetUserCustomers,
   fetchTimesheetUsers,
+  listAdminUserTimeActivities,
   syncTimesheetUserCustomers,
+  updateAdminUserTimeActivity,
   type CreateTimesheetUserPayload,
   type QboCustomerOption,
   type QboEmployeeOption,
@@ -56,6 +58,14 @@ export {
   type QuickBooksStatus,
 } from './quickbooks'
 export {
+  formatTimeActivityDuration,
+  fromDateTimeLocalValue,
+  parseTimeActivityRow,
+  toDateTimeLocalValue,
+  type TimeActivityRow,
+  type TimeActivityUpdatePayload,
+} from './timeActivityFormat'
+export {
   createTimeActivity,
   discardTimeTracker,
   fetchQboCustomers,
@@ -64,6 +74,7 @@ export {
   fetchTimeTracker,
   listTimeActivities,
   logTimeTracker,
+  updateTimeActivity,
   updateTimeTracker,
   type ListTimeActivitiesParams,
   type QboPickerOption,

@@ -12,16 +12,21 @@ namespace App\Support;
 final class TimeActivityQuery
 {
     /**
-     * Builds a SELECT query for an employee's time activities with pagination.
+     * Builds a paginated SELECT for time activities within a transaction date window.
      *
-     * @param  string  $employeeRef  QuickBooks employee reference.
+     * QuickBooks does not allow filtering TimeActivity by EmployeeRef in queries.
+     * Employee scoping is applied in PHP after the query returns.
+     *
      * @param  int  $startPosition  QuickBooks STARTPOSITION (1-based).
      * @param  int  $maxResults  QuickBooks MAXRESULTS cap.
+     * @param  string  $minTxnDate  Inclusive lower bound (YYYY-MM-DD).
      * @return string
      */
-    public static function listForEmployee(string $employeeRef, int $startPosition, int $maxResults): string
+    public static function listPage(int $startPosition, int $maxResults, string $minTxnDate): string
     {
-        return "SELECT * FROM TimeActivity WHERE EmployeeRef = '".self::escapeValue($employeeRef)."' STARTPOSITION {$startPosition} MAXRESULTS {$maxResults}";
+        return "SELECT * FROM TimeActivity WHERE TxnDate >= '"
+            .self::escapeValue($minTxnDate)
+            ."' STARTPOSITION {$startPosition} MAXRESULTS {$maxResults}";
     }
 
     /**

@@ -2,7 +2,7 @@
  * @file Admin UI for QuickBooks OAuth connection and QBO employee mapping.
  */
 
-import { AppShell, LoadingScreen, LocaleProvider, useLocale, usePasswordResetInviteGate, useSyncUserLocale } from '@ellr/ui'
+import { AppShell, BootstrapUnavailableScreen, LoadingScreen, LocaleProvider, useLocale, usePasswordResetInviteGate, useSyncUserLocale } from '@ellr/ui'
 import { AdminDashboard } from './components/AdminDashboard'
 import { AdminGuestAuth } from './components/AdminGuestAuth'
 import { useQuickBooksAdmin } from './hooks/useQuickBooksAdmin'
@@ -21,6 +21,12 @@ function AdminApp() {
   })
 
   useSyncUserLocale(admin.user)
+
+  if (admin.apiUnavailable) {
+    return (
+      <BootstrapUnavailableScreen onRetry={() => void admin.bootstrap()} retrying={admin.authLoading} />
+    )
+  }
 
   if (resetInviteGate.gateLoading) {
     return <LoadingScreen />

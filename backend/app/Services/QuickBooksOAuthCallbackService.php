@@ -7,6 +7,7 @@
 namespace App\Services;
 
 use App\Exceptions\QuickBooksOAuthException;
+use App\Jobs\ReconcileRealmTimeActivitiesJob;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 
@@ -46,6 +47,10 @@ class QuickBooksOAuthCallbackService
 
         $token = $this->quickBooks->exchangeCode($code, $realmId, $user);
         $this->connectionValidation->validateAdministratorConnection($user, $token);
+
+        if (config('quickbooks.time_activities_reconcile_enabled', true)) {
+            ReconcileRealmTimeActivitiesJob::dispatch($token->id);
+        }
     }
 
     /**

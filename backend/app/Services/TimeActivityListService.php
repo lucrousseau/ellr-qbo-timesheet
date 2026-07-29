@@ -8,23 +8,44 @@ namespace App\Services;
 
 use App\Models\QuickBooksToken;
 use App\Models\User;
-use App\Support\TimeActivityQuery;
 use App\Support\UsesQuickBooksEmployeeScope;
 
 /**
- * Queries QuickBooks for time activities scoped to the user's employee.
+ * Reads time activities from the local snapshot read model.
  */
 class TimeActivityListService
 {
-    use UsesQuickBooksEmployeeScope;
+    use UsesQuickBooksEmployeeScope {
+        __construct as private initializeQuickBooksEmployeeScope;
+    }
+
+    /**
+     * Injects QuickBooks dependencies, sync, and snapshot queries.
+     *
+     * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
+     * @param  QboEmployeeAuthorizationService  $employeeAuthorization  QBO employee ownership checks.
+     * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
+     * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
+     * @param  TimeActivitySyncService  $sync  Realm-wide reconcile from QuickBooks.
+     */
+    public function __construct(
+        QuickBooksService $quickBooks,
+        QboEmployeeAuthorizationService $employeeAuthorization,
+        QuickBooksApiErrorFormatterService $apiErrors,
+        private readonly TimeActivitySnapshotService $snapshots,
+        private readonly TimeActivitySyncService $sync,
+    ) {
+        $this->initializeQuickBooksEmployeeScope($quickBooks, $employeeAuthorization, $apiErrors);
+    }
 
     /**
      * Lists time activities for the QBO employee linked to the user.
      *
      * @param  User  $user  Authenticated application user.
      * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
-     * @param  int  $startPosition  QuickBooks STARTPOSITION (1-based).
-     * @param  int  $maxResults  QuickBooks MAXRESULTS cap for this request.
+     * @param  int  $startPosition  Application page start (1-based).
+     * @param  int  $maxResults  Maximum rows to return for this page.
+     * @param  bool  $refresh  When true, reconciles from QuickBooks before reading snapshots.
      * @return array{data: array<int, mixed>, meta: array{count: int, max_results: int, start_position: int, truncated: bool}}
      */
     public function listForUser(
@@ -32,16 +53,26 @@ class TimeActivityListService
         QuickBooksToken $token,
         int $startPosition = 1,
         int $maxResults = 100,
+        bool $refresh = false,
     ): array {
         $employeeRef = $this->employeeAuthorization->resolveEmployeeRef($user);
-        $dataService = $this->quickBooks->dataService($token);
+        $realmId = $token->realm_id;
         $configMax = (int) config('quickbooks.time_activities_max_results', 100);
         $maxResults = min(max(1, $maxResults), $configMax);
         $startPosition = max(1, $startPosition);
 
-        $items = $this->queryActivities($dataService, $employeeRef, $startPosition, $maxResults);
+        if ($refresh || ! $this->snapshots->realmHasSnapshots($realmId)) {
+            $this->sync->reconcileRealm($token);
+        }
+
+        [$items, $total] = $this->snapshots->listApiObjectsForEmployee(
+            $realmId,
+            $employeeRef,
+            $startPosition,
+            $maxResults,
+        );
         $count = count($items);
-        $truncated = $this->isTruncated($dataService, $employeeRef, $count, $maxResults, $startPosition);
+        $truncated = $this->isTruncated($count, $maxResults, $startPosition, $total);
 
         return [
             'data' => $items,
@@ -57,75 +88,18 @@ class TimeActivityListService
     /**
      * Determines whether additional rows exist beyond the current page.
      *
-     * @param  object  $dataService  Configured QuickBooks DataService instance.
-     * @param  string  $employeeRef  QuickBooks employee reference.
-     * @param  int  $count  Number of rows returned for the current page.
-     * @param  int  $maxResults  QuickBooks MAXRESULTS cap.
-     * @param  int  $startPosition  QuickBooks STARTPOSITION (1-based).
+     * @param  int  $count  Rows returned for the current page.
+     * @param  int  $maxResults  Requested page size.
+     * @param  int  $startPosition  Application page start (1-based).
+     * @param  int  $total  Total snapshot rows for the employee.
      * @return bool
      */
-    private function isTruncated(
-        object $dataService,
-        string $employeeRef,
-        int $count,
-        int $maxResults,
-        int $startPosition,
-    ): bool {
+    private function isTruncated(int $count, int $maxResults, int $startPosition, int $total): bool
+    {
         if ($count < $maxResults) {
             return false;
         }
 
-        if (! config('quickbooks.time_activities_probe_truncated', true)) {
-            return true;
-        }
-
-        return $this->hasMoreActivities($dataService, $employeeRef, $startPosition + $maxResults);
-    }
-
-    /**
-     * Runs a paginated QuickBooks query and returns activity rows.
-     *
-     * @param  object  $dataService  Configured QuickBooks DataService instance.
-     * @param  string  $employeeRef  QuickBooks employee reference.
-     * @param  int  $startPosition  QuickBooks STARTPOSITION (1-based).
-     * @param  int  $maxResults  QuickBooks MAXRESULTS cap.
-     * @return array<int, mixed>
-     */
-    private function queryActivities(
-        object $dataService,
-        string $employeeRef,
-        int $startPosition,
-        int $maxResults,
-    ): array {
-        $activities = $dataService->Query(
-            TimeActivityQuery::listForEmployee($employeeRef, $startPosition, $maxResults),
-        );
-
-        if ($error = $dataService->getLastError()) {
-            abort($this->apiErrors->jsonResponse($error));
-        }
-
-        return is_array($activities) ? $activities : [];
-    }
-
-    /**
-     * Probes QuickBooks for an additional row beyond the current page.
-     *
-     * @param  object  $dataService  Configured QuickBooks DataService instance.
-     * @param  string  $employeeRef  QuickBooks employee reference.
-     * @param  int  $startPosition  QuickBooks STARTPOSITION for the probe row.
-     * @return bool
-     */
-    private function hasMoreActivities(object $dataService, string $employeeRef, int $startPosition): bool
-    {
-        $probe = $dataService->Query(
-            TimeActivityQuery::listForEmployee($employeeRef, $startPosition, 1),
-        );
-
-        if ($error = $dataService->getLastError()) {
-            abort($this->apiErrors->jsonResponse($error));
-        }
-
-        return is_array($probe) && count($probe) > 0;
+        return ($startPosition + $count - 1) < $total;
     }
 }

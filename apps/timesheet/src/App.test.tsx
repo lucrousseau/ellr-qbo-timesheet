@@ -41,6 +41,10 @@ vi.mock('@ellr/api-client', async () =>
       is_billable: payload.is_billable ?? mockActiveSession.is_billable,
     })),
     fetchAppConfig: vi.fn().mockResolvedValue({ require_email_verification: false }),
+    listTimeActivities: vi.fn().mockResolvedValue({
+      data: [],
+      meta: { count: 0, max_results: 10, start_position: 1, truncated: false },
+    }),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
     resendVerificationEmail: vi.fn(),
@@ -75,15 +79,17 @@ describe('Timesheet App', () => {
     vi.mocked(logout).mockResolvedValue(undefined)
   })
 
-  it('shows an api outage message when session bootstrap fails', async () => {
+  it('shows reconnect UI when session bootstrap fails transiently', async () => {
     vi.mocked(fetchCurrentUser).mockRejectedValue(new TypeError('failed to fetch'))
 
     render(<App />)
 
-    await waitFor(() => {
-      const message = screen.getByText("Unable to reach the Laravel API.")
-      expectMessageClasses(message, 'error')
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText(/reconnecting to the server/i)).toBeInTheDocument()
+      },
+      { timeout: 5000 },
+    )
   })
 
   it('shows loading state while session is bootstrapping', async () => {

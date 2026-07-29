@@ -17,7 +17,26 @@ use QuickBooksOnline\API\Facades\TimeActivity;
  */
 class TimeActivityService
 {
-    use UsesQuickBooksEmployeeScope;
+    use UsesQuickBooksEmployeeScope {
+        __construct as private initializeQuickBooksEmployeeScope;
+    }
+
+    /**
+     * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
+     * @param  QboEmployeeAuthorizationService  $employeeAuthorization  QBO employee ownership checks.
+     * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
+     * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
+     * @param  TimeActivitySyncService  $sync  Single-entity QuickBooks sync.
+     */
+    public function __construct(
+        QuickBooksService $quickBooks,
+        QboEmployeeAuthorizationService $employeeAuthorization,
+        QuickBooksApiErrorFormatterService $apiErrors,
+        private readonly TimeActivitySnapshotService $snapshots,
+        private readonly TimeActivitySyncService $sync,
+    ) {
+        $this->initializeQuickBooksEmployeeScope($quickBooks, $employeeAuthorization, $apiErrors);
+    }
 
     /**
      * Creates a time activity in QuickBooks for the user's employee.
@@ -81,6 +100,8 @@ class TimeActivityService
         if ($error = $dataService->getLastError()) {
             abort($this->apiErrors->jsonResponse($error));
         }
+
+        $this->persistSnapshotAfterWrite($token, (string) $result->Id);
 
         return $result;
     }
@@ -146,12 +167,18 @@ class TimeActivityService
             $payload['Description'] = $validated['description'];
         }
 
+        if (array_key_exists('is_billable', $validated)) {
+            $payload['BillableStatus'] = $validated['is_billable'] ? 'Billable' : 'NotBillable';
+        }
+
         $timeActivity = TimeActivity::update($existing, $payload);
         $result = $dataService->Update($timeActivity);
 
         if ($error = $dataService->getLastError()) {
             abort($this->apiErrors->jsonResponse($error));
         }
+
+        $this->persistSnapshotAfterWrite($token, $id);
 
         return $result;
     }
@@ -174,6 +201,8 @@ class TimeActivityService
         if ($error = $dataService->getLastError()) {
             abort($this->apiErrors->jsonResponse($error));
         }
+
+        $this->snapshots->softDeleteByQboId($token->realm_id, $id);
     }
 
     /**
@@ -199,5 +228,17 @@ class TimeActivityService
         $this->employeeAuthorization->assertActivityBelongsToUser($user, $activity);
 
         return $activity;
+    }
+
+    /**
+     * Refreshes the local snapshot for one time activity after a QuickBooks write.
+     *
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  string  $id  QuickBooks time activity identifier.
+     * @return void
+     */
+    private function persistSnapshotAfterWrite(QuickBooksToken $token, string $id): void
+    {
+        $this->sync->syncOneById($token, $id);
     }
 }

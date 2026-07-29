@@ -5,6 +5,7 @@
 import { Button, cardClass, LazySearchCombobox, useLocale } from '@ellr/ui'
 import { useCallback, useState } from 'react'
 import { ManageTimesheetUserClientsDialog } from './ManageTimesheetUserClientsDialog'
+import { EmployeeTimeEntriesDialog } from './EmployeeTimeEntriesDialog'
 import { RemoveTimesheetAccessDialog } from './RemoveTimesheetAccessDialog'
 import { TimesheetProvisionedUserRow } from './TimesheetProvisionedUserRow'
 import { useManageTimesheetUserClients } from '../hooks/useManageTimesheetUserClients'
@@ -59,7 +60,9 @@ export function TimesheetUserProvisioningPanel({
   const { t } = useLocale()
   const [userToRemove, setUserToRemove] = useState<User | null>(null)
   const [userToManageClients, setUserToManageClients] = useState<User | null>(null)
+  const [userToViewEntries, setUserToViewEntries] = useState<User | null>(null)
   const closeClientDialog = useCallback(() => setUserToManageClients(null), [])
+  const closeEntriesDialog = useCallback(() => setUserToViewEntries(null), [])
   const manageClientsDialog = useManageTimesheetUserClients({
     user: userToManageClients,
     onClose: closeClientDialog,
@@ -145,6 +148,7 @@ export function TimesheetUserProvisioningPanel({
                 removingUserId={removingUserId}
                 onRequestRemove={setUserToRemove}
                 onManageClients={setUserToManageClients}
+                onViewTimeEntries={setUserToViewEntries}
               />
             ))}
           </ul>
@@ -162,6 +166,13 @@ export function TimesheetUserProvisioningPanel({
         user={userToManageClients}
         onClose={closeClientDialog}
         dialog={manageClientsDialog}
+      />
+
+      <EmployeeTimeEntriesDialog
+        user={userToViewEntries}
+        onClose={closeEntriesDialog}
+        onSuccess={onSuccess}
+        onError={onError}
       />
     </section>
   )

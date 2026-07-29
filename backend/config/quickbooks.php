@@ -63,6 +63,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Time activity list scan window
+    |--------------------------------------------------------------------------
+    |
+    | QuickBooks does not support EmployeeRef filters on TimeActivity queries.
+    | The API scans paginated rows within a TxnDate window and filters by
+    | employee in PHP. Use progressive lookback steps so recent-entry views
+    | stop after the first window when possible. Increase caps for large teams.
+    |
+    */
+
+    'time_activities_lookback_days' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_LOOKBACK_DAYS', 90),
+
+    'time_activities_lookback_steps' => array_values(array_filter(array_map(
+        static fn (string $value): int => (int) $value,
+        explode(',', (string) env('QUICKBOOKS_TIME_ACTIVITIES_LOOKBACK_STEPS', '14,30,90')),
+    ))),
+
+    'time_activities_query_batch_size' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_QUERY_BATCH_SIZE', 100),
+
+    'time_activities_scan_max_pages' => (int) env(
+        'QUICKBOOKS_TIME_ACTIVITIES_SCAN_MAX_PAGES',
+        env('QUICKBOOKS_EMPLOYEE_CUSTOMER_SCAN_MAX_PAGES', 10),
+    ),
+
+    'time_activities_list_cache_ttl_minutes' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_LIST_CACHE_TTL_MINUTES', 5),
+
+    /*
+    |--------------------------------------------------------------------------
     | QBO list endpoints (employees, customers, projects, services, ...)
     |--------------------------------------------------------------------------
     |
@@ -103,5 +131,27 @@ return [
     */
 
     'time_tracker_max_accumulated_seconds' => (int) env('QUICKBOOKS_TIME_TRACKER_MAX_ACCUMULATED_SECONDS', 86400),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Time activity snapshot sync (phase 2 read model)
+    |--------------------------------------------------------------------------
+    |
+    | Webhook verifier token from the Intuit Developer portal. Reconcile runs on
+    | a schedule and after OAuth connect to backfill the local snapshot table.
+    |
+    */
+
+    'webhook_verifier' => env('QUICKBOOKS_WEBHOOK_VERIFIER'),
+
+    'webhook_max_payload_bytes' => (int) env('QUICKBOOKS_WEBHOOK_MAX_PAYLOAD_BYTES', 262_144),
+
+    'webhook_max_notifications' => (int) env('QUICKBOOKS_WEBHOOK_MAX_NOTIFICATIONS', 50),
+
+    'webhook_max_entities_per_notification' => (int) env('QUICKBOOKS_WEBHOOK_MAX_ENTITIES_PER_NOTIFICATION', 100),
+
+    'time_activities_reconcile_enabled' => (bool) env('QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_ENABLED', true),
+
+    'time_activities_reconcile_cron' => env('QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_CRON', '0 * * * *'),
 
 ];

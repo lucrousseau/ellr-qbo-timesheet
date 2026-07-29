@@ -2,7 +2,7 @@
  * @file Timesheet UI for creating and reviewing QuickBooks time activities.
  */
 
-import { LoadingScreen, LocaleProvider, usePasswordResetInviteGate, useSyncUserLocale } from '@ellr/ui'
+import { BootstrapUnavailableScreen, LoadingScreen, LocaleProvider, usePasswordResetInviteGate, useSyncUserLocale } from '@ellr/ui'
 import { TimesheetDashboard } from './components/TimesheetDashboard'
 import { TimesheetGuestAuth } from './components/TimesheetGuestAuth'
 import { useTimesheetAuth } from './hooks/useTimesheetAuth'
@@ -27,6 +27,12 @@ function TimesheetApp() {
   const tracker = useTimeTracker(trackerEnabled)
 
   useSyncUserLocale(auth.user)
+
+  if (auth.apiUnavailable) {
+    return (
+      <BootstrapUnavailableScreen onRetry={() => void auth.bootstrap()} retrying={auth.authLoading} />
+    )
+  }
 
   if (resetInviteGate.gateLoading) {
     return <LoadingScreen />

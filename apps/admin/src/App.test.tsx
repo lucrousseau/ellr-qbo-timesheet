@@ -441,24 +441,30 @@ describe('Admin App', () => {
     })
   })
 
-  it('shows bootstrap error when current user loading fails', async () => {
+  it('shows reconnect UI when current user loading fails transiently', async () => {
     vi.mocked(fetchCurrentUser).mockRejectedValue(new TypeError('failed to fetch'))
 
     render(<App />)
 
-    await waitFor(() => {
-      expect(screen.getByText(/unable to reach the laravel api/i)).toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText(/reconnecting to the server/i)).toBeInTheDocument()
+      },
+      { timeout: 5000 },
+    )
   })
 
-  it('shows application bootstrap error for unexpected failures', async () => {
-    vi.mocked(fetchCurrentUser).mockRejectedValue(new Error('bootstrap failed'))
+  it('shows reconnect UI for unexpected transient bootstrap failures', async () => {
+    vi.mocked(fetchCurrentUser).mockRejectedValue(new ApiError(500, 'API error: 500'))
 
     render(<App />)
 
-    await waitFor(() => {
-      expect(screen.getByText(/unable to load the application/i)).toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText(/reconnecting to the server/i)).toBeInTheDocument()
+      },
+      { timeout: 5000 },
+    )
   })
 
   it('shows login error when credentials are rejected', async () => {

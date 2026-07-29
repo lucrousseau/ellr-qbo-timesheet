@@ -8,6 +8,8 @@ use App\Services\QboEmployeeAuthorizationService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityService;
+use App\Services\TimeActivitySnapshotService;
+use App\Services\TimeActivitySyncService;
 use App\Support\TimeActivityTimeValidation;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Validator;
@@ -23,8 +25,12 @@ function makeTimeActivityService(DataService $dataService): TimeActivityService
     $quickBooks->shouldReceive('dataService')->andReturn($dataService);
     $employeeAuth = new QboEmployeeAuthorizationService;
     $apiErrors = new QuickBooksApiErrorFormatterService;
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')->byDefault();
+    $snapshots = Mockery::mock(TimeActivitySnapshotService::class);
+    $snapshots->shouldReceive('softDeleteByQboId')->byDefault();
 
-    return new TimeActivityService($quickBooks, $employeeAuth, $apiErrors);
+    return new TimeActivityService($quickBooks, $employeeAuth, $apiErrors, $snapshots, $sync);
 }
 
 function makeUserWithEmployee(): User
@@ -131,6 +137,33 @@ it('creates a time activity for a user', function () {
         ->and($payload->Description)->toBe('Client work')
         ->and((string) $payload->CustomerRef->value)->toBe('42')
         ->and($payload->CustomerRef->name)->toBe('Acme');
+});
+
+it('syncs the local snapshot after creating a time activity', function () {
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => '99']);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
+    $quickBooks->shouldReceive('dataService')->andReturn($dataService);
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with(Mockery::type(QuickBooksToken::class), '99');
+
+    $service = new TimeActivityService(
+        $quickBooks,
+        new QboEmployeeAuthorizationService,
+        new QuickBooksApiErrorFormatterService,
+        Mockery::mock(TimeActivitySnapshotService::class),
+        $sync,
+    );
+
+    $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [
+        'start_time' => '2026-07-27T09:00:00',
+        'end_time' => '2026-07-27T17:00:00',
+    ]);
 });
 
 it('omits optional customer and description fields when absent', function () {

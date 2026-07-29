@@ -49,6 +49,23 @@ describe('useAuth', () => {
     expect(result.current.bootstrapError).toBeNull()
   })
 
+  it('marks transient bootstrap failures as api unavailable instead of login errors', async () => {
+    vi.mocked(fetchCurrentUser).mockRejectedValue(new ApiError(503, 'API error: 503'))
+
+    const { result } = renderHookWithLocale(() => useAuth())
+
+    await waitFor(
+      () => {
+        expect(result.current.authLoading).toBe(false)
+      },
+      { timeout: 5000 },
+    )
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.apiUnavailable).toBe(true)
+    expect(result.current.bootstrapError).toBeNull()
+  })
+
   it('maps bootstrap failures to localized api errors', async () => {
     vi.mocked(fetchCurrentUser).mockRejectedValue(new ApiError(401, 'API error: 401'))
 
@@ -60,6 +77,20 @@ describe('useAuth', () => {
 
     expect(result.current.user).toBeNull()
     expect(result.current.bootstrapError).toBe('Session expired. Please sign in again.')
+  })
+
+  it('maps non-retryable bootstrap failures to localized api errors', async () => {
+    vi.mocked(fetchCurrentUser).mockRejectedValue(new Error('Unexpected failure'))
+
+    const { result } = renderHookWithLocale(() => useAuth())
+
+    await waitFor(() => {
+      expect(result.current.authLoading).toBe(false)
+    })
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.apiUnavailable).toBe(false)
+    expect(result.current.bootstrapError).toBe('Unable to load the application.')
   })
 
   it('signs in and clears the password field', async () => {

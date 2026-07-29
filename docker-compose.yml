@@ -1,30 +1,44 @@
+x-api-base: &api-base
+  build:
+    context: .
+    dockerfile: docker/api/Dockerfile
+  restart: unless-stopped
+  env_file:
+    - backend/.env
+  environment: &api-environment
+    APP_URL: http://localhost:8000
+    DEV_SEED_ENABLED: "true"
+    FRONTEND_ADMIN_URL: http://localhost:5173
+    FRONTEND_TIMESHEET_URL: http://localhost:5174
+    SANCTUM_STATEFUL_DOMAINS: localhost:5173,localhost:5174
+    QUICKBOOKS_REDIRECT_URI: http://localhost:8000/api/quickbooks/callback
+  volumes:
+    - ./backend:/var/www/html
+    - ./packages/password-policy:/var/www/packages/password-policy:ro
+    - api_vendor:/var/www/html/vendor
+
 services:
   api:
-    build:
-      context: .
-      dockerfile: docker/api/Dockerfile
-    restart: unless-stopped
-    env_file:
-      - backend/.env
-    environment:
-      APP_URL: http://localhost:8000
-      DEV_SEED_ENABLED: "true"
-      FRONTEND_ADMIN_URL: http://localhost:5173
-      FRONTEND_TIMESHEET_URL: http://localhost:5174
-      SANCTUM_STATEFUL_DOMAINS: localhost:5173,localhost:5174
-      QUICKBOOKS_REDIRECT_URI: http://localhost:8000/api/quickbooks/callback
+    <<: *api-base
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
-    volumes:
-      - ./backend:/var/www/html
-      - ./packages/password-policy:/var/www/packages/password-policy:ro
-      - api_vendor:/var/www/html/vendor
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 5s
       timeout: 5s
       retries: 24
       start_period: 120s
+
+  queue:
+    <<: *api-base
+    environment:
+      <<: *api-environment
+      CONTAINER_ROLE: queue
+      DEV_SEED_ENABLED: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3"]
 
   node-init:
     build:

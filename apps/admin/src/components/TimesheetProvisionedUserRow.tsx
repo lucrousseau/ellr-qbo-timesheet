@@ -11,6 +11,7 @@ type TimesheetProvisionedUserRowProps = {
   removingUserId: number | null
   onRequestRemove: (user: User) => void
   onManageClients: (user: User) => void
+  onViewTimeEntries: (user: User) => void
 }
 
 /**
@@ -24,6 +25,7 @@ export function TimesheetProvisionedUserRow({
   removingUserId,
   onRequestRemove,
   onManageClients,
+  onViewTimeEntries,
 }: TimesheetProvisionedUserRowProps) {
   const { t } = useLocale()
   const assignedCount = user.assigned_customers?.length ?? 0
@@ -48,6 +50,15 @@ export function TimesheetProvisionedUserRow({
         </p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="compact"
+          disabled={removing}
+          onClick={() => onViewTimeEntries(user)}
+        >
+          {t('admin.viewTimeEntries')}
+        </Button>
         <Button
           type="button"
           variant="secondary"

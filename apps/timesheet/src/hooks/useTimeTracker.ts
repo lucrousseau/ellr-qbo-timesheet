@@ -114,6 +114,7 @@ export function useTimeTracker(enabled = true) {
   const [state, setState] = useState<TimerState>(emptyTimerState)
   const [loading, setLoading] = useState(enabled)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [entriesRefreshToken, setEntriesRefreshToken] = useState(0)
   const stateRef = useRef(state)
   stateRef.current = state
 
@@ -384,6 +385,7 @@ export function useTimeTracker(enabled = true) {
       const reset = emptyTimerState()
       setState(reset)
       setElapsedSeconds(0)
+      setEntriesRefreshToken((current) => current + 1)
       showSuccess(t('timesheet.savedSuccess'))
     } catch (caught) {
       showError(getApiErrorMessage(caught, t('timesheet.saveFailed'), locale))
@@ -431,5 +433,6 @@ export function useTimeTracker(enabled = true) {
     onElapsedChange,
     onLogTime,
     onDiscard,
+    entriesRefreshToken,
   }
 }

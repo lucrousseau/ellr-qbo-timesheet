@@ -11,6 +11,7 @@ use App\Services\QuickBooksOAuthCallbackService;
 use App\Services\QuickBooksService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
 
 covers(QuickBooksAuthController::class);
@@ -47,8 +48,10 @@ it('rejects quickbooks connect for non-administrators', function () {
 });
 
 it('redirects to admin after oauth callback', function () {
+    Queue::fake();
+
     $user = User::factory()->create();
-    $token = QuickBooksToken::factory()->forUser($user)->make(['realm_id' => '1234567890']);
+    $token = QuickBooksToken::factory()->forUser($user)->create(['realm_id' => '1234567890']);
 
     $this->mock(QuickBooksService::class, function ($mock) use ($token, $user) {
         $mock->shouldReceive('consumeAuthorizationState')
@@ -72,8 +75,10 @@ it('redirects to admin after oauth callback', function () {
 });
 
 it('binds oauth callback to the user encoded in state without an active session', function () {
+    Queue::fake();
+
     $initiator = User::factory()->create();
-    $token = QuickBooksToken::factory()->forUser($initiator)->make(['realm_id' => '1234567890']);
+    $token = QuickBooksToken::factory()->forUser($initiator)->create(['realm_id' => '1234567890']);
 
     $this->mock(QuickBooksService::class, function ($mock) use ($token, $initiator) {
         $mock->shouldReceive('consumeAuthorizationState')

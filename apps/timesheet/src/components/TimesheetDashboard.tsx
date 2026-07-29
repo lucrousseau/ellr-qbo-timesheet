@@ -7,6 +7,7 @@ import {
   AppShell,
   TabNav,
   tabPanelId,
+  TimeActivityEntriesPanel,
   UserPreferencesPanel,
   useLocale,
   useSessionStorageState,
@@ -15,6 +16,7 @@ import { useMemo } from 'react'
 import { isTimesheetTab, timesheetActiveTabStorageKey, type TimesheetTab } from '../timesheetTabStorage'
 import type { useTimesheetAuth } from '../hooks/useTimesheetAuth'
 import type { useTimeTracker } from '../hooks/useTimeTracker'
+import { useRecentTimeActivities } from '../hooks/useRecentTimeActivities'
 import { EmailVerificationBanner } from './EmailVerificationBanner'
 import { QboEmployeeWarning } from './QboEmployeeWarning'
 import { TimeTrackerPanel } from './TimeTrackerPanel'
@@ -49,6 +51,11 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
   )
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'timer'
+  const showTimer = Boolean(user.qbo_employee_ref) && !auth.showEmailVerification(user)
+  const recentEntries = useRecentTimeActivities({
+    enabled: showTimer,
+    refreshToken: tracker.entriesRefreshToken,
+  })
 
   const onLogout = async () => {
     await auth.handleLogout()
@@ -100,36 +107,47 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
           {!user.qbo_employee_ref ? (
             <QboEmployeeWarning />
           ) : auth.showEmailVerification(user) ? null : (
-            <TimeTrackerPanel
-              loading={tracker.loading}
-              headerLabel={tracker.headerLabel}
-              customer={tracker.state.customer}
-              project={tracker.state.project}
-              service={tracker.state.service}
-              description={tracker.state.description}
-              isBillable={tracker.state.isBillable}
-              elapsedSeconds={tracker.elapsedSeconds}
-              isRunning={tracker.isRunning}
-              logging={tracker.logging}
-              discarding={tracker.discarding}
-              message={tracker.message}
-              customersSelect={tracker.customersSelect}
-              projectsSelect={tracker.projectsSelect}
-              servicesSelect={tracker.servicesSelect}
-              showCustomerPicker={tracker.showCustomerPicker}
-              showProjectPicker={tracker.showProjectPicker}
-              showServicePicker={tracker.showServicePicker}
-              onCustomerChange={tracker.onCustomerChange}
-              onProjectChange={tracker.onProjectChange}
-              onServiceChange={tracker.onServiceChange}
-              onDescriptionChange={tracker.onDescriptionChange}
-              onDescriptionBlur={tracker.onDescriptionBlur}
-              onBillableChange={tracker.onBillableChange}
-              onToggleTimer={tracker.onToggleTimer}
-              onElapsedChange={tracker.onElapsedChange}
-              onLogTime={tracker.onLogTime}
-              onDiscard={tracker.onDiscard}
-            />
+            <>
+              <TimeTrackerPanel
+                loading={tracker.loading}
+                headerLabel={tracker.headerLabel}
+                customer={tracker.state.customer}
+                project={tracker.state.project}
+                service={tracker.state.service}
+                description={tracker.state.description}
+                isBillable={tracker.state.isBillable}
+                elapsedSeconds={tracker.elapsedSeconds}
+                isRunning={tracker.isRunning}
+                logging={tracker.logging}
+                discarding={tracker.discarding}
+                message={tracker.message}
+                customersSelect={tracker.customersSelect}
+                projectsSelect={tracker.projectsSelect}
+                servicesSelect={tracker.servicesSelect}
+                showCustomerPicker={tracker.showCustomerPicker}
+                showProjectPicker={tracker.showProjectPicker}
+                showServicePicker={tracker.showServicePicker}
+                onCustomerChange={tracker.onCustomerChange}
+                onProjectChange={tracker.onProjectChange}
+                onServiceChange={tracker.onServiceChange}
+                onDescriptionChange={tracker.onDescriptionChange}
+                onDescriptionBlur={tracker.onDescriptionBlur}
+                onBillableChange={tracker.onBillableChange}
+                onToggleTimer={tracker.onToggleTimer}
+                onElapsedChange={tracker.onElapsedChange}
+                onLogTime={tracker.onLogTime}
+                onDiscard={tracker.onDiscard}
+              />
+              <TimeActivityEntriesPanel
+                title={t('timesheet.recentEntriesTitle')}
+                entries={recentEntries.entries}
+                loading={recentEntries.loading}
+                error={recentEntries.error}
+                hasMore={recentEntries.hasMore}
+                loadingMore={recentEntries.loadingMore}
+                onLoadMore={recentEntries.loadMore}
+              />
+            </>
           )}
         </div>
       ) : (
