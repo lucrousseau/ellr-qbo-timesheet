@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, updateUserLocale } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
@@ -14,6 +14,9 @@ vi.mock('@ellr/api-client', async () =>
     fetchTimesheetUsers: vi.fn(),
     createTimesheetUser: vi.fn(),
     deleteTimesheetUser: vi.fn(),
+    fetchAdminQboCustomers: vi.fn(),
+    fetchTimesheetUserCustomers: vi.fn(),
+    syncTimesheetUserCustomers: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
     updateUserLocale: vi.fn(),
@@ -74,6 +77,9 @@ describe('Admin App', () => {
     vi.mocked(fetchTimesheetUsers).mockReset()
     vi.mocked(createTimesheetUser).mockReset()
     vi.mocked(deleteTimesheetUser).mockReset()
+    vi.mocked(fetchAdminQboCustomers).mockReset()
+    vi.mocked(fetchTimesheetUserCustomers).mockReset()
+    vi.mocked(syncTimesheetUserCustomers).mockReset()
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(fetchQboEmployees).mockResolvedValue([])
@@ -848,6 +854,62 @@ describe('Admin App', () => {
         qbo_employee_ref: '7',
       })
       expect(screen.getByText(/timesheet access created/i)).toBeInTheDocument()
+    })
+  })
+
+  it('manages client access for a provisioned user', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockResolvedValue([])
+    vi.mocked(fetchTimesheetUsers).mockResolvedValue([
+      {
+        id: 2,
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        qbo_employee_ref: '7',
+        qbo_employee_name: 'Jane Doe',
+        all_customers_access: false,
+        assigned_customers: [{ id: '11', display_name: 'Acme Corp' }],
+      },
+    ])
+    vi.mocked(fetchAdminQboCustomers).mockResolvedValue([
+      { id: '11', display_name: 'Acme Corp' },
+      { id: '12', display_name: 'Beta LLC' },
+    ])
+    vi.mocked(fetchTimesheetUserCustomers).mockResolvedValue({
+      all_customers_access: false,
+      data: [{ id: '11', display_name: 'Acme Corp' }],
+    })
+    vi.mocked(syncTimesheetUserCustomers).mockResolvedValue({
+      all_customers_access: false,
+      data: [
+        { id: '11', display_name: 'Acme Corp' },
+        { id: '12', display_name: 'Beta LLC' },
+      ],
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
+    })
+
+    await openIntegrationsTab(user)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /manage clients/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /manage clients/i }))
+
+    const dialog = await screen.findByRole('dialog', { name: /client access for jane doe/i })
+
+    await waitFor(() => {
+      expect(fetchAdminQboCustomers).toHaveBeenCalledWith({ refresh: true })
+      expect(fetchTimesheetUserCustomers).toHaveBeenCalledWith(2)
+      expect(within(dialog).getByRole('checkbox', { name: /access to all clients/i })).toBeEnabled()
+      expect(within(dialog).getByText('Acme Corp')).toBeInTheDocument()
     })
   })
 

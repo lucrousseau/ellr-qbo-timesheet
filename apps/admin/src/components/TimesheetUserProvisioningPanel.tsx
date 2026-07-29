@@ -4,9 +4,10 @@
 
 import { Button, cardClass, LazySearchCombobox, useLocale } from '@ellr/ui'
 import { useCallback, useState } from 'react'
-import { RemoveTimesheetAccessDialog } from './RemoveTimesheetAccessDialog'
 import { ManageTimesheetUserClientsDialog } from './ManageTimesheetUserClientsDialog'
+import { RemoveTimesheetAccessDialog } from './RemoveTimesheetAccessDialog'
 import { TimesheetProvisionedUserRow } from './TimesheetProvisionedUserRow'
+import { useManageTimesheetUserClients } from '../hooks/useManageTimesheetUserClients'
 import type { QboEmployeeOption, TimesheetUserCustomerAccess, User } from '../hooks/useTimesheetProvisioning'
 
 type TimesheetUserProvisioningPanelProps = {
@@ -59,6 +60,13 @@ export function TimesheetUserProvisioningPanel({
   const [userToRemove, setUserToRemove] = useState<User | null>(null)
   const [userToManageClients, setUserToManageClients] = useState<User | null>(null)
   const closeClientDialog = useCallback(() => setUserToManageClients(null), [])
+  const manageClientsDialog = useManageTimesheetUserClients({
+    user: userToManageClients,
+    onClose: closeClientDialog,
+    onSaved: onClientAssignmentsSaved,
+    onError,
+    onSuccess,
+  })
 
   if (!connected) {
     return (
@@ -153,9 +161,7 @@ export function TimesheetUserProvisioningPanel({
       <ManageTimesheetUserClientsDialog
         user={userToManageClients}
         onClose={closeClientDialog}
-        onSaved={onClientAssignmentsSaved}
-        onError={onError}
-        onSuccess={onSuccess}
+        dialog={manageClientsDialog}
       />
     </section>
   )

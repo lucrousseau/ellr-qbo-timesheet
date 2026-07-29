@@ -18,6 +18,8 @@ import {
 import { getApiErrorMessage, useFlashMessage, useGuardedAction, useLazyApiSelect, useLocale } from '@ellr/ui'
 import { computeElapsedSeconds } from '../utils/timerFormat'
 
+export type { QboPickerOption } from '@ellr/api-client'
+
 type TimerState = {
   customer: QboPickerOption | null
   project: QboPickerOption | null

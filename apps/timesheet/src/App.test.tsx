@@ -763,6 +763,37 @@ describe('Timesheet App', () => {
     })
   })
 
+  it('clears a stale client after the picker loads allowed customers', async () => {
+    const user = userEvent.setup()
+    const staleSession = {
+      ...mockActiveSession,
+      customer_ref: '99',
+      customer_name: 'Stale Corp',
+    }
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchTimeTracker).mockResolvedValue(staleSession)
+    vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByLabelText(/^client$/i))
+
+    await waitFor(() => {
+      expect(fetchQboCustomers).toHaveBeenCalled()
+      expect(updateTimeTracker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customer_ref: null,
+          customer_name: null,
+        }),
+      )
+      expect(screen.getByRole('button', { name: /add a client/i })).toBeInTheDocument()
+    })
+  })
+
   it('loads customers when the client picker opens', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)

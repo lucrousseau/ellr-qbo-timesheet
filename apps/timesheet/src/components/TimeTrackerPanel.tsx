@@ -12,7 +12,7 @@ import {
   TextAreaField,
   useLocale,
 } from '@ellr/ui'
-import type { QboPickerOption } from '@ellr/api-client'
+import type { QboPickerOption } from '../hooks/useTimeTracker'
 import { TimerDisplay } from './TimerDisplay'
 
 type PickerSelect = {
