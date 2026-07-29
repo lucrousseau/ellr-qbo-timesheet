@@ -62,4 +62,31 @@ describe('TimerDisplay', () => {
     expect(onElapsedChange).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: 'Edit elapsed time' })).toHaveTextContent('00:02:05')
   })
+
+  it('commits edited duration when Enter is pressed', () => {
+    const onElapsedChange = vi.fn()
+    renderTimerDisplay({ onElapsedChange })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit elapsed time' }))
+    const input = screen.getByLabelText('Edit elapsed time')
+    fireEvent.change(input, { target: { value: '00:10' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    fireEvent.blur(input)
+
+    expect(onElapsedChange).toHaveBeenCalledWith(600)
+    expect(screen.getByRole('button', { name: 'Edit elapsed time' })).toBeInTheDocument()
+  })
+
+  it('cancels edit and restores display when Escape is pressed', () => {
+    const onElapsedChange = vi.fn()
+    renderTimerDisplay({ elapsedSeconds: 125, onElapsedChange })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit elapsed time' }))
+    const input = screen.getByLabelText('Edit elapsed time')
+    fireEvent.change(input, { target: { value: '00:10' } })
+    fireEvent.keyDown(input, { key: 'Escape' })
+
+    expect(onElapsedChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Edit elapsed time' })).toHaveTextContent('00:02:05')
+  })
 })
