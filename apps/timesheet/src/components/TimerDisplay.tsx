@@ -163,10 +163,12 @@ export const TimerDisplay = forwardRef<TimerDisplayHandle, TimerDisplayProps>(fu
 
     if (event.key === 'Escape') {
       event.preventDefault()
-      setDraft(formatElapsedInput(elapsedSeconds))
-      draftRef.current = formatElapsedInput(elapsedSeconds)
+      skipBlurCommitRef.current = true
+      const formatted = formatElapsedInput(elapsedSeconds)
+      setDraft(formatted)
+      draftRef.current = formatted
       setIsEditing(false)
-      inputRef.current?.blur()
+      skipBlurCommitRef.current = false
     }
   }
 

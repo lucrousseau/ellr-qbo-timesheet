@@ -84,7 +84,9 @@ describe('TimerDisplay', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit elapsed time' }))
     const input = screen.getByLabelText('Edit elapsed time')
-    await user.type(input, '0010', { initialSelectionStart: 0, initialSelectionEnd: 5 })
+    await waitFor(() => expect(input).toHaveFocus())
+    await user.tripleClick(input)
+    await user.keyboard('0010')
     await user.keyboard('{Enter}')
 
     await waitFor(() => {
@@ -100,7 +102,9 @@ describe('TimerDisplay', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit elapsed time' }))
     const input = screen.getByLabelText('Edit elapsed time')
-    await user.type(input, '0010', { initialSelectionStart: 0, initialSelectionEnd: 5 })
+    await waitFor(() => expect(input).toHaveFocus())
+    await user.tripleClick(input)
+    await user.keyboard('0010')
     await user.keyboard('{Escape}')
 
     expect(onElapsedCommit).not.toHaveBeenCalled()
