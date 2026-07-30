@@ -12,6 +12,7 @@ const frApiErrors = {
   registration_disabled: 'Inscription désactivée.',
   qbo_employee_not_configured: 'Employé QuickBooks non configuré. Contactez un administrateur.',
   admin_required: 'Accès administrateur requis.',
+  organization_required: 'Une organisation est requise pour ce compte.',
   email_not_verified: 'Vérifiez votre adresse courriel avant de vous connecter.',
   access_denied: 'Accès refusé.',
   qbo_employee_invalid: 'Employé QuickBooks introuvable.',
@@ -146,6 +147,7 @@ export const frMessages: Messages = {
     oauthDenied: 'Connexion QuickBooks refusée ou expirée.',
     oauthMissingParams: 'Paramètres OAuth manquants.',
     oauthRealmConflict: 'Une autre compagnie QuickBooks est déjà connectée.',
+    oauthOrganizationMissing: 'Une organisation est requise avant de connecter QuickBooks.',
     oauthFailed: 'Impossible de connecter QuickBooks.',
   },
   timesheet: {

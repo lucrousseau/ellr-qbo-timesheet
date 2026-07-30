@@ -29,10 +29,7 @@ it('lists time activities for a provisioned timesheet user', function () {
     $admin = actingAsAdmin();
     $token = QuickBooksToken::factory()->forUser($admin)->create();
 
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
     seedListedTimeActivities($token, '7', 1);
 
     $this->actingAs($admin)
@@ -54,10 +51,7 @@ it('updates a provisioned user time activity billable status', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     $existing = new IPPTimeActivity;
     $existing->Id = '12';
@@ -91,10 +85,7 @@ it('rejects updating time activities for another employee', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     $activity = (object) [
         'Id' => '1',

@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\AdminQuickBooksPickerController;
 use App\Http\Controllers\Api\AdminUserCustomerController;
 use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
-use App\Models\User;
 use App\Services\QboCustomerListService;
 use App\Services\QuickBooksService;
 use App\Services\UserQboCustomerAssignmentService;
@@ -19,10 +18,7 @@ covers(UserQboCustomerAssignmentService::class);
 
 it('lists assigned customers for a provisioned timesheet user', function () {
     $admin = actingAsAdmin();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
     $timesheetUser->qboCustomers()->create([
         'qbo_customer_ref' => '11',
         'qbo_customer_name' => 'Acme Corp',
@@ -38,9 +34,7 @@ it('lists assigned customers for a provisioned timesheet user', function () {
 
 it('reports all-customers access for a provisioned timesheet user', function () {
     $admin = actingAsAdmin();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
+    $timesheetUser = timesheetUserFor($admin, [
         'qbo_all_customers_access' => true,
     ]);
 
@@ -55,10 +49,7 @@ it('syncs customer assignments for a provisioned timesheet user', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     $this->mock(QboCustomerListService::class, function ($mock) {
         $mock->shouldReceive('listAllActive')
@@ -86,10 +77,7 @@ it('grants all-customers access for a provisioned timesheet user', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
     $timesheetUser->qboCustomers()->create([
         'qbo_customer_ref' => '11',
         'qbo_customer_name' => 'Acme Corp',
@@ -113,10 +101,7 @@ it('rejects invalid customer assignments', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     $this->mock(QboCustomerListService::class, function ($mock) {
         $mock->shouldReceive('listAllActive')
@@ -159,10 +144,7 @@ it('clears stale timer customer selections when admin updates assignments', func
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($timesheetUser)->create([
         'customer_ref' => '11',
@@ -238,10 +220,7 @@ it('lists quickbooks customers for administrators without forcing refresh', func
 
 it('includes assigned customers when listing provisioned users', function () {
     $admin = actingAsAdmin();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
     $timesheetUser->qboCustomers()->create([
         'qbo_customer_ref' => '11',
         'qbo_customer_name' => 'Acme Corp',
@@ -256,9 +235,7 @@ it('includes assigned customers when listing provisioned users', function () {
 
 it('includes all-customers access when listing provisioned users', function () {
     $admin = actingAsAdmin();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
+    $timesheetUser = timesheetUserFor($admin, [
         'qbo_all_customers_access' => true,
     ]);
 
@@ -273,10 +250,7 @@ it('lists stored customer assignments in the timesheet picker without quickbooks
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '11',
         'qbo_customer_name' => 'Acme Corp',
@@ -294,9 +268,7 @@ it('lists every quickbooks customer when all-customers access is enabled', funct
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
 
-    $employee = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
+    $employee = timesheetUserFor($admin, [
         'qbo_all_customers_access' => true,
     ]);
 

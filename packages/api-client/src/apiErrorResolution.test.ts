@@ -65,6 +65,13 @@ describe('resolveApiError', () => {
     })
   })
 
+  it('maps organization required responses', () => {
+    expect(resolveApiError(new ApiError(403, 'API error: 403', 'organization_required'))).toEqual({
+      type: 'catalog',
+      key: 'organization_required',
+    })
+  })
+
   it('maps email not verified responses', () => {
     expect(resolveApiError(new ApiError(403, 'API error: 403', 'email_not_verified'))).toEqual({
       type: 'catalog',

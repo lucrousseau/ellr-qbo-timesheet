@@ -25,7 +25,10 @@ it('seeds dev admin and timesheet users with stable credentials', function () {
     expect($admin->is_admin)->toBeTrue()
         ->and(Hash::check('EllrDev!2026', $admin->password))->toBeTrue()
         ->and($timesheetUser->is_admin)->toBeFalse()
-        ->and(Hash::check('EllrDev!2026', $timesheetUser->password))->toBeTrue();
+        ->and(Hash::check('EllrDev!2026', $timesheetUser->password))->toBeTrue()
+        ->and($admin->organization_id)->toBe($timesheetUser->organization_id)
+        ->and($admin->organization)->not->toBeNull()
+        ->and($admin->organization->slug)->toBe('ellr-dev');
 });
 
 it('refreshes passwords when the seeder runs again', function () {

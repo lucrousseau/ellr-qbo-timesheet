@@ -45,7 +45,7 @@ class AdminUserTimeActivityController extends Controller
      */
     public function index(ListTimeActivityRequest $request, User $user): JsonResponse
     {
-        $this->assignments->ensureTimesheetUser($user);
+        $this->assignments->ensureTimesheetUser($request->user(), $user);
         $token = $this->tokenResolver->resolve($request->user());
 
         return response()->json($this->timeActivityList->listForUser(
@@ -67,7 +67,7 @@ class AdminUserTimeActivityController extends Controller
      */
     public function update(UpdateTimeActivityRequest $request, User $user, string $id): JsonResponse
     {
-        $this->assignments->ensureTimesheetUser($user);
+        $this->assignments->ensureTimesheetUser($request->user(), $user);
         $token = $this->tokenResolver->resolve($request->user());
 
         $result = $this->timeActivities->updateForUser($user, $token, $id, $request->validated());

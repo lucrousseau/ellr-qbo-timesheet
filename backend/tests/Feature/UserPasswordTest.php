@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Controllers\Api\UserPasswordController;
+use App\Models\Organization;
 use App\Models\User;
+use App\Support\OrganizationApiResponse;
 use App\Support\UserApiResponse;
 use Illuminate\Support\Facades\Hash;
 
 covers(UserPasswordController::class);
 covers(UserApiResponse::class);
+covers(OrganizationApiResponse::class);
 
 it('exposes is_admin in api user payloads', function () {
     $user = User::factory()->admin()->create();
@@ -15,6 +18,77 @@ it('exposes is_admin in api user payloads', function () {
 
     expect($payload)->toHaveKey('is_admin')
         ->and($payload['is_admin'])->toBeTrue();
+});
+
+it('exposes is_admin false for non-administrator users', function () {
+    $user = User::factory()->create();
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload['is_admin'])->toBeFalse();
+});
+
+it('preserves core user attributes in api payloads', function () {
+    $user = User::factory()->create([
+        'name' => 'Jane Doe',
+        'email' => 'jane@example.com',
+    ]);
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload['name'])->toBe('Jane Doe')
+        ->and($payload['email'])->toBe('jane@example.com');
+});
+
+it('loads the organization relation when building api payloads', function () {
+    $user = User::factory()->create();
+    $user->unsetRelation('organization');
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload['organization']['id'])->toBe($user->organization_id);
+});
+
+it('exposes organization in api user payloads', function () {
+    $organization = Organization::factory()->withRealm('realm-42')->create([
+        'name' => 'Acme Consulting',
+        'slug' => 'acme-consulting',
+    ]);
+    $user = User::factory()->create([
+        'organization_id' => $organization->id,
+    ]);
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload)->not->toHaveKey('organization_id')
+        ->and($payload['organization'])->toBe([
+            'id' => $organization->id,
+            'name' => 'Acme Consulting',
+            'slug' => 'acme-consulting',
+            'qbo_connected' => true,
+        ]);
+});
+
+it('reports qbo_connected false when the organization has no realm', function () {
+    $organization = Organization::factory()->create(['realm_id' => null]);
+    $user = User::factory()->create(['organization_id' => $organization->id]);
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload['organization']['qbo_connected'])->toBeFalse();
+});
+
+it('returns a null organization when the user has no tenant', function () {
+    $user = User::factory()->make([
+        'organization_id' => null,
+        'email' => 'orphan@example.com',
+    ]);
+    $user->id = 1;
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload)->not->toHaveKey('organization_id')
+        ->and($payload['organization'])->toBeNull();
 });
 
 it('returns is_admin on the authenticated user endpoint', function () {

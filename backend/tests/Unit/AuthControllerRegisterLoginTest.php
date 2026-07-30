@@ -5,6 +5,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use App\Services\AuthSessionService;
+use App\Services\OrganizationRegistrationService;
 use App\Support\PasswordPolicy;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,10 +36,11 @@ it('regenerates the session after registration when a session is present', funct
     $authSession = Mockery::mock(AuthSessionService::class);
     $authSession->shouldReceive('sendVerificationIfRequired')->once();
 
-    $response = (new AuthController($authSession))->register($request);
+    $response = (new AuthController($authSession, app(OrganizationRegistrationService::class)))->register($request);
 
     expect($response->getStatusCode())->toBe(201)
-        ->and(User::query()->where('email', 'jane@example.com')->exists())->toBeTrue();
+        ->and(User::query()->where('email', 'jane@example.com')->exists())->toBeTrue()
+        ->and(User::query()->where('email', 'jane@example.com')->first()->isAdmin())->toBeTrue();
 });
 
 it('returns the unverified login response from the auth session service', function () {
@@ -62,7 +64,7 @@ it('returns the unverified login response from the auth session service', functi
         ->with($user, $request)
         ->andReturn($blocked);
 
-    $response = (new AuthController($authSession))->login($request);
+    $response = (new AuthController($authSession, app(OrganizationRegistrationService::class)))->login($request);
 
     expect($response)->toBeInstanceOf(JsonResponse::class)
         ->and($response->getStatusCode())->toBe(403)
@@ -90,7 +92,7 @@ it('regenerates the session after login when a session is present', function () 
     $authSession = Mockery::mock(AuthSessionService::class);
     $authSession->shouldReceive('rejectLoginIfNeeded')->once()->andReturn(null);
 
-    $response = (new AuthController($authSession))->login($request);
+    $response = (new AuthController($authSession, app(OrganizationRegistrationService::class)))->login($request);
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getData(true)['user']['email'])->toBe($user->email);

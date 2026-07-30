@@ -23,10 +23,12 @@ class QboEmployeeService
      *
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
      * @param  QuickBooksTokenResolverService  $tokenResolver  Token resolver for the acting admin.
+     * @param  OrganizationAccessService  $organizationAccess  Tenant isolation checks.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
         private readonly QuickBooksTokenResolverService $tokenResolver,
+        private readonly OrganizationAccessService $organizationAccess,
     ) {}
 
     /**
@@ -39,6 +41,8 @@ class QboEmployeeService
      */
     public function updateMapping(User $actor, User $target, array $validated): User
     {
+        $this->organizationAccess->ensureSameOrganization($actor, $target);
+
         $token = $this->tokenResolver->resolve($actor);
         $employeeRef = (string) $validated['qbo_employee_ref'];
         $identity = $this->resolveEmployeeIdentity($token, $employeeRef, $target);
@@ -84,6 +88,7 @@ class QboEmployeeService
                 ->where('email', $employee['email'])
                 ->exists()
         ) {
+            // Login emails are globally unique; two tenants cannot share the same account email.
             $this->abortEmployeeError(ApiErrorCode::QboEmployeeEmailConflict, 'api.qbo_employee_email_conflict');
         }
 

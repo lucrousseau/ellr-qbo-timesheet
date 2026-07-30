@@ -41,7 +41,8 @@ it('normalizes sdk time values to strings', function () {
     };
 
     expect(TimeActivityTimeValidation::normalizeTime($sdkTime))->toBe('2026-07-27T09:00:00')
-        ->and(TimeActivityTimeValidation::normalizeTime(null))->toBeNull();
+        ->and(TimeActivityTimeValidation::normalizeTime(null))->toBeNull()
+        ->and(TimeActivityTimeValidation::normalizeTime(1_234_567_890))->toBe('1234567890');
 });
 
 it('skips incomplete checks when both resolved times are present', function () {

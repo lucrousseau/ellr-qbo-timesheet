@@ -26,6 +26,7 @@ function quickBooksOAuthMessageKey(
   | 'admin.oauthMissingParams'
   | 'api.errors.qbo_insufficient_permissions'
   | 'admin.oauthRealmConflict'
+  | 'admin.oauthOrganizationMissing'
   | 'admin.oauthFailed' {
   if (reason === 'oauth') {
     return 'admin.oauthDenied'
@@ -41,6 +42,10 @@ function quickBooksOAuthMessageKey(
 
   if (reason === 'realm_conflict') {
     return 'admin.oauthRealmConflict'
+  }
+
+  if (reason === 'organization_missing') {
+    return 'admin.oauthOrganizationMissing'
   }
 
   return 'admin.oauthFailed'

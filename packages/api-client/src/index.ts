@@ -32,12 +32,15 @@ export {
   fetchCurrentUser,
   login,
   logout,
+  register,
   requestPasswordReset,
   resendVerificationEmail,
   resetPassword,
   updateQboEmployee,
   updateUserLocale,
   updateUserQboEmployee,
+  type Organization,
+  type RegisterPayload,
   type User,
 } from './auth'
 export {

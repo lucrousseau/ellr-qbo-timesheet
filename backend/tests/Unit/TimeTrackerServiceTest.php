@@ -142,10 +142,7 @@ it('clears running_since when a paused timer stays paused', function () {
 it('validates picker references before logging time', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => '99',
@@ -173,10 +170,7 @@ it('logs elapsed time with customer project and service selections', function ()
 
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => '11',
@@ -224,10 +218,7 @@ it('logs elapsed time with customer project and service selections', function ()
 it('rejects logging when no active session exists', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     expect(fn () => app(TimeTrackerService::class)->logForUser($user, $token))
         ->toThrow(HttpResponseException::class);
@@ -236,10 +227,7 @@ it('rejects logging when no active session exists', function () {
 it('rejects logging when elapsed time is zero', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'accumulated_seconds' => 0,
@@ -259,10 +247,7 @@ it('logs timer sessions with a single elapsed second', function () {
 
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'accumulated_seconds' => 1,
@@ -343,10 +328,7 @@ it('finds the active session for a user', function () {
 it('persists sanitized picker selections for active sessions', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '12',
         'qbo_customer_name' => 'Beta LLC',
@@ -395,10 +377,7 @@ it('persists sanitized picker selections for active sessions', function () {
 it('returns the same session when sanitize makes no changes', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '12',
         'qbo_customer_name' => 'Beta LLC',
@@ -432,10 +411,7 @@ it('returns the same session when sanitize makes no changes', function () {
 it('does nothing when sanitizeActiveSessionIfExists has no active session', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     app(TimeTrackerService::class)->sanitizeActiveSessionIfExists($user, $token);
 
@@ -489,10 +465,7 @@ it('creates a new timer session when none exists', function () {
 it('validates picker references when a quickbooks token is provided', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     $this->mock(QboPickerValidationService::class, function ($mock) use ($user, $token) {
         $mock->shouldReceive('assertValidSelections')
@@ -517,10 +490,7 @@ it('logs elapsed time with refs but without optional names', function () {
 
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => '11',
@@ -565,10 +535,7 @@ it('logs elapsed time from a running timer segment', function () {
 
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => null,
@@ -650,10 +617,7 @@ it('upserts timer state when only is_running is provided', function () {
 it('passes stored session picker refs to validation when logging', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => '11',
@@ -903,10 +867,7 @@ it('logs billable status when creating a quickbooks time activity', function () 
 
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => '11',

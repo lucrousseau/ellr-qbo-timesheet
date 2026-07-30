@@ -37,8 +37,8 @@ class AdminUserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $users = $this->provisioning->listTimesheetUsers()
-            ->load('qboCustomers')
+        $users = $this->provisioning->listTimesheetUsers($request->user())
+            ->load(['qboCustomers', 'organization'])
             ->map(function ($user) {
                 $resource = UserApiResponse::resource($user);
                 $resource->setAttribute('all_customers_access', $user->qbo_all_customers_access);
@@ -83,12 +83,13 @@ class AdminUserController extends Controller
     /**
      * Removes a provisioned timesheet user account without deleting QuickBooks time entries.
      *
+     * @param  Request  $request  Incoming HTTP request.
      * @param  User  $user  Timesheet user to revoke.
      * @return JsonResponse
      */
-    public function destroy(User $user): JsonResponse
+    public function destroy(Request $request, User $user): JsonResponse
     {
-        $this->provisioning->revokeTimesheetUser($user);
+        $this->provisioning->revokeTimesheetUser($request->user(), $user);
 
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }

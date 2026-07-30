@@ -21,10 +21,12 @@ class UserQboCustomerAssignmentService
      *
      * @param  QboCustomerListService  $customers  Customer list and resolution service.
      * @param  TimeTrackerService  $timeTracker  Active timer session service.
+     * @param  OrganizationAccessService  $organizationAccess  Tenant isolation checks.
      */
     public function __construct(
         private readonly QboCustomerListService $customers,
         private readonly TimeTrackerService $timeTracker,
+        private readonly OrganizationAccessService $organizationAccess,
     ) {}
 
     /**
@@ -44,6 +46,7 @@ class UserQboCustomerAssignmentService
     /**
      * Replaces customer access for a provisioned timesheet user.
      *
+     * @param  User  $actor  Authenticated administrator.
      * @param  User  $user  Target timesheet user.
      * @param  QuickBooksToken  $token  Connected QuickBooks token.
      * @param  bool  $allCustomersAccess  When true, grants access to every active QuickBooks customer.
@@ -51,12 +54,13 @@ class UserQboCustomerAssignmentService
      * @return array{all_customers_access: bool, data: array<int, array{id: string, display_name: string}>}
      */
     public function sync(
+        User $actor,
         User $user,
         QuickBooksToken $token,
         bool $allCustomersAccess,
         array $customerRefs,
     ): array {
-        $this->ensureTimesheetUser($user);
+        $this->ensureTimesheetUser($actor, $user);
 
         if ($allCustomersAccess) {
             $user->forceFill(['qbo_all_customers_access' => true])->save();
@@ -84,16 +88,15 @@ class UserQboCustomerAssignmentService
     }
 
     /**
-     * Ensures the target user is a provisioned timesheet account.
+     * Ensures the target user is a provisioned timesheet account in the actor's organization.
      *
+     * @param  User  $actor  Authenticated administrator.
      * @param  User  $user  Target user account.
      * @return void
      */
-    public function ensureTimesheetUser(User $user): void
+    public function ensureTimesheetUser(User $actor, User $user): void
     {
-        if ($user->isAdmin() || $user->qbo_employee_ref === null || $user->qbo_employee_ref === '') {
-            abort(404);
-        }
+        $this->organizationAccess->ensureTimesheetUser($actor, $user);
     }
 
     /**

@@ -3,6 +3,7 @@
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Services\OrganizationAccessService;
 use App\Services\QboEmployeeService;
 use App\Services\QuickBooksService;
 use App\Services\QuickBooksTokenResolverService;
@@ -10,13 +11,24 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\ValidationException;
 use QuickBooksOnline\API\DataService\DataService;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 covers(QboEmployeeService::class);
 
 uses(RefreshDatabase::class);
 
+/**
+ * Builds a QboEmployeeService with tenant access checks for unit tests.
+ */
+function makeQboEmployeeService(
+    QuickBooksService $quickBooks,
+    QuickBooksTokenResolverService $tokenResolver,
+): QboEmployeeService {
+    return new QboEmployeeService($quickBooks, $tokenResolver, new OrganizationAccessService);
+}
+
 it('updates a user mapping when the employee exists in quickbooks', function () {
-    $admin = User::factory()->admin()->make();
+    $admin = User::factory()->admin()->make(['organization_id' => 1]);
     $token = QuickBooksToken::factory()->make();
 
     $dataService = Mockery::mock(DataService::class);
@@ -35,6 +47,7 @@ it('updates a user mapping when the employee exists in quickbooks', function () 
 
     $target = Mockery::mock(User::class)->makePartial();
     $target->id = 1;
+    $target->organization_id = 1;
     $target->shouldReceive('isAdmin')->andReturn(false);
     $target->shouldReceive('update')->once()->with([
         'qbo_employee_ref' => '42',
@@ -44,7 +57,7 @@ it('updates a user mapping when the employee exists in quickbooks', function () 
     ]);
     $target->shouldReceive('fresh')->once()->andReturnSelf();
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
 
     expect($service->updateMapping($admin, $target, [
         'qbo_employee_ref' => '42',
@@ -52,7 +65,7 @@ it('updates a user mapping when the employee exists in quickbooks', function () 
 });
 
 it('casts numeric employee refs before quickbooks lookup', function () {
-    $admin = User::factory()->admin()->make();
+    $admin = User::factory()->admin()->make(['organization_id' => 1]);
     $token = QuickBooksToken::factory()->make();
 
     $dataService = Mockery::mock(DataService::class);
@@ -71,6 +84,7 @@ it('casts numeric employee refs before quickbooks lookup', function () {
 
     $target = Mockery::mock(User::class)->makePartial();
     $target->id = 1;
+    $target->organization_id = 1;
     $target->shouldReceive('isAdmin')->andReturn(false);
     $target->shouldReceive('update')->once()->with([
         'qbo_employee_ref' => '42',
@@ -80,7 +94,7 @@ it('casts numeric employee refs before quickbooks lookup', function () {
     ]);
     $target->shouldReceive('fresh')->once()->andReturnSelf();
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
 
     expect($service->updateMapping($admin, $target, [
         'qbo_employee_ref' => 42,
@@ -88,8 +102,8 @@ it('casts numeric employee refs before quickbooks lookup', function () {
 });
 
 it('aborts when the employee does not exist in quickbooks', function () {
-    $admin = User::factory()->admin()->make();
-    $target = User::factory()->make();
+    $admin = User::factory()->admin()->make(['organization_id' => 1]);
+    $target = User::factory()->make(['organization_id' => 1]);
     $token = QuickBooksToken::factory()->make();
 
     $dataService = Mockery::mock(DataService::class);
@@ -102,7 +116,7 @@ it('aborts when the employee does not exist in quickbooks', function () {
     $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
     $tokenResolver->shouldReceive('resolve')->once()->andReturn($token);
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
 
     try {
         $service->updateMapping($admin, $target, ['qbo_employee_ref' => '999']);
@@ -117,8 +131,8 @@ it('aborts when the employee does not exist in quickbooks', function () {
 });
 
 it('throws when quickbooks employee lookup fails', function () {
-    $admin = User::factory()->admin()->make();
-    $target = User::factory()->make();
+    $admin = User::factory()->admin()->make(['organization_id' => 1]);
+    $target = User::factory()->make(['organization_id' => 1]);
     $token = QuickBooksToken::factory()->make();
 
     $error = Mockery::mock();
@@ -134,7 +148,7 @@ it('throws when quickbooks employee lookup fails', function () {
     $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
     $tokenResolver->shouldReceive('resolve')->once()->andReturn($token);
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
 
     expect(fn () => $service->updateMapping($admin, $target, ['qbo_employee_ref' => '42']))
         ->toThrow(QuickBooksException::class, 'QuickBooks employee lookup failed.');
@@ -158,7 +172,7 @@ it('rejects employee identity resolution when the email is already used', functi
 
     $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
 
     try {
         $service->resolveEmployeeIdentity($token, '42');
@@ -194,7 +208,7 @@ it('syncs a timesheet user from quickbooks identity', function () {
 
     $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
     $synced = $service->syncTimesheetUserFromQuickBooks($user, $token);
 
     expect($synced->name)->toBe('Jane Doe')
@@ -210,7 +224,7 @@ it('skips sync when quickbooks identity is already applied', function () {
     ]);
     $updatedAt = $user->updated_at;
 
-    $service = new QboEmployeeService(
+    $service = makeQboEmployeeService(
         Mockery::mock(QuickBooksService::class),
         Mockery::mock(QuickBooksTokenResolverService::class),
     );
@@ -242,7 +256,7 @@ it('allows employee identity resolution for the excluded user email', function (
 
     $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
 
     expect($service->resolveEmployeeIdentity($token, '42', $target))->toBe([
         'display_name' => 'Jane Doe',
@@ -257,7 +271,7 @@ it('throws when syncing identity onto an email already used by another user', fu
     ]);
     User::factory()->create(['email' => 'jane@example.com']);
 
-    $service = new QboEmployeeService(
+    $service = makeQboEmployeeService(
         Mockery::mock(QuickBooksService::class),
         Mockery::mock(QuickBooksTokenResolverService::class),
     );
@@ -282,7 +296,7 @@ it('rejects employee identity resolution when email is missing', function () {
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    $service = new QboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
+    $service = makeQboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
 
     try {
         $service->resolveEmployeeIdentity($token, '42');
@@ -303,7 +317,7 @@ it('syncs when only the stored quickbooks employee name differs', function () {
         'qbo_employee_name' => 'Old QBO Name',
     ]);
 
-    $service = new QboEmployeeService(
+    $service = makeQboEmployeeService(
         Mockery::mock(QuickBooksService::class),
         Mockery::mock(QuickBooksTokenResolverService::class),
     );
@@ -324,7 +338,7 @@ it('syncs when only the email address changes', function () {
         'qbo_employee_name' => 'Jane Doe',
     ]);
 
-    $service = new QboEmployeeService(
+    $service = makeQboEmployeeService(
         Mockery::mock(QuickBooksService::class),
         Mockery::mock(QuickBooksTokenResolverService::class),
     );
@@ -345,7 +359,7 @@ it('syncs when only the display name changes', function () {
         'qbo_employee_name' => 'Old Name',
     ]);
 
-    $service = new QboEmployeeService(
+    $service = makeQboEmployeeService(
         Mockery::mock(QuickBooksService::class),
         Mockery::mock(QuickBooksTokenResolverService::class),
     );
@@ -372,7 +386,7 @@ it('returns an empty display name when quickbooks omits DisplayName', function (
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    $service = new QboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
+    $service = makeQboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
 
     expect($service->findEmployee($token, '42'))->toBe([
         'display_name' => '',
@@ -400,7 +414,7 @@ it('casts numeric quickbooks employee refs during quickbooks sync', function () 
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    $service = new QboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
+    $service = makeQboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
 
     expect($service->syncTimesheetUserFromQuickBooks($user, $token)->is($user))->toBeTrue();
 });
@@ -412,7 +426,7 @@ it('throws a translated validation error when sync hits an email conflict', func
     ]);
     User::factory()->create(['email' => 'jane@example.com']);
 
-    $service = new QboEmployeeService(
+    $service = makeQboEmployeeService(
         Mockery::mock(QuickBooksService::class),
         Mockery::mock(QuickBooksTokenResolverService::class),
     );
@@ -444,7 +458,7 @@ it('checks whether a quickbooks employee exists', function () {
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    $service = new QboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
+    $service = makeQboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
 
     expect($service->employeeExists($token, '42'))->toBeTrue();
 });
@@ -460,15 +474,34 @@ it('reports missing quickbooks employees', function () {
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    $service = new QboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
+    $service = makeQboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
 
     expect($service->employeeExists($token, '99'))->toBeFalse();
+});
+
+it('rejects mapping updates for users in another organization', function () {
+    $admin = User::factory()->admin()->create();
+    $foreignUser = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Foreign User',
+    ]);
+
+    $service = makeQboEmployeeService(
+        Mockery::mock(QuickBooksService::class),
+        Mockery::mock(QuickBooksTokenResolverService::class),
+    );
+
+    expect(fn () => $service->updateMapping($admin, $foreignUser, ['qbo_employee_ref' => '42']))
+        ->toThrow(NotFoundHttpException::class);
 });
 
 it('keeps administrator profile fields when updating mapping', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create();
-    $target = User::factory()->admin()->create(['email' => 'admin-target@example.com']);
+    $target = User::factory()->admin()->create([
+        'organization_id' => $admin->organization_id,
+        'email' => 'admin-target@example.com',
+    ]);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '42')->andReturn((object) [
@@ -484,7 +517,7 @@ it('keeps administrator profile fields when updating mapping', function () {
     $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
     $tokenResolver->shouldReceive('resolve')->once()->with($admin)->andReturn($token);
 
-    $service = new QboEmployeeService($quickBooks, $tokenResolver);
+    $service = makeQboEmployeeService($quickBooks, $tokenResolver);
     $service->updateMapping($admin, $target, ['qbo_employee_ref' => '42']);
 
     $fresh = $target->fresh();
@@ -502,7 +535,7 @@ it('updates changed quickbooks identity fields during sync', function () {
         'qbo_employee_name' => 'Old Name',
     ]);
 
-    $service = new QboEmployeeService(
+    $service = makeQboEmployeeService(
         Mockery::mock(QuickBooksService::class),
         Mockery::mock(QuickBooksTokenResolverService::class),
     );

@@ -44,9 +44,13 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/quickbooks/webhook', [QuickBooksWebhookController::class, 'store']);
 });
 
-// Sanctum session required for profile, QBO link, and time activities.
+// Sanctum session: logout stays available even when tenant membership is missing.
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+});
+
+// Sanctum session required for profile, QBO link, and time activities.
+Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::patch('/user/locale', [UserLocaleController::class, 'update']);
     Route::patch('/user/password', [UserPasswordController::class, 'update']);

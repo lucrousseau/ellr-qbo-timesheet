@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\QuickBooksException;
+use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QuickBooksService;
@@ -104,6 +105,7 @@ it('resolves an administrator quickbooks token for non-admin users without a tok
         'access_token_expires_at' => now()->addHour(),
     ]);
     $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
         'qbo_employee_name' => 'Jane Doe',
     ]);
@@ -114,4 +116,26 @@ it('resolves an administrator quickbooks token for non-admin users without a tok
     $resolved = (new QuickBooksTokenResolverService($quickBooks))->resolve($employee);
 
     expect($resolved->id)->toBe($adminToken->id);
+});
+
+it('aborts when the resolved token realm does not match the organization realm', function () {
+    $organization = Organization::factory()->withRealm('realm-a')->create();
+    $admin = User::factory()->admin()->create(['organization_id' => $organization->id]);
+    QuickBooksToken::factory()->forUser($admin)->create([
+        'realm_id' => 'realm-b',
+        'access_token_expires_at' => now()->addHour(),
+    ]);
+    $employee = User::factory()->create([
+        'organization_id' => $organization->id,
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ]);
+
+    try {
+        (new QuickBooksTokenResolverService(Mockery::mock(QuickBooksService::class)))->resolve($employee);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(403)
+            ->and($exception->getResponse()->getData(true)['error'])->toBe('quickbooks_not_connected');
+    }
 });

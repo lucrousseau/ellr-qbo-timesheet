@@ -6,6 +6,7 @@
 
 use App\Exceptions\QuickBooksException;
 use App\Http\Middleware\EnsureEmailVerifiedIfRequired;
+use App\Http\Middleware\EnsureUserHasOrganization;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\SetLocaleFromUser;
 use App\Services\QuickBooksApiErrorFormatterService;
@@ -34,6 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('api', SetLocaleFromUser::class);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+            'organization' => EnsureUserHasOrganization::class,
             'verified.email' => EnsureEmailVerifiedIfRequired::class,
         ]);
     })

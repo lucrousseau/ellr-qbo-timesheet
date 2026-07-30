@@ -15,9 +15,14 @@ it('registers a new user', function () {
         'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertCreated()
-        ->assertJsonPath('user.email', 'jane@example.com');
+        ->assertJsonPath('user.email', 'jane@example.com')
+        ->assertJsonPath('user.organization.name', 'Jane Doe organization');
 
     $this->assertAuthenticated();
+
+    $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
+    expect($user->isAdmin())->toBeTrue()
+        ->and($user->organization)->not->toBeNull();
 });
 
 it('sends a verification email when registration requires verification', function () {
@@ -282,12 +287,16 @@ it('requires a string password on login', function () {
 
 it('returns the authenticated user', function () {
     $user = User::factory()->admin()->create();
+    $organizationName = $user->organization()->value('name');
 
     $this->actingAs($user)
         ->getJson('/api/user')
         ->assertOk()
         ->assertJsonPath('user.id', $user->id)
-        ->assertJsonPath('user.is_admin', true);
+        ->assertJsonPath('user.is_admin', true)
+        ->assertJsonPath('user.organization.id', $user->organization_id)
+        ->assertJsonPath('user.organization.name', $organizationName)
+        ->assertJsonPath('user.organization.qbo_connected', false);
 });
 
 it('logs out the authenticated user', function () {

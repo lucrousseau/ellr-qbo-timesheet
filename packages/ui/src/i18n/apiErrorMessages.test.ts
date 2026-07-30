@@ -60,6 +60,16 @@ describe('getApiErrorMessage', () => {
     ).toBe('Administrator access required.')
   })
 
+  it('maps organization required responses', () => {
+    expect(
+      getApiErrorMessage(new ApiError(403, 'API error: 403', 'organization_required'), 'fallback'),
+    ).toBe('Organization membership is required for this account.')
+
+    expect(
+      getApiErrorMessage(new ApiError(403, 'API error: 403', 'organization_required'), 'fallback', 'fr'),
+    ).toBe('Une organisation est requise pour ce compte.')
+  })
+
   it('maps email not verified responses', () => {
     expect(
       getApiErrorMessage(new ApiError(403, 'API error: 403', 'email_not_verified'), 'fallback'),

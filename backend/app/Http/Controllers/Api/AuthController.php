@@ -10,8 +10,8 @@ use App\Enums\ApiErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
-use App\Models\User;
 use App\Services\AuthSessionService;
+use App\Services\OrganizationRegistrationService;
 use App\Support\UserApiResponse;
 use App\Support\UserLocaleApplicator;
 use Illuminate\Http\JsonResponse;
@@ -27,9 +27,11 @@ class AuthController extends Controller
      * Injects the auth session helper.
      *
      * @param  AuthSessionService  $authSession  Login and registration session rules.
+     * @param  OrganizationRegistrationService  $organizationRegistration  Tenant signup provisioning.
      */
     public function __construct(
         private readonly AuthSessionService $authSession,
+        private readonly OrganizationRegistrationService $organizationRegistration,
     ) {}
 
     /**
@@ -41,13 +43,10 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         if (! config('app.allow_registration')) {
-            return response()->json([
-                'message' => __('api.registration_disabled'),
-                'error' => ApiErrorCode::RegistrationDisabled->value,
-            ], 403);
+            return response()->json(['message' => __('api.registration_disabled'), 'error' => ApiErrorCode::RegistrationDisabled->value], 403);
         }
 
-        $user = User::query()->create($request->validated());
+        $user = $this->organizationRegistration->registerAdministrator($request->validated());
         $this->authSession->sendVerificationIfRequired($user);
         Auth::login($user);
 

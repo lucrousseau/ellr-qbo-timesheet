@@ -8,6 +8,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\QuickBooksOAuthException;
 use App\Http\Controllers\Controller;
+use App\Services\OrganizationRealmService;
 use App\Services\QboListCacheService;
 use App\Services\QuickBooksOAuthCallbackService;
 use App\Services\QuickBooksService;
@@ -26,11 +27,13 @@ class QuickBooksAuthController extends Controller
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
      * @param  QuickBooksOAuthCallbackService  $oauthCallback  OAuth callback handler.
      * @param  QboListCacheService  $listCache  Cached QuickBooks list endpoints.
+     * @param  OrganizationRealmService  $organizationRealm  Tenant realm binding.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
         private readonly QuickBooksOAuthCallbackService $oauthCallback,
         private readonly QboListCacheService $listCache,
+        private readonly OrganizationRealmService $organizationRealm,
     ) {}
 
     /**
@@ -103,13 +106,16 @@ class QuickBooksAuthController extends Controller
      */
     public function disconnect(Request $request): JsonResponse
     {
-        $realmId = $request->user()->quickBooksToken?->realm_id;
+        $user = $request->user();
+        $realmId = $user->quickBooksToken?->realm_id;
 
-        $this->quickBooks->disconnect($request->user());
+        $this->quickBooks->disconnect($user);
 
         if (is_string($realmId) && $realmId !== '') {
             $this->listCache->forgetRealm($realmId);
         }
+
+        $this->organizationRealm->releaseRealmWhenDisconnected($user, $realmId);
 
         return response()->json(['connected' => false]);
     }

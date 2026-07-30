@@ -9,6 +9,7 @@ return [
     'registration_disabled' => 'Inscription désactivée.',
     'invalid_credentials' => 'Identifiants invalides.',
     'admin_required' => 'Accès administrateur requis.',
+    'organization_required' => 'Une organisation est requise pour ce compte.',
     'email_not_verified' => 'L\'adresse courriel n\'est pas vérifiée.',
     'quickbooks_not_connected' => 'QuickBooks n\'est pas connecté.',
     'quickbooks_expired' => 'La connexion QuickBooks a expiré. Reconnectez-la depuis l\'application admin.',

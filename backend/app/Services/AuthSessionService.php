@@ -36,11 +36,41 @@ class AuthSessionService
      */
     public function rejectLoginIfNeeded(User $user, Request $request): ?JsonResponse
     {
+        if ($response = $this->rejectLoginWithoutOrganization($user, $request)) {
+            return $response;
+        }
+
         if ($response = $this->rejectUnverifiedLogin($user, $request)) {
             return $response;
         }
 
         return $this->qboEmployeeLoginGuard->rejectIfEmployeeRemoved($user, $request);
+    }
+
+    /**
+     * Logs out and returns a JSON response when the account has no tenant organization.
+     *
+     * @param  User  $user  Authenticated user.
+     * @param  Request  $request  Incoming HTTP request.
+     * @return JsonResponse|null
+     */
+    public function rejectLoginWithoutOrganization(User $user, Request $request): ?JsonResponse
+    {
+        if ($user->organization_id !== null) {
+            return null;
+        }
+
+        Auth::logout();
+
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return response()->json([
+            'message' => __('api.organization_required'),
+            'error' => ApiErrorCode::OrganizationRequired->value,
+        ], 403);
     }
 
     /**

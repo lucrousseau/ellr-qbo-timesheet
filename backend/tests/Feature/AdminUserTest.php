@@ -36,10 +36,7 @@ function mockQuickBooksEmployee(DataService $dataService, string $ref, ?array $e
 
 it('lists provisioned timesheet users for administrators', function () {
     $admin = actingAsAdmin();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     $this->actingAs($admin)
         ->getJson('/api/admin/users', frontendHeaders())
@@ -173,10 +170,9 @@ it('rejects provisioning when the quickbooks employee email is already used', fu
         ]);
 });
 
-it('rejects duplicate quickbooks employee provisioning', function () {
+it('rejects duplicate quickbooks employee provisioning in the same organization', function () {
     $admin = actingAsAdmin();
-
-    User::factory()->create(['qbo_employee_ref' => '42']);
+    timesheetUserFor($admin, ['qbo_employee_ref' => '42']);
 
     $this->actingAs($admin)
         ->postJson('/api/admin/users', [
@@ -186,12 +182,37 @@ it('rejects duplicate quickbooks employee provisioning', function () {
         ->assertJsonValidationErrors(['qbo_employee_ref']);
 });
 
+it('allows the same quickbooks employee ref in a different organization', function () {
+    Notification::fake();
+
+    $admin = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($admin)->create();
+
+    User::factory()->create(['qbo_employee_ref' => '42']);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('FindById')->twice()->with('Employee', '42')->andReturn((object) [
+        'Id' => '42',
+        'DisplayName' => 'Jane Doe',
+        'PrimaryEmailAddr' => (object) ['Address' => 'jane@example.com'],
+    ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $mock->shouldReceive('dataService')->andReturn($dataService);
+    });
+
+    $this->actingAs($admin)
+        ->postJson('/api/admin/users', [
+            'qbo_employee_ref' => '42',
+        ], frontendHeaders())
+        ->assertCreated()
+        ->assertJsonPath('user.qbo_employee_ref', '42');
+});
+
 it('removes a provisioned timesheet user and revokes their sessions', function () {
     $admin = actingAsAdmin();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
     $timesheetUser->createToken('timesheet');
 
     $this->actingAs($admin)
@@ -203,11 +224,11 @@ it('removes a provisioned timesheet user and revokes their sessions', function (
 });
 
 it('requires administrator access to remove a timesheet user', function () {
-    $user = User::factory()->create();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create([
+        'organization_id' => $admin->organization_id,
     ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     $this->actingAs($user)
         ->deleteJson("/api/admin/users/{$timesheetUser->id}", [], frontendHeaders())
@@ -244,10 +265,7 @@ it('removes database sessions and password reset tokens when revoking a timeshee
     config()->set('session.driver', 'database');
 
     $admin = actingAsAdmin();
-    $timesheetUser = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $timesheetUser = timesheetUserFor($admin);
 
     DB::table('sessions')->insert([
         'id' => 'session-to-revoke',

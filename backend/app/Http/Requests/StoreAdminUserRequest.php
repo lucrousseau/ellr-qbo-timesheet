@@ -7,8 +7,8 @@
 namespace App\Http\Requests;
 
 use App\Http\Concerns\AllowsAuthenticatedApiUser;
+use App\Http\Concerns\ScopesQboEmployeeRefUniqueness;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 /**
  * Form request rules for POST /api/admin/users payloads.
@@ -16,6 +16,7 @@ use Illuminate\Validation\Rule;
 class StoreAdminUserRequest extends FormRequest
 {
     use AllowsAuthenticatedApiUser;
+    use ScopesQboEmployeeRefUniqueness;
 
     /**
      * Validation rules for timesheet user provisioning.
@@ -29,7 +30,7 @@ class StoreAdminUserRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('users', 'qbo_employee_ref'),
+                $this->uniqueQboEmployeeRefForOrganization(),
             ],
         ];
     }

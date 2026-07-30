@@ -11,6 +11,7 @@ const enApiErrors = {
   registration_disabled: 'Registration disabled.',
   qbo_employee_not_configured: 'QuickBooks employee not configured. Contact an administrator.',
   admin_required: 'Administrator access required.',
+  organization_required: 'Organization membership is required for this account.',
   email_not_verified: 'Verify your email address before signing in.',
   access_denied: 'Access denied.',
   qbo_employee_invalid: 'QuickBooks employee not found.',
@@ -145,6 +146,7 @@ export const enMessages = {
     oauthDenied: 'QuickBooks connection denied or expired.',
     oauthMissingParams: 'Missing OAuth parameters.',
     oauthRealmConflict: 'Another QuickBooks company is already connected.',
+    oauthOrganizationMissing: 'An organization is required before connecting QuickBooks.',
     oauthFailed: 'Unable to connect QuickBooks.',
   },
   timesheet: {

@@ -2,6 +2,7 @@
 
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Services\OrganizationAccessService;
 use App\Services\QboCustomerListService;
 use App\Services\TimeTrackerService;
 use App\Services\UserQboCustomerAssignmentService;
@@ -34,9 +35,10 @@ it('validates assignments against the admin customer picker list', function () {
         ->once()
         ->with($user, $token);
 
-    $service = new UserQboCustomerAssignmentService($customers, $timeTracker);
+    $service = new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService);
 
-    $access = $service->sync($user, $token, false, ['11', '12']);
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    $access = $service->sync($admin, $user, $token, false, ['11', '12']);
 
     expect($access['all_customers_access'])->toBeFalse()
         ->and($access['data'])->toHaveCount(2)
@@ -67,8 +69,9 @@ it('replaces existing customer assignments during sync', function () {
         ->once()
         ->with($user, $token);
 
-    (new UserQboCustomerAssignmentService($customers, $timeTracker))
-        ->sync($user, $token, false, ['11']);
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    (new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService))
+        ->sync($admin, $user, $token, false, ['11']);
 
     expect($user->fresh()->qboCustomers->pluck('qbo_customer_ref')->all())->toBe(['11']);
 });
@@ -91,9 +94,10 @@ it('rejects assignments that are not in the admin customer picker list', functio
     $timeTracker = Mockery::mock(TimeTrackerService::class);
     $timeTracker->shouldNotReceive('sanitizeActiveSessionIfExists');
 
-    $service = new UserQboCustomerAssignmentService($customers, $timeTracker);
+    $service = new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService);
 
-    expect(fn () => $service->sync($user, $token, false, ['11', '99']))
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    expect(fn () => $service->sync($admin, $user, $token, false, ['11', '99']))
         ->toThrow(HttpResponseException::class);
 });
 
@@ -116,9 +120,10 @@ it('grants access to all customers and clears stored assignments', function () {
         ->once()
         ->with($user, $token);
 
-    $service = new UserQboCustomerAssignmentService($customers, $timeTracker);
+    $service = new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService);
 
-    $access = $service->sync($user, $token, true, []);
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    $access = $service->sync($admin, $user, $token, true, []);
 
     expect($access)->toBe([
         'all_customers_access' => true,
@@ -137,6 +142,7 @@ it('describes all-customers access without assignment rows', function () {
     $service = new UserQboCustomerAssignmentService(
         Mockery::mock(QboCustomerListService::class),
         Mockery::mock(TimeTrackerService::class),
+        new OrganizationAccessService,
     );
 
     expect($service->describeAccess($user))->toBe([
@@ -161,8 +167,9 @@ it('syncs an empty restricted customer assignment list', function () {
         ->once()
         ->with($user, $token);
 
-    $access = (new UserQboCustomerAssignmentService($customers, $timeTracker))
-        ->sync($user, $token, false, []);
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    $access = (new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService))
+        ->sync($admin, $user, $token, false, []);
 
     expect($access['all_customers_access'])->toBeFalse()
         ->and($access['data'])->toBe([])
@@ -176,9 +183,10 @@ it('rejects customer sync for non-timesheet users', function () {
     $service = new UserQboCustomerAssignmentService(
         Mockery::mock(QboCustomerListService::class),
         Mockery::mock(TimeTrackerService::class),
+        new OrganizationAccessService,
     );
 
-    expect(fn () => $service->sync($admin, $token, true, []))
+    expect(fn () => $service->sync($admin, $admin, $token, true, []))
         ->toThrow(HttpException::class);
 });
 
@@ -203,8 +211,9 @@ it('ignores quickbooks customers without a usable identifier during sync', funct
         ->once()
         ->with($user, $token);
 
-    $access = (new UserQboCustomerAssignmentService($customers, $timeTracker))
-        ->sync($user, $token, false, ['11']);
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    $access = (new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService))
+        ->sync($admin, $user, $token, false, ['11']);
 
     expect($access['data'])->toBe([
         ['id' => '11', 'display_name' => 'Acme Corp'],
@@ -231,8 +240,9 @@ it('deduplicates normalized customer refs during sync', function () {
         ->once()
         ->with($user, $token);
 
-    (new UserQboCustomerAssignmentService($customers, $timeTracker))
-        ->sync($user, $token, false, ['Customer-11', '11']);
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    (new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService))
+        ->sync($admin, $user, $token, false, ['Customer-11', '11']);
 
     expect($user->fresh()->qboCustomers)->toHaveCount(1)
         ->and($user->fresh()->qboCustomers->first()->qbo_customer_ref)->toBe('11');
@@ -258,8 +268,9 @@ it('ignores customer refs that cannot be normalized during sync', function () {
         ->once()
         ->with($user, $token);
 
-    (new UserQboCustomerAssignmentService($customers, $timeTracker))
-        ->sync($user, $token, false, ['abc', '11']);
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+    (new UserQboCustomerAssignmentService($customers, $timeTracker, new OrganizationAccessService))
+        ->sync($admin, $user, $token, false, ['abc', '11']);
 
     expect($user->fresh()->qboCustomers)->toHaveCount(1)
         ->and($user->fresh()->qboCustomers->first()->qbo_customer_ref)->toBe('11');
@@ -272,12 +283,15 @@ it('rejects customer sync for users without a quickbooks employee ref', function
         'qbo_employee_name' => null,
     ]);
 
+    $admin = User::factory()->admin()->create(['organization_id' => $user->organization_id]);
+
     $service = new UserQboCustomerAssignmentService(
         Mockery::mock(QboCustomerListService::class),
         Mockery::mock(TimeTrackerService::class),
+        new OrganizationAccessService,
     );
 
-    expect(fn () => $service->sync($user, $token, true, []))
+    expect(fn () => $service->sync($admin, $user, $token, true, []))
         ->toThrow(HttpException::class);
 });
 
@@ -295,6 +309,7 @@ it('describes restricted customer access with assignment rows', function () {
     $service = new UserQboCustomerAssignmentService(
         Mockery::mock(QboCustomerListService::class),
         Mockery::mock(TimeTrackerService::class),
+        new OrganizationAccessService,
     );
 
     expect($service->describeAccess($user))->toBe([

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
@@ -60,6 +61,10 @@ expect()->extend('toBeOne', function () {
 
 function actingAsWithQboEmployee(array $attributes = []): User
 {
+    if (! array_key_exists('organization_id', $attributes)) {
+        $attributes['organization_id'] = Organization::factory()->create()->id;
+    }
+
     $user = User::factory()->create(array_merge([
         'qbo_employee_ref' => '7',
         'qbo_employee_name' => 'Jane Doe',
@@ -77,6 +82,20 @@ function actingAsAdmin(array $attributes = []): User
     Sanctum::actingAs($user);
 
     return $user;
+}
+
+/**
+ * Creates a timesheet user in the same organization as the given administrator.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function timesheetUserFor(User $admin, array $attributes = []): User
+{
+    return User::factory()->create(array_merge([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+        'qbo_employee_name' => 'Jane Doe',
+    ], $attributes));
 }
 
 function frontendHeaders(): array

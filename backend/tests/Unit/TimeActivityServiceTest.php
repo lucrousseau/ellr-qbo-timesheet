@@ -36,6 +36,7 @@ function makeTimeActivityService(DataService $dataService): TimeActivityService
 function makeUserWithEmployee(): User
 {
     return User::factory()->make([
+        'organization_id' => 1,
         'qbo_employee_ref' => '7',
         'qbo_employee_name' => 'Jane Doe',
     ]);

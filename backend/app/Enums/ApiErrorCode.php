@@ -23,5 +23,6 @@ enum ApiErrorCode: string
     case QboInsufficientPermissions = 'qbo_insufficient_permissions';
     case AdminRequired = 'admin_required';
     case EmailNotVerified = 'email_not_verified';
+    case OrganizationRequired = 'organization_required';
     case InvalidCredentials = 'invalid_credentials';
 }

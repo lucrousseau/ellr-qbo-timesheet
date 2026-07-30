@@ -6,6 +6,7 @@
 
 namespace Features\Bootstrap;
 
+use App\Models\Organization;
 use App\Models\User;
 use Behat\Behat\Context\Context;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
@@ -33,6 +34,8 @@ class FeatureContext implements Context
 
     private ?int $timesheetUserId = null;
 
+    private ?int $foreignTimesheetUserId = null;
+
     private ?string $webhookVerifier = null;
 
     /**
@@ -48,6 +51,7 @@ class FeatureContext implements Context
         $this->cookies = [];
         $this->statefulClient = false;
         $this->timesheetUserId = null;
+        $this->foreignTimesheetUserId = null;
         $this->webhookVerifier = null;
     }
 
@@ -61,6 +65,7 @@ class FeatureContext implements Context
         $this->cookies = [];
         $this->statefulClient = false;
         $this->timesheetUserId = null;
+        $this->foreignTimesheetUserId = null;
         $this->webhookVerifier = null;
         $this->resetAuthenticationState();
         self::$app = null;
@@ -141,7 +146,31 @@ class FeatureContext implements Context
      */
     public function anotherUserIsMappedToQuickbooksEmployee(string $ref): void
     {
-        User::factory()->create(['qbo_employee_ref' => $ref]);
+        $attributes = ['qbo_employee_ref' => $ref];
+        $actor = auth()->user();
+
+        if ($actor instanceof User) {
+            $attributes['organization_id'] = $actor->organization_id;
+        }
+
+        User::factory()->create($attributes);
+    }
+
+    /**
+     * @Given a timesheet user exists in another organization mapped to quickbooks employee :ref
+     * @param  string  $ref  QuickBooks employee reference.
+     * @return void
+     */
+    public function aTimesheetUserExistsInAnotherOrganizationMappedToQuickbooksEmployee(string $ref): void
+    {
+        $foreignOrganization = Organization::factory()->create();
+        $user = User::factory()->create([
+            'organization_id' => $foreignOrganization->id,
+            'qbo_employee_ref' => $ref,
+            'qbo_employee_name' => 'Foreign User',
+        ]);
+
+        $this->foreignTimesheetUserId = $user->id;
     }
 
     /**
@@ -151,10 +180,17 @@ class FeatureContext implements Context
      */
     public function aTimesheetUserIsMappedToQuickbooksEmployee(string $ref): void
     {
-        $user = User::factory()->create([
+        $attributes = [
             'qbo_employee_ref' => $ref,
             'qbo_employee_name' => 'Jane Doe',
-        ]);
+        ];
+        $actor = auth()->user();
+
+        if ($actor instanceof User) {
+            $attributes['organization_id'] = $actor->organization_id;
+        }
+
+        $user = User::factory()->create($attributes);
 
         $this->timesheetUserId = $user->id;
     }
@@ -409,6 +445,10 @@ class FeatureContext implements Context
     {
         if ($this->timesheetUserId !== null) {
             $path = str_replace('{timesheet_user_id}', (string) $this->timesheetUserId, $path);
+        }
+
+        if ($this->foreignTimesheetUserId !== null) {
+            $path = str_replace('{foreign_timesheet_user_id}', (string) $this->foreignTimesheetUserId, $path);
         }
 
         if (str_contains($path, '{admin_user_id}')) {

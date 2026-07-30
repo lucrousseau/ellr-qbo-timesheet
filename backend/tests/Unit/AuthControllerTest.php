@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Services\AuthSessionService;
+use App\Services\OrganizationRegistrationService;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ it('logs out through the web guard and clears the session', function () {
 
     $authSession = Mockery::mock(AuthSessionService::class);
 
-    $response = (new AuthController($authSession))->logout($request);
+    $response = (new AuthController($authSession, app(OrganizationRegistrationService::class)))->logout($request);
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getData(true))->toBe(['message' => 'Logged out.']);
@@ -40,7 +41,7 @@ it('skips session cleanup when the request has no session', function () {
 
     $authSession = Mockery::mock(AuthSessionService::class);
 
-    $response = (new AuthController($authSession))->logout($request);
+    $response = (new AuthController($authSession, app(OrganizationRegistrationService::class)))->logout($request);
 
     expect($response->getStatusCode())->toBe(200)
         ->and($response->getData(true))->toBe(['message' => 'Logged out.']);

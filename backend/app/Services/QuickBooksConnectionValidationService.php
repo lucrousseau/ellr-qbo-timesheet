@@ -21,10 +21,12 @@ class QuickBooksConnectionValidationService
      *
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
      * @param  QboEmployeeListService  $employeeList  Employee list queries.
+     * @param  OrganizationRealmService  $organizationRealm  Tenant realm binding rules.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
         private readonly QboEmployeeListService $employeeList,
+        private readonly OrganizationRealmService $organizationRealm,
     ) {}
 
     /**
@@ -36,10 +38,13 @@ class QuickBooksConnectionValidationService
      */
     public function validateAdministratorConnection(User $user, QuickBooksToken $token): void
     {
-        $this->assertSingleCompanyRealm($user, $token);
-
         try {
+            $this->organizationRealm->validateAndBindRealm($user, $token);
             $this->employeeList->assertCanListEmployees($token);
+        } catch (QuickBooksOAuthException $exception) {
+            $this->quickBooks->disconnect($user);
+
+            throw $exception;
         } catch (HttpResponseException) {
             $this->quickBooks->disconnect($user);
 
@@ -49,33 +54,5 @@ class QuickBooksConnectionValidationService
                 'insufficient_permissions',
             );
         }
-    }
-
-    /**
-     * Rejects OAuth when another administrator already connected a different company.
-     *
-     * @param  User  $user  Administrator who completed OAuth.
-     * @param  QuickBooksToken  $token  Persisted OAuth token.
-     * @return void
-     */
-    private function assertSingleCompanyRealm(User $user, QuickBooksToken $token): void
-    {
-        $conflictingRealm = QuickBooksToken::query()
-            ->whereKeyNot($token->id)
-            ->whereRelation('user', 'is_admin', true)
-            ->where('realm_id', '!=', $token->realm_id)
-            ->exists();
-
-        if (! $conflictingRealm) {
-            return;
-        }
-
-        $this->quickBooks->disconnect($user);
-
-        throw new QuickBooksOAuthException(
-            'Another QuickBooks company is already connected.',
-            null,
-            'realm_conflict',
-        );
     }
 }

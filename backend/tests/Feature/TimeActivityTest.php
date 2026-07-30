@@ -59,7 +59,7 @@ describe('authenticated time activities', function () {
         $admin = User::factory()->admin()->create();
         $token = QuickBooksToken::factory()->forUser($admin)->create();
 
-        $employee = User::factory()->create([
+        $employee = timesheetUserFor($admin, [
             'qbo_employee_ref' => '8',
             'qbo_employee_name' => 'Jane Doe',
         ]);

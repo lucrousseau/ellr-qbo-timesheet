@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\QuickBooksTokenResolverService;
 use App\Services\UserQboCustomerAssignmentService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Reads and updates QuickBooks customer access for provisioned timesheet users.
@@ -32,12 +33,13 @@ class AdminUserCustomerController extends Controller
     /**
      * Lists customers assigned to the given timesheet user.
      *
+     * @param  Request  $request  Incoming HTTP request.
      * @param  User  $user  Target timesheet user.
      * @return JsonResponse
      */
-    public function show(User $user): JsonResponse
+    public function show(Request $request, User $user): JsonResponse
     {
-        $this->assignments->ensureTimesheetUser($user);
+        $this->assignments->ensureTimesheetUser($request->user(), $user);
 
         return response()->json($this->assignments->describeAccess($user));
     }
@@ -53,6 +55,7 @@ class AdminUserCustomerController extends Controller
     {
         $token = $this->tokenResolver->resolve($request->user());
         $access = $this->assignments->sync(
+            $request->user(),
             $user,
             $token,
             $request->boolean('all_customers_access'),

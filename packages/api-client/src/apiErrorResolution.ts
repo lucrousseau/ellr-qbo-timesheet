@@ -14,6 +14,7 @@ export const API_ERROR_MESSAGE_KEYS = [
   'registration_disabled',
   'qbo_employee_not_configured',
   'admin_required',
+  'organization_required',
   'email_not_verified',
   'access_denied',
   'qbo_employee_invalid',
@@ -90,6 +91,10 @@ export function resolveApiError(error: unknown): ApiErrorResolution {
 
       if (error.code === 'admin_required') {
         return { type: 'catalog', key: 'admin_required' }
+      }
+
+      if (error.code === 'organization_required') {
+        return { type: 'catalog', key: 'organization_required' }
       }
 
       if (error.code === 'email_not_verified') {

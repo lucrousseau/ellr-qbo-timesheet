@@ -16,10 +16,7 @@ it('rejects login when the mapped quickbooks employee no longer exists', functio
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '7')->andReturn(null);
@@ -43,10 +40,7 @@ it('allows login when the mapped quickbooks employee still exists', function () 
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '7')->andReturn((object) [
@@ -74,10 +68,9 @@ it('syncs name and email from quickbooks on login', function () {
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $user = User::factory()->create([
+    $user = timesheetUserFor($admin, [
         'name' => 'Old Name',
         'email' => 'old@example.com',
-        'qbo_employee_ref' => '7',
         'qbo_employee_name' => 'Old Name',
     ]);
 
@@ -108,10 +101,7 @@ it('rejects login when the quickbooks employee has no email', function () {
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $user = timesheetUserFor($admin);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '7')->andReturn((object) [
@@ -136,10 +126,12 @@ it('rejects login when quickbooks identity sync hits an email conflict', functio
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create();
 
-    User::factory()->create(['email' => 'jane@example.com']);
-    $user = User::factory()->create([
+    User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'email' => 'jane@example.com',
+    ]);
+    $user = timesheetUserFor($admin, [
         'email' => 'old@example.com',
-        'qbo_employee_ref' => '7',
         'qbo_employee_name' => 'Old Name',
     ]);
 

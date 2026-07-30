@@ -11,7 +11,7 @@ covers(AdminQboEmployeeController::class);
 it('allows administrators to map a qbo employee for another user', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
-    $target = User::factory()->create();
+    $target = User::factory()->create(['organization_id' => $admin->organization_id]);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '42')->andReturn((object) [
@@ -39,7 +39,7 @@ it('allows administrators to map a qbo employee for another user', function () {
 
 it('requires administrator access to map employees for other users', function () {
     $user = User::factory()->create();
-    $target = User::factory()->create();
+    $target = User::factory()->create(['organization_id' => $user->organization_id]);
 
     $this->actingAs($user)
         ->patchJson("/api/admin/users/{$target->id}/qbo-employee", [
@@ -52,7 +52,7 @@ it('requires administrator access to map employees for other users', function ()
 it('rejects unknown qbo employees when mapping another user', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create();
-    $target = User::factory()->create();
+    $target = User::factory()->create(['organization_id' => $admin->organization_id]);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('FindById')->once()->with('Employee', '999')->andReturn(null);

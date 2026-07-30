@@ -16,4 +16,7 @@ return [
     'user_password' => env('DEV_SEED_USER_PASSWORD', 'EllrDev!2026'),
     'user_name' => env('DEV_SEED_USER_NAME', 'Dev Timesheet'),
 
+    'organization_name' => env('DEV_SEED_ORGANIZATION_NAME', 'Ellr Development'),
+    'organization_slug' => env('DEV_SEED_ORGANIZATION_SLUG', 'ellr-dev'),
+
 ];

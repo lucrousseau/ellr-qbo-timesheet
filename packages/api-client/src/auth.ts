@@ -6,6 +6,16 @@ import { ApiError, apiFetch } from './api'
 import type { UserLocale } from './locale'
 
 /**
+ * Tenant organization linked to the signed-in user.
+ */
+export type Organization = {
+  id: number
+  name: string
+  slug: string
+  qbo_connected: boolean
+}
+
+/**
  * Authenticated user with optional QuickBooks employee mapping.
  */
 export type User = {
@@ -15,6 +25,7 @@ export type User = {
   email_verified_at?: string | null
   locale?: UserLocale | null
   is_admin?: boolean
+  organization?: Organization | null
   qbo_employee_ref?: string | null
   qbo_employee_name?: string | null
   assigned_customers?: Array<{ id: string; display_name: string }>
@@ -31,6 +42,31 @@ export async function login(email: string, password: string): Promise<User> {
   const response = await apiFetch<{ user: User }>('/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
+  })
+
+  return response.user
+}
+
+/**
+ * Payload for public self-service registration.
+ */
+export type RegisterPayload = {
+  name: string
+  email: string
+  password: string
+  password_confirmation: string
+  organization_name?: string | null
+}
+
+/**
+ * Creates a user account and opens a Sanctum session when registration is enabled.
+ * @param payload Registration fields including optional organization name.
+ * @returns Newly registered user.
+ */
+export async function register(payload: RegisterPayload): Promise<User> {
+  const response = await apiFetch<{ user: User }>('/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   })
 
   return response.user

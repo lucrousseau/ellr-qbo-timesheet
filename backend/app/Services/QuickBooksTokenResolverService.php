@@ -63,7 +63,7 @@ class QuickBooksTokenResolverService
     }
 
     /**
-     * Returns the user's token or the latest administrator token for the organization.
+     * Returns the user's token or the latest administrator token for the same organization.
      *
      * @param  User  $user  Authenticated application user.
      * @return QuickBooksToken|null
@@ -72,14 +72,32 @@ class QuickBooksTokenResolverService
     {
         $token = $user->quickBooksToken;
 
-        if ($token !== null) {
-            return $token;
+        if ($token === null) {
+            $token = QuickBooksToken::query()
+                ->whereHas('user', function ($query) use ($user): void {
+                    $query
+                        ->where('organization_id', $user->organization_id)
+                        ->where('is_admin', true);
+                })
+                ->latest('id')
+                ->first();
         }
 
-        return QuickBooksToken::query()
-            ->whereRelation('user', 'is_admin', true)
-            ->latest('id')
-            ->first();
+        if ($token === null) {
+            return null;
+        }
+
+        $organization = $user->organization;
+
+        if (
+            $organization !== null
+            && $organization->hasQuickBooksRealm()
+            && $token->realm_id !== $organization->realm_id
+        ) {
+            return null;
+        }
+
+        return $token;
     }
 
     /**

@@ -18,6 +18,7 @@ import {
   fetchCurrentUser,
   login,
   logout,
+  register,
   requestPasswordReset,
   resendVerificationEmail,
   resetPassword,
@@ -764,6 +765,65 @@ describe('auth helpers', () => {
         body: JSON.stringify({ email: 'jane@example.com', password: 'password' }),
         headers: expect.objectContaining({
           'X-XSRF-TOKEN': expect.any(String),
+        }),
+      }),
+    )
+  })
+
+  it('registers a user and returns the created account', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({
+          user: {
+            id: 1,
+            name: 'Jane',
+            email: 'jane@example.com',
+            organization: {
+              id: 1,
+              name: 'Acme Inc',
+              slug: 'acme-inc',
+              qbo_connected: false,
+            },
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      register({
+        name: 'Jane',
+        email: 'jane@example.com',
+        password: 'password',
+        password_confirmation: 'password',
+        organization_name: 'Acme Inc',
+      }),
+    ).resolves.toEqual({
+      id: 1,
+      name: 'Jane',
+      email: 'jane@example.com',
+      organization: {
+        id: 1,
+        name: 'Acme Inc',
+        slug: 'acme-inc',
+        qbo_connected: false,
+      },
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:8000/api/register',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Jane',
+          email: 'jane@example.com',
+          password: 'password',
+          password_confirmation: 'password',
+          organization_name: 'Acme Inc',
         }),
       }),
     )

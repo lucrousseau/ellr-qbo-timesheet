@@ -236,13 +236,15 @@ it('disconnects quickbooks for authenticated administrators', function () {
     ]);
 
     $user = actingAsAdmin();
-    QuickBooksToken::factory()->forUser($user)->create();
+    $user->organization->update(['realm_id' => 'realm-42']);
+    QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-42']);
 
     $this->postJson('/api/quickbooks/disconnect')
         ->assertOk()
         ->assertJson(['connected' => false]);
 
-    expect(QuickBooksToken::query()->count())->toBe(0);
+    expect(QuickBooksToken::query()->count())->toBe(0)
+        ->and($user->organization->fresh()->realm_id)->toBeNull();
 });
 
 it('rejects quickbooks disconnect for non-administrators', function () {

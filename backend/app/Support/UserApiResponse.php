@@ -23,9 +23,21 @@ class UserApiResponse
      */
     public static function resource(User $user): User
     {
-        $user->makeVisible(['is_admin']);
-        $user->setAttribute('is_admin', $user->isAdmin());
+        $user->loadMissing('organization');
+        $organization = $user->organization;
 
-        return $user;
+        $resource = new User;
+        $resource->forceFill($user->getAttributes());
+        $resource->exists = $user->exists;
+
+        $resource->makeVisible(['is_admin']);
+        $resource->setAttribute('is_admin', $user->isAdmin());
+        $resource->setAttribute(
+            'organization',
+            $organization !== null ? OrganizationApiResponse::resource($organization) : null,
+        );
+        $resource->makeHidden(['organization_id']);
+
+        return $resource;
     }
 }

@@ -7,9 +7,9 @@
 namespace App\Http\Requests;
 
 use App\Http\Concerns\AllowsAuthenticatedApiUser;
+use App\Http\Concerns\ScopesQboEmployeeRefUniqueness;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 /**
  * Form request rules for PATCH /api/user/qbo-employee payloads.
@@ -17,6 +17,7 @@ use Illuminate\Validation\Rule;
 class UpdateQboEmployeeRequest extends FormRequest
 {
     use AllowsAuthenticatedApiUser;
+    use ScopesQboEmployeeRefUniqueness;
 
     /**
      * Validation rules for QBO employee mapping.
@@ -33,7 +34,7 @@ class UpdateQboEmployeeRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('users', 'qbo_employee_ref')->ignore($ignoreUserId),
+                $this->uniqueQboEmployeeRefForOrganization($ignoreUserId),
             ],
             'qbo_employee_name' => ['nullable', 'string', 'max:255'],
         ];

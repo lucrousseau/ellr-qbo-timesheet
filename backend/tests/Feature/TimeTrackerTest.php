@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\QuickBooksPickerController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
-use App\Models\User;
 use App\Services\QboCustomerListService;
 use App\Services\QboPickerValidationService;
 use App\Services\QboProjectListService;
@@ -25,10 +24,7 @@ it('lists quickbooks customers assigned to the signed-in employee', function () 
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
 
-    $employee = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $employee = timesheetUserFor($admin);
     $employee->qboCustomers()->create([
         'qbo_customer_ref' => '11',
         'qbo_customer_name' => 'Acme Corp',
@@ -45,10 +41,7 @@ it('lists quickbooks projects for a parent customer', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
 
-    $employee = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $employee = timesheetUserFor($admin);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')
@@ -74,10 +67,7 @@ it('lists quickbooks services for authenticated timesheet users', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
 
-    $employee = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $employee = timesheetUserFor($admin);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')
@@ -177,10 +167,7 @@ it('clears unassigned customers from persisted timer sessions on load', function
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
 
-    $employee = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $employee = timesheetUserFor($admin);
     $employee->qboCustomers()->create([
         'qbo_customer_ref' => '12',
         'qbo_customer_name' => 'Beta LLC',
@@ -212,7 +199,8 @@ it('clears unassigned customers from persisted timer sessions on load', function
 it('rejects timer updates with customer refs that are not allowed for the employee', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    actingAsWithQboEmployee();
+    $user = timesheetUserFor($admin);
+    $this->actingAs($user);
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => '99',
@@ -231,7 +219,8 @@ it('rejects timer updates with customer refs that are not allowed for the employ
 it('logs elapsed time to quickbooks and clears the session', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = actingAsWithQboEmployee();
+    $user = timesheetUserFor($admin);
+    $this->actingAs($user);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => null,
@@ -308,7 +297,8 @@ it('pauses a running timer through the api', function () {
 it('rejects logging when the timer has no elapsed time', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    $user = actingAsWithQboEmployee();
+    $user = timesheetUserFor($admin);
+    $this->actingAs($user);
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => null,
@@ -329,7 +319,8 @@ it('rejects logging when the timer has no elapsed time', function () {
 it('rejects logging when no active timer session exists', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    actingAsWithQboEmployee();
+    $user = timesheetUserFor($admin);
+    $this->actingAs($user);
 
     $this->postJson('/api/time-tracker/log', [], frontendHeaders())
         ->assertUnprocessable()
@@ -340,10 +331,7 @@ it('lists quickbooks customers with refresh enabled', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
 
-    $employee = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $employee = timesheetUserFor($admin);
     $employee->qboCustomers()->create([
         'qbo_customer_ref' => '11',
         'qbo_customer_name' => 'Acme Corp',
@@ -360,10 +348,7 @@ it('requires a customer reference for project picker requests', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
 
-    $employee = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
+    $employee = timesheetUserFor($admin);
 
     $this->actingAs($employee)
         ->getJson('/api/quickbooks/projects', frontendHeaders())
@@ -395,7 +380,8 @@ it('updates timer state without quickbooks validation when picker refs are blank
 it('rejects timer updates with invalid service refs', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    actingAsWithQboEmployee();
+    $user = timesheetUserFor($admin);
+    $this->actingAs($user);
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')
@@ -426,7 +412,8 @@ it('rejects timer updates with invalid service refs', function () {
 it('rejects timer updates with project refs but no customer', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
-    actingAsWithQboEmployee();
+    $user = timesheetUserFor($admin);
+    $this->actingAs($user);
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,

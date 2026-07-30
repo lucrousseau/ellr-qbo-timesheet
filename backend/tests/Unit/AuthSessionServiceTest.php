@@ -105,13 +105,66 @@ it('invalidates database sessions and api tokens for a user', function () {
         ->and($user->tokens()->count())->toBe(0);
 });
 
+it('rejects login when the account has no organization', function () {
+    $user = User::factory()->make([
+        'organization_id' => null,
+        'email_verified_at' => now(),
+    ]);
+    $user->id = 1;
+
+    $request = Request::create('/api/login', 'POST');
+
+    Auth::shouldReceive('logout')->once();
+
+    $response = app(AuthSessionService::class)->rejectLoginWithoutOrganization($user, $request);
+
+    expect($response)->not->toBeNull()
+        ->and($response->getStatusCode())->toBe(403)
+        ->and($response->getData(true))->toBe([
+            'message' => 'Organization membership is required.',
+            'error' => 'organization_required',
+        ]);
+});
+
+it('allows login when the account belongs to an organization', function () {
+    $user = User::factory()->make([
+        'organization_id' => 1,
+        'email_verified_at' => now(),
+    ]);
+
+    $request = Request::create('/api/login', 'POST');
+
+    expect(app(AuthSessionService::class)->rejectLoginWithoutOrganization($user, $request))->toBeNull();
+});
+
+it('rejects login for missing organization before other guards run', function () {
+    $guard = Mockery::mock(QboEmployeeLoginGuardService::class);
+    $guard->shouldNotReceive('rejectIfEmployeeRemoved');
+
+    $user = User::factory()->make([
+        'organization_id' => null,
+        'email_verified_at' => now(),
+    ]);
+    $user->id = 1;
+
+    Auth::shouldReceive('logout')->once();
+
+    $response = (new AuthSessionService($guard))->rejectLoginIfNeeded(
+        $user,
+        Request::create('/api/login', 'POST'),
+    );
+
+    expect($response?->getStatusCode())->toBe(403)
+        ->and($response?->getData(true)['error'])->toBe('organization_required');
+});
+
 it('rejects login when quickbooks identity guard fails', function () {
     $guard = Mockery::mock(QboEmployeeLoginGuardService::class);
     $guard->shouldReceive('rejectIfEmployeeRemoved')
         ->once()
         ->andReturn(response()->json(['message' => 'removed', 'error' => 'qbo_employee_removed'], 403));
 
-    $user = User::factory()->make();
+    $user = User::factory()->make(['organization_id' => 1]);
     $request = Request::create('/api/login', 'POST');
 
     $response = (new AuthSessionService($guard))->rejectLoginIfNeeded($user, $request);

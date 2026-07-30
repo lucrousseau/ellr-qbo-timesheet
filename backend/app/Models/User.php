@@ -15,13 +15,14 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password', 'locale', 'qbo_employee_ref', 'qbo_employee_name', 'qbo_all_customers_access'])]
+#[Fillable(['organization_id', 'name', 'email', 'password', 'locale', 'qbo_employee_ref', 'qbo_employee_name', 'qbo_all_customers_access'])]
 #[Hidden(['password', 'remember_token', 'is_admin'])]
 /**
  * Eloquent user with Sanctum auth and optional QBO employee fields.
@@ -68,6 +69,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return in_array($locale, UserLocale::values(), true)
             ? $locale
             : UserLocale::En->value;
+    }
+
+    /**
+     * Relationship to the tenant organization that owns this account.
+     *
+     * @return BelongsTo<Organization, $this>
+     */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
     }
 
     /**
@@ -136,5 +147,28 @@ class User extends Authenticatable implements MustVerifyEmail
                 app(PasswordResetLinkService::class)->resolveFrontendUrl(null),
             ))->locale($this->preferredLocale()),
         );
+    }
+
+    /**
+     * Resolves route parameters to users in the authenticated actor's organization.
+     *
+     * @param  mixed  $value  Route key value.
+     * @param  string|null  $field  Route key field name.
+     * @return User
+     */
+    public function resolveRouteBinding($value, $field = null): User
+    {
+        $field ??= $this->getRouteKeyName();
+        $query = $this->newQuery()->where($field, $value);
+
+        $actor = auth()->user();
+
+        if (! $actor instanceof self) {
+            abort(404);
+        }
+
+        return $query
+            ->where('organization_id', $actor->organization_id)
+            ->firstOrFail();
     }
 }

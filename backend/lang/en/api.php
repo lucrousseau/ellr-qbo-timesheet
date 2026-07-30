@@ -9,6 +9,7 @@ return [
     'registration_disabled' => 'Registration disabled.',
     'invalid_credentials' => 'Invalid credentials.',
     'admin_required' => 'Administrator access required.',
+    'organization_required' => 'Organization membership is required.',
     'email_not_verified' => 'Email address is not verified.',
     'quickbooks_not_connected' => 'QuickBooks is not connected.',
     'quickbooks_expired' => 'QuickBooks connection expired. Please reconnect from the admin app.',

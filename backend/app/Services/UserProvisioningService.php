@@ -23,12 +23,14 @@ class UserProvisioningService
      * @param  QuickBooksTokenResolverService  $tokenResolver  QuickBooks token resolver.
      * @param  TimesheetInvitationService  $invitation  Password-set email sender.
      * @param  AuthSessionService  $authSessions  Session and token invalidation.
+     * @param  OrganizationAccessService  $organizationAccess  Tenant isolation checks.
      */
     public function __construct(
         private readonly QboEmployeeService $qboEmployee,
         private readonly QuickBooksTokenResolverService $tokenResolver,
         private readonly TimesheetInvitationService $invitation,
         private readonly AuthSessionService $authSessions,
+        private readonly OrganizationAccessService $organizationAccess,
     ) {}
 
     /**
@@ -46,6 +48,7 @@ class UserProvisioningService
             $identity = $this->qboEmployee->resolveEmployeeIdentity($token, $employeeRef);
 
             $user = User::query()->create([
+                'organization_id' => $admin->organization_id,
                 'name' => $identity['display_name'],
                 'email' => $identity['email'],
                 'password' => Str::password(32),
@@ -63,11 +66,13 @@ class UserProvisioningService
     /**
      * Lists non-administrator users with a QuickBooks employee mapping.
      *
+     * @param  User  $admin  Administrator whose organization is listed.
      * @return Collection<int, User>
      */
-    public function listTimesheetUsers()
+    public function listTimesheetUsers(User $admin)
     {
         return User::query()
+            ->where('organization_id', $admin->organization_id)
             ->where('is_admin', false)
             ->whereNotNull('qbo_employee_ref')
             ->orderBy('name')
@@ -77,14 +82,13 @@ class UserProvisioningService
     /**
      * Deletes a provisioned timesheet user account and revokes active sessions.
      *
+     * @param  User  $admin  Administrator performing the revocation.
      * @param  User  $user  Timesheet user to remove.
      * @return void
      */
-    public function revokeTimesheetUser(User $user): void
+    public function revokeTimesheetUser(User $admin, User $user): void
     {
-        if ($user->isAdmin() || $user->qbo_employee_ref === null || $user->qbo_employee_ref === '') {
-            abort(404);
-        }
+        $this->organizationAccess->ensureTimesheetUser($admin, $user);
 
         DB::transaction(function () use ($user): void {
             $this->authSessions->invalidateUserSessions($user);
