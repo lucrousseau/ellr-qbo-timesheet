@@ -38,6 +38,7 @@ printf '%s\n' \
   "  Copy verifier token to backend/.env as QUICKBOOKS_WEBHOOK_VERIFIER" \
   "" \
   "Then: npm run sync:restart" \
+  "Check tunnel: npm run dev:webhook-tunnel:status" \
   "Queue worker: npm run sync:queue:logs" \
   ""
 

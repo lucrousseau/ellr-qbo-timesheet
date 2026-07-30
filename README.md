@@ -112,6 +112,9 @@ npm run docker:down      # stop containers
 npm run docker:reset     # stop, remove volumes, delete local SQLite (fresh DB on next start)
 npm run docker:cache:clear  # reset volumes, remove local images, prune npm BuildKit cache mounts
 npm run docker:test:scripts  # shell tests for docker scripts (sync-deps, reset, sqlite path)
+npm run sync:queue:logs      # follow queue worker (webhook jobs, OAuth backfill)
+npm run sync:schedule:logs   # follow scheduler (hourly QBO reconcile backup)
+npm run dev:webhook-tunnel:status  # verify ngrok tunnel and Docker sync workers
 ```
 
 Fresh local database:

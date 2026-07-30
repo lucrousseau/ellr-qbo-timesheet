@@ -16,6 +16,7 @@ Two procedures: **local** (Docker) and **production**. Use **local with webhooks
 | QBO delete sync | Reconcile / hourly job (~minutes) | **Yes** (~seconds via webhook) | **Yes** (~seconds) |
 | QBO create/update outside app | Reconcile / `?refresh=1` | Webhook + reconcile backup | Webhook + reconcile backup |
 | Queue worker | `queue` service (auto with `docker compose up`) | Same | Supervisor / platform worker |
+| Scheduled reconcile | `scheduler` service (auto with `docker compose up`) | Same | Cron `schedule:run` every minute |
 
 ### How sync works
 
@@ -74,19 +75,22 @@ npm run sync:migrate
 
 `Nothing to migrate.` = OK (tables already exist).
 
-### 5. Queue worker
+### 5. Queue worker and scheduler
 
 The **`queue`** service starts with `docker compose up` and runs `php artisan queue:work` in the background.
 
+The **`scheduler`** service starts with `docker compose up` and runs `php artisan schedule:work` (hourly reconcile by default).
+
 ```bash
 npm run sync:queue:logs
+npm run sync:schedule:logs
 ```
 
-Expected: `Processing jobs from the [default] queue.`
+Expected queue output: `Processing jobs from the [default] queue.`
 
-Do **not** also run `php artisan queue:work` manually while the `queue` container is up; two workers can race on the same jobs.
+Do **not** also run `php artisan queue:work` or `npm run sync:schedule` manually while the Docker services are up; duplicate workers can race on the same jobs or schedules.
 
-Needed for OAuth backfill after admin connects QBO.
+Needed for OAuth backfill after admin connects QBO (queue) and periodic reconcile when webhooks are off (scheduler).
 
 ### 6. Connect QBO
 
@@ -120,10 +124,13 @@ npm run docker:up
 npm run sync:restart
 npm run sync:migrate
 npm run sync:queue:logs
+npm run sync:schedule:logs
 npm run sync:reconcile
-npm run sync:schedule   # optional: simulate hourly cron
-npm run dev:webhook-tunnel   # optional: Intuit webhooks via ngrok
+npm run dev:webhook-tunnel        # optional: Intuit webhooks via ngrok (near real-time sync)
+npm run dev:webhook-tunnel:status # check ngrok tunnel, Docker workers, and Intuit endpoint URL
 ```
+
+`npm run sync:schedule` is only needed when running the API **without** Docker (falls back to `backend/`).
 
 `npm run artisan -- <command>` runs any Artisan command in Docker (`api`) when the stack is up, otherwise in `backend/`.
 
@@ -137,7 +144,7 @@ If you use `npm run dev:api` instead of Docker, the `sync:*` and `artisan` scrip
 
 **Use this when developing Phase 2 sync.** Webhooks remove entries within seconds; reconcile (manual or hourly) also purges ghosts in the lookback window when QuickBooks no longer returns them and the reconcile scan was not truncated by `QUICKBOOKS_TIME_ACTIVITIES_SCAN_MAX_PAGES`.
 
-You need **2 terminals**: Docker stack (includes queue worker), ngrok tunnel.
+You need **2 terminals**: Docker stack (includes queue worker and scheduler), ngrok tunnel.
 
 ### 1. Install ngrok (once per machine)
 
@@ -355,14 +362,15 @@ Full list in `backend/.env.example`:
 | List empty after connect | `docker compose logs queue`; then reconcile | Check worker logs; run reconcile |
 | QBO change not in app (no webhook) | Run reconcile or `?refresh=1` | Fix ngrok URL / verifier / worker |
 | QBO **delete** still visible | `npm run sync:reconcile` or wait for hourly reconcile | Fix webhooks / verifier / worker |
-| Brief login error during sync | SQLite lock (api + queue); restart stack after pull; WAL enabled in config | N/A |
+| Brief login error during sync | SQLite lock (api + queue + scheduler); restart stack after pull; WAL enabled in config | N/A |
 | Webhook `401` | N/A (no webhook locally) | Match `QUICKBOOKS_WEBHOOK_VERIFIER` to Intuit |
 | Jobs never run | `docker compose ps queue`; `docker compose up -d queue` | Start Supervisor / platform worker |
 | Duplicate queue workers | Stop manual `queue:work` if `queue` service is running | One worker process per queue |
-| Hourly sync missing | Optional: `schedule:work` | Add cron `schedule:run` every minute |
+| Hourly sync missing | `docker compose ps scheduler`; `npm run sync:schedule:logs` | Add cron `schedule:run` every minute |
+| Webhook tunnel health | `npm run dev:webhook-tunnel:status` | N/A |
 | `ngrok: command not found` | Skip webhooks; use reconcile | N/A |
 
-Logs: `backend/storage/logs/laravel.log`, `docker compose logs api`, or `docker compose logs queue`.
+Logs: `backend/storage/logs/laravel.log`, `docker compose logs api`, `docker compose logs queue`, or `docker compose logs scheduler`.
 
 ---
 

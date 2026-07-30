@@ -40,6 +40,17 @@ services:
         condition: service_healthy
     command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3"]
 
+  scheduler:
+    <<: *api-base
+    environment:
+      <<: *api-environment
+      CONTAINER_ROLE: scheduler
+      DEV_SEED_ENABLED: "false"
+    depends_on:
+      api:
+        condition: service_healthy
+    command: ["php", "artisan", "schedule:work"]
+
   node-init:
     build:
       context: .

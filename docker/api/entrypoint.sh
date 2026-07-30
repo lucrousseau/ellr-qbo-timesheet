@@ -69,7 +69,7 @@ if [ "$DB_CONNECTION" = "mysql" ]; then
   done
 fi
 
-if [ "${CONTAINER_ROLE:-api}" != "queue" ]; then
+if [ "${CONTAINER_ROLE:-api}" = "api" ]; then
   php artisan migrate --force
 
   if [ "$APP_ENV" = "local" ] && [ "$DEV_SEED_ENABLED" = "true" ]; then
