@@ -22,6 +22,12 @@ if [ ! -f .env ]; then
   fi
 fi
 
+# SQLite must exist before composer install (post-autoload-dump runs artisan package:discover).
+if SQLITE_FILE=$(/usr/local/bin/resolve-sqlite-path.sh /var/www/html); then
+  mkdir -p "$(dirname "$SQLITE_FILE")"
+  touch "$SQLITE_FILE"
+fi
+
 LOCK_HASH_FILE="vendor/.composer-lock-hash"
 CURRENT_HASH=$(md5sum composer.lock | awk '{print $1}')
 
@@ -39,15 +45,7 @@ fi
 MAX_ATTEMPTS="${MYSQL_WAIT_ATTEMPTS:-60}"
 DB_CONNECTION="${DB_CONNECTION:-sqlite}"
 
-if [ "$DB_CONNECTION" = "sqlite" ]; then
-  DB_DATABASE="${DB_DATABASE:-database/database.sqlite}"
-  case "$DB_DATABASE" in
-    /*) SQLITE_FILE="$DB_DATABASE" ;;
-    *) SQLITE_FILE="/var/www/html/$DB_DATABASE" ;;
-  esac
-  mkdir -p "$(dirname "$SQLITE_FILE")"
-  touch "$SQLITE_FILE"
-elif [ "$DB_CONNECTION" = "mysql" ]; then
+if [ "$DB_CONNECTION" = "mysql" ]; then
   ATTEMPT=0
   echo "Waiting for MySQL at ${DB_HOST:-mysql}:${DB_PORT:-3306}..."
   until php -r "

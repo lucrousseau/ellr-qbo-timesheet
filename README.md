@@ -105,14 +105,28 @@ npm run docker:up
 Useful commands:
 
 ```bash
-npm run docker:up:build  # rebuild images then start (after Dockerfile changes)
+npm run docker:up:build  # rebuild images then start (after Dockerfile or entrypoint changes)
 npm run docker:smoke     # wait for API/admin/timesheet, health, and login via admin proxy
 npm run docker:logs      # follow all service logs
 npm run docker:down      # stop containers
-npm run docker:reset     # stop and remove volumes (fresh node_modules vendor cache)
+npm run docker:reset     # stop, remove volumes, delete local SQLite (fresh DB on next start)
 npm run docker:cache:clear  # reset volumes, remove local images, prune npm BuildKit cache mounts
-npm run docker:test:scripts  # shell tests for docker/node/sync-deps.sh
+npm run docker:test:scripts  # shell tests for docker scripts (sync-deps, reset, sqlite path)
 ```
+
+Fresh local database:
+
+```bash
+npm run docker:reset
+npm run docker:up:build   # rebuild API image when entrypoint or Dockerfile changed
+```
+
+`docker:reset` deletes the SQLite file resolved from `backend/.env` (`DB_CONNECTION`, `DB_DATABASE`), including WAL sidecar files. Use `docker:up:build` after entrypoint changes so the API image picks up the new boot order.
+
+| Command | Volumes | SQLite | Images / BuildKit |
+|---------|---------|--------|-------------------|
+| `docker:reset` | removed | deleted | kept |
+| `docker:cache:clear` | removed | kept | removed + npm cache prune |
 
 Docker and local non-Docker dev both use **SQLite** (`backend/database/database.sqlite`, configured in `backend/.env`). **MySQL is for production only** (see Production below). Tests always use in-memory SQLite.
 

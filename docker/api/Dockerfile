@@ -13,9 +13,10 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+COPY scripts/lib/resolve-sqlite-path.sh /usr/local/bin/resolve-sqlite-path.sh
 COPY docker/api/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY docker/api/healthcheck.sh /usr/local/bin/healthcheck.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/healthcheck.sh
+RUN chmod +x /usr/local/bin/resolve-sqlite-path.sh /usr/local/bin/entrypoint.sh /usr/local/bin/healthcheck.sh
 
 EXPOSE 8000
 

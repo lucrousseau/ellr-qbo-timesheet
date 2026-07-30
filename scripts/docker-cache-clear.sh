@@ -22,4 +22,5 @@ if [ "${DOCKER_CACHE_CLEAR_ALL:-}" = "1" ]; then
   docker builder prune -f
 fi
 
-echo "Docker caches cleared. Run npm run docker:up:build to rebuild."
+echo "Docker caches cleared. SQLite is kept; use npm run docker:reset for a fresh database."
+echo "Run npm run docker:up:build to rebuild images and start."
