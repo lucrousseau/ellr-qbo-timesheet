@@ -29,7 +29,8 @@ type TimesheetUserProvisioningPanelProps = {
   onSubmit: (event: React.FormEvent) => void
   onRemoveTimesheetUser: (userId: number) => Promise<boolean>
   onClientAssignmentsSaved: (userId: number, access: TimesheetUserCustomerAccess) => void
-  onSupervisorSaved: (userId: number, supervisorId: number | null) => void
+  assignSupervisor: (userId: number, supervisorId: number | null) => Promise<void>
+  assigningSupervisor: boolean
   onError: (message: string) => void
   onSuccess: (message: string) => void
 }
@@ -56,7 +57,8 @@ export function TimesheetUserProvisioningPanel({
   onSubmit,
   onRemoveTimesheetUser,
   onClientAssignmentsSaved,
-  onSupervisorSaved,
+  assignSupervisor,
+  assigningSupervisor,
   onError,
   onSuccess,
 }: TimesheetUserProvisioningPanelProps) {
@@ -188,12 +190,9 @@ export function TimesheetUserProvisioningPanel({
       <AssignSupervisorDialog
         user={userToAssignSupervisor}
         supervisorOptions={users}
+        saving={assigningSupervisor}
         onClose={() => setUserToAssignSupervisor(null)}
-        onSaved={(userId, supervisorId) => {
-          onSupervisorSaved(userId, supervisorId)
-          onSuccess(t('admin.assignSupervisorSuccess'))
-        }}
-        onError={onError}
+        onSave={assignSupervisor}
       />
     </section>
   )

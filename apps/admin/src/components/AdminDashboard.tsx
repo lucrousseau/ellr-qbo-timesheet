@@ -178,7 +178,8 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             onSubmit={provisioning.onCreateTimesheetUser}
             onRemoveTimesheetUser={provisioning.onRemoveTimesheetUser}
             onClientAssignmentsSaved={provisioning.onClientAssignmentsSaved}
-            onSupervisorSaved={provisioning.onSupervisorSaved}
+            assignSupervisor={provisioning.assignSupervisor}
+            assigningSupervisor={provisioning.assigningSupervisor}
             onError={admin.showError}
             onSuccess={admin.showSuccess}
           />

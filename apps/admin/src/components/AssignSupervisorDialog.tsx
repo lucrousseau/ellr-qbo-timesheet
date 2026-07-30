@@ -3,8 +3,8 @@
  */
 
 import { AppDialog, Button, StaticSelect, useLocale } from '@ellr/ui'
-import { updateAdminUserSupervisor, type User } from '@ellr/api-client'
 import { useEffect, useMemo, useState } from 'react'
+import type { User } from '../hooks/useTimesheetProvisioning'
 
 type SupervisorOption = {
   value: string
@@ -14,9 +14,9 @@ type SupervisorOption = {
 type AssignSupervisorDialogProps = {
   user: User | null
   supervisorOptions: User[]
+  saving: boolean
   onClose: () => void
-  onSaved: (userId: number, supervisorId: number | null) => void
-  onError: (message: string) => void
+  onSave: (userId: number, supervisorId: number | null) => Promise<void>
 }
 
 /**
@@ -27,13 +27,12 @@ type AssignSupervisorDialogProps = {
 export function AssignSupervisorDialog({
   user,
   supervisorOptions,
+  saving,
   onClose,
-  onSaved,
-  onError,
+  onSave,
 }: AssignSupervisorDialogProps) {
   const { t } = useLocale()
   const [selectedOption, setSelectedOption] = useState<SupervisorOption | null>(null)
-  const [saving, setSaving] = useState(false)
 
   const options = useMemo<SupervisorOption[]>(
     () => [
@@ -64,18 +63,9 @@ export function AssignSupervisorDialog({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    setSaving(true)
-
-    try {
-      const supervisorId = selectedOption.value === '' ? null : Number(selectedOption.value)
-      await updateAdminUserSupervisor(user.id, supervisorId)
-      onSaved(user.id, supervisorId)
-      onClose()
-    } catch {
-      onError(t('admin.assignSupervisorFailed'))
-    } finally {
-      setSaving(false)
-    }
+    const supervisorId = selectedOption.value === '' ? null : Number(selectedOption.value)
+    await onSave(user.id, supervisorId)
+    onClose()
   }
 
   return (

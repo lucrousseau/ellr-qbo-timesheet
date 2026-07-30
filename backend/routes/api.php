@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\TimeEntryApprovalController;
 use App\Http\Controllers\Api\TimeEntryController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Http\Controllers\Api\UserLocaleController;
+use App\Http\Controllers\Api\UserPasswordController;
 use App\Http\Controllers\Api\UserPreferencesController;
 use App\Http\Controllers\Api\UserTimezoneController;
 use Illuminate\Support\Facades\Route;

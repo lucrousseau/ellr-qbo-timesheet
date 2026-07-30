@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQboCustomers, fetchQboProjects, fetchQboServices, fetchTimeTracker, logTimeTracker, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, updateTimeTracker, updateUserLocale } from '@ellr/api-client'
+import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQboCustomers, fetchQboProjects, fetchQboServices, fetchTimeTracker, logTimeTracker, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, updateTimeTracker, updateUserPreferences } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -54,7 +54,7 @@ vi.mock('@ellr/api-client', async () =>
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
     resendVerificationEmail: vi.fn(),
-    updateUserLocale: vi.fn(),
+    updateUserPreferences: vi.fn(),
   }),
 )
 
@@ -802,7 +802,7 @@ describe('Timesheet App', () => {
       ...authenticatedUser,
       locale: 'en',
     })
-    vi.mocked(updateUserLocale).mockResolvedValue({
+    vi.mocked(updateUserPreferences).mockResolvedValue({
       ...authenticatedUser,
       locale: 'fr',
     })
@@ -824,7 +824,10 @@ describe('Timesheet App', () => {
     await user.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => {
-      expect(updateUserLocale).toHaveBeenCalledWith('fr')
+      expect(updateUserPreferences).toHaveBeenCalledWith({
+        locale: 'fr',
+        timezone: 'UTC',
+      })
       expect(screen.getByText(/preferences saved/i)).toBeInTheDocument()
     })
   })

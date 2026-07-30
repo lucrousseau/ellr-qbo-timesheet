@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserLocale } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserPreferences } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
@@ -23,7 +23,7 @@ vi.mock('@ellr/api-client', async () =>
     deleteSuperAdminOrganization: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
-    updateUserLocale: vi.fn(),
+    updateUserPreferences: vi.fn(),
     changePassword: vi.fn(),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
@@ -115,7 +115,7 @@ describe('Admin App', () => {
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(fetchQboEmployees).mockResolvedValue([])
     vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
-    vi.mocked(updateUserLocale).mockReset()
+    vi.mocked(updateUserPreferences).mockReset()
     vi.mocked(changePassword).mockReset()
     vi.mocked(requestPasswordReset).mockReset()
     vi.mocked(resetPassword).mockReset()
@@ -1299,7 +1299,7 @@ describe('Admin App', () => {
       locale: 'en',
     })
     vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
-    vi.mocked(updateUserLocale).mockResolvedValue({
+    vi.mocked(updateUserPreferences).mockResolvedValue({
       id: 1,
       name: 'Test User',
       email: 'test@example.com',
@@ -1317,7 +1317,10 @@ describe('Admin App', () => {
     await user.click(screen.getByRole('button', { name: /^save$/i }))
 
     await waitFor(() => {
-      expect(updateUserLocale).toHaveBeenCalledWith('fr')
+      expect(updateUserPreferences).toHaveBeenCalledWith({
+        locale: 'fr',
+        timezone: 'UTC',
+      })
       expect(screen.getByText(/preferences saved/i)).toBeInTheDocument()
     })
   })

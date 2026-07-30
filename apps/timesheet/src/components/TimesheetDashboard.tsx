@@ -13,7 +13,6 @@ import {
   useLocale,
   useSessionStorageState,
 } from '@ellr/ui'
-import { resolveEffectiveTimezone } from '@ellr/api-client'
 import { useMemo } from 'react'
 import { isTimesheetTab, timesheetActiveTabStorageKey, type TimesheetTab } from '../timesheetTabStorage'
 import type { useTimesheetAuth } from '../hooks/useTimesheetAuth'
@@ -62,7 +61,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
   }, [t, user.can_review_time_entries])
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'timer'
-  const displayTimezone = resolveEffectiveTimezone(user)
+  const displayTimezone = user.effective_display_timezone ?? 'UTC'
   const canUseTimerTab =
     Boolean(user.qbo_employee_ref) && !auth.showEmailVerification(user)
   const showTimeTracking = canUseTimerTab && (tracker.loading || tracker.canTrackTime)
