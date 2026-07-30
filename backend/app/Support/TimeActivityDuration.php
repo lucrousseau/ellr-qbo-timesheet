@@ -57,18 +57,14 @@ final class TimeActivityDuration
             return (int) $localStart->diffInSeconds($localEnd, absolute: true);
         }
 
-        $startSeconds = $localStart->secondsSinceMidnight();
-        $endSeconds = $localEnd->secondsSinceMidnight();
+        $startSeconds = (int) $localStart->secondsSinceMidnight();
+        $endSeconds = (int) $localEnd->secondsSinceMidnight();
 
-        if ($localStart->isSameDay($localEnd) && $endSeconds >= $startSeconds) {
+        if ($endSeconds >= $startSeconds) {
             return $endSeconds - $startSeconds;
         }
 
-        if ($endSeconds < $startSeconds) {
-            return (86_400 - $startSeconds) + $endSeconds;
-        }
-
-        return (int) $localStart->diffInSeconds($localEnd, absolute: true);
+        return (86_400 - $startSeconds) + $endSeconds;
     }
 
     /**

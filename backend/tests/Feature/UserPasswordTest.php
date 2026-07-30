@@ -130,6 +130,7 @@ it('exposes organization in api user payloads', function () {
             'name' => 'Acme Consulting',
             'slug' => 'acme-consulting',
             'qbo_connected' => true,
+            'company_timezone' => null,
         ]);
 });
 

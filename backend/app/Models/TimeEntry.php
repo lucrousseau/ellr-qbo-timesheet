@@ -11,9 +11,16 @@ use Database\Factories\TimeEntryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Eloquent model for employee time entries stored locally until approved.
+ *
+ * @property Carbon $start_time
+ * @property Carbon $end_time
+ * @property TimeEntryStatus $status
+ * @property Carbon|null $reviewed_at
+ * @property Carbon|null $created_at
  */
 class TimeEntry extends Model
 {

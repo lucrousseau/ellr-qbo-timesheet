@@ -40,13 +40,13 @@ class QuickBooksCompanyInfoService
 
         $timezone = null;
 
-        if (is_object($companyInfo) && isset($companyInfo->DefaultTimeZone)) {
-            $timezone = trim((string) $companyInfo->DefaultTimeZone);
+        if (is_object($companyInfo)) {
+            $timezone = trim($companyInfo->DefaultTimeZone);
         }
 
-        if (($timezone === null || $timezone === '') && is_object($companyInfo->CompanyInfo ?? null)) {
+        if ($timezone === '' && is_object($companyInfo->CompanyInfo ?? null)) {
             $nested = $companyInfo->CompanyInfo;
-            $timezone = isset($nested->DefaultTimeZone) ? trim((string) $nested->DefaultTimeZone) : '';
+            $timezone = trim($nested->DefaultTimeZone);
         }
 
         return TimezoneIdentifier::normalize($timezone !== '' ? $timezone : null);
