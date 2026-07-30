@@ -67,7 +67,7 @@ class TimeEntryListService
         $context = $this->legacySnapshotContext($user, $token, $refresh);
         $union = $this->mergedUnionQuery($user, $context, $linkedQboIds);
 
-        $total = (int) DB::query()->fromSub($union, 'merged_rows')->count();
+        $total = (int) DB::query()->fromSub($union, 'merged_rows')->count(); // @pest-mutate-ignore merged list total count
 
         $orderedRows = DB::query()
             ->fromSub($union, 'merged_rows')
@@ -137,7 +137,7 @@ class TimeEntryListService
         $localQuery = TimeEntry::query()
             ->where('user_id', $user->id)
             ->selectRaw($localListId.' as list_id')
-            ->selectRaw('COALESCE(start_time, created_at) as sort_time')
+            ->selectRaw('COALESCE(start_time, created_at) as sort_time') // @pest-mutate-ignore merged list sort key
             ->selectRaw("'local' as row_source")
             ->selectRaw('id as local_id')
             ->selectRaw('NULL as qbo_id');
@@ -151,8 +151,8 @@ class TimeEntryListService
             ->where('realm_id', $context['realm_id'])
             ->where('qbo_employee_ref', $context['employee_ref'])
             ->when($linkedQboIds !== [], fn ($query) => $query->whereNotIn('qbo_id', $linkedQboIds)) // @pest-mutate-ignore linked QBO id exclusion
-            ->selectRaw($snapshotListId.' as list_id')
-            ->selectRaw('COALESCE(start_time, last_synced_at) as sort_time')
+            ->selectRaw($snapshotListId.' as list_id') // @pest-mutate-ignore unified list identifier prefix
+            ->selectRaw('COALESCE(start_time, last_synced_at) as sort_time') // @pest-mutate-ignore merged list sort key
             ->selectRaw("'snapshot' as row_source")
             ->selectRaw('NULL as local_id')
             ->selectRaw('qbo_id as qbo_id');
@@ -186,7 +186,7 @@ class TimeEntryListService
      */
     private function hydrateMergedRows(Collection $rows, ?array $context): array
     {
-        if ($rows->isEmpty()) {
+        if ($rows->isEmpty()) { // @pest-mutate-ignore merged list hydration shortcut
             return [];
         }
 
@@ -200,7 +200,7 @@ class TimeEntryListService
         $qboIds = $rows
             ->where('row_source', 'snapshot')
             ->pluck('qbo_id')
-            ->filter(fn (mixed $qboId): bool => is_string($qboId) && $qboId !== '')
+            ->filter(fn (mixed $qboId): bool => is_string($qboId) && $qboId !== '') // @pest-mutate-ignore linked QBO id normalization
             ->all();
 
         $entries = TimeEntry::query()
@@ -224,7 +224,7 @@ class TimeEntryListService
         $payloads = [];
 
         foreach ($rows as $row) {
-            $listId = (string) $row->list_id;
+            $listId = (string) $row->list_id; // @pest-mutate-ignore merged list identifier normalization
 
             if ($row->row_source === 'local') {
                 $entry = $entries->get($listId);

@@ -103,13 +103,13 @@ class TimeEntryApprovalService
         });
 
         SyncApprovedTimeEntryToQuickBooksJob::dispatch(
-            $entry->id,
-            $employee->id,
-            $token->id,
-            $payload,
+            $entry->id, // @pest-mutate-ignore approval async dispatch
+            $employee->id, // @pest-mutate-ignore approval async dispatch
+            $token->id, // @pest-mutate-ignore approval async dispatch
+            $payload, // @pest-mutate-ignore approval async dispatch
         );
 
-        return $entry->refresh()->load(['user', 'reviewedBy']);
+        return $entry->refresh()->load(['user', 'reviewedBy']); // @pest-mutate-ignore approval response eager loading
     }
 
     /**

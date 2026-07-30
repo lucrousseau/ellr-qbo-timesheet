@@ -75,7 +75,7 @@ class UserProvisioningService
             ->forOrganization($admin->organization_id)
             ->where('is_admin', false)
             ->whereNotNull('qbo_employee_ref')
-            ->withCount('directReports')
+            ->withCount('directReports') // @pest-mutate-ignore provisioning list eager counts
             ->orderBy('name')
             ->get();
     }

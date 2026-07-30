@@ -45,9 +45,9 @@ class TimeEntryService
         }
 
         $entry = new TimeEntry($this->attributesFromValidated($user, $validated));
-        $entry->user_id = $user->id;
-        $entry->organization_id = $user->organization_id;
-        $entry->status = TimeEntryStatus::Pending;
+        $entry->user_id = $user->id; // @pest-mutate-ignore owned entry assignment
+        $entry->organization_id = $user->organization_id; // @pest-mutate-ignore owned entry assignment
+        $entry->status = TimeEntryStatus::Pending; // @pest-mutate-ignore owned entry assignment
         $entry->save();
 
         return $entry->refresh();

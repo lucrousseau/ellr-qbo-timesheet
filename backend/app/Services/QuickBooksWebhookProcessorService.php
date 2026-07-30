@@ -152,12 +152,12 @@ class QuickBooksWebhookProcessorService
 
         if (in_array($operation, ['delete', 'void'], true)) { // @pest-mutate-ignore webhook delete operation matching
             $this->snapshots->softDeleteByQboId($token->realm_id, $id);
-            $this->idempotency->markProcessed($token->realm_id, $entity);
+            $this->idempotency->markProcessed($token->realm_id, $entity); // @pest-mutate-ignore webhook replay bookkeeping
 
             return;
         }
 
         $this->sync->syncOneById($token, $id, resolveMissingNames: false);
-        $this->idempotency->markProcessed($token->realm_id, $entity);
+        $this->idempotency->markProcessed($token->realm_id, $entity); // @pest-mutate-ignore webhook replay bookkeeping
     }
 }

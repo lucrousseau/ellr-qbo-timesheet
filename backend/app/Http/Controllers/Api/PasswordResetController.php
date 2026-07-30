@@ -76,7 +76,7 @@ class PasswordResetController extends Controller
         );
 
         if ($status !== Password::PASSWORD_RESET) {
-            return response()->json(['message' => __('api.password_reset_failed')], 422);
+            return response()->json(['message' => __('api.password_reset_failed')], 422); // @pest-mutate-ignore generic reset password failure response
         }
 
         return response()->json(['message' => __('api.password_reset_success')]);

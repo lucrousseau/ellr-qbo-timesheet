@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(SyncApprovedTimeEntryToQuickBooksJob::class);
@@ -99,4 +100,58 @@ it('keeps the approval decision when quickbooks synchronization fails', function
     expect($entry->status)->toBe(TimeEntryStatus::Approved)
         ->and($entry->reviewed_by_id)->toBe($admin->id)
         ->and($entry->qbo_id)->toBeNull();
+});
+
+it('skips sync when prerequisites are missing or the entry is already linked', function () {
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $approved = TimeEntry::factory()->forUser($employee)->create([
+        'status' => TimeEntryStatus::Approved,
+        'reviewed_by_id' => $admin->id,
+        'reviewed_at' => now(),
+    ]);
+    $linked = TimeEntry::factory()->forUser($employee)->approved('55')->create([
+        'reviewed_by_id' => $admin->id,
+        'reviewed_at' => now(),
+    ]);
+    $pending = TimeEntry::factory()->forUser($employee)->create();
+
+    $this->mock(QuickBooksService::class, function ($mock) {
+        $mock->shouldReceive('dataService')->never();
+    });
+
+    $payload = ['description' => 'noop'];
+
+    (new SyncApprovedTimeEntryToQuickBooksJob(999_999, $employee->id, $token->id, $payload))
+        ->handle(app(TimeActivityService::class));
+    (new SyncApprovedTimeEntryToQuickBooksJob($approved->id, 999_999, $token->id, $payload))
+        ->handle(app(TimeActivityService::class));
+    (new SyncApprovedTimeEntryToQuickBooksJob($approved->id, $employee->id, 999_999, $payload))
+        ->handle(app(TimeActivityService::class));
+    (new SyncApprovedTimeEntryToQuickBooksJob($pending->id, $employee->id, $token->id, $payload))
+        ->handle(app(TimeActivityService::class));
+    (new SyncApprovedTimeEntryToQuickBooksJob($linked->id, $employee->id, $token->id, $payload))
+        ->handle(app(TimeActivityService::class));
+
+    expect($linked->refresh()->qbo_id)->toBe('55');
+});
+
+it('logs permanent queue failures without reverting approval', function () {
+    Log::spy();
+
+    $job = new SyncApprovedTimeEntryToQuickBooksJob(12, 34, 56, ['description' => 'Late shift']);
+
+    $job->failed(new RuntimeException('queue worker died'));
+
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->withArgs(function (string $message, array $context): bool {
+            return str_contains($message, 'failed permanently')
+                && ($context['time_entry_id'] ?? null) === 12
+                && ($context['employee_id'] ?? null) === 34;
+        });
 });

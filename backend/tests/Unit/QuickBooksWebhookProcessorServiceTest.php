@@ -7,6 +7,7 @@ use App\Services\QuickBooksWebhookProcessorService;
 use App\Services\TimeActivitySnapshotService;
 use App\Services\TimeActivitySyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 covers(QuickBooksWebhookProcessorService::class);
@@ -84,6 +85,46 @@ it('updates webhook sync state after processing entities', function () {
 
     expect($state)->not->toBeNull()
         ->and($state->last_webhook_at)->not->toBeNull();
+});
+
+it('ignores replayed time activity webhook notifications', function () {
+    Cache::flush();
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with(
+            Mockery::type(QuickBooksToken::class),
+            '42',
+            false,
+        );
+
+    $processor = makeQuickBooksWebhookProcessor($sync);
+
+    $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
+    QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
+
+    $payload = [
+        'eventNotifications' => [
+            [
+                'realmId' => 'realm-1',
+                'dataChangeEvent' => [
+                    'entities' => [
+                        [
+                            'name' => 'TimeActivity',
+                            'id' => '42',
+                            'operation' => 'Update',
+                            'lastUpdated' => '2026-07-30T12:00:00Z',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $processor->process($payload);
+    $processor->process($payload);
 });
 
 it('calls sync for create webhooks without resolving missing names', function () {

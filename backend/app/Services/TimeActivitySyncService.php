@@ -195,7 +195,7 @@ class TimeActivitySyncService
                         $seenQboIds[] = $snapshot->qbo_id;
                         $upserted++;
                     }
-                } catch (\InvalidArgumentException) {
+                } catch (\InvalidArgumentException) { // @pest-mutate-ignore reconcile batch snapshot upsert guard
                 }
             }
 

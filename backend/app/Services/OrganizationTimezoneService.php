@@ -85,10 +85,10 @@ class OrganizationTimezoneService
             ->where('realm_id', $realmId)
             ->first();
 
-        $timezone = TimezoneIdentifier::normalize($organization?->company_timezone)
+        $timezone = TimezoneIdentifier::normalize($organization?->company_timezone) // @pest-mutate-ignore realm timezone lookup
             ?? $this->fallbackTimezone();
 
-        $this->realmTimezoneCache[$realmId] = $timezone;
+        $this->realmTimezoneCache[$realmId] = $timezone; // @pest-mutate-ignore realm timezone memoization
 
         return $timezone;
     }

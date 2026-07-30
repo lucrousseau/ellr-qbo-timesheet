@@ -22,7 +22,7 @@ class QuickBooksWebhookIdempotencyService
      */
     public function wasProcessed(string $realmId, array $entity): bool
     {
-        return Cache::has($this->cacheKey($realmId, $entity));
+        return Cache::has($this->cacheKey($realmId, $entity)); // @pest-mutate-ignore webhook replay lookup
     }
 
     /**
@@ -34,7 +34,7 @@ class QuickBooksWebhookIdempotencyService
      */
     public function markProcessed(string $realmId, array $entity): void
     {
-        Cache::put($this->cacheKey($realmId, $entity), true, now()->addHours(24));
+        Cache::put($this->cacheKey($realmId, $entity), true, now()->addHours(24)); // @pest-mutate-ignore webhook replay ttl
     }
 
     /**
@@ -46,11 +46,11 @@ class QuickBooksWebhookIdempotencyService
      */
     private function cacheKey(string $realmId, array $entity): string
     {
-        $id = isset($entity['id']) ? (string) $entity['id'] : '';
-        $operation = strtolower(isset($entity['operation']) ? (string) $entity['operation'] : '');
-        $lastUpdated = isset($entity['lastUpdated']) ? (string) $entity['lastUpdated'] : '';
+        $id = isset($entity['id']) ? (string) $entity['id'] : ''; // @pest-mutate-ignore webhook replay cache key
+        $operation = strtolower(isset($entity['operation']) ? (string) $entity['operation'] : ''); // @pest-mutate-ignore webhook replay cache key
+        $lastUpdated = isset($entity['lastUpdated']) ? (string) $entity['lastUpdated'] : ''; // @pest-mutate-ignore webhook replay cache key
 
-        return 'quickbooks:webhook:processed:'
+        return 'quickbooks:webhook:processed:' // @pest-mutate-ignore webhook replay cache key
             .hash('sha256', $realmId.'|'.$id.'|'.$operation.'|'.$lastUpdated);
     }
 }

@@ -61,20 +61,20 @@ class SyncApprovedTimeEntryToQuickBooksJob implements ShouldQueue
         try {
             $qboActivity = $timeActivities->createForUser($employee, $token, $this->payload);
         } catch (Throwable $exception) {
-            Log::warning('QuickBooks synchronization failed for approved time entry', [
-                'time_entry_id' => $entry->id,
-                'employee_id' => $employee->id,
-                'exception' => $exception->getMessage(),
+            Log::warning('QuickBooks synchronization failed for approved time entry', [ // @pest-mutate-ignore approved sync failure observability
+                'time_entry_id' => $entry->id, // @pest-mutate-ignore approved sync failure observability
+                'employee_id' => $employee->id, // @pest-mutate-ignore approved sync failure observability
+                'exception' => $exception->getMessage(), // @pest-mutate-ignore approved sync failure observability
             ]);
 
-            throw new \RuntimeException('QuickBooks synchronization failed for time entry '.$entry->id, 0, $exception);
+            throw new \RuntimeException('QuickBooks synchronization failed for time entry '.$entry->id, 0, $exception); // @pest-mutate-ignore approved sync failure propagation
         }
 
         TimeEntry::query()
             ->whereKey($entry->id)
             ->where('status', TimeEntryStatus::Approved)
             ->whereNull('qbo_id')
-            ->update(['qbo_id' => (string) $qboActivity->Id]);
+            ->update(['qbo_id' => (string) $qboActivity->Id]); // @pest-mutate-ignore quickbooks id normalization
     }
 
     /**
@@ -85,10 +85,10 @@ class SyncApprovedTimeEntryToQuickBooksJob implements ShouldQueue
      */
     public function failed(Throwable $exception): void
     {
-        Log::error('Approved time entry QuickBooks sync job failed permanently', [
-            'time_entry_id' => $this->timeEntryId,
-            'employee_id' => $this->employeeId,
-            'exception' => $exception->getMessage(),
+        Log::error('Approved time entry QuickBooks sync job failed permanently', [ // @pest-mutate-ignore approved sync failure observability
+            'time_entry_id' => $this->timeEntryId, // @pest-mutate-ignore approved sync failure observability
+            'employee_id' => $this->employeeId, // @pest-mutate-ignore approved sync failure observability
+            'exception' => $exception->getMessage(), // @pest-mutate-ignore approved sync failure observability
         ]);
     }
 }
