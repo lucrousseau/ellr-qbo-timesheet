@@ -84,6 +84,22 @@ describe('useTimeEntryApprovals', () => {
     expect(result.current.entries[0]?.id).toBe('local:12')
   })
 
+  it('shows a queued sync message when approval returns without a quickbooks id', async () => {
+    vi.mocked(approveTimeEntry).mockResolvedValue({ ...pendingEntry, status: 'approved', qbo_id: null })
+
+    const { result, onSuccess } = renderApprovalsHook()
+
+    await waitFor(() => {
+      expect(result.current.entries).toHaveLength(1)
+    })
+
+    await act(async () => {
+      await result.current.approveEntry('local:12')
+    })
+
+    expect(onSuccess).toHaveBeenCalledWith('Time entry approved. QuickBooks sync is in progress.')
+  })
+
   it('approves an entry and refreshes the list', async () => {
     const { result, onSuccess } = renderApprovalsHook()
 

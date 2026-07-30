@@ -1,7 +1,10 @@
 <?php
 
+/**
+ * Tests for the public API health endpoint.
+ */
+
 use App\Http\Controllers\Api\HealthController;
-use App\Support\PasswordPolicy;
 
 covers(HealthController::class);
 
@@ -20,10 +23,6 @@ it('returns api health status', function () {
             'service' => 'ellr-qbo-timesheet-api',
             'require_email_verification' => true,
             'time_tracker_max_accumulated_seconds' => 86400,
-            'password_policy' => [
-                'loaded' => true,
-                'min_length' => PasswordPolicy::config()['minLength'],
-            ],
         ]);
 
     expect($response->json('require_email_verification'))->toBeBool();

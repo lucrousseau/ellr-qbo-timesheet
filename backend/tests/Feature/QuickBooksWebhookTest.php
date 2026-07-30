@@ -8,7 +8,6 @@ use App\Models\TimeActivitySnapshot;
 use App\Models\User;
 use App\Services\QuickBooksWebhookProcessorService;
 use App\Services\QuickBooksWebhookVerifierService;
-use App\Services\TimeActivitySnapshotService;
 use App\Services\TimeActivitySyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
@@ -184,10 +183,7 @@ it('does not log quickbooks response bodies when api errors are hidden', functio
         ->once()
         ->andThrow(new QuickBooksException('QuickBooks API error.', 'secret-body', 422));
 
-    $processor = new QuickBooksWebhookProcessorService(
-        $sync,
-        app(TimeActivitySnapshotService::class),
-    );
+    $processor = makeQuickBooksWebhookProcessor($sync);
 
     $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
@@ -223,10 +219,7 @@ it('logs quickbooks response bodies when api errors are exposed', function () {
         ->once()
         ->andThrow(new QuickBooksException('QuickBooks API error.', 'secret-body', 422));
 
-    $processor = new QuickBooksWebhookProcessorService(
-        $sync,
-        app(TimeActivitySnapshotService::class),
-    );
+    $processor = makeQuickBooksWebhookProcessor($sync);
 
     $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
@@ -309,10 +302,7 @@ it('rethrows quickbooks errors from webhook sync jobs', function () {
         ->once()
         ->andThrow(new QuickBooksException('QuickBooks API error.', 'body', 422));
 
-    $processor = new QuickBooksWebhookProcessorService(
-        $sync,
-        app(TimeActivitySnapshotService::class),
-    );
+    $processor = makeQuickBooksWebhookProcessor($sync);
 
     $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);

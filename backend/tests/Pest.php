@@ -4,6 +4,10 @@ use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
+use App\Services\QuickBooksWebhookIdempotencyService;
+use App\Services\QuickBooksWebhookProcessorService;
+use App\Services\TimeActivitySnapshotService;
+use App\Services\TimeActivitySyncService;
 use App\Support\PasswordPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -114,6 +118,24 @@ function validTestPassword(): string
 function validTestPasswordAlt(): string
 {
     return PasswordPolicy::validTestPasswordAlt();
+}
+
+/**
+ * Builds a webhook processor with optional mocked collaborators.
+ *
+ * @param  TimeActivitySyncService  $sync  QuickBooks sync collaborator.
+ * @param  TimeActivitySnapshotService|null  $snapshots  Snapshot persistence collaborator.
+ * @return QuickBooksWebhookProcessorService
+ */
+function makeQuickBooksWebhookProcessor(
+    TimeActivitySyncService $sync,
+    ?TimeActivitySnapshotService $snapshots = null,
+): QuickBooksWebhookProcessorService {
+    return new QuickBooksWebhookProcessorService(
+        $sync,
+        $snapshots ?? app(TimeActivitySnapshotService::class),
+        app(QuickBooksWebhookIdempotencyService::class),
+    );
 }
 
 /**

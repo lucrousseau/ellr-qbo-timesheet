@@ -16,6 +16,13 @@ use App\Support\TimezoneIdentifier;
 class OrganizationTimezoneService
 {
     /**
+     * Request-scoped memo of resolved realm timezones.
+     *
+     * @var array<string, string>
+     */
+    private array $realmTimezoneCache = [];
+
+    /**
      * Injects the QuickBooks company profile reader.
      *
      * @param  QuickBooksCompanyInfoService  $companyInfo  QuickBooks CompanyInfo reader.
@@ -66,19 +73,24 @@ class OrganizationTimezoneService
      */
     public function forRealm(?string $realmId): string
     {
-        if (is_string($realmId) && $realmId !== '') { // @pest-mutate-ignore realm timezone lookup guard
-            $organization = Organization::query()
-                ->where('realm_id', $realmId)
-                ->first();
-
-            $timezone = TimezoneIdentifier::normalize($organization?->company_timezone);
-
-            if ($timezone !== null) { // @pest-mutate-ignore stored organization timezone shortcut
-                return $timezone;
-            }
+        if (! is_string($realmId) || $realmId === '') { // @pest-mutate-ignore realm timezone lookup guard
+            return $this->fallbackTimezone();
         }
 
-        return $this->fallbackTimezone();
+        if (isset($this->realmTimezoneCache[$realmId])) {
+            return $this->realmTimezoneCache[$realmId];
+        }
+
+        $organization = Organization::query()
+            ->where('realm_id', $realmId)
+            ->first();
+
+        $timezone = TimezoneIdentifier::normalize($organization?->company_timezone)
+            ?? $this->fallbackTimezone();
+
+        $this->realmTimezoneCache[$realmId] = $timezone;
+
+        return $timezone;
     }
 
     /**

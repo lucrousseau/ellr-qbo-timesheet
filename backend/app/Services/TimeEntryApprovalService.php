@@ -7,14 +7,14 @@
 namespace App\Services;
 
 use App\Enums\TimeEntryStatus;
+use App\Jobs\SyncApprovedTimeEntryToQuickBooksJob;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Support\TimeEntryApiResponse;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 /**
- * Lists pending entries for reviewers and pushes approved rows to QuickBooks.
+ * Lists pending entries for reviewers and queues approved rows for QuickBooks sync.
  */
 class TimeEntryApprovalService
 {
@@ -23,13 +23,11 @@ class TimeEntryApprovalService
      *
      * @param  TimeEntryAuthorizationService  $authorization  Review permission checks.
      * @param  QboPickerValidationService  $pickerValidation  QuickBooks picker reference validator.
-     * @param  TimeActivityService  $timeActivities  QuickBooks time activity writer.
      * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves organization QBO token.
      */
     public function __construct(
         private readonly TimeEntryAuthorizationService $authorization,
         private readonly QboPickerValidationService $pickerValidation,
-        private readonly TimeActivityService $timeActivities,
         private readonly QuickBooksTokenResolverService $tokenResolver,
     ) {}
 
@@ -70,7 +68,7 @@ class TimeEntryApprovalService
     }
 
     /**
-     * Approves a pending entry and synchronizes it to QuickBooks.
+     * Approves a pending entry and queues QuickBooks synchronization.
      *
      * @param  User  $actor  Supervisor or administrator.
      * @param  int  $id  Local time entry identifier.
@@ -89,7 +87,7 @@ class TimeEntryApprovalService
                 $this->pickerValidation->assertValidTimeEntry($employee, $token, $entry); // @pest-mutate-ignore approval picker validation
             }
 
-            $entry->fill([
+            $entry->forceFill([
                 'status' => TimeEntryStatus::Approved,
                 'reviewed_by_id' => $actor->id, // @pest-mutate-ignore approval audit fields
                 'reviewed_at' => now(), // @pest-mutate-ignore approval audit fields
@@ -104,21 +102,14 @@ class TimeEntryApprovalService
             ];
         });
 
-        try { // @pest-mutate-ignore QBO sync error boundary
-            $qboActivity = $this->timeActivities->createForUser($employee, $token, $payload);
-        } catch (Throwable $exception) {
-            $this->revertApproval($entry); // @pest-mutate-ignore approval rollback on sync failure
+        SyncApprovedTimeEntryToQuickBooksJob::dispatch(
+            $entry->id,
+            $employee->id,
+            $token->id,
+            $payload,
+        );
 
-            throw $exception;
-        }
-
-        TimeEntry::query()
-            ->whereKey($entry->id)
-            ->where('status', TimeEntryStatus::Approved) // @pest-mutate-ignore QBO id persistence guard
-            ->whereNull('qbo_id') // @pest-mutate-ignore QBO id persistence guard
-            ->update(['qbo_id' => (string) $qboActivity->Id]); // @pest-mutate-ignore QBO id persistence after approval
-
-        return $entry->refresh()->load(['user', 'reviewedBy']); // @pest-mutate-ignore approval response eager loading
+        return $entry->refresh()->load(['user', 'reviewedBy']);
     }
 
     /**
@@ -135,7 +126,7 @@ class TimeEntryApprovalService
             $entry = $this->findPendingEntry($id, lock: true); // @pest-mutate-ignore pessimistic lock for rejection workflow
             $this->authorization->assertCanReview($actor, $entry); // @pest-mutate-ignore rejection authorization guard
 
-            $entry->fill([
+            $entry->forceFill([
                 'status' => TimeEntryStatus::Rejected,
                 'reviewed_by_id' => $actor->id, // @pest-mutate-ignore rejection audit fields
                 'reviewed_at' => now(), // @pest-mutate-ignore rejection audit fields
@@ -167,25 +158,6 @@ class TimeEntryApprovalService
         return $query->firstOr(function (): never {
             abort(response()->json(['message' => __('api.time_entry_not_found')], 404)); // @pest-mutate-ignore pending entry not found
         });
-    }
-
-    /**
-     * Restores a pending entry after a failed QuickBooks synchronization.
-     *
-     * @param  TimeEntry  $entry  Entry that was marked approved before QBO failed.
-     * @return void
-     */
-    private function revertApproval(TimeEntry $entry): void
-    {
-        TimeEntry::query()
-            ->whereKey($entry->id)
-            ->where('status', TimeEntryStatus::Approved)
-            ->whereNull('qbo_id')
-            ->update([
-                'status' => TimeEntryStatus::Pending,
-                'reviewed_by_id' => null, // @pest-mutate-ignore approval rollback fields
-                'reviewed_at' => null, // @pest-mutate-ignore approval rollback fields
-            ]);
     }
 
     /**

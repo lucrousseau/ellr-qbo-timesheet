@@ -73,10 +73,11 @@ class QboProjectListService
     {
         $dataService = $this->quickBooks->dataService($token);
         $pageSize = $this->listCache->maxResults();
+        $maxPages = (int) config('quickbooks.list_scan_max_pages', 10);
         $startPosition = 1;
         $allJobs = [];
 
-        while (true) {
+        for ($page = 0; $page < $maxPages; $page++) {
             $projects = $dataService->Query(
                 QboCustomerQuery::listActiveJobCustomers($pageSize, $startPosition),
             );

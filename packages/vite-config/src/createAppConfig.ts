@@ -47,5 +47,34 @@ export function createAppConfig({ port, importMetaUrl }: CreateAppConfigOptions)
       },
     },
     appType: 'spa',
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) {
+              if (id.includes('/packages/ui/')) {
+                return 'ellr-ui'
+              }
+
+              return undefined
+            }
+
+            if (id.includes('@headlessui')) {
+              return 'headlessui'
+            }
+
+            if (id.includes('react-imask')) {
+              return 'imask'
+            }
+
+            if (id.includes('react') || id.includes('scheduler')) {
+              return 'react-vendor'
+            }
+
+            return 'vendor'
+          },
+        },
+      },
+    },
   })
 }

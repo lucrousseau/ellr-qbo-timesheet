@@ -75,6 +75,7 @@ class UserProvisioningService
             ->forOrganization($admin->organization_id)
             ->where('is_admin', false)
             ->whereNotNull('qbo_employee_ref')
+            ->withCount('directReports')
             ->orderBy('name')
             ->get();
     }

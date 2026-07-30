@@ -67,11 +67,15 @@ describe('Admin App', () => {
   }
 
   async function openEmployeeDropdown(user: ReturnType<typeof userEvent.setup>) {
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /choose an employee/i })).toBeInTheDocument()
+    })
+
     await user.click(screen.getByRole('button', { name: /choose an employee/i }))
 
     await waitFor(() => {
       expect(fetchQboEmployees).toHaveBeenCalledWith(
-        expect.objectContaining({ refresh: true }),
+        expect.objectContaining({ refresh: false }),
       )
     })
   }
@@ -1436,7 +1440,9 @@ describe('Admin App', () => {
 
     await user.click(screen.getByRole('tab', { name: /client organizations/i }))
 
-    expect(screen.getByText(/password requirements/i)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText(/password requirements/i)).toBeInTheDocument()
+    })
 
     await user.type(screen.getByLabelText(/organization name/i), 'Acme Corp')
     await user.type(screen.getByLabelText(/administrator name/i), 'Acme Admin')

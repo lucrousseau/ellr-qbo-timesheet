@@ -33,8 +33,6 @@ class TimeEntry extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'user_id',
-        'organization_id',
         'customer_ref',
         'customer_name',
         'project_ref',
@@ -45,11 +43,6 @@ class TimeEntry extends Model
         'end_time',
         'description',
         'is_billable',
-        'status',
-        'reviewed_by_id',
-        'reviewed_at',
-        'rejection_reason',
-        'qbo_id',
     ];
 
     /**

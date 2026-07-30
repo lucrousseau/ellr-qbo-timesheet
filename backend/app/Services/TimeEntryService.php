@@ -44,7 +44,13 @@ class TimeEntryService
             $this->pickerValidation->assertValidTimeEntrySelections($user, $token, $validated); // @pest-mutate-ignore create picker validation
         }
 
-        return TimeEntry::query()->create($this->attributesFromValidated($user, $validated)); // @pest-mutate-ignore pending entry persistence
+        $entry = new TimeEntry($this->attributesFromValidated($user, $validated));
+        $entry->user_id = $user->id;
+        $entry->organization_id = $user->organization_id;
+        $entry->status = TimeEntryStatus::Pending;
+        $entry->save();
+
+        return $entry->refresh();
     }
 
     /**
@@ -128,8 +134,6 @@ class TimeEntryService
     private function attributesFromValidated(User $user, array $validated): array
     {
         return [
-            'user_id' => $user->id, // @pest-mutate-ignore required create field mapping
-            'organization_id' => $user->organization_id, // @pest-mutate-ignore required create field mapping
             'customer_ref' => $validated['customer_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
             'customer_name' => $validated['customer_name'] ?? null, // @pest-mutate-ignore optional create field mapping
             'project_ref' => $validated['project_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
@@ -140,7 +144,6 @@ class TimeEntryService
             'end_time' => $validated['end_time'], // @pest-mutate-ignore required create field mapping
             'description' => $validated['description'] ?? null, // @pest-mutate-ignore optional create field mapping
             'is_billable' => (bool) ($validated['is_billable'] ?? false), // @pest-mutate-ignore optional create field mapping
-            'status' => TimeEntryStatus::Pending, // @pest-mutate-ignore required create field mapping
         ];
     }
 

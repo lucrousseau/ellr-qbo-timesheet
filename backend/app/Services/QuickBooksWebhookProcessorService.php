@@ -19,10 +19,12 @@ class QuickBooksWebhookProcessorService
     /**
      * @param  TimeActivitySyncService  $sync  Single-entity QuickBooks sync.
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
+     * @param  QuickBooksWebhookIdempotencyService  $idempotency  Replay deduplication store.
      */
     public function __construct(
         private readonly TimeActivitySyncService $sync,
         private readonly TimeActivitySnapshotService $snapshots,
+        private readonly QuickBooksWebhookIdempotencyService $idempotency,
     ) {}
 
     /**
@@ -138,12 +140,24 @@ class QuickBooksWebhookProcessorService
             return;
         }
 
+        if ($this->idempotency->wasProcessed($token->realm_id, $entity)) {
+            Log::debug('QuickBooks webhook skipped duplicate entity notification', [ // @pest-mutate-ignore webhook observability logging
+                'realm_id' => $token->realm_id,
+                'qbo_id' => $id,
+                'operation' => $operation,
+            ]);
+
+            return;
+        }
+
         if (in_array($operation, ['delete', 'void'], true)) { // @pest-mutate-ignore webhook delete operation matching
             $this->snapshots->softDeleteByQboId($token->realm_id, $id);
+            $this->idempotency->markProcessed($token->realm_id, $entity);
 
             return;
         }
 
         $this->sync->syncOneById($token, $id, resolveMissingNames: false);
+        $this->idempotency->markProcessed($token->realm_id, $entity);
     }
 }

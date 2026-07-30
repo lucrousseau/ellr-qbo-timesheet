@@ -34,7 +34,7 @@ describe('useLazyApiSelect', () => {
     expect(result.current.loaded).toBe(false)
   })
 
-  it('refreshes options on each open interaction', async () => {
+  it('loads options from cache on each open interaction', async () => {
     const { result } = renderHook(
       () =>
         useLazyApiSelect({
@@ -51,7 +51,7 @@ describe('useLazyApiSelect', () => {
     })
 
     expect(fetch).toHaveBeenCalledTimes(1)
-    expect(fetch).toHaveBeenCalledWith(true, expect.any(AbortSignal))
+    expect(fetch).toHaveBeenCalledWith(false, expect.any(AbortSignal))
     expect(result.current.items).toEqual([{ id: '1' }])
     expect(result.current.loaded).toBe(true)
 
@@ -60,7 +60,7 @@ describe('useLazyApiSelect', () => {
     })
 
     expect(fetch).toHaveBeenCalledTimes(2)
-    expect(fetch).toHaveBeenNthCalledWith(2, true, expect.any(AbortSignal))
+    expect(fetch).toHaveBeenNthCalledWith(2, false, expect.any(AbortSignal))
   })
 
   it('aborts the previous fetch when open is triggered again', async () => {
