@@ -11,7 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds a sample tenant organization, platform operator, and timesheet test accounts (local only).
+ * Seeds a sample tenant organization and platform operator (local only).
  */
 class DevDatabaseSeeder extends Seeder
 {
@@ -29,7 +29,6 @@ class DevDatabaseSeeder extends Seeder
         $organization = $this->seedOrganization();
         $this->seedTenantAdmin($organization);
         $this->seedPlatformOperator($organization);
-        $this->seedTenantTimesheetUser($organization);
     }
 
     /**
@@ -96,30 +95,6 @@ class DevDatabaseSeeder extends Seeder
         $user->forceFill([
             'is_admin' => false,
             'is_super_admin' => true,
-        ])->save();
-    }
-
-    /**
-     * Creates or updates a non-admin timesheet test account in the sample tenant.
-     *
-     * @param  Organization  $organization  Development tenant organization.
-     * @return void
-     */
-    private function seedTenantTimesheetUser(Organization $organization): void
-    {
-        $user = User::query()->updateOrCreate(
-            ['email' => (string) config('dev-seed.tenant_timesheet_user_email')],
-            [
-                'organization_id' => $organization->id,
-                'name' => (string) config('dev-seed.tenant_timesheet_user_name'),
-                'password' => (string) config('dev-seed.tenant_timesheet_user_password'),
-                'email_verified_at' => now(),
-            ],
-        );
-
-        $user->forceFill([
-            'is_admin' => false,
-            'is_super_admin' => false,
         ])->save();
     }
 }

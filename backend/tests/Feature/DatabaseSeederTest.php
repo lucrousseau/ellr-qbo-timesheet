@@ -14,15 +14,13 @@ it('runs the dev seeder only in the local environment when enabled', function ()
         'dev-seed.tenant_admin_email' => 'admin@ellr.local',
         'dev-seed.tenant_admin_password' => 'EllrDev!2026',
         'dev-seed.platform_enabled' => false,
-        'dev-seed.tenant_timesheet_user_email' => 'timesheet@ellr.local',
-        'dev-seed.tenant_timesheet_user_password' => 'EllrDev!2026',
     ]);
 
     $this->app->detectEnvironment(fn () => 'local');
 
     $this->seed(DatabaseSeeder::class);
 
-    expect(User::query()->count())->toBe(2);
+    expect(User::query()->count())->toBe(1);
 });
 
 it('skips dev seeding outside the local environment', function () {

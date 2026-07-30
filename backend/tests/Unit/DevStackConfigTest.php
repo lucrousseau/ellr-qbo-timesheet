@@ -21,7 +21,6 @@ it('documents dev seed opt-in in backend env example', function () {
 
     expect($backendExample)->toContain('DEV_SEED_ENABLED=true')
         ->and($backendExample)->toContain('DEV_SEED_TENANT_ADMIN_EMAIL')
-        ->and($backendExample)->toContain('DEV_SEED_TENANT_TIMESHEET_USER_EMAIL')
         ->and($backendExample)->toContain('DEV_SEED_PLATFORM_EMAIL')
         ->and($backendExample)->toContain('DB_CONNECTION=sqlite');
 });
