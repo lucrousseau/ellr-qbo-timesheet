@@ -1,18 +1,38 @@
 <?php
 
+use App\Http\Controllers\Api\AdminUserSupervisorController;
 use App\Http\Controllers\Api\TimeEntryApprovalController;
 use App\Http\Controllers\Api\TimeEntryController;
+use App\Http\Requests\ListTimeEntryRequest;
+use App\Http\Requests\RejectTimeEntryRequest;
+use App\Http\Requests\StoreTimeEntryRequest;
+use App\Http\Requests\UpdateTimeEntryRequest;
 use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Services\QuickBooksService;
+use App\Services\TimeEntryApprovalService;
+use App\Services\TimeEntryAuthorizationService;
 use App\Services\TimeEntryListService;
+use App\Services\TimeEntryService;
+use App\Services\UserSupervisorService;
+use App\Support\TimeEntryApiResponse;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(TimeEntryController::class);
 covers(TimeEntryApprovalController::class);
+covers(AdminUserSupervisorController::class);
 covers(TimeEntryListService::class);
+covers(TimeEntryService::class);
+covers(TimeEntryApprovalService::class);
+covers(TimeEntryAuthorizationService::class);
+covers(UserSupervisorService::class);
+covers(TimeEntryApiResponse::class);
+covers(StoreTimeEntryRequest::class);
+covers(UpdateTimeEntryRequest::class);
+covers(ListTimeEntryRequest::class);
+covers(RejectTimeEntryRequest::class);
 
 it('requires authentication for time entries', function () {
     $this->getJson('/api/time-entries')->assertUnauthorized();
