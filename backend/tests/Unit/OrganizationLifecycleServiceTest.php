@@ -5,6 +5,7 @@ use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
+use App\Services\AuthSessionService;
 use App\Services\OrganizationLifecycleService;
 use App\Services\QuickBooksService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,6 +22,15 @@ it('lists organizations with user counts', function () {
 
     expect($listed)->toHaveCount(1)
         ->and($listed->first()->users_count)->toBe(2);
+});
+
+it('lists organizations ordered by name', function () {
+    Organization::factory()->create(['name' => 'Zulu Corp']);
+    Organization::factory()->create(['name' => 'Alpha Corp']);
+
+    $listed = app(OrganizationLifecycleService::class)->listOrganizations();
+
+    expect($listed->pluck('name')->all())->toBe(['Alpha Corp', 'Zulu Corp']);
 });
 
 it('creates an organization with a verified founding administrator', function () {
@@ -67,6 +77,87 @@ it('deletes an organization and purges realm snapshots', function () {
     expect(Organization::query()->whereKey($organization->id)->exists())->toBeFalse()
         ->and(User::query()->where('organization_id', $organization->id)->exists())->toBeFalse()
         ->and(TimeActivitySnapshot::query()->where('realm_id', 'realm-delete')->exists())->toBeFalse();
+});
+
+it('invalidates user sessions when deleting an organization', function () {
+    $actor = User::factory()->superAdmin()->create();
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->admin()->create(['organization_id' => $organization->id]);
+
+    $this->mock(AuthSessionService::class, function ($mock) use ($admin): void {
+        $mock->shouldReceive('invalidateUserSessions')
+            ->once()
+            ->with(Mockery::on(fn (User $user) => $user->is($admin)));
+    });
+
+    $this->mock(QuickBooksService::class);
+
+    app(OrganizationLifecycleService::class)->deleteOrganization($actor, $organization);
+});
+
+it('invalidates sessions for every user in the deleted organization', function () {
+    $actor = User::factory()->superAdmin()->create();
+    $organization = Organization::factory()->create();
+    $first = User::factory()->create(['organization_id' => $organization->id]);
+    $second = User::factory()->create(['organization_id' => $organization->id]);
+    $invalidatedUserIds = [];
+
+    $this->mock(AuthSessionService::class, function ($mock) use (&$invalidatedUserIds): void {
+        $mock->shouldReceive('invalidateUserSessions')
+            ->twice()
+            ->andReturnUsing(function (User $user) use (&$invalidatedUserIds): void {
+                $invalidatedUserIds[] = $user->id;
+            });
+    });
+
+    $this->mock(QuickBooksService::class);
+
+    app(OrganizationLifecycleService::class)->deleteOrganization($actor, $organization->fresh());
+
+    expect($invalidatedUserIds)->toEqualCanonicalizing([$first->id, $second->id]);
+});
+
+it('disconnects quickbooks before deleting tenant users', function () {
+    $actor = User::factory()->superAdmin()->create();
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->admin()->create(['organization_id' => $organization->id]);
+    $token = QuickBooksToken::factory()->forUser($admin)->create();
+
+    $this->mock(QuickBooksService::class, function ($mock): void {
+        $mock->shouldReceive('disconnect')->once();
+    });
+
+    app(OrganizationLifecycleService::class)->deleteOrganization($actor, $organization);
+
+    expect(QuickBooksToken::query()->whereKey($token->id)->exists())->toBeFalse();
+});
+
+it('deletes stored quickbooks tokens when disconnect throws', function () {
+    $actor = User::factory()->superAdmin()->create();
+    $organization = Organization::factory()->create();
+    $admin = User::factory()->admin()->create(['organization_id' => $organization->id]);
+    $token = QuickBooksToken::factory()->forUser($admin)->create();
+
+    $this->mock(QuickBooksService::class, function ($mock): void {
+        $mock->shouldReceive('disconnect')->once()->andThrow(new RuntimeException('offline'));
+    });
+
+    app(OrganizationLifecycleService::class)->deleteOrganization($actor, $organization);
+
+    expect(QuickBooksToken::query()->whereKey($token->id)->exists())->toBeFalse()
+        ->and(Organization::query()->whereKey($organization->id)->exists())->toBeFalse();
+});
+
+it('allows deleting an organization when another platform super administrator remains', function () {
+    $actor = User::factory()->superAdmin()->create();
+    $target = Organization::factory()->create();
+    User::factory()->superAdmin()->create(['organization_id' => $target->id]);
+
+    $this->mock(QuickBooksService::class);
+
+    app(OrganizationLifecycleService::class)->deleteOrganization($actor, $target);
+
+    expect(Organization::query()->whereKey($target->id)->exists())->toBeFalse();
 });
 
 it('rejects deleting the super administrators own organization', function () {

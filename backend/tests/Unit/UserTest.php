@@ -100,3 +100,11 @@ it('casts quickbooks all-customers access to a boolean', function () {
 
     expect($user->qbo_all_customers_access)->toBeBool()->toBeTrue();
 });
+
+it('reports platform super administrator status', function () {
+    $superAdmin = User::factory()->superAdmin()->create();
+    $admin = User::factory()->admin()->create();
+
+    expect($superAdmin->isSuperAdmin())->toBeTrue()
+        ->and($admin->isSuperAdmin())->toBeFalse();
+});

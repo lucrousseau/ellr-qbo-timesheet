@@ -83,7 +83,10 @@ it('updates webhook sync state after processing entities', function () {
         ],
     ]);
 
-    expect(QboRealmSyncState::query()->where('realm_id', 'realm-1')->exists())->toBeTrue();
+    $state = QboRealmSyncState::query()->where('realm_id', 'realm-1')->first();
+
+    expect($state)->not->toBeNull()
+        ->and($state->last_webhook_at)->not->toBeNull();
 });
 
 it('calls sync for create webhooks without resolving missing names', function () {

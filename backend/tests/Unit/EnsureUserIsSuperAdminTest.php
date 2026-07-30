@@ -25,14 +25,27 @@ it('rejects tenant administrators without super admin privileges', function () {
     $request = Request::create('/api/super-admin/organizations', 'GET');
     $request->setUserResolver(fn () => $user);
 
-    expect(fn () => app(EnsureUserIsSuperAdmin::class)->handle($request, fn () => response('ok')))
-        ->toThrow(HttpResponseException::class);
+    try {
+        app(EnsureUserIsSuperAdmin::class)->handle($request, fn () => response('ok'));
+        expect(false)->toBeTrue('Expected middleware to abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(403)
+            ->and($exception->getResponse()->getData(true))->toMatchArray([
+                'message' => __('api.super_admin_required'),
+                'error' => 'super_admin_required',
+            ]);
+    }
 });
 
 it('rejects unauthenticated requests', function () {
     $request = Request::create('/api/super-admin/organizations', 'GET');
     $request->setUserResolver(fn () => null);
 
-    expect(fn () => app(EnsureUserIsSuperAdmin::class)->handle($request, fn () => response('ok')))
-        ->toThrow(HttpResponseException::class);
+    try {
+        app(EnsureUserIsSuperAdmin::class)->handle($request, fn () => response('ok'));
+        expect(false)->toBeTrue('Expected middleware to abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(403)
+            ->and($exception->getResponse()->getData(true)['error'])->toBe('super_admin_required');
+    }
 });

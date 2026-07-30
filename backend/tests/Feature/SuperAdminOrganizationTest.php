@@ -40,6 +40,21 @@ it('lists organizations for platform super administrators', function () {
         ->assertJsonCount(3, 'data');
 });
 
+it('describes quickbooks connection state in organization listings', function () {
+    $superAdmin = User::factory()->superAdmin()->create();
+    Organization::factory()->withRealm('realm-connected')->create(['name' => 'Connected Org']);
+    Organization::factory()->create(['name' => 'Disconnected Org', 'realm_id' => null]);
+
+    $response = $this->actingAs($superAdmin)
+        ->getJson('/api/super-admin/organizations', frontendHeaders())
+        ->assertOk();
+
+    $rows = collect($response->json('data'))->keyBy('name');
+
+    expect($rows['Connected Org']['qbo_connected'])->toBeTrue()
+        ->and($rows['Disconnected Org']['qbo_connected'])->toBeFalse();
+});
+
 it('rejects organization management for tenant administrators', function () {
     $admin = User::factory()->admin()->create();
 
