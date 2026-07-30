@@ -14,6 +14,7 @@ export const API_ERROR_MESSAGE_KEYS = [
   'registration_disabled',
   'qbo_employee_not_configured',
   'admin_required',
+  'super_admin_required',
   'organization_required',
   'email_not_verified',
   'access_denied',
@@ -25,6 +26,8 @@ export const API_ERROR_MESSAGE_KEYS = [
   'invalid_data',
   'quickbooks_busy',
   'network_unreachable',
+  'cannot_delete_own_organization',
+  'cannot_delete_last_super_admin_organization',
 ] as const
 
 /** Stable catalog keys for known API business errors. */
@@ -93,6 +96,10 @@ export function resolveApiError(error: unknown): ApiErrorResolution {
         return { type: 'catalog', key: 'admin_required' }
       }
 
+      if (error.code === 'super_admin_required') {
+        return { type: 'catalog', key: 'super_admin_required' }
+      }
+
       if (error.code === 'organization_required') {
         return { type: 'catalog', key: 'organization_required' }
       }
@@ -147,6 +154,16 @@ export function resolveApiError(error: unknown): ApiErrorResolution {
 
     if (error.status === 503) {
       return { type: 'catalog', key: 'quickbooks_busy' }
+    }
+
+    if (error.status === 409) {
+      if (error.code === 'cannot_delete_own_organization') {
+        return { type: 'catalog', key: 'cannot_delete_own_organization' }
+      }
+
+      if (error.code === 'cannot_delete_last_super_admin_organization') {
+        return { type: 'catalog', key: 'cannot_delete_last_super_admin_organization' }
+      }
     }
   }
 

@@ -12,6 +12,7 @@ const frApiErrors = {
   registration_disabled: 'Inscription désactivée.',
   qbo_employee_not_configured: 'Employé QuickBooks non configuré. Contactez un administrateur.',
   admin_required: 'Accès administrateur requis.',
+  super_admin_required: 'Accès super administrateur plateforme requis.',
   organization_required: 'Une organisation est requise pour ce compte.',
   email_not_verified: 'Vérifiez votre adresse courriel avant de vous connecter.',
   access_denied: 'Accès refusé.',
@@ -24,6 +25,9 @@ const frApiErrors = {
   invalid_data: 'Données invalides ou erreur QuickBooks.',
   quickbooks_busy: 'QuickBooks est occupé. Réessayez sous peu.',
   network_unreachable: 'Impossible de joindre l\'API Laravel.',
+  cannot_delete_own_organization: 'Vous ne pouvez pas supprimer l\'organisation qui possède votre compte.',
+  cannot_delete_last_super_admin_organization:
+    'Supprimer cette organisation retirerait le dernier super administrateur plateforme.',
 } satisfies Record<ApiErrorMessageKey, string>
 
 export const frMessages: Messages = {
@@ -64,6 +68,7 @@ export const frMessages: Messages = {
     tabsLabel: 'Sections d\'administration',
     tabPreferences: 'Préférences',
     tabIntegrations: 'Intégrations',
+    tabClients: 'Organisations clientes',
     quickbooksTitle: 'Connexion QuickBooks Online',
     quickbooksConnectionHelp: 'Connectez-vous avec un compte administrateur QuickBooks pour gérer les employés.',
     quickbooksEmployeeTitle: 'Employé QuickBooks',
@@ -98,6 +103,37 @@ export const frMessages: Messages = {
     removingTimesheetAccess: 'Retrait de l\'accès...',
     timesheetUserRemoved: 'Accès feuille de temps retiré.',
     removeTimesheetUserFailed: 'Impossible de retirer l\'accès feuille de temps.',
+    clientsTitle: 'Organisations clientes',
+    clientsHelp: 'Créez, renommez ou supprimez les organisations clientes gérées par Ellr.',
+    clientsLoading: 'Chargement des organisations...',
+    clientsEmpty: 'Aucune organisation cliente pour le moment.',
+    clientsUsersCount: '{{count}} utilisateurs',
+    clientsQboConnected: 'QuickBooks connecté',
+    clientsQboDisconnected: 'QuickBooks non connecté',
+    clientOrganizationName: 'Nom de l\'organisation',
+    clientAdminName: 'Nom de l\'administrateur',
+    clientAdminEmail: 'Courriel de l\'administrateur',
+    clientAdminPassword: 'Mot de passe administrateur',
+    clientAdminPasswordConfirmation: 'Confirmer le mot de passe',
+    createClientOrganization: 'Créer l\'organisation',
+    creatingClientOrganization: 'Création de l\'organisation...',
+    clientOrganizationCreated: 'Organisation cliente créée.',
+    createClientOrganizationFailed: 'Impossible de créer l\'organisation cliente.',
+    loadClientsFailed: 'Impossible de charger les organisations clientes.',
+    editClientOrganization: 'Renommer',
+    saveClientOrganization: 'Enregistrer le nom',
+    savingClientOrganization: 'Enregistrement...',
+    clientOrganizationUpdated: 'Nom de l\'organisation mis à jour.',
+    updateClientOrganizationFailed: 'Impossible de mettre à jour le nom de l\'organisation.',
+    deleteClientOrganization: 'Supprimer l\'organisation',
+    deleteClientOrganizationFor: 'Supprimer {{name}}',
+    deleteClientOrganizationConfirmTitle: 'Supprimer l\'organisation cliente ?',
+    deleteClientOrganizationConfirmDescription:
+      'Cette action supprime définitivement l\'organisation, tous les comptes utilisateurs et les données QuickBooks locales de ce client. Elle est irréversible.',
+    deleteClientOrganizationConfirmAction: 'Supprimer l\'organisation',
+    deletingClientOrganization: 'Suppression de l\'organisation...',
+    clientOrganizationDeleted: 'Organisation cliente supprimée.',
+    deleteClientOrganizationFailed: 'Impossible de supprimer l\'organisation cliente.',
     allClientsAccess: 'Accès à tous les clients',
     allClientsAccessHelp: 'Si activé, cet employé voit tous les clients QuickBooks actifs dans l\'application feuille de temps.',
     allClientsAccessEnabled: 'Accès à tous les clients activé',
@@ -204,6 +240,14 @@ export const frMessages: Messages = {
     resendingVerification: 'Envoi…',
     qboEmployeeWarning:
       'Employé QuickBooks non configuré. Un administrateur doit associer votre compte à un employé QBO.',
+    assignedClientsWarning:
+      'Aucun client ne vous est assigné. Communiquez avec un administrateur pour commencer à enregistrer du temps.',
+    noQboClientsWarning:
+      'Aucun client QuickBooks n\'est disponible. Un administrateur doit configurer des clients avant que vous puissiez enregistrer du temps.',
+    blockedDraftHelp:
+      'Il reste du temps non enregistré d\'une session précédente. Abandonnez-le si vous n\'en avez plus besoin.',
+    discardDraft: 'Abandonner le brouillon',
+    discardingDraft: 'Abandon…',
     recentEntriesTitle: 'Entrées de temps récentes',
   },
   timeActivity: {

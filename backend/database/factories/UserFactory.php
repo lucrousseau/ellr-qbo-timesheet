@@ -110,4 +110,17 @@ class UserFactory extends Factory
             'is_admin' => true,
         ]);
     }
+
+    /**
+     * Indicate that the user is a platform super administrator.
+     *
+     * @return static
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => false,
+            'is_super_admin' => true,
+        ]);
+    }
 }

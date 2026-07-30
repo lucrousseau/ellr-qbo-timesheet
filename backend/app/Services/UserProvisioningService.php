@@ -72,7 +72,7 @@ class UserProvisioningService
     public function listTimesheetUsers(User $admin)
     {
         return User::query()
-            ->where('organization_id', $admin->organization_id)
+            ->forOrganization($admin->organization_id)
             ->where('is_admin', false)
             ->whereNotNull('qbo_employee_ref')
             ->orderBy('name')

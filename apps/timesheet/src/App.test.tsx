@@ -6,7 +6,7 @@ import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQb
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
-const { mockActiveSession } = vi.hoisted(() => ({
+const { mockActiveSession, defaultCustomers } = vi.hoisted(() => ({
   mockActiveSession: {
     customer_ref: null,
     customer_name: null,
@@ -21,12 +21,13 @@ const { mockActiveSession } = vi.hoisted(() => ({
     elapsed_seconds: 3600,
     is_running: false,
   },
+  defaultCustomers: [{ id: '11', display_name: 'Acme Corp' }],
 }))
 
 vi.mock('@ellr/api-client', async () =>
   buildApiClientMock({
     discardTimeTracker: vi.fn().mockResolvedValue(undefined),
-    fetchQboCustomers: vi.fn().mockResolvedValue([]),
+    fetchQboCustomers: vi.fn().mockResolvedValue(defaultCustomers),
     fetchQboProjects: vi.fn().mockResolvedValue([]),
     fetchQboServices: vi.fn().mockResolvedValue([]),
     fetchTimeTracker: vi.fn().mockResolvedValue(mockActiveSession),
@@ -77,6 +78,10 @@ describe('Timesheet App', () => {
     vi.mocked(resendVerificationEmail).mockReset()
     vi.mocked(logout).mockReset()
     vi.mocked(logout).mockResolvedValue(undefined)
+    vi.mocked(fetchQboCustomers).mockReset()
+    vi.mocked(fetchQboCustomers).mockResolvedValue(defaultCustomers)
+    vi.mocked(fetchQboServices).mockReset()
+    vi.mocked(fetchQboServices).mockResolvedValue([{ id: '1', display_name: 'Hours' }])
   })
 
   it('shows reconnect UI when session bootstrap fails transiently', async () => {
@@ -230,7 +235,6 @@ describe('Timesheet App', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /timesheet/i })).toBeInTheDocument()
       expect(screen.getByText('Signed in as test@example.com')).toBeInTheDocument()
-      expect(screen.getByText('No Client')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
       expect(document.querySelector('.bg-red-50')).not.toBeInTheDocument()
     })
@@ -614,6 +618,33 @@ describe('Timesheet App', () => {
     })
   })
 
+  it('shows the timesheet after sign-in when returning from a reset-password invite link', async () => {
+    const user = userEvent.setup()
+    window.history.replaceState({}, '', '/reset-password?token=abc&email=user%40example.com')
+    vi.mocked(fetchCurrentUser).mockResolvedValue(null)
+    vi.mocked(login).mockResolvedValue(authenticatedUser)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /back to sign in/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
+    })
+
+    await fillLoginForm(user)
+
+    await waitFor(() => {
+      expect(login).toHaveBeenCalled()
+      expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /^sign in$/i })).not.toBeInTheDocument()
+    })
+  })
+
   it('returns to sign in from forgot password', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(null)
@@ -831,17 +862,62 @@ describe('Timesheet App', () => {
     })
   })
 
-  it('hides the client picker when quickbooks has no customers', async () => {
-    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+  it('blocks time tracking when no clients are assigned to the user', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      all_customers_access: false,
+    })
     vi.mocked(fetchQboCustomers).mockResolvedValue([])
 
     render(<App />)
 
     await waitFor(() => {
-      expect(fetchQboCustomers).toHaveBeenCalled()
+      expect(screen.getByText(/no clients are assigned to your account/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /log time/i })).not.toBeInTheDocument()
+      expect(screen.queryByText(/recent time entries/i)).not.toBeInTheDocument()
+    })
+  })
+
+  it('offers to discard a draft timer when tracking is blocked for missing clients', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      all_customers_access: false,
+    })
+    vi.mocked(fetchQboCustomers).mockResolvedValue([])
+    vi.mocked(fetchTimeTracker).mockResolvedValue({
+      ...mockActiveSession,
+      accumulated_seconds: 900,
+      elapsed_seconds: 900,
     })
 
-    expect(screen.queryByLabelText(/^client$/i)).not.toBeInTheDocument()
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/no clients are assigned to your account/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /discard draft time/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /discard draft time/i }))
+
+    await waitFor(() => {
+      expect(discardTimeTracker).toHaveBeenCalled()
+    })
+  })
+
+  it('shows a no-clients warning when all-customers access is enabled but quickbooks has none', async () => {
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      all_customers_access: true,
+    })
+    vi.mocked(fetchQboCustomers).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/no quickbooks clients are available/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /log time/i })).not.toBeInTheDocument()
+    })
   })
 
   it('shows an error when quickbooks customer availability fails', async () => {

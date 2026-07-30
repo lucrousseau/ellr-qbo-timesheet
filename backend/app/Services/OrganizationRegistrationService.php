@@ -8,8 +8,8 @@ namespace App\Services;
 
 use App\Models\Organization;
 use App\Models\User;
+use App\Support\OrganizationSlug;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Provisions a new SaaS tenant and its first administrator user.
@@ -32,7 +32,7 @@ class OrganizationRegistrationService
 
             $organization = Organization::query()->create([
                 'name' => $organizationName,
-                'slug' => $this->uniqueSlug($organizationName),
+                'slug' => OrganizationSlug::uniqueFromName($organizationName),
             ]);
 
             $user = User::query()->create([
@@ -45,23 +45,5 @@ class OrganizationRegistrationService
 
             return $user->fresh(['organization']);
         });
-    }
-
-    /**
-     * Builds a unique organization slug from a display name.
-     *
-     * @param  string  $name  Organization display name.
-     * @return string
-     */
-    private function uniqueSlug(string $name): string
-    {
-        $base = Str::slug($name);
-        $base = $base !== '' ? $base : 'organization';
-
-        do {
-            $slug = $base.'-'.Str::lower(Str::random(6));
-        } while (Organization::query()->where('slug', $slug)->exists());
-
-        return $slug;
     }
 }

@@ -69,7 +69,7 @@ export function useQuickBooksAdmin() {
       return
     }
 
-    if (currentUser.is_admin !== true) {
+    if (currentUser.is_super_admin === true || currentUser.is_admin !== true) {
       setStatus(null)
       return
     }

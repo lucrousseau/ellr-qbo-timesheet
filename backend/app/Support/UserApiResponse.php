@@ -30,8 +30,9 @@ class UserApiResponse
         $resource->forceFill($user->getAttributes());
         $resource->exists = $user->exists;
 
-        $resource->makeVisible(['is_admin']);
+        $resource->makeVisible(['is_admin', 'is_super_admin']);
         $resource->setAttribute('is_admin', $user->isAdmin());
+        $resource->setAttribute('is_super_admin', $user->isSuperAdmin());
         $resource->setAttribute(
             'organization',
             $organization !== null ? OrganizationApiResponse::resource($organization) : null,

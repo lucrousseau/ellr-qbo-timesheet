@@ -3,7 +3,7 @@
  */
 
 import { hasValidPasswordResetInvite } from '@ellr/api-client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type UsePasswordResetInviteGateOptions = {
   authLoading: boolean
@@ -21,11 +21,17 @@ export function usePasswordResetInviteGate({
   user,
   handleLogout,
 }: UsePasswordResetInviteGateOptions) {
-  const hasInvite = useMemo(() => hasValidPasswordResetInvite(), [])
+  const hasInvite = hasValidPasswordResetInvite()
   const [sessionCleared, setSessionCleared] = useState(!hasInvite)
 
   useEffect(() => {
-    if (!hasInvite || authLoading || sessionCleared) {
+    if (!hasInvite) {
+      setSessionCleared(true)
+
+      return
+    }
+
+    if (authLoading || sessionCleared) {
       return
     }
 
@@ -40,6 +46,6 @@ export function usePasswordResetInviteGate({
 
   return {
     gateLoading: authLoading || (hasInvite && !sessionCleared),
-    showGuestAuth: !user || (hasInvite && sessionCleared),
+    showGuestAuth: !user,
   }
 }

@@ -331,6 +331,23 @@ export function useTimeTracker(enabled = true) {
     }))
   }, [applyState, pickerAvailability.isServiceAllowed, state.service])
 
+  useEffect(() => {
+    if (!enabled || loading || pickerAvailability.customersStatus !== 'empty') {
+      return
+    }
+
+    setState((current) => {
+      if (current.runningSince === null) {
+        return current
+      }
+
+      const nextState = { ...current, runningSince: null }
+      void syncToServer(nextState)
+
+      return nextState
+    })
+  }, [enabled, loading, pickerAvailability.customersStatus, syncToServer])
+
   const fetchCustomers = useCallback(
     (refresh: boolean, signal: AbortSignal) => fetchQboCustomers({ refresh, signal }),
     [],
@@ -407,6 +424,17 @@ export function useTimeTracker(enabled = true) {
 
   const isRunning = state.runningSince !== null
   const headerLabel = state.project?.display_name ?? state.customer?.display_name ?? t('timesheet.noClient')
+  const canTrackTime =
+    pickerAvailability.customersStatus === 'available' ||
+    (pickerAvailability.customersStatus === 'error' && state.customer !== null)
+
+  const hasDraftSession =
+    elapsedSeconds > 0 ||
+    state.description.trim() !== '' ||
+    state.customer !== null ||
+    state.project !== null ||
+    state.service !== null ||
+    state.isBillable
 
   return {
     loading,
@@ -414,6 +442,9 @@ export function useTimeTracker(enabled = true) {
     elapsedSeconds,
     isRunning,
     headerLabel,
+    canTrackTime,
+    hasDraftSession,
+    customersStatus: pickerAvailability.customersStatus,
     message,
     logging,
     discarding,

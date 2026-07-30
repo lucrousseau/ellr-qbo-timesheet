@@ -17,6 +17,13 @@ use App\Models\User;
 class OrganizationRealmService
 {
     /**
+     * @param  OrganizationRealmDataPurgeService  $realmDataPurge  Realm read-model cleanup.
+     */
+    public function __construct(
+        private readonly OrganizationRealmDataPurgeService $realmDataPurge,
+    ) {}
+
+    /**
      * Validates realm ownership and links the organization on first QuickBooks connect.
      *
      * @param  User  $user  Administrator who completed OAuth.
@@ -92,6 +99,7 @@ class OrganizationRealmService
 
         if (! $tokensRemain) {
             $organization->update(['realm_id' => null]);
+            $this->realmDataPurge->purgeRealmWhenUnclaimed($realmId);
         }
     }
 }

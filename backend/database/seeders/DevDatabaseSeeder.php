@@ -11,7 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds default admin and timesheet test accounts (local only).
+ * Seeds a sample tenant organization, platform operator, and timesheet test accounts (local only).
  */
 class DevDatabaseSeeder extends Seeder
 {
@@ -27,8 +27,9 @@ class DevDatabaseSeeder extends Seeder
         }
 
         $organization = $this->seedOrganization();
-        $this->seedAdmin($organization);
-        $this->seedTimesheetUser($organization);
+        $this->seedTenantAdmin($organization);
+        $this->seedPlatformOperator($organization);
+        $this->seedTenantTimesheetUser($organization);
     }
 
     /**
@@ -47,44 +48,78 @@ class DevDatabaseSeeder extends Seeder
     }
 
     /**
-     * Creates or updates the development administrator account.
+     * Creates or updates the tenant administrator for the sample client organization.
      *
      * @param  Organization  $organization  Development tenant organization.
      * @return void
      */
-    private function seedAdmin(Organization $organization): void
+    private function seedTenantAdmin(Organization $organization): void
     {
         $user = User::query()->updateOrCreate(
-            ['email' => (string) config('dev-seed.admin_email')],
+            ['email' => (string) config('dev-seed.tenant_admin_email')],
             [
                 'organization_id' => $organization->id,
-                'name' => (string) config('dev-seed.admin_name'),
-                'password' => (string) config('dev-seed.admin_password'),
+                'name' => (string) config('dev-seed.tenant_admin_name'),
+                'password' => (string) config('dev-seed.tenant_admin_password'),
                 'email_verified_at' => now(),
             ],
         );
 
-        $user->forceFill(['is_admin' => true])->save();
+        $user->forceFill([
+            'is_admin' => true,
+            'is_super_admin' => false,
+        ])->save();
     }
 
     /**
-     * Creates or updates a non-admin timesheet test account.
+     * Creates or updates the Ellr platform operator account (client org management).
      *
      * @param  Organization  $organization  Development tenant organization.
      * @return void
      */
-    private function seedTimesheetUser(Organization $organization): void
+    private function seedPlatformOperator(Organization $organization): void
     {
+        if (! config('dev-seed.platform_enabled', true)) {
+            return;
+        }
+
         $user = User::query()->updateOrCreate(
-            ['email' => (string) config('dev-seed.user_email')],
+            ['email' => (string) config('dev-seed.platform_email')],
             [
                 'organization_id' => $organization->id,
-                'name' => (string) config('dev-seed.user_name'),
-                'password' => (string) config('dev-seed.user_password'),
+                'name' => (string) config('dev-seed.platform_name'),
+                'password' => (string) config('dev-seed.platform_password'),
                 'email_verified_at' => now(),
             ],
         );
 
-        $user->forceFill(['is_admin' => false])->save();
+        $user->forceFill([
+            'is_admin' => false,
+            'is_super_admin' => true,
+        ])->save();
+    }
+
+    /**
+     * Creates or updates a non-admin timesheet test account in the sample tenant.
+     *
+     * @param  Organization  $organization  Development tenant organization.
+     * @return void
+     */
+    private function seedTenantTimesheetUser(Organization $organization): void
+    {
+        $user = User::query()->updateOrCreate(
+            ['email' => (string) config('dev-seed.tenant_timesheet_user_email')],
+            [
+                'organization_id' => $organization->id,
+                'name' => (string) config('dev-seed.tenant_timesheet_user_name'),
+                'password' => (string) config('dev-seed.tenant_timesheet_user_password'),
+                'email_verified_at' => now(),
+            ],
+        );
+
+        $user->forceFill([
+            'is_admin' => false,
+            'is_super_admin' => false,
+        ])->save();
     }
 }

@@ -25,6 +25,7 @@ export type User = {
   email_verified_at?: string | null
   locale?: UserLocale | null
   is_admin?: boolean
+  is_super_admin?: boolean
   organization?: Organization | null
   qbo_employee_ref?: string | null
   qbo_employee_name?: string | null

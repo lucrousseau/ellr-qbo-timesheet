@@ -24,5 +24,6 @@ enum ApiErrorCode: string
     case AdminRequired = 'admin_required';
     case EmailNotVerified = 'email_not_verified';
     case OrganizationRequired = 'organization_required';
+    case SuperAdminRequired = 'super_admin_required';
     case InvalidCredentials = 'invalid_credentials';
 }

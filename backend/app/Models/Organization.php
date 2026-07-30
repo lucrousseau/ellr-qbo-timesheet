@@ -6,6 +6,7 @@
 
 namespace App\Models;
 
+use App\Services\OrganizationRealmDataPurgeService;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,20 @@ class Organization extends Model
 {
     /** @use HasFactory<OrganizationFactory> */
     use HasFactory;
+
+    /**
+     * Purges QuickBooks realm data before the tenant row is removed.
+     *
+     * @return void
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Organization $organization): void {
+            if ($organization->hasQuickBooksRealm()) {
+                app(OrganizationRealmDataPurgeService::class)->purgeRealm($organization->realm_id);
+            }
+        });
+    }
 
     /**
      * Users that belong to this organization.

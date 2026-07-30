@@ -50,6 +50,20 @@ function postSignedQuickBooksWebhook(TestCase $test, array $signed): TestRespons
     );
 }
 
+/**
+ * Binds a QuickBooks realm to the user's organization for webhook processing tests.
+ *
+ * @param  User  $user  Authenticated user whose organization claims the realm.
+ * @param  string  $realmId  QuickBooks company realm identifier.
+ * @return User
+ */
+function claimRealmForUser(User $user, string $realmId = 'realm-1'): User
+{
+    $user->organization->update(['realm_id' => $realmId]);
+
+    return $user;
+}
+
 it('rejects webhook requests with an invalid signature', function () {
     config(['quickbooks.webhook_verifier' => 'verifier-token']);
 
@@ -175,7 +189,7 @@ it('does not log quickbooks response bodies when api errors are hidden', functio
         app(TimeActivitySnapshotService::class),
     );
 
-    $user = User::factory()->create();
+    $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     $job = new ProcessQuickBooksWebhookJob([
@@ -214,7 +228,7 @@ it('logs quickbooks response bodies when api errors are exposed', function () {
         app(TimeActivitySnapshotService::class),
     );
 
-    $user = User::factory()->create();
+    $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     $job = new ProcessQuickBooksWebhookJob([
@@ -241,7 +255,7 @@ it('logs quickbooks response bodies when api errors are exposed', function () {
 });
 
 it('soft-deletes snapshots when a delete webhook is received', function () {
-    $user = User::factory()->create();
+    $user = claimRealmForUser(User::factory()->create());
     $token = QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
     $snapshot = TimeActivitySnapshot::factory()
         ->forRealm('realm-1')
@@ -266,7 +280,7 @@ it('soft-deletes snapshots when a delete webhook is received', function () {
 });
 
 it('soft-deletes snapshots when delete operation casing varies', function () {
-    $user = User::factory()->create();
+    $user = claimRealmForUser(User::factory()->create());
     $token = QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
     $snapshot = TimeActivitySnapshot::factory()
         ->forRealm('realm-1')
@@ -300,7 +314,7 @@ it('rethrows quickbooks errors from webhook sync jobs', function () {
         app(TimeActivitySnapshotService::class),
     );
 
-    $user = User::factory()->create();
+    $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     $job = new ProcessQuickBooksWebhookJob([
@@ -320,7 +334,7 @@ it('rethrows quickbooks errors from webhook sync jobs', function () {
 });
 
 it('soft-deletes snapshots when void webhook operation is received', function () {
-    $user = User::factory()->create();
+    $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
     $snapshot = TimeActivitySnapshot::factory()
         ->forRealm('realm-1')
@@ -357,6 +371,8 @@ it('validates webhook signatures with the verifier service', function () {
 it('ignores webhook notifications without entities or unknown realms', function () {
     Log::spy();
 
+    $user = claimRealmForUser(User::factory()->create(), 'realm-1');
+
     app(QuickBooksWebhookProcessorService::class)->process([
         'eventNotifications' => [
             ['realmId' => 'missing-realm', 'dataChangeEvent' => ['entities' => [
@@ -373,7 +389,7 @@ it('ignores webhook notifications without entities or unknown realms', function 
 });
 
 it('skips non-time-activity webhook entities', function () {
-    $user = User::factory()->create();
+    $user = claimRealmForUser(User::factory()->create());
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     app(QuickBooksWebhookProcessorService::class)->process([

@@ -41,7 +41,7 @@ composer qa                # format + analyse + coverage + arch + behat
 - `TimeActivityController` delegates to the service; no direct SDK facades in the controller.
 - `QuickBooksToken` model: `quickbooks_tokens` table.
 - Protected routes: `auth:sanctum` middleware and `organization` (tenant membership).
-- **Multi-tenant (phase 1)**: each `User` belongs to one `Organization`; QBO `realm_id` is bound per org via `OrganizationRealmService`. Admin APIs scope by `organization_id` (middleware, route binding on `{user}`, and `OrganizationAccessService`). See `OrganizationRegistrationService`, `OrganizationRealmService`, `QuickBooksTokenResolverService`.
+- **Multi-tenant (phase 1)**: each `User` belongs to one `Organization`; QBO `realm_id` is bound per org via `OrganizationRealmService`. Admin APIs scope by `organization_id` (middleware, route binding on `{user}`, and `OrganizationAccessService`). Platform operators use `is_super_admin` and `/api/super-admin/organizations` via `OrganizationLifecycleService`. Realm snapshots purge through `OrganizationRealmDataPurgeService` on disconnect and org delete. See `OrganizationRegistrationService`, `OrganizationRealmService`, `QuickBooksTokenResolverService`.
 - Mock `QuickBooksService` in tests; never call the Intuit API in tests.
 - **QBO API economy**: cache read-heavy lists (`QboEmployeeListService`), manual `?refresh=1` bypass, invalidate on disconnect. See `.cursor/rules/quickbooks-api.mdc`.
 - **Time activity read model (Phase 2)**: webhooks, reconcile, local snapshots. See `docs/quickbooks-time-activity-sync.md`.

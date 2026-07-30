@@ -141,6 +141,30 @@ describe('resolveApiError', () => {
     })
   })
 
+  it('maps organization lifecycle conflicts to catalog keys', () => {
+    expect(
+      resolveApiError(
+        new ApiError(409, 'You cannot delete the organization that owns your account.', 'cannot_delete_own_organization'),
+      ),
+    ).toEqual({
+      type: 'catalog',
+      key: 'cannot_delete_own_organization',
+    })
+
+    expect(
+      resolveApiError(
+        new ApiError(
+          409,
+          'Deleting this organization would remove the last platform super administrator.',
+          'cannot_delete_last_super_admin_organization',
+        ),
+      ),
+    ).toEqual({
+      type: 'catalog',
+      key: 'cannot_delete_last_super_admin_organization',
+    })
+  })
+
   it('maps network failures to an outage key', () => {
     expect(resolveApiError(new TypeError('failed to fetch'))).toEqual({
       type: 'catalog',

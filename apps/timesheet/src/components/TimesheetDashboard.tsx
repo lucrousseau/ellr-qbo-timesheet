@@ -5,6 +5,7 @@
 import {
   Alert,
   AppShell,
+  LoadingScreen,
   TabNav,
   tabPanelId,
   TimeActivityEntriesPanel,
@@ -18,6 +19,8 @@ import type { useTimesheetAuth } from '../hooks/useTimesheetAuth'
 import type { useTimeTracker } from '../hooks/useTimeTracker'
 import { useRecentTimeActivities } from '../hooks/useRecentTimeActivities'
 import { EmailVerificationBanner } from './EmailVerificationBanner'
+import { AssignedClientsWarning } from './AssignedClientsWarning'
+import { CustomerLoadError } from './CustomerLoadError'
 import { QboEmployeeWarning } from './QboEmployeeWarning'
 import { TimeTrackerPanel } from './TimeTrackerPanel'
 
@@ -51,9 +54,11 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
   )
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'timer'
-  const showTimer = Boolean(user.qbo_employee_ref) && !auth.showEmailVerification(user)
+  const canUseTimerTab =
+    Boolean(user.qbo_employee_ref) && !auth.showEmailVerification(user)
+  const showTimeTracking = canUseTimerTab && (tracker.loading || tracker.canTrackTime)
   const recentEntries = useRecentTimeActivities({
-    enabled: showTimer,
+    enabled: showTimeTracking && !tracker.loading && tracker.canTrackTime,
     refreshToken: tracker.entriesRefreshToken,
   })
 
@@ -106,7 +111,22 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
           )}
           {!user.qbo_employee_ref ? (
             <QboEmployeeWarning />
-          ) : auth.showEmailVerification(user) ? null : (
+          ) : auth.showEmailVerification(user) ? null : tracker.loading || tracker.customersStatus === 'unknown' ? (
+            <LoadingScreen />
+          ) : !tracker.canTrackTime && tracker.customersStatus === 'empty' ? (
+            <AssignedClientsWarning
+              allCustomersAccess={user.all_customers_access === true}
+              hasDraftSession={tracker.hasDraftSession}
+              discarding={tracker.discarding}
+              onDiscard={() => void tracker.onDiscard()}
+            />
+          ) : !tracker.canTrackTime && tracker.customersStatus === 'error' ? (
+            <CustomerLoadError
+              hasDraftSession={tracker.hasDraftSession}
+              discarding={tracker.discarding}
+              onDiscard={() => void tracker.onDiscard()}
+            />
+          ) : (
             <>
               <TimeTrackerPanel
                 loading={tracker.loading}

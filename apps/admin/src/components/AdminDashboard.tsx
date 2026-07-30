@@ -12,8 +12,10 @@ import {
 import { AccountPanel } from './AccountPanel'
 import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
 import { TimesheetUserProvisioningPanel } from './TimesheetUserProvisioningPanel'
+import { SuperAdminOrganizationsPanel } from './SuperAdminOrganizationsPanel'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
 import { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
+import { useSuperAdminOrganizations } from '../hooks/useSuperAdminOrganizations'
 
 const TAB_ID_PREFIX = 'admin'
 
@@ -31,6 +33,8 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
   const userId = admin.user!.id
   const [activeTab, setActiveTab] = useAdminActiveTab(userId)
   const isAdministrator = admin.user?.is_admin === true
+  const isSuperAdministrator = admin.user?.is_super_admin === true
+  const isTenantAdministrator = isAdministrator && !isSuperAdministrator
 
   useEffect(() => {
     try {
@@ -45,12 +49,16 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
       { id: 'preferences', label: t('admin.tabPreferences') },
     ]
 
-    if (isAdministrator) {
+    if (isTenantAdministrator) {
       items.push({ id: 'integrations', label: t('admin.tabIntegrations') })
     }
 
+    if (isSuperAdministrator) {
+      items.push({ id: 'clients', label: t('admin.tabClients') })
+    }
+
     return items
-  }, [isAdministrator, t])
+  }, [isTenantAdministrator, isSuperAdministrator, t])
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'preferences'
 
@@ -66,16 +74,22 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
   } = admin
 
   useEffect(() => {
-    if (focusIntegrationsTab && isAdministrator) {
+    if (focusIntegrationsTab && isTenantAdministrator) {
       setActiveTab('integrations')
       clearFocusIntegrationsTab()
     }
-  }, [focusIntegrationsTab, clearFocusIntegrationsTab, isAdministrator, setActiveTab])
+  }, [focusIntegrationsTab, clearFocusIntegrationsTab, isTenantAdministrator, setActiveTab])
 
   const provisioning = useTimesheetProvisioning({
     status: admin.status,
-    isAdministrator,
+    isAdministrator: isTenantAdministrator,
     integrationsTabActive: activeTabId === 'integrations',
+    onError: admin.showError,
+    onSuccess: admin.showSuccess,
+  })
+
+  const clientOrganizations = useSuperAdminOrganizations({
+    enabled: isSuperAdministrator && activeTabId === 'clients',
     onError: admin.showError,
     onSuccess: admin.showSuccess,
   })
@@ -108,6 +122,14 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           onSaveLocale={admin.saveLocale}
           tabIdPrefix={TAB_ID_PREFIX}
         />
+      ) : activeTabId === 'clients' ? (
+        <div
+          id={tabPanelId(TAB_ID_PREFIX, 'clients')}
+          role="tabpanel"
+          aria-labelledby={`${TAB_ID_PREFIX}-tab-clients`}
+        >
+          <SuperAdminOrganizationsPanel clients={clientOrganizations} />
+        </div>
       ) : (
         <div
           id={tabPanelId(TAB_ID_PREFIX, 'integrations')}

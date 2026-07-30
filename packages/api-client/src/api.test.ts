@@ -35,6 +35,12 @@ import {
 import { createTimeActivity, discardTimeTracker, fetchTimeTracker, listTimeActivities, logTimeTracker, updateTimeActivity, updateTimeTracker } from './timesheet'
 import { listAdminUserTimeActivities, updateAdminUserTimeActivity } from './admin'
 import {
+  createSuperAdminOrganization,
+  deleteSuperAdminOrganization,
+  fetchSuperAdminOrganizations,
+  updateSuperAdminOrganization,
+} from './superAdmin'
+import {
   hasValidPasswordResetInvite,
   isEmailUnverified,
   isResetPasswordRoute,
@@ -1616,6 +1622,63 @@ describe('admin api helpers', () => {
       all_customers_access: false,
       data: [{ id: '11', display_name: 'Acme Corp' }],
     })
+  })
+
+  it('loads and mutates tenant organizations for platform super administrators', async () => {
+    mockCsrfCookie()
+    const organization = {
+      id: 5,
+      name: 'Gamma LLC',
+      slug: 'gamma-llc',
+      qbo_connected: false,
+      users_count: 1,
+      created_at: '2026-07-30T12:00:00Z',
+    }
+    const csrfResponse = { ok: true, status: 204, json: async () => ({}) }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [organization] }),
+      })
+      .mockResolvedValueOnce(csrfResponse)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({ data: organization }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { ...organization, name: 'Gamma Corp' } }),
+      })
+      .mockResolvedValueOnce({ ok: true, status: 204 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchSuperAdminOrganizations()).resolves.toEqual([organization])
+
+    await expect(
+      createSuperAdminOrganization({
+        organization_name: 'Gamma LLC',
+        name: 'Gamma Admin',
+        email: 'gamma@client.test',
+        password: VALID_TEST_PASSWORD_ALT,
+        password_confirmation: VALID_TEST_PASSWORD_ALT,
+      }),
+    ).resolves.toEqual(organization)
+
+    await expect(updateSuperAdminOrganization(5, { name: 'Gamma Corp' })).resolves.toEqual({
+      ...organization,
+      name: 'Gamma Corp',
+    })
+
+    await expect(deleteSuperAdminOrganization(5)).resolves.toBeUndefined()
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:8000/api/super-admin/organizations/5',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
   })
 })
 

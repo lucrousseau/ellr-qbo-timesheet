@@ -3,7 +3,7 @@
  */
 
 import type { FormEvent } from 'react'
-import { getPasswordRequirementLabels } from '../i18n/passwordPolicyMessages'
+import { PasswordPolicyRequirements } from './PasswordPolicyRequirements'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
 import { Button } from './Button'
@@ -40,8 +40,7 @@ export function ChangePasswordPanel({
   onPasswordConfirmationChange,
   onSubmit,
 }: ChangePasswordPanelProps) {
-  const { t, locale } = useLocale()
-  const requirementLabels = getPasswordRequirementLabels(locale)
+  const { t } = useLocale()
 
   return (
     <section className={cardClass}>
@@ -61,14 +60,7 @@ export function ChangePasswordPanel({
       )}
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-        <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-          <p className="font-medium text-slate-700">{t('auth.passwordPolicy.requirementsTitle')}</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            {requirementLabels.map((label) => (
-              <li key={label}>{label}</li>
-            ))}
-          </ul>
-        </div>
+        <PasswordPolicyRequirements />
         <TextField
           label={t('auth.currentPassword')}
           type="password"

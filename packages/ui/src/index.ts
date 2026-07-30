@@ -12,6 +12,7 @@ export { StaticSelect } from './components/StaticSelect'
 export { TextField } from './components/TextField'
 export { Alert } from './components/Alert'
 export { AppShell } from './components/AppShell'
+export { PasswordPolicyRequirements } from './components/PasswordPolicyRequirements'
 export { ChangePasswordPanel } from './components/ChangePasswordPanel'
 export { ForgotPasswordForm } from './components/ForgotPasswordForm'
 export { LoadingScreen } from './components/LoadingScreen'
@@ -22,6 +23,11 @@ export { TabNav, tabButtonId, tabPanelId, type TabNavItem } from './components/T
 export { TimeActivityEntriesPanel, type TimeActivityEntriesPanelProps } from './components/TimeActivityEntriesPanel'
 export { UserPreferencesPanel } from './components/UserPreferencesPanel'
 export { LocaleProvider, useLocale } from './i18n/LocaleProvider'
+export {
+  getPasswordRequirementLabels,
+  translateApiPasswordValidationMessage,
+  translatePasswordPolicyErrors,
+} from './i18n/passwordPolicyMessages'
 export { getApiErrorMessage, translateApiError } from './i18n/apiErrorMessages'
 export { useGuardedAction } from './hooks/useGuardedAction'
 export { useLazyApiSelect } from './hooks/useLazyApiSelect'

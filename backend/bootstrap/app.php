@@ -8,6 +8,7 @@ use App\Exceptions\QuickBooksException;
 use App\Http\Middleware\EnsureEmailVerifiedIfRequired;
 use App\Http\Middleware\EnsureUserHasOrganization;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsSuperAdmin;
 use App\Http\Middleware\SetLocaleFromUser;
 use App\Services\QuickBooksApiErrorFormatterService;
 use Illuminate\Console\Scheduling\Schedule;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
             'organization' => EnsureUserHasOrganization::class,
+            'super_admin' => EnsureUserIsSuperAdmin::class,
             'verified.email' => EnsureEmailVerifiedIfRequired::class,
         ]);
     })

@@ -81,6 +81,15 @@ class FeatureContext implements Context
     }
 
     /**
+     * @Given an authenticated platform super administrator
+     * @return void
+     */
+    public function anAuthenticatedPlatformSuperAdministrator(): void
+    {
+        Sanctum::actingAs(User::factory()->superAdmin()->create());
+    }
+
+    /**
      * @Given I am logged out
      * @return void
      */

@@ -28,6 +28,7 @@ it('ignores invalid top-level eventNotifications payloads', function () {
 it('ignores malformed notifications and time activities without ids', function () {
     Log::spy();
     $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     app(QuickBooksWebhookProcessorService::class)->process([
@@ -66,6 +67,7 @@ it('updates webhook sync state after processing entities', function () {
     );
 
     $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     $processor->process([
@@ -95,6 +97,7 @@ it('calls sync for create webhooks without resolving missing names', function ()
         );
 
     $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     (new QuickBooksWebhookProcessorService($sync, app(TimeActivitySnapshotService::class)))->process([
@@ -113,6 +116,8 @@ it('calls sync for create webhooks without resolving missing names', function ()
 
 it('logs when notifications omit realm ids or entity lists', function () {
     Log::spy();
+    $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
 
     app(QuickBooksWebhookProcessorService::class)->process([
         'eventNotifications' => [
@@ -136,6 +141,7 @@ it('processes numeric webhook identifiers as strings', function () {
         ->with(Mockery::type(QuickBooksToken::class), '55', false);
 
     $user = User::factory()->create();
+    $user->organization->update(['realm_id' => '1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => '1']);
 
     (new QuickBooksWebhookProcessorService($sync, app(TimeActivitySnapshotService::class)))->process([
@@ -160,6 +166,7 @@ it('defaults missing webhook operations to sync and skips other entities', funct
         ->with(Mockery::type(QuickBooksToken::class), '77', false);
 
     $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     (new QuickBooksWebhookProcessorService($sync, app(TimeActivitySnapshotService::class)))->process([
@@ -194,6 +201,7 @@ it('soft-deletes snapshots for delete and void webhook operations', function () 
         ->with('realm-1', '33');
 
     $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
     (new QuickBooksWebhookProcessorService($sync, $snapshots))->process([
@@ -210,7 +218,7 @@ it('soft-deletes snapshots for delete and void webhook operations', function () 
     ]);
 });
 
-it('logs when webhook notifications reference unknown realms', function () {
+it('logs when webhook notifications reference unclaimed realms', function () {
     Log::spy();
 
     app(QuickBooksWebhookProcessorService::class)->process([
@@ -228,7 +236,7 @@ it('logs when webhook notifications reference unknown realms', function () {
 
     Log::shouldHaveReceived('warning')
         ->once()
-        ->with('QuickBooks webhook ignored unknown realm', ['realm_id' => 'missing-realm']);
+        ->with('QuickBooks webhook ignored unclaimed realm', ['realm_id' => 'missing-realm']);
 });
 
 it('ignores payloads without an eventNotifications key', function () {

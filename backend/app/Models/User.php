@@ -6,6 +6,7 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToOrganization;
 use App\Enums\UserLocale;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
@@ -23,14 +24,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['organization_id', 'name', 'email', 'password', 'locale', 'qbo_employee_ref', 'qbo_employee_name', 'qbo_all_customers_access'])]
-#[Hidden(['password', 'remember_token', 'is_admin'])]
+#[Hidden(['password', 'remember_token', 'is_admin', 'is_super_admin'])]
 /**
  * Eloquent user with Sanctum auth and optional QBO employee fields.
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use BelongsToOrganization, HasApiTokens, HasFactory, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -43,6 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_super_admin' => 'boolean',
             'qbo_all_customers_access' => 'boolean',
         ];
     }
@@ -55,6 +57,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return (bool) $this->is_admin;
+    }
+
+    /**
+     * Indicates whether the user has platform super-administrator privileges.
+     *
+     * @return bool
+     */
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_super_admin;
     }
 
     /**

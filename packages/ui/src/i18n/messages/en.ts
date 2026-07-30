@@ -11,6 +11,7 @@ const enApiErrors = {
   registration_disabled: 'Registration disabled.',
   qbo_employee_not_configured: 'QuickBooks employee not configured. Contact an administrator.',
   admin_required: 'Administrator access required.',
+  super_admin_required: 'Platform super administrator access required.',
   organization_required: 'Organization membership is required for this account.',
   email_not_verified: 'Verify your email address before signing in.',
   access_denied: 'Access denied.',
@@ -23,6 +24,9 @@ const enApiErrors = {
   invalid_data: 'Invalid data or QuickBooks error.',
   quickbooks_busy: 'QuickBooks is busy. Please try again shortly.',
   network_unreachable: 'Unable to reach the Laravel API.',
+  cannot_delete_own_organization: 'You cannot delete the organization that owns your account.',
+  cannot_delete_last_super_admin_organization:
+    'Deleting this organization would remove the last platform super administrator.',
 } satisfies Record<ApiErrorMessageKey, string>
 
 export const enMessages = {
@@ -63,6 +67,7 @@ export const enMessages = {
     tabsLabel: 'Administration sections',
     tabPreferences: 'Preferences',
     tabIntegrations: 'Integrations',
+    tabClients: 'Client organizations',
     quickbooksTitle: 'QuickBooks Online connection',
     quickbooksConnectionHelp: 'Connect with a QuickBooks company administrator account to manage employees.',
     quickbooksEmployeeTitle: 'QuickBooks employee',
@@ -97,6 +102,37 @@ export const enMessages = {
     removingTimesheetAccess: 'Removing access...',
     timesheetUserRemoved: 'Timesheet access removed.',
     removeTimesheetUserFailed: 'Unable to remove timesheet access.',
+    clientsTitle: 'Client organizations',
+    clientsHelp: 'Create, rename, or delete tenant organizations managed by Ellr.',
+    clientsLoading: 'Loading organizations...',
+    clientsEmpty: 'No client organizations yet.',
+    clientsUsersCount: '{{count}} users',
+    clientsQboConnected: 'QuickBooks connected',
+    clientsQboDisconnected: 'QuickBooks not connected',
+    clientOrganizationName: 'Organization name',
+    clientAdminName: 'Administrator name',
+    clientAdminEmail: 'Administrator email',
+    clientAdminPassword: 'Administrator password',
+    clientAdminPasswordConfirmation: 'Confirm password',
+    createClientOrganization: 'Create organization',
+    creatingClientOrganization: 'Creating organization...',
+    clientOrganizationCreated: 'Client organization created.',
+    createClientOrganizationFailed: 'Unable to create client organization.',
+    loadClientsFailed: 'Unable to load client organizations.',
+    editClientOrganization: 'Rename',
+    saveClientOrganization: 'Save name',
+    savingClientOrganization: 'Saving...',
+    clientOrganizationUpdated: 'Organization name updated.',
+    updateClientOrganizationFailed: 'Unable to update organization name.',
+    deleteClientOrganization: 'Delete organization',
+    deleteClientOrganizationFor: 'Delete {{name}}',
+    deleteClientOrganizationConfirmTitle: 'Delete client organization?',
+    deleteClientOrganizationConfirmDescription:
+      'This permanently deletes the organization, all user accounts, and local QuickBooks data for that tenant. This action cannot be undone.',
+    deleteClientOrganizationConfirmAction: 'Delete organization',
+    deletingClientOrganization: 'Deleting organization...',
+    clientOrganizationDeleted: 'Client organization deleted.',
+    deleteClientOrganizationFailed: 'Unable to delete client organization.',
     allClientsAccess: 'Access to all clients',
     allClientsAccessHelp: 'When enabled, this employee can see every active QuickBooks client in the timesheet app.',
     allClientsAccessEnabled: 'Access to all clients enabled',
@@ -203,6 +239,14 @@ export const enMessages = {
     resendingVerification: 'Sending…',
     qboEmployeeWarning:
       'QuickBooks employee not configured. An administrator must link your account to a QBO employee.',
+    assignedClientsWarning:
+      'No clients are assigned to your account. Contact an administrator to start tracking time.',
+    noQboClientsWarning:
+      'No QuickBooks clients are available. An administrator must configure clients before you can track time.',
+    blockedDraftHelp:
+      'You still have unsaved timer time from a previous session. Discard it if you no longer need it.',
+    discardDraft: 'Discard draft time',
+    discardingDraft: 'Discarding…',
     recentEntriesTitle: 'Recent time entries',
   },
   timeActivity: {

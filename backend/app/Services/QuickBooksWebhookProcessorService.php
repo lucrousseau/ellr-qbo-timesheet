@@ -6,6 +6,7 @@
 
 namespace App\Services;
 
+use App\Models\Organization;
 use App\Models\QboRealmSyncState;
 use App\Models\QuickBooksToken;
 use Illuminate\Support\Facades\Log;
@@ -59,6 +60,14 @@ class QuickBooksWebhookProcessorService
 
         if ($realmId === '') {
             Log::warning('QuickBooks webhook ignored notification without realmId'); // @pest-mutate-ignore webhook observability logging
+
+            return;
+        }
+
+        if (! Organization::query()->where('realm_id', $realmId)->exists()) {
+            Log::warning('QuickBooks webhook ignored unclaimed realm', [ // @pest-mutate-ignore webhook observability logging
+                'realm_id' => $realmId,
+            ]);
 
             return;
         }

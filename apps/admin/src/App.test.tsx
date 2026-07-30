@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateUserLocale } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, createSuperAdminOrganization, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
@@ -17,6 +17,8 @@ vi.mock('@ellr/api-client', async () =>
     fetchAdminQboCustomers: vi.fn(),
     fetchTimesheetUserCustomers: vi.fn(),
     syncTimesheetUserCustomers: vi.fn(),
+    fetchSuperAdminOrganizations: vi.fn(),
+    createSuperAdminOrganization: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
     updateUserLocale: vi.fn(),
@@ -80,6 +82,8 @@ describe('Admin App', () => {
     vi.mocked(fetchAdminQboCustomers).mockReset()
     vi.mocked(fetchTimesheetUserCustomers).mockReset()
     vi.mocked(syncTimesheetUserCustomers).mockReset()
+    vi.mocked(fetchSuperAdminOrganizations).mockReset()
+    vi.mocked(createSuperAdminOrganization).mockReset()
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(fetchQboEmployees).mockResolvedValue([])
@@ -1371,6 +1375,63 @@ describe('Admin App', () => {
     expect(fetchQuickBooksStatus).not.toHaveBeenCalled()
     expect(screen.queryByText(/administrator access required/i)).not.toBeInTheDocument()
     expect(sessionStorage.getItem(adminActiveTabStorageKey(2))).toBe('preferences')
+  })
+
+  it('shows the clients tab for super admins without quickbooks integrations', async () => {
+    sessionStorage.setItem(adminActiveTabStorageKey(3), 'integrations')
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 3,
+      name: 'Platform Operator',
+      email: 'luc@ellr.ca',
+      is_admin: false,
+      is_super_admin: true,
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /client organizations/i })).toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: /integrations/i })).not.toBeInTheDocument()
+      expect(screen.queryByText(/quickbooks online connection/i)).not.toBeInTheDocument()
+    })
+
+    expect(fetchQuickBooksStatus).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem(adminActiveTabStorageKey(3))).toBe('preferences')
+  })
+
+  it('shows password policy hints and blocks weak passwords when creating client organizations', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      id: 3,
+      name: 'Platform Operator',
+      email: 'luc@ellr.ca',
+      is_admin: false,
+      is_super_admin: true,
+    })
+    vi.mocked(fetchSuperAdminOrganizations).mockResolvedValue([])
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /client organizations/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('tab', { name: /client organizations/i }))
+
+    expect(screen.getByText(/password requirements/i)).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/organization name/i), 'Acme Corp')
+    await user.type(screen.getByLabelText(/administrator name/i), 'Acme Admin')
+    await user.type(screen.getByLabelText(/administrator email/i), 'admin@acme.test')
+    await user.type(screen.getByLabelText(/^administrator password$/i), 'short')
+    await user.type(screen.getByLabelText(/^confirm password$/i), 'short')
+    await user.click(screen.getByRole('button', { name: /create organization/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/the password must be at least 12 characters/i)).toBeInTheDocument()
+    })
+
+    expect(createSuperAdminOrganization).not.toHaveBeenCalled()
   })
 
   it('shows a password change error when the api rejects the current password', async () => {

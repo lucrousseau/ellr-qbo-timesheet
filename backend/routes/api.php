@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\QuickBooksAuthController;
 use App\Http\Controllers\Api\QuickBooksEmployeeController;
 use App\Http\Controllers\Api\QuickBooksPickerController;
 use App\Http\Controllers\Api\QuickBooksWebhookController;
+use App\Http\Controllers\Api\SuperAdminOrganizationController;
 use App\Http\Controllers\Api\TimeActivityController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Http\Controllers\Api\UserLocaleController;
@@ -58,6 +59,13 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
         ->middleware('throttle:6,1');
 
     Route::middleware('verified.email')->group(function () {
+        Route::middleware('super_admin')->prefix('super-admin')->group(function () {
+            Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
+            Route::post('/organizations', [SuperAdminOrganizationController::class, 'store']);
+            Route::patch('/organizations/{organization}', [SuperAdminOrganizationController::class, 'update']);
+            Route::delete('/organizations/{organization}', [SuperAdminOrganizationController::class, 'destroy']);
+        });
+
         Route::middleware('admin')->group(function () {
             Route::get('/admin/users', [AdminUserController::class, 'index']);
             Route::post('/admin/users', [AdminUserController::class, 'store']);
