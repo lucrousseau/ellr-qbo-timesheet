@@ -11,7 +11,11 @@ import type { UserLocale } from '@ellr/api-client'
  * @param locale Active UI locale.
  * @returns Localized date and time string.
  */
-export function formatEntryDateTime(isoValue: string | null, locale: UserLocale): string {
+export function formatEntryDateTime(
+  isoValue: string | null,
+  locale: UserLocale,
+  timeZone?: string | null,
+): string {
   if (!isoValue) {
     return ''
   }
@@ -25,6 +29,7 @@ export function formatEntryDateTime(isoValue: string | null, locale: UserLocale)
   return new Intl.DateTimeFormat(locale === 'fr' ? 'fr-CA' : 'en-CA', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    ...(timeZone ? { timeZone } : {}),
   }).format(date)
 }
 

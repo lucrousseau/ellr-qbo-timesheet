@@ -13,6 +13,8 @@ use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Services\QuickBooksTokenResolverService;
 use App\Services\TimeActivityListService;
 use App\Services\TimeActivityService;
+use App\Services\TimeEntryService;
+use App\Support\TimeEntryApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,16 +24,16 @@ use Illuminate\Http\Request;
 class TimeActivityController extends Controller
 {
     /**
-     * Injects token resolution and time activity services.
-     *
-     * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves the user's QBO token.
-     * @param  TimeActivityListService  $timeActivityList  Paginated list queries for time activities.
-     * @param  TimeActivityService  $timeActivities  Time activity CRUD service instance.
+     * @param  QuickBooksTokenResolverService  $tokenResolver  QBO token resolver.
+     * @param  TimeActivityListService  $timeActivityList  Snapshot list service.
+     * @param  TimeActivityService  $timeActivities  QBO writer.
+     * @param  TimeEntryService  $timeEntries  Local entry writer.
      */
     public function __construct(
         private readonly QuickBooksTokenResolverService $tokenResolver,
         private readonly TimeActivityListService $timeActivityList,
         private readonly TimeActivityService $timeActivities,
+        private readonly TimeEntryService $timeEntries,
     ) {}
 
     /**
@@ -55,19 +57,18 @@ class TimeActivityController extends Controller
     }
 
     /**
-     * Creates a time activity in QuickBooks.
+     * Creates a pending local time entry for supervisor approval.
      *
      * @param  StoreTimeActivityRequest  $request  Validated create request.
      * @return JsonResponse
      */
     public function store(StoreTimeActivityRequest $request): JsonResponse
     {
-        $user = $request->user();
-        $token = $this->tokenResolver->resolve($user);
+        $entry = $this->timeEntries->createForUser($request->user(), $request->validated());
 
-        $result = $this->timeActivities->createForUser($user, $token, $request->validated());
-
-        return response()->json(['data' => $result], 201);
+        return response()->json([
+            'data' => TimeEntryApiResponse::resource($entry->load('user')),
+        ], 201);
     }
 
     /**

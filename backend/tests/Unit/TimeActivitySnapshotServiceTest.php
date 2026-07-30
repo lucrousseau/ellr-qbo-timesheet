@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\TimeActivitySnapshot;
+use App\Services\OrganizationTimezoneService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\TimeActivityDisplayEnricherService;
 use App\Services\TimeActivitySnapshotService;
@@ -22,7 +23,10 @@ function makeTimeActivitySnapshotService(): TimeActivitySnapshotService
     );
 
     return new TimeActivitySnapshotService(
-        new TimeActivitySnapshotMapper(new QboCustomerResolver(new QuickBooksApiErrorFormatterService)),
+        new TimeActivitySnapshotMapper(
+            new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
+            app(OrganizationTimezoneService::class),
+        ),
         $enricher,
     );
 }

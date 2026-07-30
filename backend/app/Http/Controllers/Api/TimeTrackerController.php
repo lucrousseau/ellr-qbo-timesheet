@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateTimeTrackerRequest;
 use App\Services\QuickBooksTokenResolverService;
 use App\Services\TimeTrackerService;
+use App\Support\TimeEntryApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -68,7 +69,7 @@ class TimeTrackerController extends Controller
     }
 
     /**
-     * Logs elapsed time to QuickBooks and clears the active session.
+     * Logs elapsed time as a pending local entry and clears the active session.
      *
      * @param  Request  $request  Incoming HTTP request.
      * @return JsonResponse
@@ -77,9 +78,11 @@ class TimeTrackerController extends Controller
     {
         $user = $request->user();
         $token = $this->tokenResolver->resolve($user);
-        $activity = $this->timeTracker->logForUser($user, $token);
+        $entry = $this->timeTracker->logForUser($user, $token);
 
-        return response()->json(['data' => $activity]);
+        return response()->json([
+            'data' => TimeEntryApiResponse::resource($entry->load('user')),
+        ]);
     }
 
     /**

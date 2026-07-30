@@ -7,11 +7,13 @@ import type { User } from '../hooks/useTimesheetProvisioning'
 
 type TimesheetProvisionedUserRowProps = {
   user: User
+  supervisorName: string | null
   removing: boolean
   removingUserId: number | null
   onRequestRemove: (user: User) => void
   onManageClients: (user: User) => void
   onViewTimeEntries: (user: User) => void
+  onAssignSupervisor: (user: User) => void
 }
 
 /**
@@ -21,11 +23,13 @@ type TimesheetProvisionedUserRowProps = {
  */
 export function TimesheetProvisionedUserRow({
   user,
+  supervisorName,
   removing,
   removingUserId,
   onRequestRemove,
   onManageClients,
   onViewTimeEntries,
+  onAssignSupervisor,
 }: TimesheetProvisionedUserRowProps) {
   const { t } = useLocale()
   const assignedCount = user.assigned_customers?.length ?? 0
@@ -48,8 +52,22 @@ export function TimesheetProvisionedUserRow({
               ? t('admin.noAssignedClients')
               : t('admin.assignedClientCount', { count: assignedCount })}
         </p>
+        <p className="text-slate-500">
+          {supervisorName
+            ? t('admin.supervisorAssigned', { name: supervisorName })
+            : t('admin.noSupervisorAssigned')}
+        </p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="compact"
+          disabled={removing}
+          onClick={() => onAssignSupervisor(user)}
+        >
+          {t('admin.assignSupervisor')}
+        </Button>
         <Button
           type="button"
           variant="secondary"

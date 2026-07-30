@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AdminQboEmployeeController;
 use App\Http\Controllers\Api\AdminQuickBooksPickerController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AdminUserCustomerController;
+use App\Http\Controllers\Api\AdminUserSupervisorController;
 use App\Http\Controllers\Api\AdminUserTimeActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailVerificationController;
@@ -20,9 +21,12 @@ use App\Http\Controllers\Api\QuickBooksPickerController;
 use App\Http\Controllers\Api\QuickBooksWebhookController;
 use App\Http\Controllers\Api\SuperAdminOrganizationController;
 use App\Http\Controllers\Api\TimeActivityController;
+use App\Http\Controllers\Api\TimeEntryApprovalController;
+use App\Http\Controllers\Api\TimeEntryController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Http\Controllers\Api\UserLocaleController;
-use App\Http\Controllers\Api\UserPasswordController;
+use App\Http\Controllers\Api\UserPreferencesController;
+use App\Http\Controllers\Api\UserTimezoneController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthController::class, 'show']);
@@ -54,6 +58,8 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
 Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::patch('/user/locale', [UserLocaleController::class, 'update']);
+    Route::patch('/user/preferences', [UserPreferencesController::class, 'update']);
+    Route::patch('/user/timezone', [UserTimezoneController::class, 'update']);
     Route::patch('/user/password', [UserPasswordController::class, 'update']);
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
         ->middleware('throttle:6,1');
@@ -74,6 +80,10 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::put('/admin/users/{user}/customers', [AdminUserCustomerController::class, 'update']);
             Route::get('/admin/users/{user}/time-activities', [AdminUserTimeActivityController::class, 'index']);
             Route::patch('/admin/users/{user}/time-activities/{id}', [AdminUserTimeActivityController::class, 'update']);
+            Route::patch('/admin/users/{user}/supervisor', [AdminUserSupervisorController::class, 'update']);
+            Route::get('/admin/time-entry-approvals', [TimeEntryApprovalController::class, 'index']);
+            Route::post('/admin/time-entry-approvals/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
+            Route::post('/admin/time-entry-approvals/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
             Route::get('/admin/quickbooks/customers', [AdminQuickBooksPickerController::class, 'customers']);
             Route::patch('/user/qbo-employee', [QboEmployeeController::class, 'update']);
             Route::patch('/admin/users/{user}/qbo-employee', [AdminQboEmployeeController::class, 'update']);
@@ -87,6 +97,13 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
         });
 
         Route::apiResource('time-activities', TimeActivityController::class);
+        Route::apiResource('time-entries', TimeEntryController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        Route::prefix('time-entry-approvals')->group(function () {
+            Route::get('/', [TimeEntryApprovalController::class, 'index']);
+            Route::post('/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
+            Route::post('/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
+        });
 
         Route::get('/quickbooks/customers', [QuickBooksPickerController::class, 'customers']);
         Route::get('/quickbooks/projects', [QuickBooksPickerController::class, 'projects']);

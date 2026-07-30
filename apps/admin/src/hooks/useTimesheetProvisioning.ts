@@ -168,6 +168,12 @@ export function useTimesheetProvisioning({
     [],
   )
 
+  const onSupervisorSaved = useCallback((userId: number, supervisorId: number | null) => {
+    setUsers((current) =>
+      current.map((user) => (user.id === userId ? { ...user, supervisor_id: supervisorId } : user)),
+    )
+  }, [])
+
   return {
     employees: availableEmployees,
     users,
@@ -184,5 +190,6 @@ export function useTimesheetProvisioning({
     onCreateTimesheetUser,
     onRemoveTimesheetUser,
     onClientAssignmentsSaved,
+    onSupervisorSaved,
   }
 }

@@ -22,11 +22,13 @@ class QuickBooksConnectionValidationService
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
      * @param  QboEmployeeListService  $employeeList  Employee list queries.
      * @param  OrganizationRealmService  $organizationRealm  Tenant realm binding rules.
+     * @param  OrganizationTimezoneService  $organizationTimezone  Tenant company timezone sync.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
         private readonly QboEmployeeListService $employeeList,
         private readonly OrganizationRealmService $organizationRealm,
+        private readonly OrganizationTimezoneService $organizationTimezone,
     ) {}
 
     /**
@@ -41,6 +43,12 @@ class QuickBooksConnectionValidationService
         try {
             $this->organizationRealm->validateAndBindRealm($user, $token);
             $this->employeeList->assertCanListEmployees($token);
+
+            $organization = $user->organization;
+
+            if ($organization !== null) {
+                $this->organizationTimezone->syncFromQuickBooks($organization, $token);
+            }
         } catch (QuickBooksOAuthException $exception) {
             $this->quickBooks->disconnect($user);
 

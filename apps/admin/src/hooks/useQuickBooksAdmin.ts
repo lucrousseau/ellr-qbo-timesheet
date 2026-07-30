@@ -12,7 +12,7 @@ import {
   type QuickBooksStatus,
   type User,
 } from '@ellr/api-client'
-import { getApiErrorMessage, useAuth, useFlashMessage, useGuardedAction, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
+import { getApiErrorMessage, useAuth, useFlashMessage, useGuardedAction, useLocale, usePasswordRecovery, useUserPreferences } from '@ellr/ui'
 
 /**
  * Maps a QuickBooks OAuth callback reason to a localized message catalog key.
@@ -103,7 +103,14 @@ export function useQuickBooksAdmin() {
     onUserLoaded: loadQuickBooksStatus,
   })
 
-  const { preferenceLocale, setPreferenceLocale, savingLocale, saveLocale } = useUserLocalePreferences({
+  const {
+    preferenceLocale,
+    setPreferenceLocale,
+    preferenceTimezone,
+    setPreferenceTimezone,
+    savingPreferences,
+    savePreferences,
+  } = useUserPreferences({
     user,
     setUser,
     onSaved: () => showSuccess(t('preferences.saved')),
@@ -193,10 +200,12 @@ export function useQuickBooksAdmin() {
     disconnecting,
     preferenceLocale,
     setPreferenceLocale,
-    savingLocale,
+    preferenceTimezone,
+    setPreferenceTimezone,
+    savingPreferences,
     connectQuickBooksFlow,
     disconnectQuickBooksFlow,
-    saveLocale,
+    savePreferences,
     showError,
     showSuccess,
     ...recovery,

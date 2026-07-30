@@ -2,7 +2,7 @@
  * @file Paginated recent time activities for the signed-in timesheet user.
  */
 
-import { listTimeActivities, parseTimeActivityRow, type TimeActivityRow } from '@ellr/api-client'
+import { listTimeEntries, parseTimeEntryRow, type TimeActivityRow } from '@ellr/api-client'
 import { getApiErrorMessage, useLocale } from '@ellr/ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -60,11 +60,11 @@ export function useRecentTimeActivities({ enabled, refreshToken }: UseRecentTime
         const startPosition = mode === 'append' ? nextStartPosition.current : 1
         const maxResults =
           mode === 'append' ? PAGE_SIZE : Math.max(PAGE_SIZE, entriesLengthRef.current)
-        const response = await listTimeActivities({
+        const response = await listTimeEntries({
           max_results: maxResults,
           start_position: startPosition,
         })
-        const rows = response.data.map(parseTimeActivityRow)
+        const rows = response.data.map(parseTimeEntryRow)
 
         setEntries((current) => (mode === 'append' ? [...current, ...rows] : rows))
         setHasMore(response.meta.truncated)

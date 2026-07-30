@@ -37,6 +37,14 @@ export { fetchAppConfig, DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS, type AppC
 export { normalizeQboRef, qboRefsMatch } from './qboRef'
 export { normalizeUserLocale, SUPPORTED_LOCALES, type UserLocale } from './locale'
 export {
+  COMMON_TIMEZONES,
+  formatTimezoneLabel,
+  normalizeUserTimezone,
+  resolveEffectiveTimezone,
+  timezonePreferenceForApi,
+  timezonePreferenceOptions,
+} from './timezone'
+export {
   DEFAULT_USER_LEVEL,
   normalizeUserLevel,
   USER_LEVELS,
@@ -53,6 +61,8 @@ export {
   resetPassword,
   updateQboEmployee,
   updateUserLocale,
+  updateUserPreferences,
+  updateUserTimezone,
   updateUserQboEmployee,
   type Organization,
   type RegisterPayload,
@@ -83,6 +93,25 @@ export {
   type TimeActivityRow,
   type TimeActivityUpdatePayload,
 } from './timeActivityFormat'
+export {
+  approveTimeEntry,
+  createTimeEntry,
+  deleteTimeEntry,
+  listPendingTimeEntryApprovals,
+  listTimeEntries,
+  rejectTimeEntry,
+  resolveTimeEntryId,
+  updateAdminUserSupervisor,
+  updateTimeEntry,
+  type ListTimeEntriesParams,
+  type TimeEntry,
+  type TimeEntryListMeta,
+  type TimeEntryListResponse,
+  type TimeEntryPayload,
+  type TimeEntryStatus,
+  type TimeEntryUpdatePayload,
+} from './timeEntries'
+export { parseTimeEntryRow } from './timeEntryFormat'
 export {
   createTimeActivity,
   discardTimeTracker,

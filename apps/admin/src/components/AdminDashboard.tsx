@@ -11,6 +11,7 @@ import {
 } from '../adminTabStorage'
 import { AccountPanel } from './AccountPanel'
 import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
+import { TimeEntryApprovalsPanel } from './TimeEntryApprovalsPanel'
 import { TimesheetUserProvisioningPanel } from './TimesheetUserProvisioningPanel'
 import { SuperAdminOrganizationsPanel } from './SuperAdminOrganizationsPanel'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
@@ -51,6 +52,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
 
     if (isTenantAdministrator) {
       items.push({ id: 'integrations', label: t('admin.tabIntegrations') })
+      items.push({ id: 'approvals', label: t('admin.tabApprovals') })
     }
 
     if (isSuperAdministrator) {
@@ -117,9 +119,12 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
       {activeTabId === 'preferences' ? (
         <AccountPanel
           preferenceLocale={admin.preferenceLocale}
-          savingLocale={admin.savingLocale}
+          preferenceTimezone={admin.preferenceTimezone}
+          companyTimezone={admin.user?.organization?.company_timezone}
+          savingPreferences={admin.savingPreferences}
           onLocaleChange={admin.setPreferenceLocale}
-          onSaveLocale={admin.saveLocale}
+          onTimezoneChange={admin.setPreferenceTimezone}
+          onSavePreferences={admin.savePreferences}
           tabIdPrefix={TAB_ID_PREFIX}
         />
       ) : activeTabId === 'clients' ? (
@@ -129,6 +134,18 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           aria-labelledby={`${TAB_ID_PREFIX}-tab-clients`}
         >
           <SuperAdminOrganizationsPanel clients={clientOrganizations} />
+        </div>
+      ) : activeTabId === 'approvals' ? (
+        <div
+          id={tabPanelId(TAB_ID_PREFIX, 'approvals')}
+          role="tabpanel"
+          aria-labelledby={`${TAB_ID_PREFIX}-tab-approvals`}
+        >
+          <TimeEntryApprovalsPanel
+            enabled={activeTabId === 'approvals'}
+            onError={admin.showError}
+            onSuccess={admin.showSuccess}
+          />
         </div>
       ) : (
         <div
@@ -161,6 +178,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             onSubmit={provisioning.onCreateTimesheetUser}
             onRemoveTimesheetUser={provisioning.onRemoveTimesheetUser}
             onClientAssignmentsSaved={provisioning.onClientAssignmentsSaved}
+            onSupervisorSaved={provisioning.onSupervisorSaved}
             onError={admin.showError}
             onSuccess={admin.showSuccess}
           />

@@ -13,10 +13,10 @@ export const LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY = ADMIN_ACTIVE_TAB_STORAGE_PREF
 export const LEGACY_ADMIN_TAB_ID = 'administrator'
 
 /** Persisted admin dashboard tab ids. */
-export type AdminTab = 'preferences' | 'integrations' | 'clients'
+export type AdminTab = 'preferences' | 'integrations' | 'approvals' | 'clients'
 
 /** Known admin dashboard tab ids. */
-const ADMIN_TABS: readonly AdminTab[] = ['preferences', 'integrations', 'clients']
+const ADMIN_TABS: readonly AdminTab[] = ['preferences', 'integrations', 'approvals', 'clients']
 
 /**
  * Builds a per-user sessionStorage key for the active admin tab.

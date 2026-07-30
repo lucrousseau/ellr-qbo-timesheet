@@ -7,6 +7,7 @@
 namespace Features\Bootstrap;
 
 use App\Models\Organization;
+use App\Models\TimeEntry;
 use App\Models\User;
 use Behat\Behat\Context\Context;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
@@ -36,6 +37,10 @@ class FeatureContext implements Context
 
     private ?int $foreignTimesheetUserId = null;
 
+    private ?int $pendingTimeEntryId = null;
+
+    private ?int $foreignPendingTimeEntryId = null;
+
     private ?string $webhookVerifier = null;
 
     /**
@@ -52,6 +57,8 @@ class FeatureContext implements Context
         $this->statefulClient = false;
         $this->timesheetUserId = null;
         $this->foreignTimesheetUserId = null;
+        $this->pendingTimeEntryId = null;
+        $this->foreignPendingTimeEntryId = null;
         $this->webhookVerifier = null;
     }
 
@@ -66,6 +73,8 @@ class FeatureContext implements Context
         $this->statefulClient = false;
         $this->timesheetUserId = null;
         $this->foreignTimesheetUserId = null;
+        $this->pendingTimeEntryId = null;
+        $this->foreignPendingTimeEntryId = null;
         $this->webhookVerifier = null;
         $this->resetAuthenticationState();
         self::$app = null;
@@ -202,6 +211,36 @@ class FeatureContext implements Context
         $user = User::factory()->create($attributes);
 
         $this->timesheetUserId = $user->id;
+    }
+
+    /**
+     * @Given the timesheet user has a pending time entry
+     * @return void
+     */
+    public function theTimesheetUserHasAPendingTimeEntry(): void
+    {
+        if ($this->timesheetUserId === null) {
+            throw new RuntimeException('No timesheet user id was captured.');
+        }
+
+        $user = User::query()->findOrFail($this->timesheetUserId);
+        $entry = TimeEntry::factory()->forUser($user)->create();
+        $this->pendingTimeEntryId = $entry->id;
+    }
+
+    /**
+     * @Given the foreign timesheet user has a pending time entry
+     * @return void
+     */
+    public function theForeignTimesheetUserHasAPendingTimeEntry(): void
+    {
+        if ($this->foreignTimesheetUserId === null) {
+            throw new RuntimeException('No foreign timesheet user id was captured.');
+        }
+
+        $user = User::query()->findOrFail($this->foreignTimesheetUserId);
+        $entry = TimeEntry::factory()->forUser($user)->create();
+        $this->foreignPendingTimeEntryId = $entry->id;
     }
 
     /**
@@ -458,6 +497,14 @@ class FeatureContext implements Context
 
         if ($this->foreignTimesheetUserId !== null) {
             $path = str_replace('{foreign_timesheet_user_id}', (string) $this->foreignTimesheetUserId, $path);
+        }
+
+        if ($this->pendingTimeEntryId !== null) {
+            $path = str_replace('{pending_time_entry_id}', (string) $this->pendingTimeEntryId, $path);
+        }
+
+        if ($this->foreignPendingTimeEntryId !== null) {
+            $path = str_replace('{foreign_pending_time_entry_id}', (string) $this->foreignPendingTimeEntryId, $path);
         }
 
         if (str_contains($path, '{admin_user_id}')) {

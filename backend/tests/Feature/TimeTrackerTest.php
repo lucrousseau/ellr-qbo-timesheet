@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\QuickBooksPickerController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
+use App\Models\TimeEntry;
 use App\Services\QboCustomerListService;
 use App\Services\QboPickerValidationService;
 use App\Services\QboProjectListService;
@@ -217,7 +218,7 @@ it('rejects timer updates with customer refs that are not allowed for the employ
         ->assertJsonPath('message', __('api.time_tracker_invalid_customer'));
 });
 
-it('logs elapsed time to quickbooks and clears the session', function () {
+it('logs elapsed time as a pending local entry and clears the session', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
     $user = timesheetUserFor($admin);
@@ -235,25 +236,13 @@ it('logs elapsed time to quickbooks and clears the session', function () {
         'running_since' => null,
     ]);
 
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Add')
-        ->once()
-        ->andReturn((object) ['Id' => '99']);
-    $dataService->shouldReceive('FindById')
-        ->once()
-        ->with('TimeActivity', '99')
-        ->andReturn(timeActivityQboEntity('99'));
-    $dataService->shouldReceive('getLastError')->andReturn(null);
-
-    $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
-        $mock->shouldReceive('dataService')->andReturn($dataService);
-    });
-
     $this->postJson('/api/time-tracker/log', [], frontendHeaders())
         ->assertOk()
-        ->assertJsonPath('data.Id', '99');
+        ->assertJsonPath('data.status', 'pending')
+        ->assertJsonPath('data.description', 'Support call');
 
     expect(ActiveTimeSession::query()->where('user_id', $user->id)->exists())->toBeFalse();
+    expect(TimeEntry::query()->where('user_id', $user->id)->count())->toBe(1);
 });
 
 it('discards an active timer session', function () {

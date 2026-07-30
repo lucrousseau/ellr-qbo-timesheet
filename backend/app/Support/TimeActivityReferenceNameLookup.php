@@ -31,7 +31,9 @@ final class TimeActivityReferenceNameLookup
             $dataService,
             $customerRefs,
             fn (array $chunk, int $maxResults): string => QboCustomerQuery::customersByIds($chunk, $maxResults),
-            fn (object $entity): ?string => $this->nonEmpty((string) ($entity->DisplayName ?? '')), // @pest-mutate-ignore optional QBO display name fields
+            fn (object $entity): ?string => $this->nonEmpty(
+                (string) ($entity->FullyQualifiedName ?? $entity->DisplayName ?? ''),
+            ), // @pest-mutate-ignore optional QBO display name fields
         );
     }
 

@@ -47,7 +47,7 @@ vi.mock('@ellr/api-client', async () =>
       require_email_verification: false,
       time_tracker_max_accumulated_seconds: 86_400,
     }),
-    listTimeActivities: vi.fn().mockResolvedValue({
+    listTimeEntries: vi.fn().mockResolvedValue({
       data: [],
       meta: { count: 0, max_results: 10, start_position: 1, truncated: false },
     }),
@@ -281,7 +281,16 @@ describe('Timesheet App', () => {
   it('submits a time entry through the api', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(logTimeTracker).mockResolvedValue({ Id: '1' })
+    vi.mocked(logTimeTracker).mockResolvedValue({
+      id: 1,
+      list_id: 'local:1',
+      user_id: 1,
+      start_time: '2026-07-27T09:00:00Z',
+      end_time: '2026-07-27T17:00:00Z',
+      duration_seconds: 28_800,
+      is_billable: false,
+      status: 'pending',
+    })
 
     render(<App />)
 
@@ -429,7 +438,23 @@ describe('Timesheet App', () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(logTimeTracker).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ Id: '1' }), 100)),
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                id: 1,
+                list_id: 'local:1',
+                user_id: 1,
+                start_time: '2026-07-27T09:00:00Z',
+                end_time: '2026-07-27T17:00:00Z',
+                duration_seconds: 28_800,
+                is_billable: false,
+                status: 'pending',
+              }),
+            100,
+          ),
+        ),
     )
 
     render(<App />)
@@ -453,7 +478,16 @@ describe('Timesheet App', () => {
   it('logs elapsed time through the tracker api', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
-    vi.mocked(logTimeTracker).mockResolvedValue({ Id: '1' })
+    vi.mocked(logTimeTracker).mockResolvedValue({
+      id: 1,
+      list_id: 'local:1',
+      user_id: 1,
+      start_time: '2026-07-27T09:00:00Z',
+      end_time: '2026-07-27T17:00:00Z',
+      duration_seconds: 28_800,
+      is_billable: false,
+      status: 'pending',
+    })
 
     render(<App />)
 

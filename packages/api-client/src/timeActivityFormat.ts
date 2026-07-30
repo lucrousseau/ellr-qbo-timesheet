@@ -5,10 +5,12 @@
 import type { TimeActivity } from './timesheet'
 
 /**
- * Display-ready row derived from a QuickBooks time activity entity.
+ * Display-ready row derived from a QuickBooks time activity entity or local time entry.
  */
 export type TimeActivityRow = {
   id: string
+  /** Numeric local time entry id used by approval API routes. */
+  timeEntryId?: number | null
   startTime: string | null
   endTime: string | null
   durationSeconds: number
@@ -17,6 +19,10 @@ export type TimeActivityRow = {
   description: string | null
   isBillable: boolean
   billableLocked: boolean
+  approvalStatus?: 'pending' | 'approved' | 'rejected' | null
+  employeeName?: string | null
+  rejectionReason?: string | null
+  qboId?: string | null
 }
 
 /**

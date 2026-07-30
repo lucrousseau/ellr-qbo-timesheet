@@ -7,6 +7,7 @@
 namespace App\Services;
 
 use App\Models\QuickBooksToken;
+use App\Models\TimeEntry;
 use App\Models\User;
 use App\Support\QboRefNormalizer;
 
@@ -60,6 +61,40 @@ class QboPickerValidationService
         )) {
             abort(response()->json(['message' => __('api.time_tracker_invalid_service')], 422));
         }
+    }
+
+    /**
+     * Aborts with 422 when any time entry picker reference is not allowed.
+     *
+     * @param  User  $user  Entry owner.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  array<string, mixed>  $validated  Time entry payload fields.
+     * @return void
+     */
+    public function assertValidTimeEntrySelections(User $user, QuickBooksToken $token, array $validated): void
+    {
+        $this->assertValidSelections($user, $token, [
+            'customer_ref' => $validated['customer_ref'] ?? null,
+            'project_ref' => $validated['project_ref'] ?? null,
+            'service_ref' => $validated['item_ref'] ?? null,
+        ]);
+    }
+
+    /**
+     * Aborts with 422 when a stored time entry references disallowed QuickBooks pickers.
+     *
+     * @param  User  $user  Entry owner.
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  TimeEntry  $entry  Local time entry being reviewed.
+     * @return void
+     */
+    public function assertValidTimeEntry(User $user, QuickBooksToken $token, TimeEntry $entry): void
+    {
+        $this->assertValidTimeEntrySelections($user, $token, [
+            'customer_ref' => $entry->customer_ref,
+            'project_ref' => $entry->project_ref,
+            'item_ref' => $entry->item_ref,
+        ]);
     }
 
     /**

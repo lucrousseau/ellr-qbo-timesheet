@@ -24,7 +24,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['organization_id', 'name', 'email', 'password', 'locale', 'qbo_employee_ref', 'qbo_employee_name', 'qbo_all_customers_access'])]
+#[Fillable(['organization_id', 'name', 'email', 'password', 'locale', 'timezone', 'qbo_employee_ref', 'qbo_employee_name', 'qbo_all_customers_access', 'supervisor_id'])]
 #[Hidden(['password', 'remember_token', 'is_admin', 'is_super_admin'])]
 /**
  * Eloquent user with Sanctum auth and optional QBO employee fields.
@@ -128,6 +128,26 @@ class User extends Authenticatable implements MustVerifyEmail
     public function quickBooksToken(): HasOne
     {
         return $this->hasOne(QuickBooksToken::class)->latestOfMany();
+    }
+
+    /**
+     * Relationship to the supervisor who approves this user's time entries.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'supervisor_id');
+    }
+
+    /**
+     * Relationship to employees supervised by this user.
+     *
+     * @return HasMany<User, $this>
+     */
+    public function directReports(): HasMany
+    {
+        return $this->hasMany(self::class, 'supervisor_id');
     }
 
     /**

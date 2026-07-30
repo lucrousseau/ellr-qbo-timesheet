@@ -14,6 +14,7 @@ export type Organization = {
   name: string
   slug: string
   qbo_connected: boolean
+  company_timezone?: string | null
 }
 
 /**
@@ -25,6 +26,8 @@ export type User = {
   email: string
   email_verified_at?: string | null
   locale?: UserLocale | null
+  timezone?: string | null
+  effective_display_timezone?: string | null
   level?: UserLevel | null
   is_admin?: boolean
   is_super_admin?: boolean
@@ -33,6 +36,8 @@ export type User = {
   qbo_employee_name?: string | null
   assigned_customers?: Array<{ id: string; display_name: string }>
   all_customers_access?: boolean
+  supervisor_id?: number | null
+  can_review_time_entries?: boolean
 }
 
 /**
@@ -129,6 +134,37 @@ export async function updateUserLocale(locale: UserLocale): Promise<User> {
   const response = await apiFetch<{ user: User }>('/user/locale', {
     method: 'PATCH',
     body: JSON.stringify({ locale }),
+  })
+
+  return response.user
+}
+
+/**
+ * Updates the signed-in user timezone preference.
+ * @param timezone IANA timezone identifier, or null to follow the company timezone.
+ * @returns Updated user.
+ */
+export async function updateUserTimezone(timezone: string | null): Promise<User> {
+  const response = await apiFetch<{ user: User }>('/user/timezone', {
+    method: 'PATCH',
+    body: JSON.stringify({ timezone }),
+  })
+
+  return response.user
+}
+
+/**
+ * Updates locale and timezone preferences in a single request.
+ * @param preferences Locale and optional timezone values.
+ * @returns Updated user.
+ */
+export async function updateUserPreferences(preferences: {
+  locale: UserLocale
+  timezone: string | null
+}): Promise<User> {
+  const response = await apiFetch<{ user: User }>('/user/preferences', {
+    method: 'PATCH',
+    body: JSON.stringify(preferences),
   })
 
   return response.user

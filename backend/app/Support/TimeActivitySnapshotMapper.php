@@ -7,6 +7,7 @@
 namespace App\Support;
 
 use App\Models\TimeActivitySnapshot;
+use App\Services\OrganizationTimezoneService;
 
 /**
  * Normalizes QuickBooks TimeActivity rows for persistence and JSON responses.
@@ -15,9 +16,11 @@ final class TimeActivitySnapshotMapper
 {
     /**
      * @param  QboCustomerResolver  $customerResolver  Reference extraction helpers.
+     * @param  OrganizationTimezoneService  $organizationTimezone  Tenant company timezone resolver.
      */
     public function __construct(
         private readonly QboCustomerResolver $customerResolver,
+        private readonly OrganizationTimezoneService $organizationTimezone,
     ) {}
 
     /**
@@ -105,7 +108,11 @@ final class TimeActivitySnapshotMapper
         $payload->ItemRef = $this->refObject($snapshot->item_ref, $snapshot->item_name);
 
         if ($snapshot->start_time !== null && $snapshot->end_time !== null) {
-            $seconds = max(0, $snapshot->end_time->getTimestamp() - $snapshot->start_time->getTimestamp());
+            $seconds = TimeActivityDuration::qboDurationSeconds(
+                $snapshot->start_time,
+                $snapshot->end_time,
+                $this->organizationTimezone->forRealm($snapshot->realm_id),
+            );
             $payload->Hours = intdiv($seconds, 3600); // @pest-mutate-ignore QBO duration rounding constants
             $payload->Minutes = intdiv($seconds % 3600, 60); // @pest-mutate-ignore
         }
