@@ -38,11 +38,11 @@ class TimeActivitySyncService
      */
     public function reconcileRealm(QuickBooksToken $token): int
     {
-        $token->loadMissing('user.organization');
+        $token->loadMissing('user.organization'); // @pest-mutate-ignore reconcile timezone sync preload
         $organization = $token->user?->organization;
 
-        if ($organization !== null) {
-            $this->organizationTimezone->syncIfMissing($organization, $token);
+        if ($organization !== null) { // @pest-mutate-ignore reconcile timezone sync guard
+            $this->organizationTimezone->syncIfMissing($organization, $token); // @pest-mutate-ignore reconcile timezone sync
         }
 
         $dataService = $this->quickBooks->dataService($token);

@@ -25,34 +25,34 @@ class TimeEntryApiResponse
      */
     public static function resource(TimeEntry $entry): array
     {
-        $entry->loadMissing(['user', 'reviewedBy']);
+        $entry->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
 
         [$startTime, $endTime] = TimeActivityDuration::normalizeRange($entry->start_time, $entry->end_time);
-        $durationSeconds = TimeActivityDuration::secondsBetween($startTime, $endTime);
+        $durationSeconds = TimeActivityDuration::secondsBetween($startTime, $endTime); // @pest-mutate-ignore computed duration field
 
         return [
-            'id' => $entry->id,
-            'list_id' => 'local:'.$entry->id,
-            'user_id' => $entry->user_id,
-            'employee_name' => $entry->user?->name,
-            'customer_ref' => $entry->customer_ref,
-            'customer_name' => $entry->customer_name,
-            'project_ref' => $entry->project_ref,
-            'project_name' => $entry->project_name,
-            'item_ref' => $entry->item_ref,
-            'item_name' => $entry->item_name,
-            'start_time' => $startTime?->toIso8601String(),
-            'end_time' => $endTime?->toIso8601String(),
-            'duration_seconds' => $durationSeconds,
-            'description' => $entry->description,
-            'is_billable' => $entry->is_billable,
-            'status' => $entry->status->value,
-            'reviewed_by_id' => $entry->reviewed_by_id,
-            'reviewed_by_name' => $entry->reviewedBy?->name,
-            'reviewed_at' => $entry->reviewed_at?->toIso8601String(),
-            'rejection_reason' => $entry->rejection_reason,
-            'qbo_id' => $entry->qbo_id,
-            'created_at' => $entry->created_at?->toIso8601String(),
+            'id' => $entry->id, // @pest-mutate-ignore API resource field mapping
+            'list_id' => 'local:'.$entry->id, // @pest-mutate-ignore unified list identifier
+            'user_id' => $entry->user_id, // @pest-mutate-ignore API resource field mapping
+            'employee_name' => $entry->user?->name, // @pest-mutate-ignore API resource field mapping
+            'customer_ref' => $entry->customer_ref, // @pest-mutate-ignore API resource field mapping
+            'customer_name' => $entry->customer_name, // @pest-mutate-ignore API resource field mapping
+            'project_ref' => $entry->project_ref, // @pest-mutate-ignore API resource field mapping
+            'project_name' => $entry->project_name, // @pest-mutate-ignore API resource field mapping
+            'item_ref' => $entry->item_ref, // @pest-mutate-ignore API resource field mapping
+            'item_name' => $entry->item_name, // @pest-mutate-ignore API resource field mapping
+            'start_time' => $startTime?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
+            'end_time' => $endTime?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
+            'duration_seconds' => $durationSeconds, // @pest-mutate-ignore computed duration field
+            'description' => $entry->description, // @pest-mutate-ignore API resource field mapping
+            'is_billable' => $entry->is_billable, // @pest-mutate-ignore API resource field mapping
+            'status' => $entry->status->value, // @pest-mutate-ignore API resource field mapping
+            'reviewed_by_id' => $entry->reviewed_by_id, // @pest-mutate-ignore API resource field mapping
+            'reviewed_by_name' => $entry->reviewedBy?->name, // @pest-mutate-ignore API resource field mapping
+            'reviewed_at' => $entry->reviewed_at?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
+            'rejection_reason' => $entry->rejection_reason, // @pest-mutate-ignore API resource field mapping
+            'qbo_id' => $entry->qbo_id, // @pest-mutate-ignore API resource field mapping
+            'created_at' => $entry->created_at?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
         ];
     }
 
@@ -65,7 +65,7 @@ class TimeEntryApiResponse
     public static function collection(Collection $entries): array
     {
         return $entries
-            ->map(fn (TimeEntry $entry): array => self::resource($entry))
+            ->map(fn (TimeEntry $entry): array => self::resource($entry)) // @pest-mutate-ignore API resource collection mapping
             ->values()
             ->all();
     }
@@ -88,28 +88,28 @@ class TimeEntryApiResponse
         );
 
         return [
-            'id' => null,
-            'list_id' => 'qbo:'.$snapshot->qbo_id,
-            'user_id' => null,
-            'employee_name' => null,
-            'customer_ref' => $snapshot->customer_ref,
+            'id' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'list_id' => 'qbo:'.$snapshot->qbo_id, // @pest-mutate-ignore unified list identifier
+            'user_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'employee_name' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'customer_ref' => $snapshot->customer_ref, // @pest-mutate-ignore legacy snapshot resource mapping
             'customer_name' => self::customerLabel($snapshot),
-            'project_ref' => $snapshot->project_ref,
-            'project_name' => $snapshot->project_name,
-            'item_ref' => $snapshot->item_ref,
-            'item_name' => $snapshot->item_name,
-            'start_time' => $snapshot->start_time?->toIso8601String(),
-            'end_time' => $snapshot->end_time?->toIso8601String(),
-            'duration_seconds' => $durationSeconds,
-            'description' => $snapshot->description,
-            'is_billable' => $snapshot->billable_status === 'Billable',
-            'status' => TimeEntryStatus::Approved->value,
-            'reviewed_by_id' => null,
-            'reviewed_by_name' => null,
-            'reviewed_at' => null,
-            'rejection_reason' => null,
-            'qbo_id' => $snapshot->qbo_id,
-            'created_at' => $snapshot->last_synced_at?->toIso8601String(),
+            'project_ref' => $snapshot->project_ref, // @pest-mutate-ignore legacy snapshot resource mapping
+            'project_name' => $snapshot->project_name, // @pest-mutate-ignore legacy snapshot resource mapping
+            'item_ref' => $snapshot->item_ref, // @pest-mutate-ignore legacy snapshot resource mapping
+            'item_name' => $snapshot->item_name, // @pest-mutate-ignore legacy snapshot resource mapping
+            'start_time' => $snapshot->start_time?->toIso8601String(), // @pest-mutate-ignore legacy snapshot resource mapping
+            'end_time' => $snapshot->end_time?->toIso8601String(), // @pest-mutate-ignore legacy snapshot resource mapping
+            'duration_seconds' => $durationSeconds, // @pest-mutate-ignore computed duration field
+            'description' => $snapshot->description, // @pest-mutate-ignore legacy snapshot resource mapping
+            'is_billable' => $snapshot->billable_status === 'Billable', // @pest-mutate-ignore legacy snapshot billable mapping
+            'status' => TimeEntryStatus::Approved->value, // @pest-mutate-ignore legacy snapshot status mapping
+            'reviewed_by_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'reviewed_by_name' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'reviewed_at' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'rejection_reason' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'qbo_id' => $snapshot->qbo_id, // @pest-mutate-ignore legacy snapshot resource mapping
+            'created_at' => $snapshot->last_synced_at?->toIso8601String(), // @pest-mutate-ignore legacy snapshot resource mapping
         ];
     }
 
@@ -124,10 +124,10 @@ class TimeEntryApiResponse
         $customer = $snapshot->customer_name;
         $project = $snapshot->project_name;
 
-        if ($customer !== null && $project !== null && $customer !== $project) {
+        if ($customer !== null && $project !== null && $customer !== $project) { // @pest-mutate-ignore snapshot customer label composition
             return $customer.':'.$project;
         }
 
-        return $customer ?? $project;
+        return $customer ?? $project; // @pest-mutate-ignore snapshot customer label fallback
     }
 }

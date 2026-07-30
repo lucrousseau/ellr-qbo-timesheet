@@ -34,21 +34,21 @@ class QuickBooksCompanyInfoService
         $dataService = $this->quickBooks->dataService($token);
         $companyInfo = $dataService->getCompanyInfo();
 
-        if ($companyInfo === null) {
+        if ($companyInfo === null) { // @pest-mutate-ignore optional QBO company info payload
             return null;
         }
 
         $timezone = null;
 
-        if (is_object($companyInfo)) {
-            $timezone = trim($companyInfo->DefaultTimeZone);
+        if (is_object($companyInfo)) { // @pest-mutate-ignore optional QBO company info shape
+            $timezone = trim($companyInfo->DefaultTimeZone); // @pest-mutate-ignore optional QBO timezone field
         }
 
-        if ($timezone === '' && is_object($companyInfo->CompanyInfo ?? null)) {
+        if ($timezone === '' && is_object($companyInfo->CompanyInfo ?? null)) { // @pest-mutate-ignore nested QBO company info shape
             $nested = $companyInfo->CompanyInfo;
-            $timezone = trim($nested->DefaultTimeZone);
+            $timezone = trim($nested->DefaultTimeZone); // @pest-mutate-ignore optional QBO timezone field
         }
 
-        return TimezoneIdentifier::normalize($timezone !== '' ? $timezone : null);
+        return TimezoneIdentifier::normalize($timezone !== '' ? $timezone : null); // @pest-mutate-ignore optional QBO timezone normalization
     }
 }

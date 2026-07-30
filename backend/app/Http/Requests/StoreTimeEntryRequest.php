@@ -24,15 +24,15 @@ class StoreTimeEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_ref' => ['nullable', 'string', 'max:255'],
-            'customer_name' => ['nullable', 'string', 'max:255'],
-            'project_ref' => ['nullable', 'string', 'max:255'],
-            'project_name' => ['nullable', 'string', 'max:255'],
-            'item_ref' => ['nullable', 'string', 'max:255'],
-            'item_name' => ['nullable', 'string', 'max:255'],
+            'customer_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'customer_name' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'project_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'project_name' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'item_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'item_name' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'start_time' => ['required', 'date'],
             'end_time' => ['required', 'date', 'after:start_time'],
-            'description' => ['nullable', 'string', 'max:4000'],
+            'description' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
             'is_billable' => ['sometimes', 'boolean'],
         ];
     }

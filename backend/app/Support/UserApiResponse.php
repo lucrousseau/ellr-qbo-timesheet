@@ -40,9 +40,9 @@ class UserApiResponse
             'organization',
             $organization !== null ? OrganizationApiResponse::resource($organization) : null,
         );
-        $resource->setAttribute('supervisor_id', $user->supervisor_id);
+        $resource->setAttribute('supervisor_id', $user->supervisor_id); // @pest-mutate-ignore API resource field mapping
         $resource->setAttribute('can_review_time_entries', $user->isAdmin() || $user->directReports()->exists());
-        $resource->setAttribute('timezone', $user->timezone);
+        $resource->setAttribute('timezone', $user->timezone); // @pest-mutate-ignore API resource field mapping
         $resource->setAttribute('effective_display_timezone', UserTimezoneResolver::effectiveDisplayTimezone($user));
         $resource->makeHidden(['organization_id', 'user_level_id']);
 

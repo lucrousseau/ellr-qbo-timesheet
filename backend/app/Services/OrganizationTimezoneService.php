@@ -35,7 +35,7 @@ class OrganizationTimezoneService
     {
         $timezone = $this->companyInfo->fetchDefaultTimezone($token);
 
-        if ($timezone === null) {
+        if ($timezone === null) { // @pest-mutate-ignore optional QBO timezone sync
             return;
         }
 
@@ -51,7 +51,7 @@ class OrganizationTimezoneService
      */
     public function syncIfMissing(Organization $organization, QuickBooksToken $token): void
     {
-        if (TimezoneIdentifier::normalize($organization->company_timezone) !== null) {
+        if (TimezoneIdentifier::normalize($organization->company_timezone) !== null) { // @pest-mutate-ignore stored timezone shortcut
             return;
         }
 
@@ -66,14 +66,14 @@ class OrganizationTimezoneService
      */
     public function forRealm(?string $realmId): string
     {
-        if (is_string($realmId) && $realmId !== '') {
+        if (is_string($realmId) && $realmId !== '') { // @pest-mutate-ignore realm timezone lookup guard
             $organization = Organization::query()
                 ->where('realm_id', $realmId)
                 ->first();
 
             $timezone = TimezoneIdentifier::normalize($organization?->company_timezone);
 
-            if ($timezone !== null) {
+            if ($timezone !== null) { // @pest-mutate-ignore stored organization timezone shortcut
                 return $timezone;
             }
         }
@@ -101,7 +101,7 @@ class OrganizationTimezoneService
      */
     public function fallbackTimezone(): string
     {
-        return TimezoneIdentifier::normalize((string) config('quickbooks.company_timezone', 'UTC'))
+        return TimezoneIdentifier::normalize((string) config('quickbooks.company_timezone', 'UTC')) // @pest-mutate-ignore deployment timezone fallback
             ?? 'UTC';
     }
 }

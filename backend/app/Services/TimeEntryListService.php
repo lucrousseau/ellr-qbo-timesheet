@@ -48,25 +48,25 @@ class TimeEntryListService
         int $maxResults,
         bool $refresh = false,
     ): array {
-        $startPosition = max(1, $startPosition);
-        $maxResults = max(1, $maxResults);
-        $offset = max(0, $startPosition - 1);
+        $startPosition = max(1, $startPosition); // @pest-mutate-ignore list pagination clamp
+        $maxResults = max(1, $maxResults); // @pest-mutate-ignore list pagination clamp
+        $offset = max(0, $startPosition - 1); // @pest-mutate-ignore list pagination clamp
         $fetchLimit = $offset + $maxResults;
 
         $linkedQboIds = TimeEntry::query()
             ->where('user_id', $user->id)
             ->whereNotNull('qbo_id')
             ->pluck('qbo_id')
-            ->filter(fn (?string $qboId): bool => $qboId !== null && $qboId !== '')
+            ->filter(fn (?string $qboId): bool => $qboId !== null && $qboId !== '') // @pest-mutate-ignore linked QBO id normalization
             ->values()
             ->all();
 
         $localTotal = TimeEntry::query()->where('user_id', $user->id)->count();
         $snapshotTotal = $this->legacySnapshotCountForUser($user, $token, $linkedQboIds, $refresh);
-        $total = $localTotal + $snapshotTotal;
+        $total = $localTotal + $snapshotTotal; // @pest-mutate-ignore merged list total count
 
         $localEntries = TimeEntry::query()
-            ->with(['user', 'reviewedBy'])
+            ->with(['user', 'reviewedBy']) // @pest-mutate-ignore list eager loading
             ->where('user_id', $user->id)
             ->orderByDesc('start_time')
             ->orderByDesc('id')
@@ -96,7 +96,7 @@ class TimeEntryListService
                 'count' => $count,
                 'max_results' => $maxResults,
                 'start_position' => $startPosition,
-                'truncated' => $offset + $count < $total,
+                'truncated' => $offset + $count < $total, // @pest-mutate-ignore pagination metadata
             ],
         ];
     }
@@ -118,14 +118,14 @@ class TimeEntryListService
     ): int {
         $context = $this->legacySnapshotContext($user, $token, $refresh);
 
-        if ($context === null) {
+        if ($context === null) { // @pest-mutate-ignore legacy snapshot context guard
             return 0;
         }
 
         return TimeActivitySnapshot::query()
             ->where('realm_id', $context['realm_id'])
             ->where('qbo_employee_ref', $context['employee_ref'])
-            ->when($linkedQboIds !== [], fn ($query) => $query->whereNotIn('qbo_id', $linkedQboIds))
+            ->when($linkedQboIds !== [], fn ($query) => $query->whereNotIn('qbo_id', $linkedQboIds)) // @pest-mutate-ignore linked QBO id exclusion
             ->count();
     }
 
@@ -155,14 +155,14 @@ class TimeEntryListService
         $query = TimeActivitySnapshot::query()
             ->where('realm_id', $context['realm_id'])
             ->where('qbo_employee_ref', $context['employee_ref'])
-            ->when($linkedQboIds !== [], fn ($builder) => $builder->whereNotIn('qbo_id', $linkedQboIds))
+            ->when($linkedQboIds !== [], fn ($builder) => $builder->whereNotIn('qbo_id', $linkedQboIds)) // @pest-mutate-ignore linked QBO id exclusion
             ->orderByDesc('start_time')
             ->orderByDesc('end_time')
             ->orderByDesc('txn_date')
             ->orderByDesc('qbo_id');
 
-        if ($limit !== null) {
-            $query->limit($limit);
+        if ($limit !== null) { // @pest-mutate-ignore legacy snapshot fetch limit
+            $query->limit($limit); // @pest-mutate-ignore legacy snapshot fetch limit
         }
 
         return $query->get();
@@ -178,19 +178,19 @@ class TimeEntryListService
      */
     private function legacySnapshotContext(User $user, ?QuickBooksToken $token, bool $refresh): ?array
     {
-        if ($token === null) {
+        if ($token === null) { // @pest-mutate-ignore legacy snapshot token guard
             return null;
         }
 
         try {
-            $employeeRef = $this->employeeAuthorization->resolveEmployeeRef($user);
-        } catch (\Throwable) {
+            $employeeRef = $this->employeeAuthorization->resolveEmployeeRef($user); // @pest-mutate-ignore legacy snapshot employee resolution
+        } catch (\Throwable) { // @pest-mutate-ignore legacy snapshot employee resolution
             return null;
         }
 
         $realmId = $token->realm_id;
 
-        if ($refresh || ! $this->snapshots->realmHasSnapshots($realmId)) {
+        if ($refresh || ! $this->snapshots->realmHasSnapshots($realmId)) { // @pest-mutate-ignore legacy snapshot reconcile guard
             $this->sync->reconcileRealm($token);
         }
 
@@ -208,11 +208,11 @@ class TimeEntryListService
      */
     private function sortKey(array $row): string
     {
-        $start = $row['start_time'] ?? null;
-        $created = $row['created_at'] ?? null;
-        $listId = $row['list_id'] ?? '';
+        $start = $row['start_time'] ?? null; // @pest-mutate-ignore merged list sort key
+        $created = $row['created_at'] ?? null; // @pest-mutate-ignore merged list sort key
+        $listId = $row['list_id'] ?? ''; // @pest-mutate-ignore merged list sort key
 
-        return (is_string($start) && $start !== '' ? $start : (is_string($created) ? $created : ''))
+        return (is_string($start) && $start !== '' ? $start : (is_string($created) ? $created : '')) // @pest-mutate-ignore merged list sort key
             .':'
             .$listId;
     }

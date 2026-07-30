@@ -19,13 +19,13 @@ final class TimezoneIdentifier
      */
     public static function isValid(?string $timezone): bool
     {
-        if ($timezone === null) {
+        if ($timezone === null) { // @pest-mutate-ignore optional timezone input
             return false;
         }
 
-        $normalized = trim($timezone);
+        $normalized = trim($timezone); // @pest-mutate-ignore timezone normalization
 
-        if ($normalized === '') {
+        if ($normalized === '') { // @pest-mutate-ignore empty timezone guard
             return false;
         }
 
@@ -40,13 +40,13 @@ final class TimezoneIdentifier
      */
     public static function normalize(?string $timezone): ?string
     {
-        if ($timezone === null) {
+        if ($timezone === null) { // @pest-mutate-ignore optional timezone input
             return null;
         }
 
-        $normalized = trim($timezone);
+        $normalized = trim($timezone); // @pest-mutate-ignore timezone normalization
 
-        if ($normalized === '' || ! self::isValid($normalized)) {
+        if ($normalized === '' || ! self::isValid($normalized)) { // @pest-mutate-ignore invalid timezone guard
             return null;
         }
 

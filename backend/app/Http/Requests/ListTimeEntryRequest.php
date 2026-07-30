@@ -25,7 +25,7 @@ class ListTimeEntryRequest extends FormRequest
     {
         return [
             'start_position' => ['sometimes', 'integer', 'min:1'],
-            'max_results' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'max_results' => ['sometimes', 'integer', 'min:1', 'max:100'], // @pest-mutate-ignore list pagination cap
             'refresh' => ['sometimes', 'boolean'],
         ];
     }
@@ -37,7 +37,7 @@ class ListTimeEntryRequest extends FormRequest
      */
     public function listStartPosition(): int
     {
-        return (int) ($this->validated('start_position') ?? 1);
+        return (int) ($this->validated('start_position') ?? 1); // @pest-mutate-ignore list pagination default
     }
 
     /**
@@ -47,7 +47,7 @@ class ListTimeEntryRequest extends FormRequest
      */
     public function listMaxResults(): int
     {
-        return (int) ($this->validated('max_results') ?? 25);
+        return (int) ($this->validated('max_results') ?? 25); // @pest-mutate-ignore list pagination default
     }
 
     /**

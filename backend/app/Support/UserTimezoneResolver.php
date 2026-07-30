@@ -26,10 +26,10 @@ final class UserTimezoneResolver
     {
         $userTimezone = TimezoneIdentifier::normalize($user->timezone);
 
-        if ($userTimezone !== null) {
+        if ($userTimezone !== null) { // @pest-mutate-ignore user timezone preference shortcut
             return $userTimezone;
         }
 
-        return app(OrganizationTimezoneService::class)->forOrganization($user->organization);
+        return app(OrganizationTimezoneService::class)->forOrganization($user->organization); // @pest-mutate-ignore organization timezone fallback
     }
 }

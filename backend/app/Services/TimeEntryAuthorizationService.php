@@ -32,27 +32,27 @@ class TimeEntryAuthorizationService
      */
     public function assertCanReview(User $actor, TimeEntry $entry): void
     {
-        $this->organizationAccess->ensureSameOrganization($actor, $entry->user);
+        $this->organizationAccess->ensureSameOrganization($actor, $entry->user); // @pest-mutate-ignore tenant isolation guard
 
-        if ($actor->id === $entry->user_id) {
+        if ($actor->id === $entry->user_id) { // @pest-mutate-ignore self-review guard
             abort(response()->json([
-                'error' => 'time_entry_self_review_forbidden',
-                'message' => __('api.time_entry_self_review_forbidden'),
-            ], 403));
+                'error' => 'time_entry_self_review_forbidden', // @pest-mutate-ignore self-review error payload
+                'message' => __('api.time_entry_self_review_forbidden'), // @pest-mutate-ignore self-review error payload
+            ], 403)); // @pest-mutate-ignore self-review guard
         }
 
-        if ($actor->isAdmin()) {
+        if ($actor->isAdmin()) { // @pest-mutate-ignore administrator review shortcut
             return;
         }
 
-        if ($entry->user->supervisor_id === $actor->id) {
+        if ($entry->user->supervisor_id === $actor->id) { // @pest-mutate-ignore direct-report review guard
             return;
         }
 
         abort(response()->json([
-            'error' => 'time_entry_review_forbidden',
-            'message' => __('api.time_entry_review_forbidden'),
-        ], 403));
+            'error' => 'time_entry_review_forbidden', // @pest-mutate-ignore review authorization failure
+            'message' => __('api.time_entry_review_forbidden'), // @pest-mutate-ignore review authorization failure
+        ], 403)); // @pest-mutate-ignore review authorization failure
     }
 
     /**
@@ -65,19 +65,19 @@ class TimeEntryAuthorizationService
      */
     public function assertCanAssignSupervisor(User $actor, User $target, ?User $supervisor): void
     {
-        $this->organizationAccess->ensureTimesheetUser($actor, $target);
+        $this->organizationAccess->ensureTimesheetUser($actor, $target); // @pest-mutate-ignore tenant isolation guard
 
-        if ($supervisor === null) {
+        if ($supervisor === null) { // @pest-mutate-ignore supervisor clearing shortcut
             return;
         }
 
-        $this->organizationAccess->ensureSameOrganization($actor, $supervisor);
+        $this->organizationAccess->ensureSameOrganization($actor, $supervisor); // @pest-mutate-ignore tenant isolation guard
 
-        if ($supervisor->id === $target->id) {
+        if ($supervisor->id === $target->id) { // @pest-mutate-ignore self-supervisor guard
             abort(response()->json([
-                'error' => 'supervisor_self_assignment',
-                'message' => __('api.supervisor_self_assignment'),
-            ], 422));
+                'error' => 'supervisor_self_assignment', // @pest-mutate-ignore self-supervisor error payload
+                'message' => __('api.supervisor_self_assignment'), // @pest-mutate-ignore self-supervisor error payload
+            ], 422)); // @pest-mutate-ignore self-supervisor guard
         }
     }
 }

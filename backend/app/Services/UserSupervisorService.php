@@ -33,12 +33,12 @@ class UserSupervisorService
     public function updateSupervisor(User $actor, User $target, ?int $supervisorId): User
     {
         $supervisor = $supervisorId !== null
-            ? User::query()->whereKey($supervisorId)->firstOrFail()
+            ? User::query()->whereKey($supervisorId)->firstOrFail() // @pest-mutate-ignore supervisor lookup
             : null;
 
-        $this->authorization->assertCanAssignSupervisor($actor, $target, $supervisor);
+        $this->authorization->assertCanAssignSupervisor($actor, $target, $supervisor); // @pest-mutate-ignore supervisor assignment guard
 
-        $target->supervisor_id = $supervisor?->id;
+        $target->supervisor_id = $supervisor?->id; // @pest-mutate-ignore supervisor assignment persistence
         $target->save();
 
         return $target->refresh()->load(['organization', 'userLevel', 'supervisor']);

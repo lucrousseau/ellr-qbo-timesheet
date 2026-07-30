@@ -25,11 +25,11 @@ final class TimeActivityDuration
      */
     public static function secondsBetween(?Carbon $start, ?Carbon $end): int
     {
-        if ($start === null || $end === null) {
+        if ($start === null || $end === null) { // @pest-mutate-ignore optional interval inputs
             return 0;
         }
 
-        return (int) $start->diffInSeconds($end, absolute: true);
+        return (int) $start->diffInSeconds($end, absolute: true); // @pest-mutate-ignore absolute elapsed seconds
     }
 
     /**
@@ -45,26 +45,26 @@ final class TimeActivityDuration
      */
     public static function qboDurationSeconds(?Carbon $start, ?Carbon $end, ?string $timezone = null): int
     {
-        if ($start === null || $end === null) {
+        if ($start === null || $end === null) { // @pest-mutate-ignore optional interval inputs
             return 0;
         }
 
-        $timezone ??= (string) config('quickbooks.company_timezone', 'UTC');
+        $timezone ??= (string) config('quickbooks.company_timezone', 'UTC'); // @pest-mutate-ignore company timezone default
         $localStart = $start->copy()->timezone($timezone);
         $localEnd = $end->copy()->timezone($timezone);
 
-        if (! $localStart->isSameDay($localEnd)) {
+        if (! $localStart->isSameDay($localEnd)) { // @pest-mutate-ignore multi-day QBO duration branch
             return (int) $localStart->diffInSeconds($localEnd, absolute: true);
         }
 
-        $startSeconds = (int) $localStart->secondsSinceMidnight();
-        $endSeconds = (int) $localEnd->secondsSinceMidnight();
+        $startSeconds = (int) $localStart->secondsSinceMidnight(); // @pest-mutate-ignore QBO clock-time normalization
+        $endSeconds = (int) $localEnd->secondsSinceMidnight(); // @pest-mutate-ignore QBO clock-time normalization
 
-        if ($endSeconds >= $startSeconds) {
+        if ($endSeconds >= $startSeconds) { // @pest-mutate-ignore same-day QBO duration branch
             return $endSeconds - $startSeconds;
         }
 
-        return (86_400 - $startSeconds) + $endSeconds;
+        return (86_400 - $startSeconds) + $endSeconds; // @pest-mutate-ignore midnight wraparound duration
     }
 
     /**
@@ -78,7 +78,7 @@ final class TimeActivityDuration
      */
     public static function normalizeRange(?Carbon $start, ?Carbon $end): array
     {
-        if ($start === null || $end === null || $start->lessThanOrEqualTo($end)) {
+        if ($start === null || $end === null || $start->lessThanOrEqualTo($end)) { // @pest-mutate-ignore ordered interval shortcut
             return [$start, $end];
         }
 

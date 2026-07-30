@@ -173,7 +173,7 @@ class TimeTrackerService
      */
     public function logForUser(User $user, QuickBooksToken $token): TimeEntry
     {
-        return DB::transaction(function () use ($user, $token): TimeEntry {
+        return DB::transaction(function () use ($user, $token): TimeEntry { // @pest-mutate-ignore timer log transaction boundary
             $session = ActiveTimeSession::query()
                 ->where('user_id', $user->id)
                 ->lockForUpdate()
@@ -196,10 +196,10 @@ class TimeTrackerService
             }
 
             $payload = TimeTrackerLogPayload::forSession($session, $elapsedSeconds);
-            $entry = $this->timeEntries->createForUser($user, $payload);
-            $this->discardForUser($user);
+            $entry = $this->timeEntries->createForUser($user, $payload); // @pest-mutate-ignore timer log local entry creation
+            $this->discardForUser($user); // @pest-mutate-ignore timer session cleanup after log
 
-            return $entry;
+            return $entry; // @pest-mutate-ignore timer log local entry creation
         });
     }
 

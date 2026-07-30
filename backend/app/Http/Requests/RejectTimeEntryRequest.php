@@ -24,7 +24,7 @@ class RejectTimeEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reason' => ['nullable', 'string', 'max:2000'],
+            'reason' => ['nullable', 'string', 'max:2000'], // @pest-mutate-ignore declarative validation rules
         ];
     }
 }

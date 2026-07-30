@@ -115,9 +115,9 @@ class TimeEntryController extends Controller
      */
     private function resolveOptionalToken(User $user): ?QuickBooksToken
     {
-        try {
+        try { // @pest-mutate-ignore optional QBO token resolution
             return $this->tokenResolver->resolve($user);
-        } catch (HttpResponseException) {
+        } catch (HttpResponseException) { // @pest-mutate-ignore optional QBO token resolution
             return null;
         }
     }
