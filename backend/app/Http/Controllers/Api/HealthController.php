@@ -28,6 +28,9 @@ class HealthController extends Controller
             'status' => 'ok',
             'service' => 'ellr-qbo-timesheet-api',
             'require_email_verification' => (bool) config('app.require_email_verification'),
+            'time_tracker_max_accumulated_seconds' => (int) config(
+                'quickbooks.time_tracker_max_accumulated_seconds',
+            ),
             'password_policy' => [
                 'loaded' => true,
                 'min_length' => $passwordPolicy['minLength'],

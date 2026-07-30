@@ -2,15 +2,35 @@
  * @file Timer display with play/pause control for the timesheet app.
  */
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { Button, useLocale } from '@ellr/ui'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react'
+import { Button, createDurationHoursMinutesMask, MaskedInput, useLocale } from '@ellr/ui'
 import { formatElapsedInput, formatElapsedSeconds, parseElapsedInput } from '../utils/timerFormat'
 
 type TimerDisplayProps = {
   elapsedSeconds: number
+  maxAccumulatedSeconds: number
   isRunning: boolean
-  onToggle: () => void
-  onElapsedChange: (seconds: number) => void
+  onToggle: () => void | Promise<void>
+  onElapsedCommit: (seconds: number) => void | Promise<boolean>
+}
+
+/**
+ * Imperative handle for flushing a pending timer edit from the parent panel.
+ */
+export type TimerDisplayHandle = {
+  /**
+   * Flushes a pending manual edit and returns parsed seconds when the value changed.
+   * @returns Parsed seconds to sync, or null when there is nothing to commit.
+   */
+  commitPendingEdit: () => number | null
 }
 
 const timerTypographyClass = 'font-mono text-4xl font-semibold tracking-tight text-slate-900'
@@ -23,28 +43,40 @@ const timerInputClass = `rounded-lg border border-transparent bg-transparent px-
  * @param props Elapsed time, running state, and event handlers.
  * @returns Timer row with digital clock styling.
  */
-export function TimerDisplay({
-  elapsedSeconds,
-  isRunning,
-  onToggle,
-  onElapsedChange,
-}: TimerDisplayProps) {
+export const TimerDisplay = forwardRef<TimerDisplayHandle, TimerDisplayProps>(function TimerDisplay(
+  { elapsedSeconds, maxAccumulatedSeconds, isRunning, onToggle, onElapsedCommit },
+  ref,
+) {
   const { t } = useLocale()
   const inputRef = useRef<HTMLInputElement>(null)
   const editBaselineRef = useRef('')
+  const draftRef = useRef(formatElapsedInput(elapsedSeconds))
+  const skipBlurCommitRef = useRef(false)
   const [draft, setDraft] = useState(() => formatElapsedInput(elapsedSeconds))
   const [isEditing, setIsEditing] = useState(false)
   const { hours, minutes, seconds } = formatElapsedSeconds(elapsedSeconds)
+  const durationMask = useMemo(
+    () => createDurationHoursMinutesMask(maxAccumulatedSeconds),
+    [maxAccumulatedSeconds],
+  )
 
   useEffect(() => {
     if (!isEditing) {
-      setDraft(formatElapsedInput(elapsedSeconds))
+      const formatted = formatElapsedInput(elapsedSeconds)
+      draftRef.current = formatted
+      setDraft(formatted)
     }
   }, [elapsedSeconds, isEditing])
+
+  const onDraftAccept = (value: string) => {
+    draftRef.current = value
+    setDraft(value)
+  }
 
   const startEditing = () => {
     const baseline = formatElapsedInput(elapsedSeconds)
     editBaselineRef.current = baseline
+    draftRef.current = baseline
     setDraft(baseline)
     setIsEditing(true)
     window.requestAnimationFrame(() => {
@@ -53,35 +85,86 @@ export function TimerDisplay({
     })
   }
 
-  const commitDraft = () => {
-    setIsEditing(false)
+  const flushPendingEdit = (): number | null => {
+    const nextDraft = inputRef.current?.value ?? draftRef.current
 
-    if (draft === editBaselineRef.current) {
-      return
+    if (nextDraft === editBaselineRef.current) {
+      return null
     }
 
-    const parsed = parseElapsedInput(draft)
+    const parsed = parseElapsedInput(nextDraft, maxAccumulatedSeconds)
 
     if (parsed === null) {
-      setDraft(formatElapsedInput(elapsedSeconds))
+      const formatted = formatElapsedInput(elapsedSeconds)
+      draftRef.current = formatted
+      setDraft(formatted)
 
+      return null
+    }
+
+    if (parsed === elapsedSeconds) {
+      return null
+    }
+
+    return parsed
+  }
+
+  const commitDraft = () => {
+    if (skipBlurCommitRef.current) {
       return
     }
 
-    if (parsed !== elapsedSeconds) {
-      onElapsedChange(parsed)
+    const pendingSeconds = flushPendingEdit()
+    setIsEditing(false)
+
+    if (pendingSeconds !== null) {
+      void onElapsedCommit(pendingSeconds)
     }
+  }
+
+  useImperativeHandle(ref, () => ({
+    commitPendingEdit: () => {
+      if (!isEditing) {
+        return null
+      }
+
+      skipBlurCommitRef.current = true
+      const pendingSeconds = flushPendingEdit()
+      setIsEditing(false)
+      skipBlurCommitRef.current = false
+
+      return pendingSeconds
+    },
+  }))
+
+  const handleToggle = async () => {
+    if (isEditing) {
+      skipBlurCommitRef.current = true
+      const pendingSeconds = flushPendingEdit()
+      setIsEditing(false)
+
+      if (pendingSeconds !== null) {
+        await onElapsedCommit(pendingSeconds)
+      }
+
+      skipBlurCommitRef.current = false
+    }
+
+    await onToggle()
   }
 
   const onInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault()
       inputRef.current?.blur()
+
+      return
     }
 
     if (event.key === 'Escape') {
       event.preventDefault()
       setDraft(formatElapsedInput(elapsedSeconds))
+      draftRef.current = formatElapsedInput(elapsedSeconds)
       setIsEditing(false)
       inputRef.current?.blur()
     }
@@ -91,16 +174,16 @@ export function TimerDisplay({
     <div className="flex items-center justify-between gap-4">
       <div>
         {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
+          <MaskedInput
+            mask={durationMask}
+            inputRef={inputRef}
             inputMode="numeric"
             autoComplete="off"
             aria-label={t('timesheet.editTimer')}
             className={timerInputClass}
             placeholder="00:00"
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onAccept={onDraftAccept}
             onBlur={commitDraft}
             onKeyDown={onInputKeyDown}
           />
@@ -124,9 +207,9 @@ export function TimerDisplay({
           {isEditing ? t('timesheet.timerInputLabels') : t('timesheet.timerLabels')}
         </p>
       </div>
-      <Button type="button" variant="secondary" onClick={onToggle}>
+      <Button type="button" variant="secondary" onClick={() => void handleToggle()}>
         {isRunning ? t('timesheet.pause') : t('timesheet.play')}
       </Button>
     </div>
   )
-}
+})

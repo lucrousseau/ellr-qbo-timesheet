@@ -10,6 +10,13 @@ export { TextAreaField } from './components/TextAreaField'
 export { LazySearchCombobox } from './components/LazySearchCombobox'
 export { StaticSelect } from './components/StaticSelect'
 export { TextField } from './components/TextField'
+export { MaskedInput } from './components/MaskedInput'
+export {
+  capDurationMaskValue,
+  createDurationHoursMinutesMask,
+  DEFAULT_DURATION_MAX_SECONDS,
+  durationHoursMinutesMask,
+} from './masks/durationMask'
 export { Alert } from './components/Alert'
 export { AppShell } from './components/AppShell'
 export { PasswordPolicyRequirements } from './components/PasswordPolicyRequirements'

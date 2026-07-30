@@ -13,8 +13,9 @@ import {
   TextAreaField,
   useLocale,
 } from '@ellr/ui'
+import { useRef } from 'react'
 import type { QboPickerOption } from '../hooks/useTimeTracker'
-import { TimerDisplay } from './TimerDisplay'
+import { TimerDisplay, type TimerDisplayHandle } from './TimerDisplay'
 
 type PickerSelect = {
   items: QboPickerOption[]
@@ -33,6 +34,7 @@ type TimeTrackerPanelProps = {
   description: string
   isBillable: boolean
   elapsedSeconds: number
+  maxAccumulatedSeconds: number
   isRunning: boolean
   logging: boolean
   discarding: boolean
@@ -49,8 +51,8 @@ type TimeTrackerPanelProps = {
   onDescriptionChange: (value: string) => void
   onDescriptionBlur: () => void
   onBillableChange: (value: boolean) => void
-  onToggleTimer: () => void
-  onElapsedChange: (seconds: number) => void
+  onToggleTimer: () => void | Promise<void>
+  commitElapsedSeconds: (seconds: number) => Promise<boolean>
   onLogTime: () => void | Promise<void>
   onDiscard: () => void | Promise<void>
 }
@@ -69,6 +71,7 @@ export function TimeTrackerPanel({
   description,
   isBillable,
   elapsedSeconds,
+  maxAccumulatedSeconds,
   isRunning,
   logging,
   discarding,
@@ -86,11 +89,22 @@ export function TimeTrackerPanel({
   onDescriptionBlur,
   onBillableChange,
   onToggleTimer,
-  onElapsedChange,
+  commitElapsedSeconds,
   onLogTime,
   onDiscard,
 }: TimeTrackerPanelProps) {
   const { t } = useLocale()
+  const timerDisplayRef = useRef<TimerDisplayHandle>(null)
+
+  const handleLogTime = async () => {
+    const pendingSeconds = timerDisplayRef.current?.commitPendingEdit()
+
+    if (pendingSeconds !== null && pendingSeconds !== undefined) {
+      await commitElapsedSeconds(pendingSeconds)
+    }
+
+    await onLogTime()
+  }
 
   if (loading) {
     return <LoadingScreen />
@@ -103,10 +117,12 @@ export function TimeTrackerPanel({
       </header>
 
       <TimerDisplay
+        ref={timerDisplayRef}
         elapsedSeconds={elapsedSeconds}
+        maxAccumulatedSeconds={maxAccumulatedSeconds}
         isRunning={isRunning}
         onToggle={onToggleTimer}
-        onElapsedChange={onElapsedChange}
+        onElapsedCommit={commitElapsedSeconds}
       />
 
       {showCustomerPicker && (
@@ -184,7 +200,7 @@ export function TimeTrackerPanel({
         onChange={onBillableChange}
       />
 
-      <Button type="button" disabled={logging || elapsedSeconds <= 0} onClick={() => void onLogTime()}>
+      <Button type="button" disabled={logging || elapsedSeconds <= 0} onClick={() => void handleLogTime()}>
         {logging ? t('common.saving') : t('timesheet.logTime')}
       </Button>
 

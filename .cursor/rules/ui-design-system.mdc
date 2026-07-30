@@ -26,6 +26,7 @@ Headless UI is the **primitive layer** for interactive controls. Apps consume **
 |----------------|-------------------|------|
 | `Button` | `Button` | Primary, secondary, danger, and link actions; `size="compact"` for header chrome |
 | `TextField` | `Field` + `Label` + `Input` | — |
+| `MaskedInput` | IMask (`react-imask`) | Duration, phone, and other masked numeric entry |
 | `TextAreaField` | `Field` + `Label` + `Textarea` | — |
 | `StaticSelect` | `Listbox` | — |
 | `LazySearchCombobox` | `Combobox` | `useLazyApiSelect` |

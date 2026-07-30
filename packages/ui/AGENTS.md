@@ -21,6 +21,7 @@ See also the [root README](../../README.md) and [root AGENTS.md](../../AGENTS.md
 |-----------|-------------------|----------|
 | `Button` | `Button` | Primary, secondary, danger, link; `size="compact"` for header chrome |
 | `TextField` | `Field` + `Label` + `Input` | Text, email, password, datetime-local |
+| `MaskedInput` | IMask (`react-imask`) | Formatted numeric entry (duration, phone, etc.) |
 | `TextAreaField` | `Field` + `Label` + `Textarea` | Multi-line text, notes, descriptions |
 | `StaticSelect` | `Listbox` | Short static lists (locale, enums) |
 | `LazySearchCombobox` | `Combobox` | API-backed lists with search (`useLazyApiSelect`) |

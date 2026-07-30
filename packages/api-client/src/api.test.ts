@@ -12,7 +12,7 @@ import {
   fetchTimesheetUsers,
   syncTimesheetUserCustomers,
 } from './admin'
-import { fetchAppConfig } from './appConfig'
+import { DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS, fetchAppConfig } from './appConfig'
 import {
   changePassword,
   fetchCurrentUser,
@@ -1095,6 +1095,7 @@ describe('app config', () => {
 
     await expect(fetchAppConfig()).resolves.toEqual({
       require_email_verification: true,
+      time_tracker_max_accumulated_seconds: DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS,
     })
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -1103,6 +1104,25 @@ describe('app config', () => {
         credentials: 'include',
       }),
     )
+  })
+
+  it('reads the timer cap from the health endpoint when present', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        status: 'ok',
+        service: 'ellr-qbo-timesheet',
+        require_email_verification: false,
+        time_tracker_max_accumulated_seconds: 7200,
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchAppConfig()).resolves.toEqual({
+      require_email_verification: false,
+      time_tracker_max_accumulated_seconds: 7200,
+    })
   })
 })
 

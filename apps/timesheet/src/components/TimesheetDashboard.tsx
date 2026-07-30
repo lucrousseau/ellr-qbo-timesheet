@@ -137,6 +137,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 description={tracker.state.description}
                 isBillable={tracker.state.isBillable}
                 elapsedSeconds={tracker.elapsedSeconds}
+                maxAccumulatedSeconds={tracker.maxAccumulatedSeconds}
                 isRunning={tracker.isRunning}
                 logging={tracker.logging}
                 discarding={tracker.discarding}
@@ -154,7 +155,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 onDescriptionBlur={tracker.onDescriptionBlur}
                 onBillableChange={tracker.onBillableChange}
                 onToggleTimer={tracker.onToggleTimer}
-                onElapsedChange={tracker.onElapsedChange}
+                commitElapsedSeconds={tracker.commitElapsedSeconds}
                 onLogTime={tracker.onLogTime}
                 onDiscard={tracker.onDiscard}
               />

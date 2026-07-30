@@ -35,13 +35,18 @@ vi.mock('@ellr/api-client', async () =>
     updateTimeTracker: vi.fn().mockImplementation(async (payload) => ({
       ...mockActiveSession,
       ...payload,
-      accumulated_seconds: mockActiveSession.accumulated_seconds,
+      accumulated_seconds:
+        payload.accumulated_seconds ?? mockActiveSession.accumulated_seconds,
       running_since: payload.is_running ? new Date().toISOString() : null,
-      elapsed_seconds: mockActiveSession.elapsed_seconds,
+      elapsed_seconds:
+        payload.accumulated_seconds ?? mockActiveSession.elapsed_seconds,
       is_running: payload.is_running,
       is_billable: payload.is_billable ?? mockActiveSession.is_billable,
     })),
-    fetchAppConfig: vi.fn().mockResolvedValue({ require_email_verification: false }),
+    fetchAppConfig: vi.fn().mockResolvedValue({
+      require_email_verification: false,
+      time_tracker_max_accumulated_seconds: 86_400,
+    }),
     listTimeActivities: vi.fn().mockResolvedValue({
       data: [],
       meta: { count: 0, max_results: 10, start_position: 1, truncated: false },
@@ -64,15 +69,20 @@ describe('Timesheet App', () => {
     vi.mocked(updateTimeTracker).mockImplementation(async (payload) => ({
       ...mockActiveSession,
       ...payload,
-      accumulated_seconds: mockActiveSession.accumulated_seconds,
+      accumulated_seconds:
+        payload.accumulated_seconds ?? mockActiveSession.accumulated_seconds,
       running_since: payload.is_running ? new Date().toISOString() : null,
-      elapsed_seconds: mockActiveSession.elapsed_seconds,
+      elapsed_seconds:
+        payload.accumulated_seconds ?? mockActiveSession.elapsed_seconds,
       is_running: payload.is_running,
       is_billable: payload.is_billable ?? mockActiveSession.is_billable,
     }))
     vi.mocked(fetchCurrentUser).mockReset()
     vi.mocked(fetchAppConfig).mockReset()
-    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: false })
+    vi.mocked(fetchAppConfig).mockResolvedValue({
+      require_email_verification: false,
+      time_tracker_max_accumulated_seconds: 86_400,
+    })
     vi.mocked(requestPasswordReset).mockReset()
     vi.mocked(resetPassword).mockReset()
     vi.mocked(resendVerificationEmail).mockReset()
@@ -495,7 +505,10 @@ describe('Timesheet App', () => {
   })
 
   it('shows email verification banner for unverified users when verification is required', async () => {
-    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: true })
+    vi.mocked(fetchAppConfig).mockResolvedValue({
+      require_email_verification: true,
+      time_tracker_max_accumulated_seconds: 86_400,
+    })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
       email_verified_at: null,
@@ -509,7 +522,10 @@ describe('Timesheet App', () => {
   })
 
   it('allows unverified users to record time when verification is not required', async () => {
-    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: false })
+    vi.mocked(fetchAppConfig).mockResolvedValue({
+      require_email_verification: false,
+      time_tracker_max_accumulated_seconds: 86_400,
+    })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
       email_verified_at: null,
@@ -683,7 +699,10 @@ describe('Timesheet App', () => {
 
   it('resends the verification email for unverified users', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: true })
+    vi.mocked(fetchAppConfig).mockResolvedValue({
+      require_email_verification: true,
+      time_tracker_max_accumulated_seconds: 86_400,
+    })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
       email_verified_at: null,
@@ -706,7 +725,10 @@ describe('Timesheet App', () => {
 
   it('shows verification resend errors from the api', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchAppConfig).mockResolvedValue({ require_email_verification: true })
+    vi.mocked(fetchAppConfig).mockResolvedValue({
+      require_email_verification: true,
+      time_tracker_max_accumulated_seconds: 86_400,
+    })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
       email_verified_at: null,
@@ -800,6 +822,58 @@ describe('Timesheet App', () => {
     await waitFor(() => {
       expect(updateTimeTracker).toHaveBeenCalledWith(expect.objectContaining({ is_running: true }))
       expect(screen.getByRole('button', { name: /pause timer/i })).toBeInTheDocument()
+    })
+  })
+
+  it('persists manual elapsed edits through start, pause, and log', async () => {
+    const user = userEvent.setup()
+    const editedSeconds = 12 * 3600 + 34 * 60
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(fetchTimeTracker).mockResolvedValue({
+      ...mockActiveSession,
+      accumulated_seconds: 0,
+      elapsed_seconds: 0,
+      is_running: false,
+      running_since: null,
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /edit elapsed time/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /edit elapsed time/i }))
+    const input = screen.getByLabelText(/edit elapsed time/i)
+    await waitFor(() => expect(input).toHaveFocus())
+    await user.tripleClick(input)
+    await user.keyboard('1234')
+    await user.click(screen.getByRole('button', { name: /start timer/i }))
+
+    await waitFor(() => {
+      expect(updateTimeTracker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accumulated_seconds: editedSeconds,
+          is_running: true,
+        }),
+      )
+    })
+
+    await user.click(screen.getByRole('button', { name: /pause timer/i }))
+
+    await waitFor(() => {
+      expect(updateTimeTracker).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          accumulated_seconds: editedSeconds,
+          is_running: false,
+        }),
+      )
+    })
+
+    await user.click(screen.getByRole('button', { name: /log time/i }))
+
+    await waitFor(() => {
+      expect(logTimeTracker).toHaveBeenCalled()
     })
   })
 

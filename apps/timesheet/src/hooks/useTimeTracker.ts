@@ -4,7 +4,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS,
   discardTimeTracker,
+  fetchAppConfig,
   fetchQboCustomers,
   fetchQboProjects,
   fetchQboServices,
@@ -16,7 +18,8 @@ import {
 } from '@ellr/api-client'
 import { getApiErrorMessage, useFlashMessage, useGuardedAction, useLazyApiSelect, useLocale } from '@ellr/ui'
 import { useTimerPickerAvailability } from './useTimerPickerAvailability'
-import { computeElapsedSeconds } from '../utils/timerFormat'
+import { capElapsedSeconds, computeElapsedSeconds } from '../utils/timerFormat'
+import { createSyncQueue } from '../utils/timerSyncQueue'
 
 export type { QboPickerOption } from '@ellr/api-client'
 
@@ -28,6 +31,10 @@ type TimerState = {
   isBillable: boolean
   accumulatedSeconds: number
   runningSince: string | null
+}
+
+type UseTimeTrackerOptions = {
+  maxAccumulatedSeconds?: number
 }
 
 const emptyTimerState = (): TimerState => ({
@@ -106,38 +113,80 @@ function applyServerSession(session: TimeTrackerSession): TimerState {
 /**
  * Timer tracking with server persistence and QBO picker lazy loads.
  * @param enabled When false, skips initial load until the user is authenticated.
+ * @param options Optional timer limits from public app config.
  * @returns Timer state, picker handlers, and log/discard actions.
  */
-export function useTimeTracker(enabled = true) {
+export function useTimeTracker(enabled = true, options: UseTimeTrackerOptions = {}) {
   const { locale, t } = useLocale()
   const { message, clearMessage, showError, showSuccess } = useFlashMessage()
   const [state, setState] = useState<TimerState>(emptyTimerState)
   const [loading, setLoading] = useState(enabled)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [entriesRefreshToken, setEntriesRefreshToken] = useState(0)
+  const [maxAccumulatedSeconds, setMaxAccumulatedSeconds] = useState(
+    options.maxAccumulatedSeconds ?? DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS,
+  )
   const stateRef = useRef(state)
+  const syncQueueRef = useRef(createSyncQueue())
   stateRef.current = state
+
+  useEffect(() => {
+    if (options.maxAccumulatedSeconds !== undefined) {
+      setMaxAccumulatedSeconds(options.maxAccumulatedSeconds)
+    }
+  }, [options.maxAccumulatedSeconds])
+
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
+    let cancelled = false
+
+    void fetchAppConfig()
+      .then((config) => {
+        if (!cancelled) {
+          setMaxAccumulatedSeconds(config.time_tracker_max_accumulated_seconds)
+        }
+      })
+      .catch(() => {
+        // Keep the default cap when health config is unavailable.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [enabled])
 
   const syncToServer = useCallback(
     async (
       nextState: TimerState,
-      options?: { accumulatedSeconds?: number },
+      syncOptions?: { accumulatedSeconds?: number },
     ): Promise<boolean> => {
-      try {
-        const session = await updateTimeTracker(stateToPayload(nextState, options))
-        const syncedState = applyServerSession(session)
-        setState(syncedState)
-        setElapsedSeconds(session.elapsed_seconds)
+      return syncQueueRef.current.enqueue(async () => {
+        try {
+          const session = await updateTimeTracker(stateToPayload(nextState, syncOptions))
+          const syncedState = applyServerSession(session)
+          stateRef.current = syncedState
+          setState(syncedState)
+          setElapsedSeconds(session.elapsed_seconds)
 
-        return true
-      } catch (caught) {
-        showError(getApiErrorMessage(caught, t('timesheet.syncFailed'), locale))
+          return true
+        } catch (caught) {
+          showError(getApiErrorMessage(caught, t('timesheet.syncFailed'), locale))
 
-        return false
-      }
+          return false
+        }
+      })
     },
     [locale, showError, t],
   )
+
+  const restoreTimerState = useCallback((previousState: TimerState, previousElapsed: number) => {
+    stateRef.current = previousState
+    setState(previousState)
+    setElapsedSeconds(previousElapsed)
+  }, [])
 
   useEffect(() => {
     if (!enabled) {
@@ -155,6 +204,7 @@ export function useTimeTracker(enabled = true) {
         const session = await fetchTimeTracker()
         if (!cancelled) {
           const nextState = session ? sessionToState(session) : emptyTimerState()
+          stateRef.current = nextState
           setState(nextState)
           setElapsedSeconds(session?.elapsed_seconds ?? 0)
         }
@@ -201,6 +251,7 @@ export function useTimeTracker(enabled = true) {
     (updater: (current: TimerState) => TimerState, sync = true) => {
       setState((current) => {
         const nextState = updater(current)
+        stateRef.current = nextState
         if (sync) {
           void syncToServer(nextState)
         }
@@ -237,7 +288,12 @@ export function useTimeTracker(enabled = true) {
   )
 
   const onDescriptionChange = useCallback((description: string) => {
-    setState((current) => ({ ...current, description }))
+    setState((current) => {
+      const nextState = { ...current, description }
+      stateRef.current = nextState
+
+      return nextState
+    })
   }, [])
 
   const onDescriptionBlur = useCallback(() => {
@@ -251,15 +307,9 @@ export function useTimeTracker(enabled = true) {
     [applyState],
   )
 
-  const onToggleTimer = useCallback(() => {
-    applyState((current) => ({
-      ...current,
-      runningSince: current.runningSince ? null : new Date().toISOString(),
-    }))
-  }, [applyState])
-
-  const onElapsedChange = useCallback(
-    (seconds: number) => {
+  const commitElapsedSeconds = useCallback(
+    async (seconds: number): Promise<boolean> => {
+      const cappedSeconds = capElapsedSeconds(seconds, maxAccumulatedSeconds)
       const previousState = stateRef.current
       const previousElapsed = computeElapsedSeconds(
         previousState.accumulatedSeconds,
@@ -267,22 +317,79 @@ export function useTimeTracker(enabled = true) {
       )
       const nextState: TimerState = {
         ...previousState,
-        accumulatedSeconds: seconds,
+        accumulatedSeconds: cappedSeconds,
         runningSince: previousState.runningSince ? new Date().toISOString() : null,
       }
 
+      stateRef.current = nextState
       setState(nextState)
-      setElapsedSeconds(seconds)
+      setElapsedSeconds(cappedSeconds)
 
-      void syncToServer(nextState, { accumulatedSeconds: seconds }).then((synced) => {
-        if (!synced) {
-          setState(previousState)
-          setElapsedSeconds(previousElapsed)
-        }
-      })
+      const synced = await syncToServer(nextState, { accumulatedSeconds: cappedSeconds })
+
+      if (!synced) {
+        restoreTimerState(previousState, previousElapsed)
+      }
+
+      return synced
     },
-    [syncToServer],
+    [maxAccumulatedSeconds, restoreTimerState, syncToServer],
   )
+
+  const onElapsedChange = useCallback(
+    (seconds: number) => {
+      void commitElapsedSeconds(seconds)
+    },
+    [commitElapsedSeconds],
+  )
+
+  const onToggleTimer = useCallback(async () => {
+    const current = stateRef.current
+    const displayElapsed = capElapsedSeconds(
+      computeElapsedSeconds(current.accumulatedSeconds, current.runningSince),
+      maxAccumulatedSeconds,
+    )
+
+    if (current.runningSince) {
+      const nextState: TimerState = {
+        ...current,
+        accumulatedSeconds: displayElapsed,
+        runningSince: null,
+      }
+      const previousElapsed = computeElapsedSeconds(
+        current.accumulatedSeconds,
+        current.runningSince,
+      )
+      stateRef.current = nextState
+      setState(nextState)
+      setElapsedSeconds(displayElapsed)
+
+      const synced = await syncToServer(nextState, { accumulatedSeconds: displayElapsed })
+      if (!synced) {
+        restoreTimerState(current, previousElapsed)
+      }
+
+      return
+    }
+
+    const nextState: TimerState = {
+      ...current,
+      accumulatedSeconds: displayElapsed,
+      runningSince: new Date().toISOString(),
+    }
+    const previousElapsed = computeElapsedSeconds(
+      current.accumulatedSeconds,
+      current.runningSince,
+    )
+    stateRef.current = nextState
+    setState(nextState)
+    setElapsedSeconds(displayElapsed)
+
+    const synced = await syncToServer(nextState, { accumulatedSeconds: displayElapsed })
+    if (!synced) {
+      restoreTimerState(current, previousElapsed)
+    }
+  }, [maxAccumulatedSeconds, restoreTimerState, syncToServer])
 
   const pickerAvailability = useTimerPickerAvailability({
     enabled,
@@ -342,6 +449,7 @@ export function useTimeTracker(enabled = true) {
       }
 
       const nextState = { ...current, runningSince: null }
+      stateRef.current = nextState
       void syncToServer(nextState)
 
       return nextState
@@ -397,9 +505,31 @@ export function useTimeTracker(enabled = true) {
   const { run: onLogTime, pending: logging } = useGuardedAction(async () => {
     clearMessage()
 
+    const current = stateRef.current
+    if (current.runningSince) {
+      const displayElapsed = capElapsedSeconds(
+        computeElapsedSeconds(current.accumulatedSeconds, current.runningSince),
+        maxAccumulatedSeconds,
+      )
+      const pausedState: TimerState = {
+        ...current,
+        accumulatedSeconds: displayElapsed,
+        runningSince: null,
+      }
+      const previousElapsed = displayElapsed
+      const synced = await syncToServer(pausedState, { accumulatedSeconds: displayElapsed })
+
+      if (!synced) {
+        restoreTimerState(current, previousElapsed)
+
+        return
+      }
+    }
+
     try {
       await logTimeTracker()
       const reset = emptyTimerState()
+      stateRef.current = reset
       setState(reset)
       setElapsedSeconds(0)
       setEntriesRefreshToken((current) => current + 1)
@@ -415,6 +545,7 @@ export function useTimeTracker(enabled = true) {
     try {
       await discardTimeTracker()
       const reset = emptyTimerState()
+      stateRef.current = reset
       setState(reset)
       setElapsedSeconds(0)
     } catch (caught) {
@@ -440,6 +571,7 @@ export function useTimeTracker(enabled = true) {
     loading,
     state,
     elapsedSeconds,
+    maxAccumulatedSeconds,
     isRunning,
     headerLabel,
     canTrackTime,
@@ -462,6 +594,7 @@ export function useTimeTracker(enabled = true) {
     onBillableChange,
     onToggleTimer,
     onElapsedChange,
+    commitElapsedSeconds,
     onLogTime,
     onDiscard,
     entriesRefreshToken,

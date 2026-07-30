@@ -33,7 +33,7 @@ export {
   type ApiErrorMessageKey,
   type ApiErrorResolution,
 } from './apiErrorResolution'
-export { fetchAppConfig, type AppConfig } from './appConfig'
+export { fetchAppConfig, DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS, type AppConfig } from './appConfig'
 export { normalizeQboRef, qboRefsMatch } from './qboRef'
 export { normalizeUserLocale, SUPPORTED_LOCALES, type UserLocale } from './locale'
 export {

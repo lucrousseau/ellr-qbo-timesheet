@@ -36,11 +36,24 @@ export function formatElapsedInput(totalSeconds: number): string {
 }
 
 /**
+ * Caps elapsed seconds to the API maximum.
+ * @param totalSeconds Raw elapsed seconds.
+ * @param maxSeconds Maximum allowed accumulated seconds.
+ * @returns Capped whole seconds.
+ */
+export function capElapsedSeconds(totalSeconds: number, maxSeconds: number): number {
+  const safeMax = Math.max(1, Math.floor(maxSeconds))
+
+  return Math.min(Math.max(0, Math.floor(totalSeconds)), safeMax)
+}
+
+/**
  * Parses HH:MM timer input into total seconds.
  * @param value User-entered timer text.
+ * @param maxSeconds Optional API maximum to cap parsed values.
  * @returns Total seconds, or null when the value is invalid.
  */
-export function parseElapsedInput(value: string): number | null {
+export function parseElapsedInput(value: string, maxSeconds?: number): number | null {
   const trimmed = value.trim()
   if (trimmed === '') {
     return 0
@@ -63,7 +76,13 @@ export function parseElapsedInput(value: string): number | null {
     return null
   }
 
-  return hours * 3600 + minutes * 60
+  const totalSeconds = hours * 3600 + minutes * 60
+
+  if (maxSeconds !== undefined) {
+    return capElapsedSeconds(totalSeconds, maxSeconds)
+  }
+
+  return totalSeconds
 }
 
 /**
