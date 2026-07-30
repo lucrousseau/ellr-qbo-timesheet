@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, createSuperAdminOrganization, createTimesheetUser, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateUserLocale } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserLocale } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
@@ -19,6 +19,8 @@ vi.mock('@ellr/api-client', async () =>
     syncTimesheetUserCustomers: vi.fn(),
     fetchSuperAdminOrganizations: vi.fn(),
     createSuperAdminOrganization: vi.fn(),
+    updateSuperAdminOrganization: vi.fn(),
+    deleteSuperAdminOrganization: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
     updateUserLocale: vi.fn(),
@@ -35,6 +37,29 @@ describe('Admin App', () => {
     name: 'Test User',
     email: 'test@example.com',
     is_admin: true,
+  }
+  const superAdminUser = {
+    id: 3,
+    name: 'Platform Operator',
+    email: 'luc@ellr.ca',
+    is_admin: false,
+    is_super_admin: true,
+  }
+  const sampleClientOrganization = {
+    id: 5,
+    name: 'Gamma LLC',
+    slug: 'gamma-llc',
+    qbo_connected: false,
+    users_count: 1,
+    created_at: '2026-07-30T12:00:00Z',
+  }
+
+  async function openClientsTab(user: ReturnType<typeof userEvent.setup>) {
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /client organizations/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('tab', { name: /client organizations/i }))
   }
 
   async function openIntegrationsTab(user: ReturnType<typeof userEvent.setup>) {
@@ -84,6 +109,8 @@ describe('Admin App', () => {
     vi.mocked(syncTimesheetUserCustomers).mockReset()
     vi.mocked(fetchSuperAdminOrganizations).mockReset()
     vi.mocked(createSuperAdminOrganization).mockReset()
+    vi.mocked(updateSuperAdminOrganization).mockReset()
+    vi.mocked(deleteSuperAdminOrganization).mockReset()
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
     vi.mocked(fetchQboEmployees).mockResolvedValue([])
@@ -1379,13 +1406,7 @@ describe('Admin App', () => {
 
   it('shows the clients tab for super admins without quickbooks integrations', async () => {
     sessionStorage.setItem(adminActiveTabStorageKey(3), 'integrations')
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 3,
-      name: 'Platform Operator',
-      email: 'luc@ellr.ca',
-      is_admin: false,
-      is_super_admin: true,
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(superAdminUser)
 
     render(<App />)
 
@@ -1401,13 +1422,7 @@ describe('Admin App', () => {
 
   it('shows password policy hints and blocks weak passwords when creating client organizations', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchCurrentUser).mockResolvedValue({
-      id: 3,
-      name: 'Platform Operator',
-      email: 'luc@ellr.ca',
-      is_admin: false,
-      is_super_admin: true,
-    })
+    vi.mocked(fetchCurrentUser).mockResolvedValue(superAdminUser)
     vi.mocked(fetchSuperAdminOrganizations).mockResolvedValue([])
 
     render(<App />)
@@ -1432,6 +1447,111 @@ describe('Admin App', () => {
     })
 
     expect(createSuperAdminOrganization).not.toHaveBeenCalled()
+  })
+
+  it('creates a client organization for platform super administrators', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(superAdminUser)
+    vi.mocked(fetchSuperAdminOrganizations).mockResolvedValue([])
+    vi.mocked(createSuperAdminOrganization).mockResolvedValue(sampleClientOrganization)
+
+    render(<App />)
+
+    await openClientsTab(user)
+
+    await user.type(screen.getByLabelText(/organization name/i), 'Gamma LLC')
+    await user.type(screen.getByLabelText(/administrator name/i), 'Gamma Admin')
+    await user.type(screen.getByLabelText(/administrator email/i), 'gamma@client.test')
+    await user.type(screen.getByLabelText(/^administrator password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.type(screen.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.click(screen.getByRole('button', { name: /create organization/i }))
+
+    await waitFor(() => {
+      expect(createSuperAdminOrganization).toHaveBeenCalledWith({
+        organization_name: 'Gamma LLC',
+        name: 'Gamma Admin',
+        email: 'gamma@client.test',
+        password: VALID_TEST_PASSWORD_ALT,
+        password_confirmation: VALID_TEST_PASSWORD_ALT,
+      })
+      expect(screen.getByText(/client organization created/i)).toBeInTheDocument()
+      expect(screen.getByText('Gamma LLC')).toBeInTheDocument()
+    })
+  })
+
+  it('renames a client organization for platform super administrators', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(superAdminUser)
+    vi.mocked(fetchSuperAdminOrganizations).mockResolvedValue([sampleClientOrganization])
+    vi.mocked(updateSuperAdminOrganization).mockResolvedValue({
+      ...sampleClientOrganization,
+      name: 'Gamma Corp',
+    })
+
+    render(<App />)
+
+    await openClientsTab(user)
+
+    await user.click(screen.getByRole('button', { name: /^rename$/i }))
+
+    const nameField = screen.getByDisplayValue('Gamma LLC')
+    await user.clear(nameField)
+    await user.type(nameField, 'Gamma Corp')
+    await user.click(screen.getByRole('button', { name: /save name/i }))
+
+    await waitFor(() => {
+      expect(updateSuperAdminOrganization).toHaveBeenCalledWith(5, { name: 'Gamma Corp' })
+      expect(screen.getByText(/organization name updated/i)).toBeInTheDocument()
+      expect(screen.getByText('Gamma Corp')).toBeInTheDocument()
+    })
+  })
+
+  it('deletes a client organization for platform super administrators', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(superAdminUser)
+    vi.mocked(fetchSuperAdminOrganizations).mockResolvedValue([sampleClientOrganization])
+    vi.mocked(deleteSuperAdminOrganization).mockResolvedValue(undefined)
+
+    render(<App />)
+
+    await openClientsTab(user)
+
+    await user.click(screen.getByRole('button', { name: /delete organization/i }))
+
+    const dialog = screen.getByRole('alertdialog')
+    await user.click(within(dialog).getByRole('button', { name: /delete organization/i }))
+
+    await waitFor(() => {
+      expect(deleteSuperAdminOrganization).toHaveBeenCalledWith(5)
+      expect(screen.getByText(/client organization deleted/i)).toBeInTheDocument()
+      expect(screen.queryByText('Gamma LLC')).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows a localized error when deleting the super administrators own organization', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(superAdminUser)
+    vi.mocked(fetchSuperAdminOrganizations).mockResolvedValue([sampleClientOrganization])
+    vi.mocked(deleteSuperAdminOrganization).mockRejectedValue(
+      new ApiError(
+        409,
+        'You cannot delete the organization that owns your account.',
+        'cannot_delete_own_organization',
+      ),
+    )
+
+    render(<App />)
+
+    await openClientsTab(user)
+
+    await user.click(screen.getByRole('button', { name: /delete organization/i }))
+
+    const dialog = screen.getByRole('alertdialog')
+    await user.click(within(dialog).getByRole('button', { name: /delete organization/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText(/you cannot delete the organization that owns your account/i)).toBeInTheDocument()
+    })
   })
 
   it('shows a password change error when the api rejects the current password', async () => {
