@@ -51,3 +51,13 @@ it('casts disabled require_email_verification config values to booleans', functi
 
     expect($response->json('require_email_verification'))->toBeFalse();
 });
+
+it('exposes the configured timer cap from quickbooks config', function () {
+    config(['quickbooks.time_tracker_max_accumulated_seconds' => 7200]);
+
+    $response = $this->getJson('/api/health');
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('time_tracker_max_accumulated_seconds', 7200);
+});
