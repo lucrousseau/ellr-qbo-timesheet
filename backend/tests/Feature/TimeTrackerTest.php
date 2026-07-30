@@ -10,6 +10,7 @@ use App\Services\QboProjectListService;
 use App\Services\QboServiceListService;
 use App\Services\QuickBooksService;
 use App\Services\TimeTrackerService;
+use Carbon\CarbonImmutable;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(QuickBooksPickerController::class);
@@ -273,25 +274,31 @@ it('returns null when no active timer session exists', function () {
 });
 
 it('pauses a running timer through the api', function () {
-    $user = actingAsWithQboEmployee();
-    ActiveTimeSession::factory()->for($user)->create([
-        'accumulated_seconds' => 120,
-        'running_since' => now()->subMinute(),
-    ]);
+    CarbonImmutable::setTestNow('2026-07-28 12:00:00');
 
-    $this->putJson('/api/time-tracker', [
-        'customer_ref' => null,
-        'customer_name' => null,
-        'project_ref' => null,
-        'project_name' => null,
-        'service_ref' => null,
-        'service_name' => null,
-        'description' => null,
-        'is_running' => false,
-    ], frontendHeaders())
-        ->assertOk()
-        ->assertJsonPath('data.is_running', false)
-        ->assertJsonPath('data.accumulated_seconds', 180);
+    try {
+        $user = actingAsWithQboEmployee();
+        ActiveTimeSession::factory()->for($user)->create([
+            'accumulated_seconds' => 120,
+            'running_since' => '2026-07-28 11:59:00',
+        ]);
+
+        $this->putJson('/api/time-tracker', [
+            'customer_ref' => null,
+            'customer_name' => null,
+            'project_ref' => null,
+            'project_name' => null,
+            'service_ref' => null,
+            'service_name' => null,
+            'description' => null,
+            'is_running' => false,
+        ], frontendHeaders())
+            ->assertOk()
+            ->assertJsonPath('data.is_running', false)
+            ->assertJsonPath('data.accumulated_seconds', 180);
+    } finally {
+        CarbonImmutable::setTestNow();
+    }
 });
 
 it('rejects logging when the timer has no elapsed time', function () {
