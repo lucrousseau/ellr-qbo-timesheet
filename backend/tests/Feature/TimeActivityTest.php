@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\TimeActivityController;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
+use App\Services\QboPickerValidationService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivitySyncService;
 use App\Support\TimeActivityTimeValidation;
@@ -47,6 +48,10 @@ describe('authenticated time activities', function () {
             'quickbooks.time_activities_list_cache_ttl_minutes' => 0,
         ]);
         actingAsWithQboEmployee();
+        auth()->user()->organization?->update(['company_timezone' => 'America/Los_Angeles']);
+        $this->mock(QboPickerValidationService::class, function ($mock): void {
+            $mock->shouldReceive('assertValidTimeEntrySelections')->andReturnNull();
+        });
     });
 
     it('requires quickbooks connection to list time activities', function () {
@@ -246,194 +251,71 @@ describe('authenticated time activities', function () {
             ->assertJsonValidationErrors(['end_time']);
     });
 
-    it('creates a time activity with description in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $captured = null;
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Add')
-            ->once()
-            ->with(Mockery::capture($captured))
-            ->andReturn((object) ['Id' => '99']);
-        $dataService->shouldReceive('FindById')
-            ->once()
-            ->with('TimeActivity', '99')
-            ->andReturn(timeActivityQboEntity('99'));
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
-
+    it('creates a pending local entry with description', function () {
         $this->postJson('/api/time-activities', [
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
             'description' => 'Billable work',
-        ])->assertCreated();
-
-        expect(MockeryCapture::unwrap($captured)->Description)->toBe('Billable work');
+        ])->assertCreated()
+            ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.description', 'Billable work');
     });
 
-    it('returns quickbooks errors when creating a time activity fails', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $dataService = Mockery::mock(DataService::class);
-        $error = Mockery::mock();
-        $error->shouldReceive('getResponseBody')->andReturn('create failed');
-        $dataService->shouldReceive('Add')->once()->andReturn(null);
-        $dataService->shouldReceive('getLastError')->andReturn($error);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->postJson('/api/time-activities', [
-            'start_time' => '2026-07-27T09:00:00',
-            'end_time' => '2026-07-27T17:00:00',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('message', 'QuickBooks API error');
-    });
-
-    it('creates a time activity in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => '99']);
-        $dataService->shouldReceive('FindById')
-            ->once()
-            ->with('TimeActivity', '99')
-            ->andReturn(timeActivityQboEntity('99'));
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
-
+    it('creates a pending local entry', function () {
         $this->postJson('/api/time-activities', [
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
             'description' => 'Client work',
         ])
             ->assertCreated()
-            ->assertJsonPath('data.Id', '99');
+            ->assertJsonPath('data.status', 'pending');
     });
 
     it('includes customer reference when provided on create', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $captured = null;
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Add')
-            ->once()
-            ->with(Mockery::capture($captured))
-            ->andReturn((object) ['Id' => '99']);
-        $dataService->shouldReceive('FindById')
-            ->once()
-            ->with('TimeActivity', '99')
-            ->andReturn(timeActivityQboEntity('99'));
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create(['realm_id' => 'realm-create']);
 
         $this->postJson('/api/time-activities', [
             'customer_ref' => '42',
             'customer_name' => 'Acme Corp',
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
-        ])->assertCreated();
-
-        expect(MockeryCapture::unwrap($captured)->CustomerRef)->toMatchArray([
-            'value' => '42',
-            'name' => 'Acme Corp',
-        ]);
+        ])->assertCreated()
+            ->assertJsonPath('data.customer_ref', '42')
+            ->assertJsonPath('data.customer_name', 'Acme Corp');
     });
 
     it('includes customer reference without name when only ref is provided', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $captured = null;
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Add')
-            ->once()
-            ->with(Mockery::capture($captured))
-            ->andReturn((object) ['Id' => '99']);
-        $dataService->shouldReceive('FindById')
-            ->once()
-            ->with('TimeActivity', '99')
-            ->andReturn(timeActivityQboEntity('99'));
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create(['realm_id' => 'realm-create']);
 
         $this->postJson('/api/time-activities', [
             'customer_ref' => '42',
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
-        ])->assertCreated();
-
-        $payload = MockeryCapture::unwrap($captured);
-        expect($payload->CustomerRef)->toMatchArray(['value' => '42'])
-            ->and(isset($payload->CustomerRef->name))->toBeFalse();
+        ])->assertCreated()
+            ->assertJsonPath('data.customer_ref', '42')
+            ->assertJsonPath('data.customer_name', null);
     });
 
     it('omits description when explicitly null on create', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $captured = null;
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Add')
-            ->once()
-            ->with(Mockery::capture($captured))
-            ->andReturn((object) ['Id' => '99']);
-        $dataService->shouldReceive('FindById')
-            ->once()
-            ->with('TimeActivity', '99')
-            ->andReturn(timeActivityQboEntity('99'));
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
-
         $this->postJson('/api/time-activities', [
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
             'description' => null,
-        ])->assertCreated();
-
-        $payload = MockeryCapture::unwrap($captured);
-        expect(isset($payload->Description))->toBeFalse();
+        ])->assertCreated()
+            ->assertJsonPath('data.description', null);
     });
 
     it('omits empty customer names on create', function () {
         ActingUser::current()->update(['qbo_employee_name' => null]);
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $captured = null;
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Add')
-            ->once()
-            ->with(Mockery::capture($captured))
-            ->andReturn((object) ['Id' => '99']);
-        $dataService->shouldReceive('FindById')
-            ->once()
-            ->with('TimeActivity', '99')
-            ->andReturn(timeActivityQboEntity('99'));
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
 
         $this->postJson('/api/time-activities', [
             'customer_ref' => '',
             'customer_name' => '',
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
-        ])->assertCreated();
-
-        $payload = MockeryCapture::unwrap($captured);
-        expect($payload->EmployeeRef)->toMatchArray(['value' => '7'])
-            ->and(isset($payload->EmployeeRef->name))->toBeFalse()
-            ->and(isset($payload->CustomerRef))->toBeFalse();
+        ])->assertCreated()
+            ->assertJsonPath('data.customer_ref', null)
+            ->assertJsonPath('data.customer_name', null);
     });
 
     it('returns 404 when a time activity belongs to another employee', function () {

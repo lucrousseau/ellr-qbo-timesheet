@@ -17,7 +17,7 @@ class OrganizationApiResponse
      * Returns API-visible organization attributes for JSON encoding.
      *
      * @param  Organization  $organization  Tenant organization instance.
-     * @return array{id: int, name: string, slug: string, qbo_connected: bool}
+     * @return array{id: int, name: string, slug: string, qbo_connected: bool, company_timezone: string|null}
      */
     public static function resource(Organization $organization): array
     {
@@ -26,6 +26,7 @@ class OrganizationApiResponse
             'name' => $organization->name,
             'slug' => $organization->slug,
             'qbo_connected' => $organization->hasQuickBooksRealm(),
+            'company_timezone' => $organization->company_timezone,
         ];
     }
 }

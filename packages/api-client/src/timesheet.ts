@@ -3,6 +3,7 @@
  */
 
 import { apiFetch } from './api'
+import type { TimeEntry } from './timeEntries'
 import type { TimeActivityUpdatePayload } from './timeActivityFormat'
 
 /**
@@ -234,11 +235,11 @@ export async function updateTimeTracker(payload: TimeTrackerPayload): Promise<Ti
 }
 
 /**
- * Logs elapsed time to QuickBooks and clears the active session.
- * @returns Created QuickBooks activity data.
+ * Logs elapsed time as a pending local entry and clears the active session.
+ * @returns Created local time entry awaiting supervisor approval.
  */
-export async function logTimeTracker(): Promise<TimeActivity> {
-  const response = await apiFetch<{ data: TimeActivity }>('/time-tracker/log', {
+export async function logTimeTracker(): Promise<TimeEntry> {
+  const response = await apiFetch<{ data: TimeEntry }>('/time-tracker/log', {
     method: 'POST',
   })
 

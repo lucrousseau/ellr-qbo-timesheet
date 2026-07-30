@@ -13,22 +13,28 @@ import {
 
 type AccountPanelProps = {
   preferenceLocale: UserLocale
-  savingLocale: boolean
+  preferenceTimezone: string
+  companyTimezone?: string | null
+  savingPreferences: boolean
   onLocaleChange: (locale: UserLocale) => void
-  onSaveLocale: (event: React.FormEvent) => void
+  onTimezoneChange: (timezone: string) => void
+  onSavePreferences: (event: React.FormEvent) => void
   tabIdPrefix?: string
 }
 
 /**
  * Account settings: preferences and password management.
- * @param props Locale preference handlers and optional tab id prefix.
+ * @param props Preference handlers and optional tab id prefix.
  * @returns Preferences tab content.
  */
 export function AccountPanel({
   preferenceLocale,
-  savingLocale,
+  preferenceTimezone,
+  companyTimezone,
+  savingPreferences,
   onLocaleChange,
-  onSaveLocale,
+  onTimezoneChange,
+  onSavePreferences,
   tabIdPrefix = 'admin',
 }: AccountPanelProps) {
   const password = useChangePassword()
@@ -43,9 +49,12 @@ export function AccountPanel({
     >
       <UserPreferencesPanel
         locale={preferenceLocale}
-        saving={savingLocale}
+        timezone={preferenceTimezone}
+        companyTimezone={companyTimezone}
+        saving={savingPreferences}
         onLocaleChange={onLocaleChange}
-        onSave={onSaveLocale}
+        onTimezoneChange={onTimezoneChange}
+        onSave={onSavePreferences}
       />
       <ChangePasswordPanel
         currentPassword={password.currentPassword}

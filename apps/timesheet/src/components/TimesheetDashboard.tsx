@@ -23,6 +23,7 @@ import { AssignedClientsWarning } from './AssignedClientsWarning'
 import { CustomerLoadError } from './CustomerLoadError'
 import { QboEmployeeWarning } from './QboEmployeeWarning'
 import { TimeTrackerPanel } from './TimeTrackerPanel'
+import { TimesheetTimeEntryApprovalsPanel } from './TimesheetTimeEntryApprovalsPanel'
 
 const TAB_ID_PREFIX = 'timesheet'
 
@@ -45,15 +46,22 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
     { isValid: isTimesheetTab },
   )
 
-  const tabs = useMemo(
-    () => [
-      { id: 'timer' as const, label: t('timesheet.tabTimer') },
-      { id: 'preferences' as const, label: t('timesheet.tabPreferences') },
-    ],
-    [t],
-  )
+  const tabs = useMemo(() => {
+    const items: { id: TimesheetTab; label: string }[] = [
+      { id: 'timer', label: t('timesheet.tabTimer') },
+    ]
+
+    if (user.can_review_time_entries) {
+      items.push({ id: 'approvals', label: t('timesheet.tabApprovals') })
+    }
+
+    items.push({ id: 'preferences', label: t('timesheet.tabPreferences') })
+
+    return items
+  }, [t, user.can_review_time_entries])
 
   const activeTabId = tabs.some((tab) => tab.id === activeTab) ? activeTab : 'timer'
+  const displayTimezone = user.effective_display_timezone ?? 'UTC'
   const canUseTimerTab =
     Boolean(user.qbo_employee_ref) && !auth.showEmailVerification(user)
   const showTimeTracking = canUseTimerTab && (tracker.loading || tracker.canTrackTime)
@@ -167,9 +175,25 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 hasMore={recentEntries.hasMore}
                 loadingMore={recentEntries.loadingMore}
                 onLoadMore={recentEntries.loadMore}
+                showApprovalStatus
+                displayTimezone={displayTimezone}
               />
             </>
           )}
+        </div>
+      ) : activeTabId === 'approvals' ? (
+        <div
+          id={tabPanelId(TAB_ID_PREFIX, 'approvals')}
+          role="tabpanel"
+          aria-labelledby={`${TAB_ID_PREFIX}-tab-approvals`}
+          className="mt-6"
+        >
+          <TimesheetTimeEntryApprovalsPanel
+            enabled={user.can_review_time_entries === true}
+            useAdminRoutes={user.is_admin === true}
+            onSuccess={(message) => auth.setPreferenceNotice(message, 'success')}
+            onError={(message) => auth.setPreferenceNotice(message, 'error')}
+          />
         </div>
       ) : (
         <div
@@ -180,9 +204,12 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
         >
           <UserPreferencesPanel
             locale={auth.preferenceLocale}
-            saving={auth.savingLocale}
+            timezone={auth.preferenceTimezone}
+            companyTimezone={user.organization?.company_timezone}
+            saving={auth.savingPreferences}
             onLocaleChange={auth.setPreferenceLocale}
-            onSave={auth.saveLocale}
+            onTimezoneChange={auth.setPreferenceTimezone}
+            onSave={auth.savePreferences}
           />
         </div>
       )}

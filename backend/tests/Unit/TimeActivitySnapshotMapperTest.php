@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\TimeActivitySnapshot;
+use App\Services\OrganizationTimezoneService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Support\QboCustomerResolver;
 use App\Support\TimeActivitySnapshotMapper;
@@ -13,7 +14,10 @@ uses(RefreshDatabase::class);
 
 function makeTimeActivitySnapshotMapper(): TimeActivitySnapshotMapper
 {
-    return new TimeActivitySnapshotMapper(new QboCustomerResolver(new QuickBooksApiErrorFormatterService));
+    return new TimeActivitySnapshotMapper(
+        new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
+        app(OrganizationTimezoneService::class),
+    );
 }
 
 it('maps quickbooks entities into snapshot attributes', function () {
@@ -198,15 +202,15 @@ it('maps metadata, scalar fields, and array reference names', function () {
         ->and($attributes['customer_name'])->toBe('Acme');
 });
 
-it('keeps zero duration when end time is before start time', function () {
+it('computes qbo midnight wraparound when end clock is before start clock', function () {
     $snapshot = TimeActivitySnapshot::factory()->make([
-        'start_time' => Carbon::parse('2026-07-29 11:00:00'),
-        'end_time' => Carbon::parse('2026-07-29 09:00:00'),
+        'start_time' => Carbon::parse('2026-07-29 11:00:00', 'UTC'),
+        'end_time' => Carbon::parse('2026-07-29 09:00:00', 'UTC'),
     ]);
 
     $payload = makeTimeActivitySnapshotMapper()->toApiObject($snapshot);
 
-    expect($payload->Hours)->toBe(0)
+    expect($payload->Hours)->toBe(22)
         ->and($payload->Minutes)->toBe(0);
 });
 

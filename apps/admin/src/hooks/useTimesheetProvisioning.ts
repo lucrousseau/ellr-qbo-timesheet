@@ -8,6 +8,7 @@ import {
   deleteTimesheetUser,
   fetchQboEmployees,
   fetchTimesheetUsers,
+  updateAdminUserSupervisor,
   type QboEmployeeOption,
   type QuickBooksStatus,
   type TimesheetUserCustomerAccess,
@@ -42,6 +43,7 @@ export function useTimesheetProvisioning({
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<QboEmployeeOption | null>(null)
   const [removingUserId, setRemovingUserId] = useState<number | null>(null)
+  const [assigningSupervisorUserId, setAssigningSupervisorUserId] = useState<number | null>(null)
 
   const employeesEnabled =
     isAdministrator && status?.connected === true && integrationsTabActive
@@ -168,6 +170,29 @@ export function useTimesheetProvisioning({
     [],
   )
 
+  const onSupervisorSaved = useCallback((userId: number, supervisorId: number | null) => {
+    setUsers((current) =>
+      current.map((user) => (user.id === userId ? { ...user, supervisor_id: supervisorId } : user)),
+    )
+  }, [])
+
+  const { run: assignSupervisor, pending: assigningSupervisor } = useGuardedAction(
+    async (userId: number, supervisorId: number | null) => {
+      setAssigningSupervisorUserId(userId)
+
+      try {
+        await updateAdminUserSupervisor(userId, supervisorId)
+        onSupervisorSaved(userId, supervisorId)
+        onSuccess(t('admin.assignSupervisorSuccess'))
+      } catch (caught) {
+        onError(getApiErrorMessage(caught, t('admin.assignSupervisorFailed'), locale))
+        throw caught
+      } finally {
+        setAssigningSupervisorUserId(null)
+      }
+    },
+  )
+
   return {
     employees: availableEmployees,
     users,
@@ -184,5 +209,9 @@ export function useTimesheetProvisioning({
     onCreateTimesheetUser,
     onRemoveTimesheetUser,
     onClientAssignmentsSaved,
+    onSupervisorSaved,
+    assignSupervisor,
+    assigningSupervisor,
+    assigningSupervisorUserId,
   }
 }

@@ -28,6 +28,11 @@ export const API_ERROR_MESSAGE_KEYS = [
   'network_unreachable',
   'cannot_delete_own_organization',
   'cannot_delete_last_super_admin_organization',
+  'time_entry_review_forbidden',
+  'time_entry_self_review_forbidden',
+  'time_entry_not_editable',
+  'time_entry_not_deletable',
+  'supervisor_self_assignment',
 ] as const
 
 /** Stable catalog keys for known API business errors. */

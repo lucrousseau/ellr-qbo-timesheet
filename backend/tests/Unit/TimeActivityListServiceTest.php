@@ -4,6 +4,7 @@ use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
+use App\Services\OrganizationTimezoneService;
 use App\Services\QboEmployeeAuthorizationService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
@@ -53,12 +54,16 @@ function makeTimeActivityListService(?DataService $dataService = null): TimeActi
         new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
         new TimeActivityReferenceNameLookup(new QuickBooksApiErrorFormatterService),
     );
-    $mapper = new TimeActivitySnapshotMapper(new QboCustomerResolver(new QuickBooksApiErrorFormatterService));
+    $mapper = new TimeActivitySnapshotMapper(
+        new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
+        app(OrganizationTimezoneService::class),
+    );
     $snapshots = new TimeActivitySnapshotService($mapper, $enricher);
     $sync = new TimeActivitySyncService(
         $quickBooks,
         new QuickBooksApiErrorFormatterService,
         $snapshots,
+        app(OrganizationTimezoneService::class),
     );
 
     return new TimeActivityListService(

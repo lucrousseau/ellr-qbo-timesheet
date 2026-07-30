@@ -1,0 +1,39 @@
+<?php
+
+/**
+ * Validates payloads for creating local time entries.
+ */
+
+namespace App\Http\Requests;
+
+use App\Http\Concerns\AllowsAuthenticatedApiUser;
+use Illuminate\Foundation\Http\FormRequest;
+
+/**
+ * Form request rules for POST /api/time-entries payloads.
+ */
+class StoreTimeEntryRequest extends FormRequest
+{
+    use AllowsAuthenticatedApiUser;
+
+    /**
+     * Validation rules for time entry creation.
+     *
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'customer_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'customer_name' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'project_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'project_name' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'item_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'item_name' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'start_time' => ['required', 'date'],
+            'end_time' => ['required', 'date', 'after:start_time'],
+            'description' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
+            'is_billable' => ['sometimes', 'boolean'],
+        ];
+    }
+}

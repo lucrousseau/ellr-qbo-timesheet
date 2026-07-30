@@ -11,6 +11,24 @@ function makeTimeActivityReferenceNameLookup(): TimeActivityReferenceNameLookup
     return new TimeActivityReferenceNameLookup(new QuickBooksApiErrorFormatterService);
 }
 
+it('prefers fully qualified customer names when available', function () {
+    $lookup = makeTimeActivityReferenceNameLookup();
+    $dataService = Mockery::mock(stdClass::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->andReturn([
+            (object) [
+                'Id' => '58',
+                'DisplayName' => 'Test ABC',
+                'FullyQualifiedName' => "Bill's Windsurf Shop:Test ABC",
+            ],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    expect($lookup->customerNames($dataService, ['58']))
+        ->toBe(['58' => "Bill's Windsurf Shop:Test ABC"]);
+});
+
 it('loads customer and item names in bounded batches', function () {
     config(['quickbooks.list_max_results' => 500]);
 

@@ -5,10 +5,10 @@
 export const TIMESHEET_ACTIVE_TAB_STORAGE_PREFIX = 'ellr.timesheet.activeTab'
 
 /** Persisted timesheet dashboard tab ids. */
-export type TimesheetTab = 'timer' | 'preferences'
+export type TimesheetTab = 'timer' | 'approvals' | 'preferences'
 
 /** Known timesheet dashboard tab ids. */
-const TIMESHEET_TABS: readonly TimesheetTab[] = ['timer', 'preferences']
+const TIMESHEET_TABS: readonly TimesheetTab[] = ['timer', 'approvals', 'preferences']
 
 /**
  * Builds a per-user sessionStorage key for the active timesheet tab.

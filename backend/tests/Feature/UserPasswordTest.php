@@ -130,6 +130,7 @@ it('exposes organization in api user payloads', function () {
             'name' => 'Acme Consulting',
             'slug' => 'acme-consulting',
             'qbo_connected' => true,
+            'company_timezone' => null,
         ]);
 });
 
@@ -153,6 +154,39 @@ it('returns a null organization when the user has no tenant', function () {
 
     expect($payload)->not->toHaveKey('organization_id')
         ->and($payload['organization'])->toBeNull();
+});
+
+it('exposes supervisor and review metadata in api user payloads', function () {
+    $admin = User::factory()->admin()->create();
+    $supervisor = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'timezone' => 'America/Toronto',
+    ]);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'supervisor_id' => $supervisor->id,
+        'timezone' => 'America/New_York',
+    ]);
+
+    $payload = UserApiResponse::resource($employee)->toArray();
+
+    expect($payload['supervisor_id'])->toBe($supervisor->id)
+        ->and($payload['can_review_time_entries'])->toBeFalse()
+        ->and($payload['timezone'])->toBe('America/New_York')
+        ->and($payload['effective_display_timezone'])->toBeString();
+});
+
+it('marks supervisors who can review time entries', function () {
+    $admin = User::factory()->admin()->create();
+    $supervisor = User::factory()->create(['organization_id' => $admin->organization_id]);
+    User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'supervisor_id' => $supervisor->id,
+    ]);
+
+    $payload = UserApiResponse::resource($supervisor->fresh())->toArray();
+
+    expect($payload['can_review_time_entries'])->toBeTrue();
 });
 
 it('returns is_admin on the authenticated user endpoint', function () {

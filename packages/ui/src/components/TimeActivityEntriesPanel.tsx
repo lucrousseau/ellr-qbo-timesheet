@@ -10,6 +10,32 @@ import { cardClass } from '../styles/tokens'
 import { useLocale } from '../i18n/LocaleProvider'
 import { TimeActivityEditableRow } from './TimeActivityEditableRow'
 import { formatEntryDateTime, formatEntryDuration } from './timeActivityDisplay'
+import { TimeEntryApprovalActions } from './TimeEntryApprovalActions'
+
+/**
+ * Maps a time entry approval status to a localized label.
+ * @param status Approval status from the API row.
+ * @param t Locale lookup function.
+ * @returns Localized status label.
+ */
+function formatApprovalStatus(
+  status: TimeActivityRow['approvalStatus'],
+  t: (key: string) => string,
+): string {
+  if (status === 'pending') {
+    return t('timeActivity.statusPending')
+  }
+
+  if (status === 'approved') {
+    return t('timeActivity.statusApproved')
+  }
+
+  if (status === 'rejected') {
+    return t('timeActivity.statusRejected')
+  }
+
+  return t('timeActivity.noValue')
+}
 
 /** Props for {@link TimeActivityEntriesPanel}. */
 export type TimeActivityEntriesPanelProps = {
@@ -24,6 +50,13 @@ export type TimeActivityEntriesPanelProps = {
   editable?: boolean
   savingId?: string | null
   onSaveEntry?: (id: string, payload: TimeActivityUpdatePayload) => Promise<void>
+  showApprovalStatus?: boolean
+  showEmployee?: boolean
+  displayTimezone?: string | null
+  reviewable?: boolean
+  reviewingId?: string | null
+  onApproveEntry?: (id: string) => Promise<void>
+  onRejectEntry?: (id: string, reason?: string | null) => Promise<void>
 }
 
 /**
@@ -43,6 +76,13 @@ export function TimeActivityEntriesPanel({
   editable = false,
   savingId = null,
   onSaveEntry,
+  showApprovalStatus = false,
+  showEmployee = false,
+  displayTimezone = null,
+  reviewable = false,
+  reviewingId = null,
+  onApproveEntry,
+  onRejectEntry,
 }: TimeActivityEntriesPanelProps) {
   const { t, locale } = useLocale()
 
@@ -74,7 +114,10 @@ export function TimeActivityEntriesPanel({
                 <th className="px-3 py-2">{t('timeActivity.description')}</th>
                 <th className="px-3 py-2">{t('timeActivity.duration')}</th>
                 <th className="px-3 py-2">{t('timeActivity.billable')}</th>
+                {showEmployee ? <th className="px-3 py-2">{t('timeActivity.employee')}</th> : null}
+                {showApprovalStatus ? <th className="px-3 py-2">{t('timeActivity.status')}</th> : null}
                 {editable ? <th className="px-3 py-2">{t('timeActivity.actions')}</th> : null}
+                {reviewable ? <th className="px-3 py-2">{t('timeActivity.actions')}</th> : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -89,10 +132,10 @@ export function TimeActivityEntriesPanel({
                 ) : (
                   <tr key={entry.id}>
                     <td className="px-3 py-3 text-slate-700">
-                      {formatEntryDateTime(entry.startTime, locale) || t('timeActivity.noValue')}
+                      {formatEntryDateTime(entry.startTime, locale, displayTimezone) || t('timeActivity.noValue')}
                     </td>
                     <td className="px-3 py-3 text-slate-700">
-                      {formatEntryDateTime(entry.endTime, locale) || t('timeActivity.noValue')}
+                      {formatEntryDateTime(entry.endTime, locale, displayTimezone) || t('timeActivity.noValue')}
                     </td>
                     <td className="px-3 py-3 text-slate-700">
                       {entry.customerName ?? t('timeActivity.noValue')}
@@ -111,6 +154,26 @@ export function TimeActivityEntriesPanel({
                           ? t('timeActivity.billableYes')
                           : t('timeActivity.billableNo')}
                     </td>
+                    {showEmployee ? (
+                      <td className="px-3 py-3 text-slate-700">
+                        {entry.employeeName ?? t('timeActivity.noValue')}
+                      </td>
+                    ) : null}
+                    {showApprovalStatus ? (
+                      <td className="px-3 py-3 text-slate-700">
+                        {formatApprovalStatus(entry.approvalStatus, t)}
+                      </td>
+                    ) : null}
+                    {reviewable && onApproveEntry && onRejectEntry ? (
+                      <td className="px-3 py-3 text-slate-700">
+                        <TimeEntryApprovalActions
+                          entryId={entry.id}
+                          reviewing={reviewingId === entry.id}
+                          onApprove={onApproveEntry}
+                          onReject={onRejectEntry}
+                        />
+                      </td>
+                    ) : null}
                   </tr>
                 ),
               )}

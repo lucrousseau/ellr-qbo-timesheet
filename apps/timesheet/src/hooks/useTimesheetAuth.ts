@@ -11,7 +11,7 @@ import {
   shouldBlockUnverifiedUser,
   type User,
 } from '@ellr/api-client'
-import { getApiErrorMessage, useAuth, useGuardedAction, useLocale, usePasswordRecovery, useUserLocalePreferences } from '@ellr/ui'
+import { getApiErrorMessage, useAuth, useGuardedAction, useLocale, usePasswordRecovery, useUserPreferences } from '@ellr/ui'
 
 /**
  * Timesheet authentication state including password recovery screens.
@@ -30,7 +30,7 @@ export function useTimesheetAuth() {
   const [preferenceNotice, setPreferenceNotice] = useState<string | null>(null)
   const [preferenceNoticeVariant, setPreferenceNoticeVariant] = useState<'success' | 'error' | null>(null)
 
-  const preferences = useUserLocalePreferences({
+  const preferences = useUserPreferences({
     user: auth.user,
     setUser: auth.setUser,
     onSaved: () => {
@@ -113,6 +113,10 @@ export function useTimesheetAuth() {
     showEmailVerification,
     preferenceNotice,
     preferenceNoticeVariant,
+    setPreferenceNotice: (message: string, variant: 'success' | 'error') => {
+      setPreferenceNotice(message)
+      setPreferenceNoticeVariant(variant)
+    },
     clearPreferenceNotice: () => {
       setPreferenceNotice(null)
       setPreferenceNoticeVariant(null)

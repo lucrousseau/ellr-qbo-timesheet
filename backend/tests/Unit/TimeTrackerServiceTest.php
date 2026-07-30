@@ -2,9 +2,10 @@
 
 use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
+use App\Models\TimeEntry;
 use App\Models\User;
 use App\Services\QboPickerValidationService;
-use App\Services\TimeActivityService;
+use App\Services\TimeEntryService;
 use App\Services\TimeTrackerService;
 use App\Support\TimerElapsed;
 use Carbon\CarbonImmutable;
@@ -188,12 +189,11 @@ it('logs elapsed time with customer project and service selections', function ()
         $mock->shouldReceive('assertValidSelections')->once();
     });
 
-    $this->mock(TimeActivityService::class, function ($mock) use ($user, $token) {
+    $this->mock(TimeEntryService::class, function ($mock) use ($user) {
         $mock->shouldReceive('createForUser')
             ->once()
             ->with(
                 $user,
-                $token,
                 Mockery::on(fn (array $payload): bool => $payload['customer_ref'] === '11'
                     && $payload['customer_name'] === 'Acme Corp'
                     && $payload['project_ref'] === '22'
@@ -204,12 +204,12 @@ it('logs elapsed time with customer project and service selections', function ()
                     && $payload['start_time'] === '2026-07-28T11:00:00+00:00'
                     && $payload['end_time'] === '2026-07-28T12:00:00+00:00'),
             )
-            ->andReturn((object) ['Id' => '99']);
+            ->andReturn(TimeEntry::factory()->forUser($user)->make(['id' => 99]));
     });
 
-    $activity = app(TimeTrackerService::class)->logForUser($user, $token);
+    $entry = app(TimeTrackerService::class)->logForUser($user, $token);
 
-    expect($activity->Id)->toBe('99')
+    expect($entry->id)->toBe(99)
         ->and(ActiveTimeSession::query()->where('user_id', $user->id)->exists())->toBeFalse();
 
     CarbonImmutable::setTestNow();
@@ -258,8 +258,8 @@ it('logs timer sessions with a single elapsed second', function () {
         $mock->shouldReceive('assertValidSelections')->once();
     });
 
-    $this->mock(TimeActivityService::class, function ($mock) {
-        $mock->shouldReceive('createForUser')->once()->andReturn((object) ['Id' => '99']);
+    $this->mock(TimeEntryService::class, function ($mock) use ($user) {
+        $mock->shouldReceive('createForUser')->once()->andReturn(TimeEntry::factory()->forUser($user)->make(['id' => 99]));
     });
 
     app(TimeTrackerService::class)->logForUser($user, $token);
@@ -508,12 +508,11 @@ it('logs elapsed time with refs but without optional names', function () {
         $mock->shouldReceive('assertValidSelections')->once();
     });
 
-    $this->mock(TimeActivityService::class, function ($mock) use ($user, $token) {
+    $this->mock(TimeEntryService::class, function ($mock) use ($user) {
         $mock->shouldReceive('createForUser')
             ->once()
             ->with(
                 $user,
-                $token,
                 Mockery::on(fn (array $payload): bool => $payload['customer_ref'] === '11'
                     && ! array_key_exists('customer_name', $payload)
                     && $payload['project_ref'] === '22'
@@ -522,7 +521,7 @@ it('logs elapsed time with refs but without optional names', function () {
                     && ! array_key_exists('item_name', $payload)
                     && ! array_key_exists('description', $payload)),
             )
-            ->andReturn((object) ['Id' => '99']);
+            ->andReturn(TimeEntry::factory()->forUser($user)->make(['id' => 99]));
     });
 
     app(TimeTrackerService::class)->logForUser($user, $token);
@@ -552,16 +551,15 @@ it('logs elapsed time from a running timer segment', function () {
         $mock->shouldReceive('assertValidSelections')->once();
     });
 
-    $this->mock(TimeActivityService::class, function ($mock) use ($user, $token) {
+    $this->mock(TimeEntryService::class, function ($mock) use ($user) {
         $mock->shouldReceive('createForUser')
             ->once()
             ->with(
                 $user,
-                $token,
                 Mockery::on(fn (array $payload): bool => $payload['start_time'] === '2026-07-28T11:59:30+00:00'
                     && $payload['end_time'] === '2026-07-28T12:01:00+00:00'),
             )
-            ->andReturn((object) ['Id' => '99']);
+            ->andReturn(TimeEntry::factory()->forUser($user)->make(['id' => 99]));
     });
 
     app(TimeTrackerService::class)->logForUser($user, $token);
@@ -637,8 +635,8 @@ it('passes stored session picker refs to validation when logging', function () {
             ]);
     });
 
-    $this->mock(TimeActivityService::class, function ($mock) {
-        $mock->shouldReceive('createForUser')->once()->andReturn((object) ['Id' => '99']);
+    $this->mock(TimeEntryService::class, function ($mock) use ($user) {
+        $mock->shouldReceive('createForUser')->once()->andReturn(TimeEntry::factory()->forUser($user)->make(['id' => 99]));
     });
 
     app(TimeTrackerService::class)->logForUser($user, $token);
@@ -886,15 +884,14 @@ it('logs billable status when creating a quickbooks time activity', function () 
         $mock->shouldReceive('assertValidSelections')->once();
     });
 
-    $this->mock(TimeActivityService::class, function ($mock) use ($user, $token) {
+    $this->mock(TimeEntryService::class, function ($mock) use ($user) {
         $mock->shouldReceive('createForUser')
             ->once()
             ->with(
                 $user,
-                $token,
                 Mockery::on(fn (array $payload): bool => $payload['is_billable'] === true),
             )
-            ->andReturn((object) ['Id' => '99']);
+            ->andReturn(TimeEntry::factory()->forUser($user)->make(['id' => 99]));
     });
 
     app(TimeTrackerService::class)->logForUser($user, $token);

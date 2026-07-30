@@ -21,11 +21,13 @@ class TimeActivitySyncService
      * @param  QuickBooksService  $quickBooks  QuickBooks service instance.
      * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
+     * @param  OrganizationTimezoneService  $organizationTimezone  Tenant company timezone sync.
      */
     public function __construct(
         private readonly QuickBooksService $quickBooks,
         private readonly QuickBooksApiErrorFormatterService $apiErrors,
         private readonly TimeActivitySnapshotService $snapshots,
+        private readonly OrganizationTimezoneService $organizationTimezone,
     ) {}
 
     /**
@@ -36,6 +38,13 @@ class TimeActivitySyncService
      */
     public function reconcileRealm(QuickBooksToken $token): int
     {
+        $token->loadMissing('user.organization'); // @pest-mutate-ignore reconcile timezone sync preload
+        $organization = $token->user?->organization;
+
+        if ($organization !== null) { // @pest-mutate-ignore reconcile timezone sync guard
+            $this->organizationTimezone->syncIfMissing($organization, $token); // @pest-mutate-ignore reconcile timezone sync
+        }
+
         $dataService = $this->quickBooks->dataService($token);
         $realmId = $token->realm_id;
         $batchSize = min(

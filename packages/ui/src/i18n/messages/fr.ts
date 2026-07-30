@@ -28,6 +28,11 @@ const frApiErrors = {
   cannot_delete_own_organization: 'Vous ne pouvez pas supprimer l\'organisation qui possède votre compte.',
   cannot_delete_last_super_admin_organization:
     'Supprimer cette organisation retirerait le dernier super administrateur plateforme.',
+  time_entry_review_forbidden: 'Vous n\'êtes pas autorisé à réviser cette entrée de temps.',
+  time_entry_self_review_forbidden: 'Vous ne pouvez pas réviser vos propres entrées de temps.',
+  time_entry_not_editable: 'Seules les entrées en attente peuvent être modifiées.',
+  time_entry_not_deletable: 'Seules les entrées en attente ou refusées peuvent être supprimées.',
+  supervisor_self_assignment: 'Un employé ne peut pas être son propre supérieur.',
 } satisfies Record<ApiErrorMessageKey, string>
 
 export const frMessages: Messages = {
@@ -62,12 +67,20 @@ export const frMessages: Messages = {
     saveFailed: 'Impossible d\'enregistrer les préférences.',
     localeEn: 'Anglais',
     localeFr: 'Français',
+    timezone: 'Fuseau horaire',
+    timezoneHelp:
+      'Par défaut, le fuseau de l\'entreprise issu de QuickBooks est utilisé. Choisissez un autre fuseau seulement si vous travaillez dans une autre région.',
+    timezoneCompanyDefault: 'entreprise par défaut',
+    companyTimezone: 'Fuseau de l\'entreprise depuis QuickBooks : {{timezone}}',
+    companyTimezonePending:
+      'Le fuseau de l\'entreprise apparaîtra ici après la connexion à QuickBooks.',
   },
   admin: {
     appTitle: 'Ellr QBO Timesheet',
     tabsLabel: 'Sections d\'administration',
     tabPreferences: 'Préférences',
     tabIntegrations: 'Intégrations',
+    tabApprovals: 'Approbations de temps',
     tabClients: 'Organisations clientes',
     quickbooksTitle: 'Connexion QuickBooks Online',
     quickbooksConnectionHelp: 'Connectez-vous avec un compte administrateur QuickBooks pour gérer les employés.',
@@ -154,6 +167,27 @@ export const frMessages: Messages = {
     viewTimeEntries: 'Entrées de temps',
     employeeTimeEntriesTitle: 'Entrées de temps pour {{name}}',
     employeeTimeEntriesHelp: 'Modifiez les entrées de temps QuickBooks récentes pour cet employé.',
+    timeApprovalsTitle: 'Approbations d\'entrées de temps en attente',
+    timeApprovalsHelp:
+      'Révisez les entrées de temps des employés avant leur synchronisation vers QuickBooks. Les entrées refusées restent uniquement dans Ellr.',
+    approveEntry: 'Approuver',
+    approvingEntry: 'Approbation...',
+    rejectEntry: 'Refuser',
+    rejectingEntry: 'Refus...',
+    rejectionReasonLabel: 'Motif du refus (optionnel)',
+    approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
+    rejectionSuccess: 'Entrée de temps refusée.',
+    approvalFailed: 'Impossible de réviser l\'entrée de temps.',
+    noPendingApprovals: 'Aucune entrée de temps en attente à réviser.',
+    assignSupervisor: 'Assigner un superviseur',
+    assignSupervisorTitle: 'Superviseur pour {{name}}',
+    assignSupervisorHelp: 'Choisissez qui approuve les entrées de temps de cet employé avant la synchronisation QuickBooks.',
+    assignSupervisorFailed: 'Impossible de mettre à jour l\'assignation du superviseur.',
+    savingSupervisor: 'Enregistrement du superviseur…',
+    supervisorLabel: 'Superviseur',
+    noSupervisorAssigned: 'Aucun superviseur',
+    supervisorAssigned: 'Superviseur : {{name}}',
+    assignSupervisorSuccess: 'Assignation du superviseur mise à jour.',
     qboIdentityTitle: 'Profil QuickBooks',
     qboIdentityReadOnly: 'Le nom et le courriel sont gérés dans QuickBooks.',
     noEmployeesAvailable: 'Aucun employé QuickBooks trouvé.',
@@ -233,6 +267,7 @@ export const frMessages: Messages = {
     timerInputLabels: 'HH : MM',
     tabsLabel: 'Sections de la feuille de temps',
     tabTimer: 'Minuterie',
+    tabApprovals: 'Approbations',
     tabPreferences: 'Préférences',
     emailVerificationWarning:
       'Vérifiez votre adresse courriel pour enregistrer du temps. Consultez votre boîte de réception pour le lien de vérification.',
@@ -253,6 +288,7 @@ export const frMessages: Messages = {
   timeActivity: {
     start: 'Début',
     end: 'Fin',
+    rangeSeparator: 'à',
     client: 'Client / projet',
     service: 'Service',
     description: 'Description',
@@ -272,6 +308,20 @@ export const frMessages: Messages = {
     empty: 'Aucune entrée de temps pour le moment.',
     loadFailed: 'Impossible de charger les entrées de temps.',
     noValue: '-',
+    status: 'Statut',
+    employee: 'Employé',
+    statusPending: 'En attente d\'approbation',
+    statusApproved: 'Approuvée',
+    statusRejected: 'Refusée',
+    pendingApprovalNotice:
+      'Soumise pour approbation par le supérieur. Elle sera synchronisée vers QuickBooks une fois approuvée.',
+    timeApprovalsTitle: 'Entrées de temps d\'équipe en attente',
+    timeApprovalsHelp:
+      'Révisez et approuvez les entrées de temps de vos employés directs avant leur synchronisation vers QuickBooks.',
+    noPendingApprovals: 'Aucune entrée de temps en attente ne requiert votre révision.',
+    approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
+    rejectionSuccess: 'Entrée de temps refusée.',
+    approvalFailed: 'Impossible de réviser l\'entrée de temps.',
   },
   auth: {
     forgotPassword: 'Mot de passe oublié ?',

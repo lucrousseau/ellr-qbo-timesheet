@@ -193,8 +193,11 @@ describe('auth and layout screens', () => {
     renderWithLocale(
       <UserPreferencesPanel
         locale="en"
+        timezone="America/Toronto"
+        companyTimezone="America/Toronto"
         saving={false}
         onLocaleChange={onLocaleChange}
+        onTimezoneChange={vi.fn()}
         onSave={onSave}
       />,
     )

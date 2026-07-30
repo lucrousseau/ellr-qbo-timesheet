@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'slug', 'realm_id'])]
+#[Fillable(['name', 'slug', 'realm_id', 'company_timezone'])]
 /**
  * SaaS tenant with optional QuickBooks Online company binding.
  */

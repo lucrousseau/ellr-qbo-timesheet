@@ -19,6 +19,7 @@ use QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2AccessToken;
  * @property int $user_id
  * @property Carbon|null $access_token_expires_at
  * @property Carbon|null $refresh_token_expires_at
+ * @property-read User|null $user
  */
 class QuickBooksToken extends Model
 {

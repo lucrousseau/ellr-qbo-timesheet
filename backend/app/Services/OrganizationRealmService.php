@@ -98,7 +98,10 @@ class OrganizationRealmService
             ->exists();
 
         if (! $tokensRemain) {
-            $organization->update(['realm_id' => null]);
+            $organization->update([
+                'realm_id' => null,
+                'company_timezone' => null,
+            ]);
             $this->realmDataPurge->purgeRealmWhenUnclaimed($realmId);
         }
     }

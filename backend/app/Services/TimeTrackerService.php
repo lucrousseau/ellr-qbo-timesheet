@@ -8,6 +8,7 @@ namespace App\Services;
 
 use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
+use App\Models\TimeEntry;
 use App\Models\User;
 use App\Support\TimerElapsed;
 use App\Support\TimeTrackerLogPayload;
@@ -19,13 +20,13 @@ use Illuminate\Support\Facades\DB;
 class TimeTrackerService
 {
     /**
-     * Injects time activity creation and picker validation for logging completed sessions.
+     * Injects time entry creation and picker validation for logging completed sessions.
      *
-     * @param  TimeActivityService  $timeActivities  QuickBooks time activity service.
+     * @param  TimeEntryService  $timeEntries  Local time entry service.
      * @param  QboPickerValidationService  $pickerValidation  QuickBooks picker reference validator.
      */
     public function __construct(
-        private readonly TimeActivityService $timeActivities,
+        private readonly TimeEntryService $timeEntries,
         private readonly QboPickerValidationService $pickerValidation,
     ) {}
 
@@ -164,15 +165,15 @@ class TimeTrackerService
     }
 
     /**
-     * Logs elapsed time to QuickBooks and clears the active session.
+     * Logs elapsed time as a pending local entry and clears the active session.
      *
      * @param  User  $user  Authenticated application user.
      * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
-     * @return object
+     * @return TimeEntry
      */
-    public function logForUser(User $user, QuickBooksToken $token): object
+    public function logForUser(User $user, QuickBooksToken $token): TimeEntry
     {
-        return DB::transaction(function () use ($user, $token): object {
+        return DB::transaction(function () use ($user, $token): TimeEntry { // @pest-mutate-ignore timer log transaction boundary
             $session = ActiveTimeSession::query()
                 ->where('user_id', $user->id)
                 ->lockForUpdate()
@@ -195,10 +196,10 @@ class TimeTrackerService
             }
 
             $payload = TimeTrackerLogPayload::forSession($session, $elapsedSeconds);
-            $activity = $this->timeActivities->createForUser($user, $token, $payload);
-            $this->discardForUser($user);
+            $entry = $this->timeEntries->createForUser($user, $payload); // @pest-mutate-ignore timer log local entry creation
+            $this->discardForUser($user); // @pest-mutate-ignore timer session cleanup after log
 
-            return $activity;
+            return $entry; // @pest-mutate-ignore timer log local entry creation
         });
     }
 

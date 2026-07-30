@@ -5,6 +5,7 @@ use App\Models\QboRealmSyncState;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
+use App\Services\OrganizationTimezoneService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityDisplayEnricherService;
@@ -32,13 +33,17 @@ function makeTimeActivitySyncService(?DataService $dataService = null): TimeActi
         new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
         new TimeActivityReferenceNameLookup(new QuickBooksApiErrorFormatterService),
     );
-    $mapper = new TimeActivitySnapshotMapper(new QboCustomerResolver(new QuickBooksApiErrorFormatterService));
+    $mapper = new TimeActivitySnapshotMapper(
+        new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
+        app(OrganizationTimezoneService::class),
+    );
     $snapshots = new TimeActivitySnapshotService($mapper, $enricher);
 
     return new TimeActivitySyncService(
         $quickBooks,
         new QuickBooksApiErrorFormatterService,
         $snapshots,
+        app(OrganizationTimezoneService::class),
     );
 }
 

@@ -1,11 +1,11 @@
 /**
- * @file Tests for recent time activity list loading and background refresh.
+ * @file Tests for recent time entry list loading and background refresh.
  */
 
 import { LocaleProvider } from '@ellr/ui'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { listTimeActivities } from '@ellr/api-client'
+import { listTimeEntries } from '@ellr/api-client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useRecentTimeActivities } from './useRecentTimeActivities'
 
@@ -16,7 +16,7 @@ vi.mock('@ellr/api-client', async () => {
 
   return {
     ...actual,
-    listTimeActivities: vi.fn(),
+    listTimeEntries: vi.fn(),
   }
 })
 
@@ -31,8 +31,8 @@ function wrapper({ children }: { children: ReactNode }) {
 
 describe('useRecentTimeActivities', () => {
   beforeEach(() => {
-    vi.mocked(listTimeActivities).mockReset()
-    vi.mocked(listTimeActivities).mockResolvedValue(emptyListResponse)
+    vi.mocked(listTimeEntries).mockReset()
+    vi.mocked(listTimeEntries).mockResolvedValue(emptyListResponse)
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
   })
 
@@ -51,7 +51,7 @@ describe('useRecentTimeActivities', () => {
       expect(result.current.loading).toBe(false)
     })
 
-    expect(listTimeActivities).toHaveBeenCalledWith({
+    expect(listTimeEntries).toHaveBeenCalledWith({
       max_results: 10,
       start_position: 1,
     })
@@ -66,19 +66,19 @@ describe('useRecentTimeActivities', () => {
       await vi.runOnlyPendingTimersAsync()
     })
 
-    expect(listTimeActivities).toHaveBeenCalledTimes(1)
+    expect(listTimeEntries).toHaveBeenCalledTimes(1)
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(BACKGROUND_REFRESH_INTERVAL_MS)
     })
 
-    expect(listTimeActivities).toHaveBeenCalledTimes(2)
+    expect(listTimeEntries).toHaveBeenCalledTimes(2)
   })
 
   it('does not show the loading state during background refresh', async () => {
     vi.useFakeTimers()
     let resolveList: (value: typeof emptyListResponse) => void = () => {}
-    vi.mocked(listTimeActivities)
+    vi.mocked(listTimeEntries)
       .mockResolvedValueOnce(emptyListResponse)
       .mockImplementationOnce(
         () =>
@@ -116,7 +116,7 @@ describe('useRecentTimeActivities', () => {
     renderHook(() => useRecentTimeActivities({ enabled: true, refreshToken: 0 }), { wrapper })
 
     await waitFor(() => {
-      expect(listTimeActivities).toHaveBeenCalledTimes(1)
+      expect(listTimeEntries).toHaveBeenCalledTimes(1)
     })
 
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible')
@@ -126,7 +126,7 @@ describe('useRecentTimeActivities', () => {
     })
 
     await waitFor(() => {
-      expect(listTimeActivities).toHaveBeenCalledTimes(2)
+      expect(listTimeEntries).toHaveBeenCalledTimes(2)
     })
   })
 })

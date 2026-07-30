@@ -67,7 +67,16 @@ describe('useTimeTracker elapsed persistence', () => {
     vi.mocked(fetchQboProjects).mockResolvedValue([])
     vi.mocked(fetchQboServices).mockResolvedValue([])
     vi.mocked(fetchTimeTracker).mockResolvedValue(buildSession())
-    vi.mocked(logTimeTracker).mockResolvedValue({ Id: '1' })
+    vi.mocked(logTimeTracker).mockResolvedValue({
+      id: 1,
+      list_id: 'local:1',
+      user_id: 1,
+      start_time: '2026-07-27T09:00:00Z',
+      end_time: '2026-07-27T17:00:00Z',
+      duration_seconds: 28_800,
+      is_billable: false,
+      status: 'pending',
+    })
     vi.mocked(updateTimeTracker).mockImplementation(async (payload) => {
       const accumulated = payload.accumulated_seconds ?? 0
 

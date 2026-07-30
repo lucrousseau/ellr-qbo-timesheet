@@ -4,6 +4,7 @@
 
 import { Button, cardClass, LazySearchCombobox, useLocale } from '@ellr/ui'
 import { useCallback, useState } from 'react'
+import { AssignSupervisorDialog } from './AssignSupervisorDialog'
 import { ManageTimesheetUserClientsDialog } from './ManageTimesheetUserClientsDialog'
 import { EmployeeTimeEntriesDialog } from './EmployeeTimeEntriesDialog'
 import { RemoveTimesheetAccessDialog } from './RemoveTimesheetAccessDialog'
@@ -28,6 +29,8 @@ type TimesheetUserProvisioningPanelProps = {
   onSubmit: (event: React.FormEvent) => void
   onRemoveTimesheetUser: (userId: number) => Promise<boolean>
   onClientAssignmentsSaved: (userId: number, access: TimesheetUserCustomerAccess) => void
+  assignSupervisor: (userId: number, supervisorId: number | null) => Promise<void>
+  assigningSupervisor: boolean
   onError: (message: string) => void
   onSuccess: (message: string) => void
 }
@@ -54,6 +57,8 @@ export function TimesheetUserProvisioningPanel({
   onSubmit,
   onRemoveTimesheetUser,
   onClientAssignmentsSaved,
+  assignSupervisor,
+  assigningSupervisor,
   onError,
   onSuccess,
 }: TimesheetUserProvisioningPanelProps) {
@@ -61,6 +66,7 @@ export function TimesheetUserProvisioningPanel({
   const [userToRemove, setUserToRemove] = useState<User | null>(null)
   const [userToManageClients, setUserToManageClients] = useState<User | null>(null)
   const [userToViewEntries, setUserToViewEntries] = useState<User | null>(null)
+  const [userToAssignSupervisor, setUserToAssignSupervisor] = useState<User | null>(null)
   const closeClientDialog = useCallback(() => setUserToManageClients(null), [])
   const closeEntriesDialog = useCallback(() => setUserToViewEntries(null), [])
   const manageClientsDialog = useManageTimesheetUserClients({
@@ -144,11 +150,17 @@ export function TimesheetUserProvisioningPanel({
               <TimesheetProvisionedUserRow
                 key={user.id}
                 user={user}
+                supervisorName={
+                  user.supervisor_id
+                    ? users.find((candidate) => candidate.id === user.supervisor_id)?.name ?? null
+                    : null
+                }
                 removing={removing}
                 removingUserId={removingUserId}
                 onRequestRemove={setUserToRemove}
                 onManageClients={setUserToManageClients}
                 onViewTimeEntries={setUserToViewEntries}
+                onAssignSupervisor={setUserToAssignSupervisor}
               />
             ))}
           </ul>
@@ -173,6 +185,14 @@ export function TimesheetUserProvisioningPanel({
         onClose={closeEntriesDialog}
         onSuccess={onSuccess}
         onError={onError}
+      />
+
+      <AssignSupervisorDialog
+        user={userToAssignSupervisor}
+        supervisorOptions={users}
+        saving={assigningSupervisor}
+        onClose={() => setUserToAssignSupervisor(null)}
+        onSave={assignSupervisor}
       />
     </section>
   )

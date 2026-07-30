@@ -154,4 +154,18 @@ return [
 
     'time_activities_reconcile_cron' => env('QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_CRON', '0 * * * *'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Company timezone for QBO clock-time duration
+    |--------------------------------------------------------------------------
+    |
+    | QuickBooks time activities store StartTime and EndTime as clock values on
+    | TxnDate. When EndTime is earlier than StartTime on the same day, QBO treats
+    | the interval as crossing midnight. Convert stored UTC timestamps using this
+    | timezone when computing durations for snapshots.
+    |
+    */
+
+    'company_timezone' => env('QUICKBOOKS_COMPANY_TIMEZONE', 'America/Los_Angeles'),
+
 ];
