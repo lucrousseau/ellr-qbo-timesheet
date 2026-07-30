@@ -180,7 +180,7 @@ class TimeEntryListService
     /**
      * Hydrates ordered union rows into API payloads.
      *
-     * @param  Collection<int, object>  $rows  Ordered union page rows.
+     * @param  Collection<int, \stdClass>  $rows  Ordered union page rows.
      * @param  array{realm_id: string, employee_ref: string}|null  $context  Snapshot query context.
      * @return list<array<string, mixed>>
      */
