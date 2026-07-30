@@ -6,7 +6,9 @@
 
 namespace App\Support;
 
+use App\Enums\UserLevelCode;
 use App\Models\User;
+use LogicException;
 
 /**
  * Builds user payloads exposed to admin and timesheet clients.
@@ -23,7 +25,7 @@ class UserApiResponse
      */
     public static function resource(User $user): User
     {
-        $user->loadMissing('organization');
+        $user->loadMissing(['organization', 'userLevel']);
         $organization = $user->organization;
 
         $resource = new User;
@@ -33,12 +35,32 @@ class UserApiResponse
         $resource->makeVisible(['is_admin', 'is_super_admin']);
         $resource->setAttribute('is_admin', $user->isAdmin());
         $resource->setAttribute('is_super_admin', $user->isSuperAdmin());
+        $resource->setAttribute('level', self::resolveLevelCode($user));
         $resource->setAttribute(
             'organization',
             $organization !== null ? OrganizationApiResponse::resource($organization) : null,
         );
-        $resource->makeHidden(['organization_id']);
+        $resource->makeHidden(['organization_id', 'user_level_id']);
 
         return $resource;
+    }
+
+    /**
+     * Resolves the stable permission code exposed in API payloads.
+     *
+     * @param  User  $user  Authenticated user instance.
+     * @return string
+     */
+    private static function resolveLevelCode(User $user): string
+    {
+        if (! $user->exists) {
+            return UserLevelCode::default()->value;
+        }
+
+        if ($user->userLevel === null) {
+            throw new LogicException('Persisted user is missing a user level relation.');
+        }
+
+        return $user->userLevel->code;
     }
 }

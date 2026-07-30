@@ -6,7 +6,9 @@
 
 namespace App\Providers;
 
+use App\Services\UserLevelResolverService;
 use App\Support\PasswordPolicy;
+use App\Support\SqliteConnectionPragmas;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -21,7 +23,10 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(UserLevelResolverService::class);
+    }
 
     /**
      * Bootstraps services after registration.
@@ -33,18 +38,17 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn (): Password => PasswordPolicy::rule());
 
         if (config('database.default') === 'sqlite') {
+            $database = config('database.connections.sqlite.database');
+
+            if ($database !== ':memory:' && (! is_string($database) || ! is_file($database))) {
+                return;
+            }
+
             $pdo = DB::connection('sqlite')->getPdo();
             $busyTimeout = (int) config('database.connections.sqlite.busy_timeout', 5000);
-
-            if ($busyTimeout > 0) {
-                $pdo->exec('PRAGMA busy_timeout = '.$busyTimeout);
-            }
-
             $journalMode = config('database.connections.sqlite.journal_mode');
 
-            if (is_string($journalMode) && $journalMode !== '') {
-                $pdo->exec('PRAGMA journal_mode = '.$journalMode);
-            }
+            SqliteConnectionPragmas::apply($pdo, $busyTimeout, $journalMode);
         }
     }
 }

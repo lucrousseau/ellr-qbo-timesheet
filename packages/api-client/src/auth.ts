@@ -4,6 +4,7 @@
 
 import { ApiError, apiFetch } from './api'
 import type { UserLocale } from './locale'
+import type { UserLevel } from './userLevel'
 
 /**
  * Tenant organization linked to the signed-in user.
@@ -24,6 +25,7 @@ export type User = {
   email: string
   email_verified_at?: string | null
   locale?: UserLocale | null
+  level?: UserLevel | null
   is_admin?: boolean
   is_super_admin?: boolean
   organization?: Organization | null

@@ -67,6 +67,7 @@ it('provisions a timesheet user and sends an invitation email', function () {
 
     expect($created->email)->toBe('jane@example.com')
         ->and($created->locale)->toBe('fr')
+        ->and($created->userLevel->code)->toBe('employee')
         ->and($created->organization_id)->toBe($admin->organization_id)
         ->and($created->organization_id)->toBe($admin->fresh()->organization_id)
         ->and($created->qbo_employee_ref)->toBe('42')

@@ -22,7 +22,8 @@ it('registers a new user', function () {
 
     $user = User::query()->where('email', 'jane@example.com')->firstOrFail();
     expect($user->isAdmin())->toBeTrue()
-        ->and($user->organization)->not->toBeNull();
+        ->and($user->organization)->not->toBeNull()
+        ->and($user->userLevel->code)->toBe('employee');
 });
 
 it('sends a verification email when registration requires verification', function () {

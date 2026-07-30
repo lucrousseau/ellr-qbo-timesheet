@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\UserPasswordController;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\UserLevelResolverService;
 use App\Support\OrganizationApiResponse;
 use App\Support\UserApiResponse;
 use Illuminate\Support\Facades\Hash;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 covers(UserPasswordController::class);
 covers(UserApiResponse::class);
 covers(OrganizationApiResponse::class);
+covers(UserLevelResolverService::class);
 
 it('exposes is_admin in api user payloads', function () {
     $user = User::factory()->admin()->create();
@@ -26,6 +28,57 @@ it('exposes is_admin false for non-administrator users', function () {
     $payload = UserApiResponse::resource($user)->toArray();
 
     expect($payload['is_admin'])->toBeFalse();
+});
+
+it('exposes the default permission level in api user payloads', function () {
+    $user = User::factory()->create();
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload)->toHaveKey('level')
+        ->and($payload['level'])->toBe('employee');
+});
+
+it('defaults level for non-persisted users in api payloads', function () {
+    $user = User::factory()->make(['email' => 'draft@example.com']);
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload['level'])->toBe('employee');
+});
+
+it('exposes is_super_admin in api user payloads', function () {
+    $user = User::factory()->superAdmin()->create();
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload)->toHaveKey('is_super_admin')
+        ->and($payload['is_super_admin'])->toBeBool()->toBeTrue();
+});
+
+it('exposes is_super_admin false for non-super-admin users', function () {
+    $user = User::factory()->create(['is_super_admin' => 0]);
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload['is_super_admin'])->toBeBool()->toBeFalse();
+});
+
+it('hides user_level_id from api user payloads', function () {
+    $user = User::factory()->create();
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload)->not->toHaveKey('user_level_id');
+});
+
+it('throws when a persisted user is missing a user level relation', function () {
+    $user = User::factory()->create();
+    $user->unsetRelation('userLevel');
+    $user->setRelation('userLevel', null);
+
+    expect(fn () => UserApiResponse::resource($user)->toArray())
+        ->toThrow(LogicException::class, 'Persisted user is missing a user level relation.');
 });
 
 it('preserves core user attributes in api payloads', function () {
@@ -46,7 +99,18 @@ it('loads the organization relation when building api payloads', function () {
 
     $payload = UserApiResponse::resource($user)->toArray();
 
-    expect($payload['organization']['id'])->toBe($user->organization_id);
+    expect($payload['organization']['id'])->toBe($user->organization_id)
+        ->and($user->relationLoaded('organization'))->toBeTrue();
+});
+
+it('loads the user level relation when building api payloads', function () {
+    $user = User::factory()->create();
+    $user->unsetRelation('userLevel');
+
+    $payload = UserApiResponse::resource($user)->toArray();
+
+    expect($payload['level'])->toBe('employee')
+        ->and($user->relationLoaded('userLevel'))->toBeTrue();
 });
 
 it('exposes organization in api user payloads', function () {

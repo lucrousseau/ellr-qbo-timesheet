@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Models\UserLevel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 
@@ -107,4 +109,37 @@ it('reports platform super administrator status', function () {
 
     expect($superAdmin->isSuperAdmin())->toBeTrue()
         ->and($admin->isSuperAdmin())->toBeFalse();
+});
+
+it('casts is_super_admin to a boolean', function () {
+    $superAdmin = User::factory()->superAdmin()->create();
+    $user = User::factory()->create(['is_super_admin' => 0]);
+
+    expect($superAdmin->is_super_admin)->toBeBool()->toBeTrue()
+        ->and($user->is_super_admin)->toBeBool()->toBeFalse();
+});
+
+it('assigns the default employee level when creating a user', function () {
+    $user = User::factory()->create();
+
+    expect($user->userLevel->code)->toBe('employee');
+});
+
+it('relates users to their permission tier', function () {
+    $user = User::factory()->create();
+    $employeeLevel = UserLevel::query()->where('code', 'employee')->firstOrFail();
+
+    expect($user->userLevel()->getRelated())->toBeInstanceOf(UserLevel::class)
+        ->and($user->userLevel->is($employeeLevel))->toBeTrue();
+});
+
+it('preserves an explicit user level id on create', function () {
+    $managerId = UserLevel::query()->where('code', 'manager')->value('id');
+    $user = User::factory()->make([
+        'organization_id' => Organization::factory()->create()->id,
+        'user_level_id' => $managerId,
+    ]);
+    $user->save();
+
+    expect($user->userLevel->code)->toBe('manager');
 });

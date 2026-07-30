@@ -8,11 +8,13 @@ use App\Services\QboEmployeeService;
 use App\Services\QuickBooksService;
 use App\Services\TimesheetInvitationService;
 use App\Services\UserProvisioningService;
+use App\Support\UserApiResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(AdminUserController::class);
+covers(UserApiResponse::class);
 covers(UserProvisioningService::class);
 covers(QboEmployeeService::class);
 covers(TimesheetInvitationService::class);
@@ -42,7 +44,8 @@ it('lists provisioned timesheet users for administrators', function () {
         ->getJson('/api/admin/users', frontendHeaders())
         ->assertOk()
         ->assertJsonPath('data.0.id', $timesheetUser->id)
-        ->assertJsonPath('data.0.qbo_employee_ref', '7');
+        ->assertJsonPath('data.0.qbo_employee_ref', '7')
+        ->assertJsonPath('data.0.level', 'employee');
 });
 
 it('requires administrator access to list timesheet users', function () {
@@ -80,12 +83,14 @@ it('creates a timesheet user from quickbooks identity and sends an invite email'
         ->assertCreated()
         ->assertJsonPath('user.email', 'jane@example.com')
         ->assertJsonPath('user.name', 'Jane Doe')
-        ->assertJsonPath('user.qbo_employee_ref', '42');
+        ->assertJsonPath('user.qbo_employee_ref', '42')
+        ->assertJsonPath('user.level', 'employee');
 
     $created = User::query()->where('email', 'jane@example.com')->firstOrFail();
 
     expect($created->isAdmin())->toBeFalse()
-        ->and($created->hasVerifiedEmail())->toBeTrue();
+        ->and($created->hasVerifiedEmail())->toBeTrue()
+        ->and($created->userLevel->code)->toBe('employee');
 
     Notification::assertSentTo($created, InviteTimesheetUserNotification::class);
 });

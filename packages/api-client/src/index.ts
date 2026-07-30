@@ -37,6 +37,12 @@ export { fetchAppConfig, type AppConfig } from './appConfig'
 export { normalizeQboRef, qboRefsMatch } from './qboRef'
 export { normalizeUserLocale, SUPPORTED_LOCALES, type UserLocale } from './locale'
 export {
+  DEFAULT_USER_LEVEL,
+  normalizeUserLevel,
+  USER_LEVELS,
+  type UserLevel,
+} from './userLevel'
+export {
   changePassword,
   fetchCurrentUser,
   login,

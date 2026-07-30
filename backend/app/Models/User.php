@@ -11,6 +11,7 @@ use App\Enums\UserLocale;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
 use App\Services\PasswordResetLinkService;
+use App\Services\UserLevelResolverService;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -32,6 +33,22 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use BelongsToOrganization, HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * Bootstraps model lifecycle hooks.
+     *
+     * @return void
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (self $user): void {
+            if ($user->user_level_id !== null) {
+                return;
+            }
+
+            $user->user_level_id = app(UserLevelResolverService::class)->defaultId();
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -91,6 +108,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    /**
+     * Relationship to the permission tier assigned to this account.
+     *
+     * @return BelongsTo<UserLevel, $this>
+     */
+    public function userLevel(): BelongsTo
+    {
+        return $this->belongsTo(UserLevel::class);
     }
 
     /**

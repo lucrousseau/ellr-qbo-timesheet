@@ -8,6 +8,7 @@ namespace Database\Seeders;
 
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\UserLevelResolverService;
 use Illuminate\Database\Seeder;
 
 /**
@@ -61,6 +62,7 @@ class DevDatabaseSeeder extends Seeder
                 'name' => (string) config('dev-seed.tenant_admin_name'),
                 'password' => (string) config('dev-seed.tenant_admin_password'),
                 'email_verified_at' => now(),
+                'user_level_id' => $this->defaultUserLevelId(),
             ],
         );
 
@@ -89,6 +91,7 @@ class DevDatabaseSeeder extends Seeder
                 'name' => (string) config('dev-seed.platform_name'),
                 'password' => (string) config('dev-seed.platform_password'),
                 'email_verified_at' => now(),
+                'user_level_id' => $this->defaultUserLevelId(),
             ],
         );
 
@@ -96,5 +99,15 @@ class DevDatabaseSeeder extends Seeder
             'is_admin' => false,
             'is_super_admin' => true,
         ])->save();
+    }
+
+    /**
+     * Returns the default employee permission tier id for seeded development users.
+     *
+     * @return int
+     */
+    private function defaultUserLevelId(): int
+    {
+        return app(UserLevelResolverService::class)->defaultId();
     }
 }

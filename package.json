@@ -25,6 +25,7 @@
     "dev:webhook-tunnel": "sh scripts/dev-webhook-tunnel.sh",
     "artisan": "sh scripts/artisan.sh",
     "sync:migrate": "sh scripts/artisan.sh migrate",
+    "sync:seed": "sh scripts/artisan.sh db:seed",
     "sync:reconcile": "sh scripts/artisan.sh quickbooks:reconcile-time-activities",
     "sync:schedule": "sh scripts/artisan.sh schedule:work",
     "sync:queue:logs": "docker compose --env-file docker/.env logs queue --tail=50 -f",
