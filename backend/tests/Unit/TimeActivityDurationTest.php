@@ -127,10 +127,10 @@ it('maps a collection of local entries for api responses', function () {
     $employee = User::factory()->create(['name' => 'Jane Doe']);
     $reviewer = User::factory()->admin()->create(['name' => 'Admin User']);
     $entries = TimeEntry::factory()->count(2)->forUser($employee)->create();
-    $entries[0]->update([
+    $entries[0]->forceFill([
         'reviewed_by_id' => $reviewer->id,
         'reviewed_at' => now(),
-    ]);
+    ])->save();
 
     $payloads = TimeEntryApiResponse::collection($entries->fresh(['user', 'reviewedBy']));
 

@@ -2,8 +2,8 @@
  * @file Tabbed admin dashboard grouped by responsibility.
  */
 
-import { Alert, TabNav, tabPanelId, useLocale } from '@ellr/ui'
-import { useEffect, useMemo } from 'react'
+import { Alert, LoadingScreen, TabNav, tabPanelId, useLocale } from '@ellr/ui'
+import { lazy, Suspense, useEffect, useMemo } from 'react'
 import {
   LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY,
   useAdminActiveTab,
@@ -11,12 +11,24 @@ import {
 } from '../adminTabStorage'
 import { AccountPanel } from './AccountPanel'
 import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
-import { TimeEntryApprovalsPanel } from './TimeEntryApprovalsPanel'
-import { TimesheetUserProvisioningPanel } from './TimesheetUserProvisioningPanel'
-import { SuperAdminOrganizationsPanel } from './SuperAdminOrganizationsPanel'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
 import { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
 import { useSuperAdminOrganizations } from '../hooks/useSuperAdminOrganizations'
+
+const TimeEntryApprovalsPanel = lazy(async () => {
+  const module = await import('./TimeEntryApprovalsPanel')
+  return { default: module.TimeEntryApprovalsPanel }
+})
+
+const TimesheetUserProvisioningPanel = lazy(async () => {
+  const module = await import('./TimesheetUserProvisioningPanel')
+  return { default: module.TimesheetUserProvisioningPanel }
+})
+
+const SuperAdminOrganizationsPanel = lazy(async () => {
+  const module = await import('./SuperAdminOrganizationsPanel')
+  return { default: module.SuperAdminOrganizationsPanel }
+})
 
 const TAB_ID_PREFIX = 'admin'
 
@@ -133,7 +145,9 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           role="tabpanel"
           aria-labelledby={`${TAB_ID_PREFIX}-tab-clients`}
         >
-          <SuperAdminOrganizationsPanel clients={clientOrganizations} />
+          <Suspense fallback={<LoadingScreen />}>
+            <SuperAdminOrganizationsPanel clients={clientOrganizations} />
+          </Suspense>
         </div>
       ) : activeTabId === 'approvals' ? (
         <div
@@ -141,11 +155,13 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           role="tabpanel"
           aria-labelledby={`${TAB_ID_PREFIX}-tab-approvals`}
         >
-          <TimeEntryApprovalsPanel
-            enabled={activeTabId === 'approvals'}
-            onError={admin.showError}
-            onSuccess={admin.showSuccess}
-          />
+          <Suspense fallback={<LoadingScreen />}>
+            <TimeEntryApprovalsPanel
+              enabled={activeTabId === 'approvals'}
+              onError={admin.showError}
+              onSuccess={admin.showSuccess}
+            />
+          </Suspense>
         </div>
       ) : (
         <div
@@ -161,7 +177,8 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             onConnect={admin.connectQuickBooksFlow}
             onDisconnect={admin.disconnectQuickBooksFlow}
           />
-          <TimesheetUserProvisioningPanel
+          <Suspense fallback={<LoadingScreen />}>
+            <TimesheetUserProvisioningPanel
             connected={admin.status?.connected === true}
             employees={provisioning.employees}
             users={provisioning.users}
@@ -183,6 +200,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             onError={admin.showError}
             onSuccess={admin.showSuccess}
           />
+          </Suspense>
         </div>
       )}
     </div>

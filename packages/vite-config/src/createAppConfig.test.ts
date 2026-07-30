@@ -6,7 +6,30 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { UserConfig } from 'vite'
 import { createAppConfig } from './createAppConfig'
+
+/**
+ * Resolves the configured Rollup manual chunk for a module id.
+ * @param config Vite config returned by `createAppConfig`.
+ * @param id Module path under test.
+ * @returns Chunk name when the bundler assigns one.
+ */
+function manualChunkFor(config: UserConfig, id: string): string | undefined {
+  const output = config.build?.rollupOptions?.output
+
+  if (!output || Array.isArray(output)) {
+    return undefined
+  }
+
+  const manualChunks = output.manualChunks
+
+  if (typeof manualChunks !== 'function') {
+    return undefined
+  }
+
+  return manualChunks(id, { getModuleInfo: () => null }) ?? undefined
+}
 
 describe('createAppConfig', () => {
   afterEach(() => {
@@ -57,5 +80,17 @@ describe('createAppConfig', () => {
       '/api': { target: 'http://api:8000', changeOrigin: true },
       '/sanctum': { target: 'http://api:8000', changeOrigin: true },
     })
+  })
+
+  it('splits shared UI and vendor dependencies into stable build chunks', () => {
+    const config = createAppConfig({ port: 5173, importMetaUrl: import.meta.url })
+
+    expect(manualChunkFor(config, '/repo/packages/ui/src/index.ts')).toBe('ellr-ui')
+    expect(manualChunkFor(config, '/repo/apps/admin/src/App.tsx')).toBeUndefined()
+    expect(manualChunkFor(config, '/repo/node_modules/@headlessui/react/dist/index.js')).toBe('headlessui')
+    expect(manualChunkFor(config, '/repo/node_modules/react-imask/dist/index.js')).toBe('imask')
+    expect(manualChunkFor(config, '/repo/node_modules/react/index.js')).toBe('react-vendor')
+    expect(manualChunkFor(config, '/repo/node_modules/scheduler/index.js')).toBe('react-vendor')
+    expect(manualChunkFor(config, '/repo/node_modules/lodash/lodash.js')).toBe('vendor')
   })
 })

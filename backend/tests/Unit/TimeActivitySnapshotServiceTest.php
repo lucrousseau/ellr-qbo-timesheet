@@ -250,6 +250,66 @@ it('enriches snapshots when resolveMissingNames is enabled', function () {
     expect($snapshot->customer_name)->toBe('Acme Corp');
 });
 
+it('returns an empty batch result without writing snapshots', function () {
+    $dataService = Mockery::mock(DataService::class);
+
+    expect(makeTimeActivitySnapshotService()->upsertBatchFromQboEntities('realm-1', $dataService, []))
+        ->toBe([]);
+});
+
+it('upserts multiple quickbooks entities in one batch without extra name lookups', function () {
+    $dataService = Mockery::mock(DataService::class);
+    $service = makeTimeActivitySnapshotService();
+
+    $snapshots = $service->upsertBatchFromQboEntities(
+        'realm-1',
+        $dataService,
+        [
+            (object) [
+                'Id' => '41',
+                'EmployeeRef' => (object) ['value' => '7'],
+                'StartTime' => '2026-07-29T09:00:00',
+                'TxnDate' => '2026-07-29',
+            ],
+            (object) [
+                'Id' => '42',
+                'EmployeeRef' => (object) ['value' => '7'],
+                'StartTime' => '2026-07-29T10:00:00',
+                'TxnDate' => '2026-07-29',
+            ],
+        ],
+        resolveMissingNames: false,
+    );
+
+    expect($snapshots)->toHaveCount(2)
+        ->and($snapshots[0]->qbo_id)->toBe('41')
+        ->and($snapshots[1]->qbo_id)->toBe('42');
+});
+
+it('enriches quickbooks entities when batch upserts request missing names', function () {
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $snapshots = makeTimeActivitySnapshotService()->upsertBatchFromQboEntities(
+        'realm-1',
+        $dataService,
+        [
+            (object) [
+                'Id' => '51',
+                'EmployeeRef' => (object) ['value' => '7'],
+                'CustomerRef' => '58',
+                'StartTime' => '2026-07-29T09:00:00',
+                'TxnDate' => '2026-07-29',
+            ],
+        ],
+        resolveMissingNames: true,
+    );
+
+    expect($snapshots)->toHaveCount(1)
+        ->and($snapshots[0]->qbo_id)->toBe('51');
+});
+
 it('starts employee listing from the first page', function () {
     $service = makeTimeActivitySnapshotService();
 

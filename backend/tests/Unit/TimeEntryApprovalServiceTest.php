@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\TimeEntryStatus;
+use App\Jobs\SyncApprovedTimeEntryToQuickBooksJob;
 use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
@@ -9,6 +10,7 @@ use App\Services\QuickBooksService;
 use App\Services\TimeEntryApprovalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Queue;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(TimeEntryApprovalService::class);
@@ -146,7 +148,7 @@ it('returns not found when approving a non pending entry', function () {
     app(TimeEntryApprovalService::class)->approve($admin, $entry->id);
 })->throws(HttpResponseException::class);
 
-it('reverts approval when quickbooks synchronization fails', function () {
+it('keeps approval when quickbooks synchronization fails', function () {
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
     $employee = User::factory()->create([
@@ -164,7 +166,33 @@ it('reverts approval when quickbooks synchronization fails', function () {
 
     $entry->refresh();
 
-    expect($entry->status)->toBe(TimeEntryStatus::Pending)
-        ->and($entry->reviewed_by_id)->toBeNull()
+    expect($entry->status)->toBe(TimeEntryStatus::Approved)
+        ->and($entry->reviewed_by_id)->toBe($admin->id)
         ->and($entry->qbo_id)->toBeNull();
+});
+
+it('queues quickbooks synchronization after approval', function () {
+    Queue::fake();
+
+    $admin = User::factory()->admin()->create();
+    QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $entry = TimeEntry::factory()->forUser($employee)->create();
+
+    $approved = app(TimeEntryApprovalService::class)->approve($admin, $entry->id);
+
+    expect($approved->status)->toBe(TimeEntryStatus::Approved)
+        ->and($approved->qbo_id)->toBeNull();
+
+    Queue::assertPushed(SyncApprovedTimeEntryToQuickBooksJob::class, function (SyncApprovedTimeEntryToQuickBooksJob $job) use ($entry, $employee): bool {
+        $token = QuickBooksToken::query()->where('realm_id', 'realm-42')->first();
+
+        return $job->timeEntryId === $entry->id
+            && $job->employeeId === $employee->id
+            && $token !== null
+            && $job->tokenId === $token->id;
+    });
 });

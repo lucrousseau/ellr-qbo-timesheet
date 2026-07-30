@@ -7,6 +7,7 @@ use App\Services\QuickBooksWebhookProcessorService;
 use App\Services\TimeActivitySnapshotService;
 use App\Services\TimeActivitySyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 covers(QuickBooksWebhookProcessorService::class);
@@ -61,10 +62,7 @@ it('updates webhook sync state after processing entities', function () {
             false,
         );
 
-    $processor = new QuickBooksWebhookProcessorService(
-        $sync,
-        app(TimeActivitySnapshotService::class),
-    );
+    $processor = makeQuickBooksWebhookProcessor($sync);
 
     $user = User::factory()->create();
     $user->organization->update(['realm_id' => 'realm-1']);
@@ -89,6 +87,46 @@ it('updates webhook sync state after processing entities', function () {
         ->and($state->last_webhook_at)->not->toBeNull();
 });
 
+it('ignores replayed time activity webhook notifications', function () {
+    Cache::flush();
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with(
+            Mockery::type(QuickBooksToken::class),
+            '42',
+            false,
+        );
+
+    $processor = makeQuickBooksWebhookProcessor($sync);
+
+    $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
+    QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
+
+    $payload = [
+        'eventNotifications' => [
+            [
+                'realmId' => 'realm-1',
+                'dataChangeEvent' => [
+                    'entities' => [
+                        [
+                            'name' => 'TimeActivity',
+                            'id' => '42',
+                            'operation' => 'Update',
+                            'lastUpdated' => '2026-07-30T12:00:00Z',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    $processor->process($payload);
+    $processor->process($payload);
+});
+
 it('calls sync for create webhooks without resolving missing names', function () {
     $sync = Mockery::mock(TimeActivitySyncService::class);
     $sync->shouldReceive('syncOneById')
@@ -103,7 +141,7 @@ it('calls sync for create webhooks without resolving missing names', function ()
     $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
-    (new QuickBooksWebhookProcessorService($sync, app(TimeActivitySnapshotService::class)))->process([
+    makeQuickBooksWebhookProcessor($sync, app(TimeActivitySnapshotService::class))->process([
         'eventNotifications' => [
             [
                 'realmId' => 'realm-1',
@@ -147,7 +185,7 @@ it('processes numeric webhook identifiers as strings', function () {
     $user->organization->update(['realm_id' => '1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => '1']);
 
-    (new QuickBooksWebhookProcessorService($sync, app(TimeActivitySnapshotService::class)))->process([
+    makeQuickBooksWebhookProcessor($sync, app(TimeActivitySnapshotService::class))->process([
         'eventNotifications' => [
             [
                 'realmId' => 1,
@@ -172,7 +210,7 @@ it('defaults missing webhook operations to sync and skips other entities', funct
     $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
-    (new QuickBooksWebhookProcessorService($sync, app(TimeActivitySnapshotService::class)))->process([
+    makeQuickBooksWebhookProcessor($sync, app(TimeActivitySnapshotService::class))->process([
         'eventNotifications' => [
             [
                 'realmId' => 'realm-1',
@@ -207,7 +245,7 @@ it('soft-deletes snapshots for delete and void webhook operations', function () 
     $user->organization->update(['realm_id' => 'realm-1']);
     QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
 
-    (new QuickBooksWebhookProcessorService($sync, $snapshots))->process([
+    makeQuickBooksWebhookProcessor($sync, $snapshots)->process([
         'eventNotifications' => [
             [
                 'realmId' => 'realm-1',
@@ -246,5 +284,5 @@ it('ignores payloads without an eventNotifications key', function () {
     $sync = Mockery::mock(TimeActivitySyncService::class);
     $sync->shouldReceive('syncOneById')->never();
 
-    (new QuickBooksWebhookProcessorService($sync, app(TimeActivitySnapshotService::class)))->process([]);
+    makeQuickBooksWebhookProcessor($sync, app(TimeActivitySnapshotService::class))->process([]);
 });

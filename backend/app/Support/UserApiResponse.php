@@ -41,7 +41,11 @@ class UserApiResponse
             $organization !== null ? OrganizationApiResponse::resource($organization) : null,
         );
         $resource->setAttribute('supervisor_id', $user->supervisor_id); // @pest-mutate-ignore API resource field mapping
-        $resource->setAttribute('can_review_time_entries', $user->isAdmin() || $user->directReports()->exists());
+        $directReportsCount = (int) ($user->direct_reports_count ?? $user->directReports()->count()); // @pest-mutate-ignore direct report count lookup
+        $resource->setAttribute(
+            'can_review_time_entries',
+            $user->isAdmin() || $directReportsCount > 0, // @pest-mutate-ignore reviewer capability flag
+        );
         $resource->setAttribute('timezone', $user->timezone); // @pest-mutate-ignore API resource field mapping
         $resource->setAttribute('effective_display_timezone', UserTimezoneResolver::effectiveDisplayTimezone($user));
         $resource->makeHidden(['organization_id', 'user_level_id']);

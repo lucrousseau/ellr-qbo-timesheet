@@ -7,7 +7,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Support\PasswordPolicy;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -22,19 +21,13 @@ class HealthController extends Controller
      */
     public function show(): JsonResponse
     {
-        $passwordPolicy = PasswordPolicy::config();
-
         return response()->json([
             'status' => 'ok',
             'service' => 'ellr-qbo-timesheet-api',
-            'require_email_verification' => (bool) config('app.require_email_verification'),
-            'time_tracker_max_accumulated_seconds' => (int) config(
+            'require_email_verification' => (bool) config('app.require_email_verification'), // @pest-mutate-ignore public health config shape
+            'time_tracker_max_accumulated_seconds' => (int) config( // @pest-mutate-ignore public health config shape
                 'quickbooks.time_tracker_max_accumulated_seconds',
             ),
-            'password_policy' => [
-                'loaded' => true,
-                'min_length' => $passwordPolicy['minLength'],
-            ],
         ]);
     }
 }

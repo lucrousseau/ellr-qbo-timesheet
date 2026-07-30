@@ -14,7 +14,7 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 |------|-----------|
 | **SDK only in services** | `QuickBooksService` and domain services (`QboEmployeeListService`, `TimeActivityListService`, etc.) |
 | **Cache read-heavy lists** | Employee, customer, project, service pickers: `QboListCacheService` keyed by `quickbooks:{resource}:{realm_id}` |
-| **Lazy picker loads** | Admin API-backed selects use `useLazyApiSelect` (`@ellr/ui`); fetch on dropdown open with `?refresh=1`, abort in-flight on close/reopen (client-side only; server may still finish), clear list on close |
+| **Lazy picker loads** | Admin API-backed selects use `useLazyApiSelect` (`@ellr/ui`); fetch on dropdown open from cache (`refresh=false`), abort in-flight on close/reopen (client-side only; server may still finish), clear list on close |
 | **No cache on auth probes** | OAuth validation (`assertCanListEmployees`) must hit QBO live |
 | **Invalidate on disconnect** | Clear realm-scoped cache when QuickBooks disconnects |
 | **Do not cache empty lists** | Avoid persisting `[]` from failed or single-entity SDK quirks |
@@ -30,9 +30,9 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 | Service | `QboListCacheService::remember($resource, $realmId, $refresh, $fetch)` |
 | Resources | `employees`, `customers`, `projects`, `services` |
 | Cache key | `quickbooks:{resource}:{realm_id}` (projects also include parent customer ref; customers include employee ref) |
-| TTL config | `QUICKBOOKS_LIST_CACHE_TTL_MINUTES` (default 15; secondary when pickers always send `?refresh=1`) |
+| TTL config | `QUICKBOOKS_LIST_CACHE_TTL_MINUTES` (default 15) |
 | Max results | `QUICKBOOKS_LIST_MAX_RESULTS` (default 1000) |
-| Refresh | `?refresh=1` on list endpoints |
+| Refresh | `?refresh=1` on list endpoints (explicit bypass; lazy pickers use cache on open) |
 | Disconnect | `QboListCacheService::forgetRealm($realmId)` |
 
 ### Employee list (current)
@@ -41,7 +41,7 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 |------|-------|
 | Service | `QboEmployeeListService::listActive($token, $refresh)` |
 | Refresh route | `GET /api/quickbooks/employees?refresh=1` |
-| Frontend | `LazySearchCombobox` (`@ellr/ui`, Headless UI) + `useLazyApiSelect` + `fetchQboEmployees({ refresh: true })` on open |
+| Frontend | `LazySearchCombobox` (`@ellr/ui`, Headless UI) + `useLazyApiSelect` + `fetchQboEmployees({ refresh: false })` on open |
 
 ## Before adding a new QBO endpoint
 

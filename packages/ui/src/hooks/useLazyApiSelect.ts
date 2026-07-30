@@ -17,7 +17,7 @@ type UseLazyApiSelectOptions<T> = {
 
 /**
  * Loads select options on user interaction; clears the list when the panel closes.
- * Each open triggers a refresh request; an in-flight request is aborted on close or reopen.
+ * Each open loads from the server cache; an in-flight request is aborted on close or reopen.
  * @param options Fetch callback, enable flag, and error handling.
  * @returns Options, loading state, and open/close handlers for the select control.
  */
@@ -81,7 +81,7 @@ export function useLazyApiSelect<T>({
     setLoaded(false)
 
     try {
-      const nextItems = await fetch(true, controller.signal)
+      const nextItems = await fetch(false, controller.signal)
 
       if (requestId !== requestIdRef.current) {
         return

@@ -288,7 +288,7 @@ it('rejects password reset with an invalid token', function () {
         'password_confirmation' => PasswordPolicy::validTestPasswordAlt(),
     ], frontendHeaders())
         ->assertUnprocessable()
-        ->assertJsonPath('message', 'This password reset token is invalid.');
+        ->assertJsonPath('message', 'Unable to reset the password. Request a new reset link and try again.');
 });
 
 it('validates forgot-password payload', function () {

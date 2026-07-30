@@ -109,6 +109,8 @@ return [
         env('QUICKBOOKS_EMPLOYEES_MAX_RESULTS', 1000),
     ),
 
+    'list_scan_max_pages' => (int) env('QUICKBOOKS_LIST_SCAN_MAX_PAGES', 10), // @pest-mutate-ignore quickbooks list scan config
+
     /*
     |--------------------------------------------------------------------------
     | Employee customer scan pages

@@ -19,6 +19,7 @@ const PAGE_SIZE = 10
 type ApprovalMessages = {
   approvalFailed: string
   approvalSuccess: string
+  approvalSuccessQueued: string
   rejectionSuccess: string
 }
 
@@ -46,6 +47,7 @@ export function useTimeEntryApprovals({
   const resolvedMessages: ApprovalMessages = {
     approvalFailed: messages?.approvalFailed ?? t('admin.approvalFailed'),
     approvalSuccess: messages?.approvalSuccess ?? t('admin.approvalSuccess'),
+    approvalSuccessQueued: messages?.approvalSuccessQueued ?? t('admin.approvalSuccessQueued'),
     rejectionSuccess: messages?.rejectionSuccess ?? t('admin.rejectionSuccess'),
   }
   const [entries, setEntries] = useState<TimeActivityRow[]>([])
@@ -117,8 +119,10 @@ export function useTimeEntryApprovals({
       setReviewingId(id)
 
       try {
-        await approveTimeEntry(resolveTimeEntryId(id), { admin })
-        onSuccess(resolvedMessages.approvalSuccess)
+        const approved = await approveTimeEntry(resolveTimeEntryId(id), { admin })
+        onSuccess(
+          approved.qbo_id ? resolvedMessages.approvalSuccess : resolvedMessages.approvalSuccessQueued,
+        )
         refresh()
       } catch (caught) {
         onError(getApiErrorMessage(caught, resolvedMessages.approvalFailed, locale))
@@ -126,7 +130,7 @@ export function useTimeEntryApprovals({
         setReviewingId(null)
       }
     },
-    [admin, locale, onError, onSuccess, refresh, resolvedMessages.approvalFailed, resolvedMessages.approvalSuccess],
+    [admin, locale, onError, onSuccess, refresh, resolvedMessages.approvalFailed, resolvedMessages.approvalSuccess, resolvedMessages.approvalSuccessQueued],
   )
 
   const rejectEntry = useCallback(

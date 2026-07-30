@@ -76,11 +76,12 @@ class TimeEntryApiResponse
      * Legacy QBO-only rows are treated as already approved.
      *
      * @param  TimeActivitySnapshot  $snapshot  Synced QuickBooks snapshot row.
+     * @param  string|null  $companyTimezone  Pre-resolved company timezone for the realm.
      * @return array<string, mixed>
      */
-    public static function fromSnapshot(TimeActivitySnapshot $snapshot): array
+    public static function fromSnapshot(TimeActivitySnapshot $snapshot, ?string $companyTimezone = null): array
     {
-        $companyTimezone = app(OrganizationTimezoneService::class)->forRealm($snapshot->realm_id);
+        $companyTimezone ??= app(OrganizationTimezoneService::class)->forRealm($snapshot->realm_id);
         $durationSeconds = TimeActivityDuration::qboDurationSeconds(
             $snapshot->start_time,
             $snapshot->end_time,

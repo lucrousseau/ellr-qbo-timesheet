@@ -24,6 +24,43 @@ class TimeActivitySnapshotService
     ) {}
 
     /**
+     * Upserts multiple snapshots from QuickBooks time activity entities.
+     *
+     * @param  string  $realmId  QuickBooks company realm identifier.
+     * @param  object  $dataService  Configured QuickBooks DataService instance.
+     * @param  list<object|array<string, mixed>>  $activities  QuickBooks time activity rows.
+     * @param  bool  $resolveMissingNames  When false, skips extra QBO lookups for display names.
+     * @return list<TimeActivitySnapshot>
+     */
+    public function upsertBatchFromQboEntities(
+        string $realmId,
+        object $dataService,
+        array $activities,
+        bool $resolveMissingNames = true,
+    ): array {
+        if ($activities === []) {
+            return [];
+        }
+
+        $rows = array_map(
+            fn (object|array $activity): object => is_object($activity) ? $activity : (object) $activity,
+            $activities,
+        );
+
+        if ($resolveMissingNames) {
+            $rows = $this->displayEnricher->enrich($dataService, $rows);
+        }
+
+        $snapshots = [];
+
+        foreach ($rows as $activity) {
+            $snapshots[] = $this->upsertFromQboEntity($realmId, $dataService, $activity, false);
+        }
+
+        return $snapshots;
+    }
+
+    /**
      * Upserts a snapshot from a QuickBooks time activity entity.
      *
      * @param  string  $realmId  QuickBooks company realm identifier.

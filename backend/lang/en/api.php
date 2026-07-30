@@ -36,6 +36,7 @@ return [
     'time_tracker_invalid_service' => 'Selected service is not available in QuickBooks.',
     'password_reset_sent' => 'If that email exists, a reset link has been sent.',
     'password_reset_success' => 'Password reset successfully.',
+    'password_reset_failed' => 'Unable to reset the password. Request a new reset link and try again.',
     'password_changed' => 'Password updated successfully.',
     'email_already_verified' => 'Email already verified.',
     'verification_link_sent' => 'Verification link sent.',

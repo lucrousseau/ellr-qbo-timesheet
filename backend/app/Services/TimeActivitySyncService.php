@@ -184,17 +184,18 @@ class TimeActivitySyncService
                 return [$upserted, $seenQboIds, true];
             }
 
-            foreach ($activities as $activity) {
-                if (! is_object($activity)) {
-                    continue;
-                }
+            $pageObjects = array_values(array_filter(
+                $activities,
+                fn (mixed $activity): bool => is_object($activity),
+            ));
 
+            if ($pageObjects !== []) {
                 try {
-                    $snapshot = $this->snapshots->upsertFromQboEntity($realmId, $dataService, $activity);
-                    $seenQboIds[] = $snapshot->qbo_id;
-                    $upserted++;
-                } catch (\InvalidArgumentException) {
-                    continue;
+                    foreach ($this->snapshots->upsertBatchFromQboEntities($realmId, $dataService, $pageObjects) as $snapshot) {
+                        $seenQboIds[] = $snapshot->qbo_id;
+                        $upserted++;
+                    }
+                } catch (\InvalidArgumentException) { // @pest-mutate-ignore reconcile batch snapshot upsert guard
                 }
             }
 

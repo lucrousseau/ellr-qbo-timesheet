@@ -29,6 +29,7 @@ export function TimesheetTimeEntryApprovalsPanel({
     messages: {
       approvalFailed: t('timesheet.approvalFailed'),
       approvalSuccess: t('timesheet.approvalSuccess'),
+      approvalSuccessQueued: t('timesheet.approvalSuccessQueued'),
       rejectionSuccess: t('timesheet.rejectionSuccess'),
     },
     onSuccess,

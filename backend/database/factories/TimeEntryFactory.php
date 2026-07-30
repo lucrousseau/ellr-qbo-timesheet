@@ -31,8 +31,21 @@ class TimeEntryFactory extends Factory
             'end_time' => $end,
             'description' => fake()->optional()->sentence(),
             'is_billable' => false,
-            'status' => TimeEntryStatus::Pending,
         ];
+    }
+
+    /**
+     * Configures default privileged attributes after the model is created.
+     *
+     * @return static
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (TimeEntry $entry): void {
+            $entry->forceFill([
+                'status' => $entry->status ?? TimeEntryStatus::Pending,
+            ]);
+        });
     }
 
     /**
@@ -43,10 +56,12 @@ class TimeEntryFactory extends Factory
      */
     public function forUser(User $user): static
     {
-        return $this->state(fn (): array => [
-            'user_id' => $user->id,
-            'organization_id' => $user->organization_id,
-        ]);
+        return $this->afterMaking(function (TimeEntry $entry) use ($user): void {
+            $entry->forceFill([
+                'user_id' => $user->id,
+                'organization_id' => $user->organization_id,
+            ]);
+        });
     }
 
     /**
@@ -57,11 +72,14 @@ class TimeEntryFactory extends Factory
      */
     public function approved(?string $qboId = '100'): static
     {
-        return $this->state(fn (): array => [
-            'status' => TimeEntryStatus::Approved,
-            'qbo_id' => $qboId,
-            'reviewed_at' => now(),
-        ]);
+        return $this->state(fn (): array => [])
+            ->afterCreating(function (TimeEntry $entry) use ($qboId): void {
+                $entry->forceFill([
+                    'status' => TimeEntryStatus::Approved,
+                    'qbo_id' => $qboId,
+                    'reviewed_at' => now(),
+                ])->save();
+            });
     }
 
     /**
@@ -72,10 +90,13 @@ class TimeEntryFactory extends Factory
      */
     public function rejected(?string $reason = 'Incorrect project'): static
     {
-        return $this->state(fn (): array => [
-            'status' => TimeEntryStatus::Rejected,
-            'rejection_reason' => $reason,
-            'reviewed_at' => now(),
-        ]);
+        return $this->state(fn (): array => [])
+            ->afterCreating(function (TimeEntry $entry) use ($reason): void {
+                $entry->forceFill([
+                    'status' => TimeEntryStatus::Rejected,
+                    'rejection_reason' => $reason,
+                    'reviewed_at' => now(),
+                ])->save();
+            });
     }
 }
