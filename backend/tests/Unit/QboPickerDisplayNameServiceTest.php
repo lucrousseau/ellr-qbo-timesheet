@@ -256,3 +256,87 @@ it('falls back to the customer ref when the cached list has no display name', fu
         ['id' => '11', 'display_name' => '11'],
     ]);
 });
+
+it('skips project lookups when only a project ref is stored on a time entry', function () {
+    $token = QuickBooksToken::factory()->make();
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $entry = TimeEntry::factory()->forUser($user)->make([
+        'customer_ref' => null,
+        'project_ref' => '22',
+        'item_ref' => null,
+    ]);
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldNotReceive('listForUser');
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldNotReceive('listForCustomer');
+
+    $services = Mockery::mock(QboServiceListService::class);
+    $services->shouldNotReceive('listActive');
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects, $services);
+
+    expect($service->entryDisplayNames($token, $user, $entry))->toBe([
+        'customer_name' => null,
+        'project_name' => null,
+        'item_name' => null,
+    ]);
+});
+
+it('skips project lookups when only a project ref is stored on a timer session', function () {
+    $token = QuickBooksToken::factory()->make();
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $session = ActiveTimeSession::factory()->for($user)->make([
+        'customer_ref' => null,
+        'project_ref' => '22',
+        'service_ref' => null,
+    ]);
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldNotReceive('listForUser');
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldNotReceive('listForCustomer');
+
+    $services = Mockery::mock(QboServiceListService::class);
+    $services->shouldNotReceive('listActive');
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects, $services);
+
+    expect($service->sessionDisplayNames($token, $user, $session))->toBe([
+        'customer_name' => null,
+        'project_name' => null,
+        'service_name' => null,
+    ]);
+});
+
+it('returns null when employee lookup does not find a match', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $employees = Mockery::mock(QboEmployeeListService::class);
+    $employees->shouldReceive('listActive')->once()->with($token)->andReturn([]);
+
+    $employeeLookup = Mockery::mock(QboEmployeeService::class);
+    $employeeLookup->shouldReceive('findEmployee')->once()->with($token, '7')->andReturn(null);
+
+    $service = makeQboPickerDisplayNameService($employees, null, null, null, $employeeLookup);
+
+    expect($service->employeeDisplayName($token, '7'))->toBeNull();
+});
+
+it('skips invalid customer assignments when building assigned customer rows', function () {
+    $token = QuickBooksToken::factory()->make();
+    $user = User::factory()->create(['qbo_employee_ref' => '7']);
+    $assignment = new UserQboCustomer([
+        'user_id' => $user->id,
+        'qbo_customer_ref' => 'abc',
+    ]);
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listForUser')->once()->with($user, $token)->andReturn([]);
+
+    $service = makeQboPickerDisplayNameService(null, $customers);
+
+    expect($service->assignedCustomerRows($token, $user, [$assignment]))->toBe([]);
+});
