@@ -65,6 +65,30 @@ it('tracks processed notifications separately per entity fingerprint', function 
         ->and($service->wasProcessed('realm-2', [...$base, 'lastUpdated' => '2026-07-30T12:00:00Z']))->toBeFalse();
 });
 
+it('tracks processed notifications separately per entity id and operation', function () {
+    Cache::flush();
+
+    $service = app(QuickBooksWebhookIdempotencyService::class);
+    $lastUpdated = '2026-07-30T12:00:00Z';
+
+    $service->markProcessed('realm-1', [
+        'id' => '1',
+        'operation' => 'Update',
+        'lastUpdated' => $lastUpdated,
+    ]);
+
+    expect($service->wasProcessed('realm-1', [
+        'id' => '2',
+        'operation' => 'Update',
+        'lastUpdated' => $lastUpdated,
+    ]))->toBeFalse()
+        ->and($service->wasProcessed('realm-1', [
+            'id' => '1',
+            'operation' => 'Delete',
+            'lastUpdated' => $lastUpdated,
+        ]))->toBeFalse();
+});
+
 it('normalizes missing entity fields when building cache keys', function () {
     Cache::flush();
 

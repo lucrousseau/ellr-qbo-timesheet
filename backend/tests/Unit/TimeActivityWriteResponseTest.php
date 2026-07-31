@@ -56,6 +56,27 @@ it('upserts snapshots from write responses and falls back to syncOneById', funct
     TimeActivityWriteResponse::persistSnapshot($snapshots, $sync, $token, $dataService, $activity);
 });
 
+it('upserts snapshots directly when write responses are complete', function () {
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    $snapshots = Mockery::mock(TimeActivitySnapshotService::class);
+    $snapshots->shouldReceive('upsertFromQboEntity')
+        ->once()
+        ->with($token->realm_id, Mockery::type('object'), Mockery::type('object'), false);
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldNotReceive('syncOneById');
+
+    TimeActivityWriteResponse::persistSnapshot(
+        $snapshots,
+        $sync,
+        $token,
+        new stdClass,
+        (object) ['Id' => '12', 'EmployeeRef' => (object) ['value' => '7']],
+    );
+});
+
 it('throws when a write response is missing a quickbooks id during fallback', function () {
     $user = User::factory()->create();
     $token = QuickBooksToken::factory()->forUser($user)->create();
@@ -73,4 +94,27 @@ it('throws when a write response is missing a quickbooks id during fallback', fu
         new stdClass,
         (object) [],
     ))->toThrow(InvalidArgumentException::class, 'QuickBooks write response is missing a time activity id.');
+});
+
+it('falls back to syncOneById using numeric quickbooks ids', function () {
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    $snapshots = Mockery::mock(TimeActivitySnapshotService::class);
+    $snapshots->shouldReceive('upsertFromQboEntity')
+        ->once()
+        ->andThrow(new InvalidArgumentException('sparse'));
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with($token, Mockery::on(fn (string $id): bool => $id === '12'), false);
+
+    TimeActivityWriteResponse::persistSnapshot(
+        $snapshots,
+        $sync,
+        $token,
+        new stdClass,
+        (object) ['Id' => 12],
+    );
 });

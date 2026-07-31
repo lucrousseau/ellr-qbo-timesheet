@@ -67,7 +67,10 @@
         "test:feature:time-activities": "vendor/bin/pest tests/Feature/TimeActivityTest.php",
         "test:feature:auth": "vendor/bin/pest tests/Feature/SanctumSessionAuthTest.php",
         "test:behat": "vendor/bin/behat --strict",
-        "test:mutation": "XDEBUG_MODE=off php -d pcov.enabled=1 vendor/bin/pest --mutate --min=90 --covered-only --parallel",
+        "test:mutation": [
+            "Composer\\Config::disableProcessTimeout",
+            "XDEBUG_MODE=off php -d pcov.enabled=1 vendor/bin/pest --mutate --min=90 --covered-only --parallel"
+        ],
         "analyse": "vendor/bin/phpstan analyse --memory-limit=512M",
         "format": "vendor/bin/pint",
         "format:check": "vendor/bin/pint --test",

@@ -24,6 +24,16 @@ it('logs permanent webhook job failures', function () {
     (new ProcessQuickBooksWebhookJob([]))->failed(new RuntimeException('queue failed'));
 });
 
+it('logs permanent webhook job failures when no exception is provided', function () {
+    Log::shouldReceive('error')
+        ->once()
+        ->with('QuickBooks webhook job failed permanently', [
+            'message' => null,
+        ]);
+
+    (new ProcessQuickBooksWebhookJob([]))->failed(null);
+});
+
 it('deduplicates identical webhook payloads in the queue', function () {
     $payload = [
         'eventNotifications' => [
@@ -66,6 +76,12 @@ it('deduplicates reconcile jobs per realm and lookback mode', function () {
 
     expect($job->uniqueId())->toBe('quickbooks:reconcile:realm-42:recent')
         ->and($job->uniqueFor)->toBe(300);
+});
+
+it('falls back to the token id when the realm cannot be resolved for deduplication', function () {
+    $job = new ReconcileRealmTimeActivitiesJob(999, fullLookback: true);
+
+    expect($job->uniqueId())->toBe('quickbooks:reconcile:999:full');
 });
 
 it('skips reconcile when the token was removed before the job runs', function () {

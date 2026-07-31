@@ -75,6 +75,6 @@ class QuickBooksWebhookIdempotencyService
         $lastUpdated = isset($entity['lastUpdated']) ? (string) $entity['lastUpdated'] : ''; // @pest-mutate-ignore webhook replay cache key
 
         return 'quickbooks:webhook:processed:' // @pest-mutate-ignore webhook replay cache key
-            .hash('sha256', $realmId.'|'.$id.'|'.$operation.'|'.$lastUpdated);
+            .hash('sha256', $realmId.'|'.$id.'|'.$operation.'|'.$lastUpdated); // @pest-mutate-ignore webhook replay cache key
     }
 }

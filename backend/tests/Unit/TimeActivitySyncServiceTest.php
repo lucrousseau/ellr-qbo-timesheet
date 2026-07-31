@@ -372,3 +372,93 @@ it('skips scheduled reconcile for realms synced recently via webhook', function 
 
     expect(makeTimeActivitySyncService($dataService)->reconcileAllRealms(scheduled: true))->toBe(0);
 });
+
+it('skips scheduled reconcile for realms reconciled recently', function () {
+    config([
+        'quickbooks.time_activities_reconcile_skip_hours' => 2,
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $user = User::factory()->create();
+    QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-reconciled']);
+    QboRealmSyncState::query()->create([
+        'realm_id' => 'realm-reconciled',
+        'last_reconciled_at' => now()->subMinutes(30),
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldNotReceive('Query');
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileAllRealms(scheduled: true))->toBe(0);
+});
+
+it('returns zero upserts when reconcile queries return an empty first page', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(0);
+});
+
+it('does not skip realms during manual reconcile even when recently synced', function () {
+    config([
+        'quickbooks.time_activities_reconcile_skip_hours' => 2,
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-recent']);
+    QboRealmSyncState::query()->create([
+        'realm_id' => 'realm-recent',
+        'last_webhook_at' => now()->subMinute(),
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileAllRealms(scheduled: false))->toBe(0);
+});
+
+it('uses recent scope during scheduled reconcile for eligible realms', function () {
+    config([
+        'quickbooks.time_activities_reconcile_skip_hours' => 0,
+        'quickbooks.time_activities_lookback_steps' => [14, 30, 90],
+        'quickbooks.time_activities_lookback_days' => 90,
+    ]);
+
+    $user = User::factory()->create();
+    QuickBooksToken::factory()->forUser($user)->create();
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileAllRealms(scheduled: true))->toBe(0);
+});
+
+it('stops importing when quickbooks returns a non-array query result', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn(null);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(0);
+});
