@@ -189,3 +189,70 @@ it('resolves local time entry labels from cached picker lists', function () {
         'item_name' => 'Consulting',
     ]);
 });
+
+it('uses the full customer list when the user has all-customers access', function () {
+    $token = QuickBooksToken::factory()->make();
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_all_customers_access' => true,
+    ]);
+    $assignment = new UserQboCustomer([
+        'user_id' => $user->id,
+        'qbo_customer_ref' => '11',
+    ]);
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')
+        ->once()
+        ->with($token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+    $customers->shouldNotReceive('listForUser');
+
+    $service = makeQboPickerDisplayNameService(null, $customers);
+
+    expect($service->assignedCustomerRows($token, $user, [$assignment]))->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ]);
+});
+
+it('returns null when employee lookup resolves an empty display name', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $employees = Mockery::mock(QboEmployeeListService::class);
+    $employees->shouldReceive('listActive')->once()->with($token)->andReturn([]);
+
+    $employeeLookup = Mockery::mock(QboEmployeeService::class);
+    $employeeLookup->shouldReceive('findEmployee')
+        ->once()
+        ->with($token, '7')
+        ->andReturn(['display_name' => '']);
+
+    $service = makeQboPickerDisplayNameService($employees, null, null, null, $employeeLookup);
+
+    expect($service->employeeDisplayName($token, '7'))->toBeNull();
+});
+
+it('falls back to the customer ref when the cached list has no display name', function () {
+    $token = QuickBooksToken::factory()->make();
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+    ]);
+    $assignment = new UserQboCustomer([
+        'user_id' => $user->id,
+        'qbo_customer_ref' => '11',
+    ]);
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listForUser')
+        ->once()
+        ->with($user, $token)
+        ->andReturn([]);
+
+    $service = makeQboPickerDisplayNameService(null, $customers);
+
+    expect($service->assignedCustomerRows($token, $user, [$assignment]))->toBe([
+        ['id' => '11', 'display_name' => '11'],
+    ]);
+});

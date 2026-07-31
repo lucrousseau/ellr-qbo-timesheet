@@ -108,3 +108,46 @@ it('maps a collection with one shared token lookup', function () {
         ->and($rows[0]['customer_name'])->toBe('Acme Corp')
         ->and($rows[1]['customer_name'])->toBe('Acme Corp');
 });
+
+it('resolves one token for a collection when none is pre-resolved', function () {
+    $viewer = User::factory()->create();
+    $entries = TimeEntry::factory()->forUser($viewer)->count(2)->create();
+    $token = QuickBooksToken::factory()->forUser($viewer)->create();
+
+    $displayNames = Mockery::mock(QboPickerDisplayNameService::class);
+    $displayNames->shouldReceive('entryDisplayNames')->twice()->andReturn([
+        'customer_name' => 'Acme Corp',
+        'project_name' => null,
+        'item_name' => null,
+    ]);
+
+    $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
+    $tokenResolver->shouldReceive('resolve')->once()->with($viewer)->andReturn($token);
+
+    $service = new TimeEntryPresentationService($displayNames, $tokenResolver);
+    $rows = $service->collection($entries, $viewer);
+
+    expect($rows)->toHaveCount(2)
+        ->and($rows[0]['customer_name'])->toBe('Acme Corp');
+});
+
+it('returns null labels for a collection when quickbooks is disconnected', function () {
+    $viewer = User::factory()->create();
+    $entries = TimeEntry::factory()->forUser($viewer)->count(2)->create();
+
+    $displayNames = Mockery::mock(QboPickerDisplayNameService::class);
+    $displayNames->shouldNotReceive('entryDisplayNames');
+
+    $tokenResolver = Mockery::mock(QuickBooksTokenResolverService::class);
+    $tokenResolver->shouldReceive('resolve')
+        ->once()
+        ->with($viewer)
+        ->andThrow(new HttpResponseException(response()->json(['message' => 'not connected'], 403)));
+
+    $service = new TimeEntryPresentationService($displayNames, $tokenResolver);
+    $rows = $service->collection($entries, $viewer);
+
+    expect($rows)->toHaveCount(2)
+        ->and($rows[0]['customer_name'])->toBeNull()
+        ->and($rows[1]['customer_name'])->toBeNull();
+});

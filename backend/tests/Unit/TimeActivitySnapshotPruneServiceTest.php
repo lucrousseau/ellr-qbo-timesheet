@@ -42,3 +42,25 @@ it('hard-deletes soft-deleted snapshots older than the retention window', functi
 it('returns zero when snapshot retention days is disabled', function () {
     expect(app(TimeActivitySnapshotPruneService::class)->pruneExpiredSoftDeletes(0))->toBe(0);
 });
+
+it('returns zero when snapshot retention days is negative', function () {
+    expect(app(TimeActivitySnapshotPruneService::class)->pruneExpiredSoftDeletes(-1))->toBe(0);
+});
+
+it('prunes snapshots in bounded chunks using the configured chunk size', function () {
+    config(['quickbooks.snapshot_purge_chunk_size' => 1]);
+
+    $service = app(TimeActivitySnapshotPruneService::class);
+
+    foreach (['one', 'two'] as $qboId) {
+        $snapshot = TimeActivitySnapshot::factory()
+            ->forRealm('realm-1')
+            ->forEmployee('7')
+            ->create(['qbo_id' => $qboId]);
+        $snapshot->delete();
+        $snapshot->forceFill(['deleted_at' => now()->subDays(120)])->saveQuietly();
+    }
+
+    expect($service->pruneExpiredSoftDeletes(90))->toBe(2)
+        ->and(TimeActivitySnapshot::onlyTrashed()->count())->toBe(0);
+});

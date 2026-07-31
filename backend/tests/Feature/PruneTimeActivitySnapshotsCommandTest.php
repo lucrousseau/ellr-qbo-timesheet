@@ -64,3 +64,33 @@ it('prunes snapshots when retention days is one', function () {
         ->expectsOutputToContain('Pruned 2 expired soft-deleted snapshot(s).')
         ->assertSuccessful();
 });
+
+it('uses the configured default retention window when config is unset', function () {
+    $quickbooks = config('quickbooks');
+    unset($quickbooks['snapshot_soft_delete_retention_days']);
+    config(['quickbooks' => $quickbooks]);
+
+    $snapshots = Mockery::mock(TimeActivitySnapshotPruneService::class);
+    $snapshots->shouldReceive('pruneExpiredSoftDeletes')->once()->with(Mockery::on(
+        fn (int $days): bool => $days === 90,
+    ))->andReturn(0);
+    app()->instance(TimeActivitySnapshotPruneService::class, $snapshots);
+
+    $this->artisan('quickbooks:prune-time-activity-snapshots')
+        ->expectsOutputToContain('Pruned 0 expired soft-deleted snapshot(s).')
+        ->assertSuccessful();
+});
+
+it('casts string retention days from config before pruning', function () {
+    config(['quickbooks.snapshot_soft_delete_retention_days' => '30']);
+
+    $snapshots = Mockery::mock(TimeActivitySnapshotPruneService::class);
+    $snapshots->shouldReceive('pruneExpiredSoftDeletes')->once()->with(Mockery::on(
+        fn (int $days): bool => $days === 30,
+    ))->andReturn(1);
+    app()->instance(TimeActivitySnapshotPruneService::class, $snapshots);
+
+    $this->artisan('quickbooks:prune-time-activity-snapshots')
+        ->expectsOutputToContain('Pruned 1 expired soft-deleted snapshot(s).')
+        ->assertSuccessful();
+});

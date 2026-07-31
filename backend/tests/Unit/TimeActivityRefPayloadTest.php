@@ -26,3 +26,23 @@ it('omits customer and item refs when picker values are absent', function () {
             'item_name' => 'Consulting',
         ]))->toBeNull();
 });
+
+it('builds customer refs from customer selections without a project', function () {
+    expect(TimeActivityRefPayload::customerRef([
+        'customer_ref' => '11',
+        'customer_name' => 'Acme Corp',
+    ]))->toBe([
+        'value' => '11',
+        'name' => 'Acme Corp',
+    ]);
+});
+
+it('builds item refs with optional display names', function () {
+    expect(TimeActivityRefPayload::itemRef([
+        'item_ref' => '33',
+        'item_name' => 'Consulting',
+    ]))->toBe([
+        'value' => '33',
+        'name' => 'Consulting',
+    ]);
+});

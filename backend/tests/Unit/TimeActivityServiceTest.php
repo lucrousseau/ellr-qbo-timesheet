@@ -152,6 +152,41 @@ it('creates a time activity for a user', function () {
         ->and($payload->CustomerRef->name)->toBe('Acme');
 });
 
+it('omits employee display name when quickbooks returns an empty label', function () {
+    $captured = null;
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')->once()->with(Mockery::capture($captured))->andReturn((object) ['Id' => '99']);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $displayNames = Mockery::mock(QboPickerDisplayNameService::class);
+    $displayNames->shouldReceive('employeeDisplayName')->once()->with(Mockery::type(QuickBooksToken::class), '7')->andReturn('');
+
+    $quickBooks = Mockery::mock(QuickBooksService::class)->makePartial();
+    $quickBooks->shouldReceive('dataService')->andReturn($dataService);
+
+    $snapshots = Mockery::mock(TimeActivitySnapshotService::class);
+    $snapshots->shouldReceive('upsertFromQboEntity')->once();
+
+    $service = new TimeActivityService(
+        $quickBooks,
+        new QboEmployeeAuthorizationService,
+        new QuickBooksApiErrorFormatterService,
+        $snapshots,
+        Mockery::mock(TimeActivitySyncService::class),
+        $displayNames,
+    );
+
+    $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [
+        'start_time' => '2026-07-27T09:00:00',
+        'end_time' => '2026-07-27T17:00:00',
+    ]);
+
+    $payload = MockeryCapture::unwrap($captured);
+
+    expect((string) $payload->EmployeeRef->value)->toBe('7')
+        ->and(isset($payload->EmployeeRef->name))->toBeFalse();
+});
+
 it('upserts the local snapshot from the quickbooks create response', function () {
     $activity = (object) [
         'Id' => '99',

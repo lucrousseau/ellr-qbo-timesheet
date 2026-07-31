@@ -189,6 +189,31 @@ it('describes customer access without labels when quickbooks is disconnected', f
     ]);
 });
 
+it('describes customer access with labels when quickbooks is connected', function () {
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_all_customers_access' => false,
+    ]);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '11',
+    ]);
+    $token = QuickBooksToken::factory()->make();
+
+    $displayNames = Mockery::mock(QboPickerDisplayNameService::class);
+    $displayNames->shouldReceive('assignedCustomerRows')
+        ->once()
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+
+    expect(makeUserQboCustomerAssignmentService(null, $displayNames)->describeAccessForApi($user, $token))->toBe([
+        'all_customers_access' => false,
+        'data' => [
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ],
+    ]);
+});
+
 it('syncs an empty restricted customer assignment list', function () {
     $token = QuickBooksToken::factory()->make();
     $user = User::factory()->create([

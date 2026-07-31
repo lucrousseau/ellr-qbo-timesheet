@@ -42,3 +42,20 @@ it('matches picker options when quickbooks returns numeric ids', function () {
 it('preserves zero as a valid quickbooks identifier', function () {
     expect(QboRefNormalizer::normalize('0'))->toBe('0');
 });
+
+it('resolves display names from picker options using normalized identifiers', function () {
+    $options = [
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ];
+
+    expect(QboRefNormalizer::displayNameForRef($options, 'Customer-11'))->toBe('Acme Corp')
+        ->and(QboRefNormalizer::displayNameForRef($options, '99'))->toBeNull();
+});
+
+it('returns null when picker display names are blank after trimming', function () {
+    $options = [
+        ['id' => '11', 'display_name' => '   '],
+    ];
+
+    expect(QboRefNormalizer::displayNameForRef($options, '11'))->toBeNull();
+});

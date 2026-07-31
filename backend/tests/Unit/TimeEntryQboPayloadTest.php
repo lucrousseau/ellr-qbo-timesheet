@@ -55,3 +55,27 @@ it('omits display labels when quickbooks names are unavailable', function () {
         'customer_ref' => '11',
     ])->and($payload)->not->toHaveKey('customer_name');
 });
+
+it('omits empty display label strings from the quickbooks payload', function () {
+    $entry = TimeEntry::factory()->forUser(User::factory()->create([
+        'qbo_employee_ref' => '7',
+    ]))->make([
+        'customer_ref' => '11',
+        'project_ref' => '22',
+        'item_ref' => '33',
+        'start_time' => '2026-07-27 09:00:00',
+        'end_time' => '2026-07-27 17:00:00',
+    ]);
+
+    $payload = TimeEntryQboPayload::fromEntry($entry, [
+        'customer_name' => '',
+        'project_name' => '',
+        'item_name' => null,
+    ]);
+
+    expect($payload)->toMatchArray([
+        'customer_ref' => '11',
+        'project_ref' => '22',
+        'item_ref' => '33',
+    ])->and($payload)->not->toHaveKeys(['customer_name', 'project_name', 'item_name']);
+});
