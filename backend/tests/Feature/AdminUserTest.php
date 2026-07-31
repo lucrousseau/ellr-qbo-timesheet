@@ -45,7 +45,8 @@ it('lists provisioned timesheet users for administrators', function () {
         ->assertOk()
         ->assertJsonPath('data.0.id', $timesheetUser->id)
         ->assertJsonPath('data.0.qbo_employee_ref', '7')
-        ->assertJsonPath('data.0.level', 'employee');
+        ->assertJsonPath('data.0.level', 'employee')
+        ->assertJsonPath('data.0.assigned_customers', []);
 });
 
 it('requires administrator access to list timesheet users', function () {

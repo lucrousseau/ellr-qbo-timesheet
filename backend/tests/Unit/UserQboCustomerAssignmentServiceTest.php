@@ -174,6 +174,21 @@ it('describes all-customers access without assignment rows', function () {
     ]);
 });
 
+it('describes customer access without labels when quickbooks is disconnected', function () {
+    $user = User::factory()->create([
+        'qbo_employee_ref' => '7',
+        'qbo_all_customers_access' => false,
+    ]);
+    $user->qboCustomers()->create([
+        'qbo_customer_ref' => '11',
+    ]);
+
+    expect(makeUserQboCustomerAssignmentService()->describeAccessForApi($user, null))->toBe([
+        'all_customers_access' => false,
+        'data' => [],
+    ]);
+});
+
 it('syncs an empty restricted customer assignment list', function () {
     $token = QuickBooksToken::factory()->make();
     $user = User::factory()->create([

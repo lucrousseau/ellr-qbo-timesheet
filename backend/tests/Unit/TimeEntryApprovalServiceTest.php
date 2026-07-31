@@ -117,6 +117,40 @@ it('approves a pending entry and stores the quickbooks identifier', function () 
         ->and($approved->qbo_id)->toBe('88');
 });
 
+it('dispatches resolved quickbooks labels in the approval sync payload', function () {
+    Queue::fake();
+    mockQboEntryDisplayNames([
+        'customer_name' => 'Acme Corp',
+        'project_name' => 'Website redesign',
+        'item_name' => 'Consulting',
+    ]);
+
+    $admin = User::factory()->admin()->create();
+    QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $entry = TimeEntry::factory()->forUser($employee)->create([
+        'customer_ref' => '11',
+        'project_ref' => '22',
+        'item_ref' => '33',
+    ]);
+
+    $this->mock(QboPickerValidationService::class, function ($mock) {
+        $mock->shouldReceive('assertValidTimeEntry')->once();
+    });
+
+    app(TimeEntryApprovalService::class)->approve($admin, $entry->id);
+
+    Queue::assertPushed(
+        SyncApprovedTimeEntryToQuickBooksJob::class,
+        fn (SyncApprovedTimeEntryToQuickBooksJob $job): bool => $job->payload['customer_name'] === 'Acme Corp'
+            && $job->payload['project_name'] === 'Website redesign'
+            && $job->payload['item_name'] === 'Consulting',
+    );
+});
+
 it('validates picker references before approving entries with quickbooks fields', function () {
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);

@@ -52,3 +52,15 @@ it('skips pruning when retention days is disabled', function () {
         ->expectsOutputToContain('Snapshot soft-delete pruning is disabled')
         ->assertSuccessful();
 });
+
+it('prunes snapshots when retention days is one', function () {
+    config(['quickbooks.snapshot_soft_delete_retention_days' => 1]);
+
+    $snapshots = Mockery::mock(TimeActivitySnapshotPruneService::class);
+    $snapshots->shouldReceive('pruneExpiredSoftDeletes')->once()->with(1)->andReturn(2);
+    app()->instance(TimeActivitySnapshotPruneService::class, $snapshots);
+
+    $this->artisan('quickbooks:prune-time-activity-snapshots')
+        ->expectsOutputToContain('Pruned 2 expired soft-deleted snapshot(s).')
+        ->assertSuccessful();
+});
