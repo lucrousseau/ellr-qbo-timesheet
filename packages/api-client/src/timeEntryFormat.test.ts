@@ -36,4 +36,30 @@ describe('parseTimeEntryRow', () => {
       employeeName: 'Jane Doe',
     })
   })
+
+  it('falls back to refs when display names are missing', () => {
+    const row = parseTimeEntryRow({
+      id: 13,
+      user_id: 3,
+      customer_ref: '11',
+      customer_name: null,
+      project_ref: '22',
+      project_name: null,
+      item_ref: '9',
+      item_name: null,
+      start_time: '2026-07-27T09:00:00Z',
+      end_time: '2026-07-27T17:00:00Z',
+      duration_seconds: 28_800,
+      description: 'Draft',
+      is_billable: true,
+      status: 'pending',
+      qbo_id: null,
+      list_id: 'local:13',
+    })
+
+    expect(row).toMatchObject({
+      customerName: '11 / 22',
+      serviceName: '9',
+    })
+  })
 })

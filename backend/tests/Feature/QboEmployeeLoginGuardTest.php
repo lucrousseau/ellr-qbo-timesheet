@@ -71,7 +71,6 @@ it('syncs name and email from quickbooks on login', function () {
     $user = timesheetUserFor($admin, [
         'name' => 'Old Name',
         'email' => 'old@example.com',
-        'qbo_employee_name' => 'Old Name',
     ]);
 
     $dataService = Mockery::mock(DataService::class);
@@ -132,7 +131,6 @@ it('rejects login when quickbooks identity sync hits an email conflict', functio
     ]);
     $user = timesheetUserFor($admin, [
         'email' => 'old@example.com',
-        'qbo_employee_name' => 'Old Name',
     ]);
 
     $dataService = Mockery::mock(DataService::class);

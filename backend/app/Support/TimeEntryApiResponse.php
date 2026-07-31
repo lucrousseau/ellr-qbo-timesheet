@@ -21,11 +21,17 @@ class TimeEntryApiResponse
      * Maps a time entry model to an API-friendly array.
      *
      * @param  TimeEntry  $entry  Local time entry instance.
+     * @param  array{customer_name?: string|null, project_name?: string|null, item_name?: string|null}|null  $labels  Resolved picker labels.
      * @return array<string, mixed>
      */
-    public static function resource(TimeEntry $entry): array
+    public static function resource(TimeEntry $entry, ?array $labels = null): array
     {
         $entry->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
+        $labels ??= [
+            'customer_name' => null,
+            'project_name' => null,
+            'item_name' => null,
+        ];
 
         [$startTime, $endTime] = TimeActivityDuration::normalizeRange($entry->start_time, $entry->end_time);
         $durationSeconds = TimeActivityDuration::secondsBetween($startTime, $endTime); // @pest-mutate-ignore computed duration field
@@ -36,11 +42,11 @@ class TimeEntryApiResponse
             'user_id' => $entry->user_id, // @pest-mutate-ignore API resource field mapping
             'employee_name' => $entry->user?->name, // @pest-mutate-ignore API resource field mapping
             'customer_ref' => $entry->customer_ref, // @pest-mutate-ignore API resource field mapping
-            'customer_name' => $entry->customer_name, // @pest-mutate-ignore API resource field mapping
+            'customer_name' => $labels['customer_name'] ?? null, // @pest-mutate-ignore API resource field mapping
             'project_ref' => $entry->project_ref, // @pest-mutate-ignore API resource field mapping
-            'project_name' => $entry->project_name, // @pest-mutate-ignore API resource field mapping
+            'project_name' => $labels['project_name'] ?? null, // @pest-mutate-ignore API resource field mapping
             'item_ref' => $entry->item_ref, // @pest-mutate-ignore API resource field mapping
-            'item_name' => $entry->item_name, // @pest-mutate-ignore API resource field mapping
+            'item_name' => $labels['item_name'] ?? null, // @pest-mutate-ignore API resource field mapping
             'start_time' => $startTime?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
             'end_time' => $endTime?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
             'duration_seconds' => $durationSeconds, // @pest-mutate-ignore computed duration field

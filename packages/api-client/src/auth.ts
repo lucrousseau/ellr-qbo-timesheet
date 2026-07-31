@@ -33,7 +33,6 @@ export type User = {
   is_super_admin?: boolean
   organization?: Organization | null
   qbo_employee_ref?: string | null
-  qbo_employee_name?: string | null
   assigned_customers?: Array<{ id: string; display_name: string }>
   all_customers_access?: boolean
   supervisor_id?: number | null
@@ -107,18 +106,13 @@ export async function fetchCurrentUser(): Promise<User | null> {
 /**
  * Links a QuickBooks employee to the user account (admin).
  * @param qboEmployeeRef QuickBooks employee ID.
- * @param qboEmployeeName Optional display name.
  * @returns Updated user.
  */
-export async function updateQboEmployee(
-  qboEmployeeRef: string,
-  qboEmployeeName?: string,
-): Promise<User> {
+export async function updateQboEmployee(qboEmployeeRef: string): Promise<User> {
   const response = await apiFetch<{ user: User }>('/user/qbo-employee', {
     method: 'PATCH',
     body: JSON.stringify({
       qbo_employee_ref: qboEmployeeRef,
-      qbo_employee_name: qboEmployeeName ?? null,
     }),
   })
 
@@ -196,19 +190,16 @@ export async function changePassword(
  * Links a QuickBooks employee to another user account (administrator only).
  * @param userId Target application user ID.
  * @param qboEmployeeRef QuickBooks employee ID.
- * @param qboEmployeeName Optional display name.
  * @returns Updated user.
  */
 export async function updateUserQboEmployee(
   userId: number,
   qboEmployeeRef: string,
-  qboEmployeeName?: string,
 ): Promise<User> {
   const response = await apiFetch<{ user: User }>(`/admin/users/${userId}/qbo-employee`, {
     method: 'PATCH',
     body: JSON.stringify({
       qbo_employee_ref: qboEmployeeRef,
-      qbo_employee_name: qboEmployeeName ?? null,
     }),
   })
 

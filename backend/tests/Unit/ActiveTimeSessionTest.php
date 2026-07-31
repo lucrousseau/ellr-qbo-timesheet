@@ -69,7 +69,6 @@ it('reports running state from running_since', function () {
 it('belongs to the owning user', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     $session = ActiveTimeSession::factory()->for($user)->create();

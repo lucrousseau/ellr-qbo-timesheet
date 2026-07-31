@@ -36,7 +36,6 @@ class UpdateQboEmployeeRequest extends FormRequest
                 'max:255',
                 $this->uniqueQboEmployeeRefForOrganization($ignoreUserId),
             ],
-            'qbo_employee_name' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

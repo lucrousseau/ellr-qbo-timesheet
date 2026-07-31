@@ -135,11 +135,8 @@ class TimeEntryService
     {
         return [
             'customer_ref' => $validated['customer_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
-            'customer_name' => $validated['customer_name'] ?? null, // @pest-mutate-ignore optional create field mapping
             'project_ref' => $validated['project_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
-            'project_name' => $validated['project_name'] ?? null, // @pest-mutate-ignore optional create field mapping
             'item_ref' => $validated['item_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
-            'item_name' => $validated['item_name'] ?? null, // @pest-mutate-ignore optional create field mapping
             'start_time' => $validated['start_time'], // @pest-mutate-ignore required create field mapping
             'end_time' => $validated['end_time'], // @pest-mutate-ignore required create field mapping
             'description' => $validated['description'] ?? null, // @pest-mutate-ignore optional create field mapping
@@ -159,11 +156,8 @@ class TimeEntryService
 
         foreach ([
             'customer_ref',
-            'customer_name',
             'project_ref',
-            'project_name',
             'item_ref',
-            'item_name',
             'start_time',
             'end_time',
             'description',

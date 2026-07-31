@@ -28,18 +28,26 @@ function makeQboCustomerListService(QuickBooksService $quickBooks): QboCustomerL
 }
 
 it('returns assigned customers for a timesheet user from stored assignments', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0]);
+
     $user = User::factory()->create(['qbo_employee_ref' => '7']);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
     $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern('/FROM Customer WHERE Active = true AND Job = false/'))
+        ->andReturn([
+            (object) ['Id' => '11', 'DisplayName' => 'Acme Corp'],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
 
-    $service = makeQboCustomerListService(Mockery::mock(QuickBooksService::class));
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
 
-    expect($service->listForUser($user, $token))->toBe([
-        ['id' => '11', 'display_name' => 'Acme Corp'],
-    ])->and($service->listForUser($user, $token, true))->toBe([
+    expect(makeQboCustomerListService($quickBooks)->listForUser($user, $token))->toBe([
         ['id' => '11', 'display_name' => 'Acme Corp'],
     ]);
 });
@@ -52,11 +60,12 @@ it('returns an empty customer list when no assignments exist', function () {
 });
 
 it('resolves the employee ref before returning customer lists', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0]);
+
     $user = User::factory()->create(['qbo_employee_ref' => '7']);
     $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
 
     $authorization = Mockery::mock(QboEmployeeAuthorizationService::class);
@@ -65,8 +74,20 @@ it('resolves the employee ref before returning customer lists', function () {
         ->with($user)
         ->andReturn('7');
 
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->with(Mockery::pattern('/FROM Customer WHERE Active = true AND Job = false/'))
+        ->andReturn([
+            (object) ['Id' => '11', 'DisplayName' => 'Acme Corp'],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
+
     $service = new QboCustomerListService(
-        Mockery::mock(QuickBooksService::class),
+        $quickBooks,
         new QboListCacheService,
         new QuickBooksApiErrorFormatterService,
         $authorization,

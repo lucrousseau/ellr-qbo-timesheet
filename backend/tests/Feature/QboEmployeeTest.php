@@ -29,8 +29,7 @@ it('updates the authenticated administrators qbo employee mapping', function () 
             'qbo_employee_ref' => '42',
         ], frontendHeaders())
         ->assertOk()
-        ->assertJsonPath('user.qbo_employee_ref', '42')
-        ->assertJsonPath('user.qbo_employee_name', 'Jane Doe');
+        ->assertJsonPath('user.qbo_employee_ref', '42');
 
     expect($admin->fresh()->qbo_employee_ref)->toBe('42');
 });

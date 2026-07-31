@@ -34,9 +34,16 @@ class OrganizationRealmDataPurgeService
             return;
         }
 
+        $chunkSize = max(1, (int) config('quickbooks.snapshot_purge_chunk_size', 1000));
+
         TimeActivitySnapshot::withTrashed()
             ->where('realm_id', $realmId)
-            ->forceDelete();
+            ->orderBy('id')
+            ->chunkById($chunkSize, function ($snapshots): void {
+                foreach ($snapshots as $snapshot) {
+                    $snapshot->forceDelete();
+                }
+            });
 
         QboRealmSyncState::query()
             ->where('realm_id', $realmId)

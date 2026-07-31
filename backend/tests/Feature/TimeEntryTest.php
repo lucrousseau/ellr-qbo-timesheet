@@ -40,6 +40,7 @@ it('requires authentication for time entries', function () {
 
 describe('employee time entries', function () {
     beforeEach(function () {
+        mockQboEntryDisplayNames();
         actingAsWithQboEmployee();
     });
 
@@ -144,6 +145,10 @@ describe('employee time entries', function () {
 });
 
 describe('time entry approvals', function () {
+    beforeEach(function () {
+        mockQboEntryDisplayNames();
+    });
+
     it('lets an administrator approve a pending entry and sync to quickbooks', function () {
         $admin = actingAsAdmin();
         QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);

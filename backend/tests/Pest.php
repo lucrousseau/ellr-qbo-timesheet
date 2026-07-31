@@ -4,6 +4,8 @@ use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
+use App\Services\QboCustomerListService;
+use App\Services\QboPickerDisplayNameService;
 use App\Services\QuickBooksWebhookIdempotencyService;
 use App\Services\QuickBooksWebhookProcessorService;
 use App\Services\TimeActivitySnapshotService;
@@ -71,7 +73,6 @@ function actingAsWithQboEmployee(array $attributes = []): User
 
     $user = User::factory()->create(array_merge([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ], $attributes));
 
     Sanctum::actingAs($user);
@@ -98,7 +99,6 @@ function timesheetUserFor(User $admin, array $attributes = []): User
     return User::factory()->create(array_merge([
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ], $attributes));
 }
 
@@ -118,6 +118,106 @@ function validTestPassword(): string
 function validTestPasswordAlt(): string
 {
     return PasswordPolicy::validTestPasswordAlt();
+}
+
+/**
+ * Mocks QuickBooks customer list responses in feature tests.
+ *
+ * @param  array<int, array{id: string, display_name: string}>  $customers
+ */
+function mockQboCustomerList(array $customers = [['id' => '11', 'display_name' => 'Acme Corp']]): void
+{
+    test()->mock(QboCustomerListService::class, function ($mock) use ($customers) {
+        $mock->shouldReceive('listAllActive')->andReturn($customers);
+        $mock->shouldReceive('listForUser')->andReturnUsing(
+            function ($user, $token, bool $refresh = false) use ($customers): array {
+                if ($user->qbo_all_customers_access) {
+                    return $customers;
+                }
+
+                $assigned = [];
+
+                foreach ($user->qboCustomers as $assignment) {
+                    $assigned[(string) $assignment->qbo_customer_ref] = true;
+                }
+
+                if ($assigned === []) {
+                    foreach ($user->qboCustomers()->pluck('qbo_customer_ref') as $ref) {
+                        $assigned[(string) $ref] = true;
+                    }
+                }
+
+                return array_values(array_filter(
+                    $customers,
+                    fn (array $row): bool => isset($assigned[$row['id']]),
+                ));
+            },
+        );
+    });
+}
+
+/**
+ * Mocks assigned customer picker rows for admin assignment endpoints.
+ *
+ * @param  array<int, array{id: string, display_name: string}>  $rows
+ */
+function mockAssignedCustomerRows(array $rows = [['id' => '11', 'display_name' => 'Acme Corp']]): void
+{
+    test()->mock(QboPickerDisplayNameService::class, function ($mock) use ($rows) {
+        $mock->shouldReceive('assignedCustomerRows')->andReturn($rows);
+        $mock->shouldReceive('sessionDisplayNames')->andReturn([
+            'customer_name' => null,
+            'project_name' => null,
+            'service_name' => null,
+        ]);
+    });
+}
+
+/**
+ * Mocks active timer session display labels resolved from QuickBooks lists.
+ *
+ * @param  array{customer_name?: string|null, project_name?: string|null, service_name?: string|null}  $labels
+ */
+function mockQboSessionDisplayNames(array $labels = [
+    'customer_name' => null,
+    'project_name' => null,
+    'service_name' => null,
+]): void
+{
+    test()->mock(QboPickerDisplayNameService::class, function ($mock) use ($labels) {
+        $mock->shouldReceive('sessionDisplayNames')->andReturn([
+            'customer_name' => $labels['customer_name'] ?? null,
+            'project_name' => $labels['project_name'] ?? null,
+            'service_name' => $labels['service_name'] ?? null,
+        ]);
+    });
+}
+
+/**
+ * Mocks local time entry display labels and employee names for approval and API tests.
+ *
+ * @param  array{customer_name?: string|null, project_name?: string|null, item_name?: string|null}  $labels
+ */
+function mockQboEntryDisplayNames(array $labels = [
+    'customer_name' => null,
+    'project_name' => null,
+    'item_name' => null,
+]): void
+{
+    test()->mock(QboPickerDisplayNameService::class, function ($mock) use ($labels) {
+        $mock->shouldReceive('entryDisplayNames')->andReturn([
+            'customer_name' => $labels['customer_name'] ?? null,
+            'project_name' => $labels['project_name'] ?? null,
+            'item_name' => $labels['item_name'] ?? null,
+        ]);
+        $mock->shouldReceive('employeeDisplayName')->andReturn('Jane Doe');
+        $mock->shouldReceive('assignedCustomerRows')->zeroOrMoreTimes()->andReturn([]);
+        $mock->shouldReceive('sessionDisplayNames')->zeroOrMoreTimes()->andReturn([
+            'customer_name' => null,
+            'project_name' => null,
+            'service_name' => null,
+        ]);
+    });
 }
 
 /**

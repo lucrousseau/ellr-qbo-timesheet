@@ -130,6 +130,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Snapshot retention and bulk purge chunk size
+    |--------------------------------------------------------------------------
+    |
+    | Soft-deleted snapshots are hard-deleted after the retention window by the
+    | scheduled prune command. Realm disconnect purges delete rows in chunks to
+    | avoid long table locks on large tenants.
+    |
+    */
+
+    'snapshot_soft_delete_retention_days' => (int) env('QUICKBOOKS_SNAPSHOT_SOFT_DELETE_RETENTION_DAYS', 90),
+
+    'snapshot_purge_chunk_size' => (int) env('QUICKBOOKS_SNAPSHOT_PURGE_CHUNK_SIZE', 1000),
+
+    /*
+    |--------------------------------------------------------------------------
     | Company timezone for QBO clock-time duration
     |--------------------------------------------------------------------------
     |

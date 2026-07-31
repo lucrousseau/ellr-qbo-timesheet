@@ -42,7 +42,7 @@ export function TimesheetProvisionedUserRow({
         <p className="text-slate-600">{user.email}</p>
         <p className="text-slate-500">
           {t('admin.mappedEmployee', {
-            name: user.qbo_employee_name ?? user.qbo_employee_ref ?? '',
+            name: user.name,
           })}
         </p>
         <p className="text-slate-500">

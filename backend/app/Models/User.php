@@ -24,7 +24,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['organization_id', 'name', 'email', 'password', 'locale', 'timezone', 'qbo_employee_ref', 'qbo_employee_name', 'qbo_all_customers_access', 'supervisor_id'])]
+#[Fillable(['organization_id', 'name', 'email', 'password', 'locale', 'timezone', 'qbo_employee_ref', 'qbo_all_customers_access', 'supervisor_id'])]
 #[Hidden(['password', 'remember_token', 'is_admin', 'is_super_admin'])]
 /**
  * Eloquent user with Sanctum auth and optional QBO employee fields.
@@ -158,24 +158,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function qboCustomers(): HasMany
     {
         return $this->hasMany(UserQboCustomer::class);
-    }
-
-    /**
-     * Returns assigned QuickBooks customer picker rows for timesheet users.
-     *
-     * @return array<int, array{id: string, display_name: string}>
-     */
-    public function assignedQboCustomerPickerRows(): array
-    {
-        return $this->qboCustomers()
-            ->orderBy('qbo_customer_name')
-            ->get()
-            ->map(fn (UserQboCustomer $assignment): array => [
-                'id' => $assignment->qbo_customer_ref,
-                'display_name' => $assignment->qbo_customer_name,
-            ])
-            ->values()
-            ->all();
     }
 
     /**

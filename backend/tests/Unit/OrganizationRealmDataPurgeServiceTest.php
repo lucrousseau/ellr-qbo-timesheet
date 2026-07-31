@@ -53,3 +53,18 @@ it('ignores empty realm identifiers', function () {
 
     expect(TimeActivitySnapshot::query()->where('realm_id', 'realm-42')->exists())->toBeTrue();
 });
+
+it('purges large realms in chunks without leaving rows behind', function () {
+    config(['quickbooks.snapshot_purge_chunk_size' => 2]);
+
+    foreach (range(1, 5) as $index) {
+        TimeActivitySnapshot::factory()->create([
+            'realm_id' => 'realm-chunk',
+            'qbo_id' => (string) $index,
+        ]);
+    }
+
+    app(OrganizationRealmDataPurgeService::class)->purgeRealm('realm-chunk');
+
+    expect(TimeActivitySnapshot::withTrashed()->where('realm_id', 'realm-chunk')->count())->toBe(0);
+});

@@ -25,7 +25,6 @@ const timesheetUser: User = {
   name: 'Jane Doe',
   email: 'jane@example.com',
   qbo_employee_ref: '7',
-  qbo_employee_name: 'Jane Doe',
   all_customers_access: false,
   assigned_customers: [{ id: '11', display_name: 'Acme Corp' }],
 }

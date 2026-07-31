@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AdminUserCustomerController;
 use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
 use App\Services\QboCustomerListService;
+use App\Services\QboPickerDisplayNameService;
 use App\Services\QuickBooksService;
 use App\Services\UserQboCustomerAssignmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,11 +19,13 @@ covers(UserQboCustomerAssignmentService::class);
 
 it('lists assigned customers for a provisioned timesheet user', function () {
     $admin = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($admin)->create();
     $timesheetUser = timesheetUserFor($admin);
     $timesheetUser->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
+
+    mockAssignedCustomerRows();
 
     $this->actingAs($admin)
         ->getJson("/api/admin/users/{$timesheetUser->id}/customers", frontendHeaders())
@@ -34,6 +37,7 @@ it('lists assigned customers for a provisioned timesheet user', function () {
 
 it('reports all-customers access for a provisioned timesheet user', function () {
     $admin = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($admin)->create();
     $timesheetUser = timesheetUserFor($admin, [
         'qbo_all_customers_access' => true,
     ]);
@@ -53,8 +57,14 @@ it('syncs customer assignments for a provisioned timesheet user', function () {
 
     $this->mock(QboCustomerListService::class, function ($mock) {
         $mock->shouldReceive('listAllActive')
-            ->once()
-            ->with(Mockery::any(), true)
+            ->andReturn([
+                ['id' => '11', 'display_name' => 'Acme Corp'],
+                ['id' => '12', 'display_name' => 'Beta LLC'],
+            ]);
+    });
+
+    $this->mock(QboPickerDisplayNameService::class, function ($mock) {
+        $mock->shouldReceive('assignedCustomerRows')
             ->andReturn([
                 ['id' => '11', 'display_name' => 'Acme Corp'],
                 ['id' => '12', 'display_name' => 'Beta LLC'],
@@ -80,7 +90,6 @@ it('grants all-customers access for a provisioned timesheet user', function () {
     $timesheetUser = timesheetUserFor($admin);
     $timesheetUser->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
 
     $this->actingAs($admin)
@@ -148,9 +157,7 @@ it('clears stale timer customer selections when admin updates assignments', func
 
     ActiveTimeSession::factory()->for($timesheetUser)->create([
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website redesign',
         'accumulated_seconds' => 120,
         'running_since' => null,
     ]);
@@ -220,11 +227,13 @@ it('lists quickbooks customers for administrators without forcing refresh', func
 
 it('includes assigned customers when listing provisioned users', function () {
     $admin = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($admin)->create();
     $timesheetUser = timesheetUserFor($admin);
     $timesheetUser->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
+
+    mockAssignedCustomerRows();
 
     $this->actingAs($admin)
         ->getJson('/api/admin/users', frontendHeaders())
@@ -235,6 +244,7 @@ it('includes assigned customers when listing provisioned users', function () {
 
 it('includes all-customers access when listing provisioned users', function () {
     $admin = actingAsAdmin();
+    QuickBooksToken::factory()->forUser($admin)->create();
     $timesheetUser = timesheetUserFor($admin, [
         'qbo_all_customers_access' => true,
     ]);
@@ -253,8 +263,9 @@ it('lists stored customer assignments in the timesheet picker without quickbooks
     $user = timesheetUserFor($admin);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
+
+    mockQboCustomerList();
 
     $this->actingAs($user)
         ->getJson('/api/quickbooks/customers', frontendHeaders())

@@ -10,7 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ListTimeEntryRequest;
 use App\Http\Requests\RejectTimeEntryRequest;
 use App\Services\TimeEntryApprovalService;
-use App\Support\TimeEntryApiResponse;
+use App\Services\TimeEntryPresentationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -23,9 +23,11 @@ class TimeEntryApprovalController extends Controller
      * Injects the approval workflow service.
      *
      * @param  TimeEntryApprovalService  $approvals  Time entry approval service instance.
+     * @param  TimeEntryPresentationService  $presentation  Read-time label resolution for API rows.
      */
     public function __construct(
         private readonly TimeEntryApprovalService $approvals,
+        private readonly TimeEntryPresentationService $presentation,
     ) {}
 
     /**
@@ -55,7 +57,7 @@ class TimeEntryApprovalController extends Controller
         $entry = $this->approvals->approve($request->user(), $timeEntry);
 
         return response()->json([
-            'data' => TimeEntryApiResponse::resource($entry),
+            'data' => $this->presentation->resource($entry, $request->user()),
         ]);
     }
 
@@ -75,7 +77,7 @@ class TimeEntryApprovalController extends Controller
         );
 
         return response()->json([
-            'data' => TimeEntryApiResponse::resource($entry),
+            'data' => $this->presentation->resource($entry, $request->user()),
         ]);
     }
 }

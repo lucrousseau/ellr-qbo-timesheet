@@ -25,11 +25,8 @@ class UpdateTimeEntryRequest extends FormRequest
     {
         return [
             'customer_ref' => ['sometimes', 'nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
-            'customer_name' => ['sometimes', 'nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'project_ref' => ['sometimes', 'nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
-            'project_name' => ['sometimes', 'nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'item_ref' => ['sometimes', 'nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
-            'item_name' => ['sometimes', 'nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'start_time' => ['sometimes', 'date'],
             'end_time' => ['sometimes', 'date', 'after:start_time'],
             'description' => ['sometimes', 'nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules

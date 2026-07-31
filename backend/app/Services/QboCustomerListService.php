@@ -10,6 +10,7 @@ use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Support\QboCustomerQuery;
 use App\Support\QboQueryResult;
+use App\Support\QboRefNormalizer;
 
 /**
  * Queries QuickBooks customers for admin pickers and employee-scoped timesheet access.
@@ -47,7 +48,24 @@ class QboCustomerListService
             return $this->listAllActive($token, $refresh);
         }
 
-        return $user->assignedQboCustomerPickerRows();
+        $assignedRefs = [];
+
+        foreach ($user->qboCustomers()->pluck('qbo_customer_ref') as $ref) {
+            $normalized = QboRefNormalizer::normalize((string) $ref);
+
+            if ($normalized !== null) {
+                $assignedRefs[$normalized] = true;
+            }
+        }
+
+        if ($assignedRefs === []) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $this->listAllActive($token, $refresh),
+            fn (array $row): bool => isset($assignedRefs[QboRefNormalizer::normalize($row['id']) ?? '']),
+        ));
     }
 
     /**

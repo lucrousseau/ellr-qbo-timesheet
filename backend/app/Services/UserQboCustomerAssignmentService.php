@@ -17,14 +17,16 @@ use Illuminate\Support\Facades\DB;
 class UserQboCustomerAssignmentService
 {
     /**
-     * Injects customer list and timer session services.
+     * Injects customer list, display name resolution, and timer session services.
      *
      * @param  QboCustomerListService  $customers  Customer list and resolution service.
+     * @param  QboPickerDisplayNameService  $displayNames  Cached QuickBooks label resolver.
      * @param  TimeTrackerService  $timeTracker  Active timer session service.
      * @param  OrganizationAccessService  $organizationAccess  Tenant isolation checks.
      */
     public function __construct(
         private readonly QboCustomerListService $customers,
+        private readonly QboPickerDisplayNameService $displayNames,
         private readonly TimeTrackerService $timeTracker,
         private readonly OrganizationAccessService $organizationAccess,
     ) {}
@@ -33,14 +35,40 @@ class UserQboCustomerAssignmentService
      * Returns customer access settings for the given timesheet user.
      *
      * @param  User  $user  Timesheet user account.
+     * @param  QuickBooksToken  $token  Connected QuickBooks token for label resolution.
      * @return array{all_customers_access: bool, data: array<int, array{id: string, display_name: string}>}
      */
-    public function describeAccess(User $user): array
+    public function describeAccess(User $user, QuickBooksToken $token): array
     {
         return [
             'all_customers_access' => $user->qbo_all_customers_access,
-            'data' => $user->qbo_all_customers_access ? [] : $user->assignedQboCustomerPickerRows(),
+            'data' => $user->qbo_all_customers_access
+                ? []
+                : $this->displayNames->assignedCustomerRows(
+                    $token,
+                    $user,
+                    $user->relationLoaded('qboCustomers') ? $user->qboCustomers : $user->qboCustomers()->get(),
+                ),
         ];
+    }
+
+    /**
+     * Returns customer access for admin APIs, omitting labels when QuickBooks is disconnected.
+     *
+     * @param  User  $user  Timesheet user account.
+     * @param  QuickBooksToken|null  $token  Connected QuickBooks token when available.
+     * @return array{all_customers_access: bool, data: array<int, array{id: string, display_name: string}>}
+     */
+    public function describeAccessForApi(User $user, ?QuickBooksToken $token): array
+    {
+        if ($token === null) {
+            return [
+                'all_customers_access' => $user->qbo_all_customers_access,
+                'data' => [],
+            ];
+        }
+
+        return $this->describeAccess($user, $token);
     }
 
     /**
@@ -69,14 +97,13 @@ class UserQboCustomerAssignmentService
             $normalizedRefs = $this->normalizeRefs($customerRefs);
             $resolvedById = $this->resolveAssignableCustomers($token, $normalizedRefs);
 
-            DB::transaction(function () use ($user, $normalizedRefs, $resolvedById): void {
+            DB::transaction(function () use ($user, $normalizedRefs): void {
                 $user->forceFill(['qbo_all_customers_access' => false])->save();
                 $user->qboCustomers()->delete();
 
                 foreach ($normalizedRefs as $ref) {
                     $user->qboCustomers()->create([
                         'qbo_customer_ref' => $ref,
-                        'qbo_customer_name' => $resolvedById[$ref]['display_name'],
                     ]);
                 }
             });
@@ -84,7 +111,7 @@ class UserQboCustomerAssignmentService
 
         $this->timeTracker->sanitizeActiveSessionIfExists($user, $token);
 
-        return $this->describeAccess($user->fresh(['qboCustomers']));
+        return $this->describeAccess($user->fresh(['qboCustomers']), $token);
     }
 
     /**

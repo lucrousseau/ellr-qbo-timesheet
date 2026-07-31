@@ -5,6 +5,7 @@ use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QboEmployeeAuthorizationService;
+use App\Services\QboPickerDisplayNameService;
 use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityService;
@@ -19,6 +20,14 @@ use Tests\Support\MockeryCapture;
 
 covers(TimeActivityService::class);
 
+function makeDisplayNamesMock(): QboPickerDisplayNameService
+{
+    $displayNames = Mockery::mock(QboPickerDisplayNameService::class);
+    $displayNames->shouldReceive('employeeDisplayName')->zeroOrMoreTimes()->andReturn('Jane Doe');
+
+    return $displayNames;
+}
+
 function makeTimeActivityService(
     DataService $dataService,
     ?TimeActivitySnapshotService $snapshots = null,
@@ -32,8 +41,9 @@ function makeTimeActivityService(
     $snapshots->shouldReceive('softDeleteByQboId')->byDefault();
     $sync = Mockery::mock(TimeActivitySyncService::class);
     $sync->shouldReceive('syncOneById')->byDefault();
+    $displayNames = makeDisplayNamesMock();
 
-    return new TimeActivityService($quickBooks, $employeeAuth, $apiErrors, $snapshots, $sync);
+    return new TimeActivityService($quickBooks, $employeeAuth, $apiErrors, $snapshots, $sync, $displayNames);
 }
 
 function makeUserWithEmployee(): User
@@ -41,7 +51,6 @@ function makeUserWithEmployee(): User
     return User::factory()->make([
         'organization_id' => 1,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 }
 
@@ -175,6 +184,7 @@ it('upserts the local snapshot from the quickbooks create response', function ()
         new QuickBooksApiErrorFormatterService,
         $snapshots,
         Mockery::mock(TimeActivitySyncService::class),
+        makeDisplayNamesMock(),
     );
 
     $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [
@@ -207,6 +217,7 @@ it('falls back to syncOneById when the quickbooks create response is sparse', fu
         new QuickBooksApiErrorFormatterService,
         $snapshots,
         $sync,
+        makeDisplayNamesMock(),
     );
 
     $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [
@@ -247,6 +258,7 @@ it('upserts snapshots from numeric quickbooks create ids without an extra find c
         new QuickBooksApiErrorFormatterService,
         $snapshots,
         Mockery::mock(TimeActivitySyncService::class),
+        makeDisplayNamesMock(),
     );
 
     $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [
@@ -264,7 +276,6 @@ it('omits optional customer and description fields when absent', function () {
     $service = makeTimeActivityService($dataService);
     $user = User::factory()->make([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => null,
     ]);
     $token = QuickBooksToken::factory()->make();
 
@@ -278,7 +289,7 @@ it('omits optional customer and description fields when absent', function () {
     $payload = MockeryCapture::unwrap($captured);
 
     expect((string) $payload->EmployeeRef->value)->toBe('7')
-        ->and(isset($payload->EmployeeRef->name))->toBeFalse()
+        ->and($payload->EmployeeRef->name ?? null)->toBe('Jane Doe')
         ->and(isset($payload->Description))->toBeFalse()
         ->and(isset($payload->CustomerRef))->toBeFalse();
 });
@@ -506,6 +517,7 @@ it('deletes a time activity for a user', function () {
         new QuickBooksApiErrorFormatterService,
         $snapshots,
         Mockery::mock(TimeActivitySyncService::class),
+        makeDisplayNamesMock(),
     );
 
     $user = makeUserWithEmployee();
@@ -549,6 +561,7 @@ it('syncs the local snapshot after updating a time activity', function () {
         new QuickBooksApiErrorFormatterService,
         $snapshots,
         Mockery::mock(TimeActivitySyncService::class),
+        makeDisplayNamesMock(),
     );
 
     $service->updateForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), '10', [
@@ -564,7 +577,6 @@ it('creates a time activity without optional fields', function () {
     $service = makeTimeActivityService($dataService);
     $user = User::factory()->make([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => null,
     ]);
     $token = QuickBooksToken::factory()->make();
 
@@ -608,6 +620,7 @@ it('upserts snapshots from the quickbooks update response without a second find 
         new QuickBooksApiErrorFormatterService,
         $snapshots,
         Mockery::mock(TimeActivitySyncService::class),
+        makeDisplayNamesMock(),
     );
 
     $service->createForUser(makeUserWithEmployee(), QuickBooksToken::factory()->make(), [

@@ -49,7 +49,6 @@ class QboEmployeeService
 
         $attributes = [
             'qbo_employee_ref' => $employeeRef,
-            'qbo_employee_name' => $identity['display_name'],
         ];
 
         if (! $target->isAdmin()) {
@@ -134,7 +133,6 @@ class QboEmployeeService
         $user->update([
             'name' => $identity['display_name'],
             'email' => $identity['email'],
-            'qbo_employee_name' => $identity['display_name'],
         ]);
 
         return $user->fresh();
@@ -191,8 +189,7 @@ class QboEmployeeService
     private function timesheetIdentityMatches(User $user, array $identity): bool
     {
         return $user->name === $identity['display_name']
-            && $user->email === $identity['email']
-            && $user->qbo_employee_name === $identity['display_name'];
+            && $user->email === $identity['email'];
     }
 
     /**

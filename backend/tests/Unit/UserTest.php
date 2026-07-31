@@ -4,6 +4,12 @@ use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Models\UserLevel;
+use App\Services\QboCustomerListService;
+use App\Services\QboEmployeeListService;
+use App\Services\QboEmployeeService;
+use App\Services\QboPickerDisplayNameService;
+use App\Services\QboProjectListService;
+use App\Services\QboServiceListService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 
@@ -82,19 +88,33 @@ it('returns assigned quickbooks customers as sorted picker rows', function () {
     $user = User::factory()->create(['qbo_employee_ref' => '7']);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '12',
-        'qbo_customer_name' => 'Beta LLC',
     ]);
     $user->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
+    $token = QuickBooksToken::factory()->make();
 
-    expect($user->assignedQboCustomerPickerRows())->toBe([
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listForUser')
+        ->once()
+        ->with($user, $token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+            ['id' => '12', 'display_name' => 'Beta LLC'],
+        ]);
+
+    $service = new QboPickerDisplayNameService(
+        Mockery::mock(QboEmployeeListService::class),
+        $customers,
+        Mockery::mock(QboProjectListService::class),
+        Mockery::mock(QboServiceListService::class),
+        Mockery::mock(QboEmployeeService::class),
+    );
+
+    expect($service->assignedCustomerRows($token, $user, $user->qboCustomers))->toBe([
         ['id' => '11', 'display_name' => 'Acme Corp'],
         ['id' => '12', 'display_name' => 'Beta LLC'],
     ]);
-
-    expect($user->assignedQboCustomerPickerRows()[0]['id'])->toBeString();
 });
 
 it('casts quickbooks all-customers access to a boolean', function () {

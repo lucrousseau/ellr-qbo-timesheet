@@ -25,11 +25,8 @@ class StoreTimeActivityRequest extends FormRequest
     {
         return [
             'customer_ref' => ['nullable', 'string', 'max:255'],
-            'customer_name' => ['nullable', 'string', 'max:255'],
             'project_ref' => ['nullable', 'string', 'max:255'],
-            'project_name' => ['nullable', 'string', 'max:255'],
             'item_ref' => ['nullable', 'string', 'max:255'],
-            'item_name' => ['nullable', 'string', 'max:255'],
             'start_time' => ['required', 'date'],
             'end_time' => ['required', 'date', 'after:start_time'],
             'description' => ['nullable', 'string', 'max:4000'],

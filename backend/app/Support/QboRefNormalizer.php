@@ -63,4 +63,30 @@ class QboRefNormalizer
 
         return false;
     }
+
+    /**
+     * Returns the display label for a QuickBooks identifier within a picker option list.
+     *
+     * @param  array<int, array{id: string, display_name: string}>  $options  Picker rows.
+     * @param  string|null  $ref  QuickBooks entity identifier.
+     * @return string|null
+     */
+    public static function displayNameForRef(array $options, ?string $ref): ?string
+    {
+        $normalized = self::normalize($ref);
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        foreach ($options as $option) {
+            if (self::normalize((string) $option['id']) === $normalized) {
+                $displayName = trim((string) $option['display_name']);
+
+                return $displayName !== '' ? $displayName : null;
+            }
+        }
+
+        return null;
+    }
 }

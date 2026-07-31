@@ -256,7 +256,6 @@ it('returns not found when removing an administrator account', function () {
     $admin = actingAsAdmin();
     $adminTarget = User::factory()->admin()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     $this->actingAs($admin)

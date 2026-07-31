@@ -25,11 +25,8 @@ class UpdateTimeTrackerRequest extends FormRequest
     {
         return [
             'customer_ref' => ['nullable', 'string', 'max:255'],
-            'customer_name' => ['nullable', 'string', 'max:255'],
             'project_ref' => ['nullable', 'string', 'max:255'],
-            'project_name' => ['nullable', 'string', 'max:255'],
             'service_ref' => ['nullable', 'string', 'max:255'],
-            'service_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
             'is_billable' => ['sometimes', 'boolean'],
             'is_running' => ['required', 'boolean'],

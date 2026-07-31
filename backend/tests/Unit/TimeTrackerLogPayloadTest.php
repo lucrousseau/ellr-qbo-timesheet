@@ -11,11 +11,8 @@ it('maps session fields to a quickbooks time activity payload', function () {
 
     $session = new ActiveTimeSession([
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website redesign',
         'service_ref' => '33',
-        'service_name' => 'Consulting',
         'description' => 'Support tickets',
         'is_billable' => true,
     ]);
@@ -28,11 +25,8 @@ it('maps session fields to a quickbooks time activity payload', function () {
         'is_billable' => true,
         'description' => 'Support tickets',
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website redesign',
         'item_ref' => '33',
-        'item_name' => 'Consulting',
     ]);
 
     CarbonImmutable::setTestNow();
@@ -43,11 +37,8 @@ it('omits optional fields when session values are empty', function () {
 
     $session = new ActiveTimeSession([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => '',
         'is_billable' => false,
     ]);
@@ -68,11 +59,8 @@ it('includes customer ref without name when only the ref is set', function () {
 
     $session = new ActiveTimeSession([
         'customer_ref' => '11',
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => null,
         'is_billable' => false,
     ]);

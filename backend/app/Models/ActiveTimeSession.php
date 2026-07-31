@@ -16,11 +16,8 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'user_id',
     'customer_ref',
-    'customer_name',
     'project_ref',
-    'project_name',
     'service_ref',
-    'service_name',
     'description',
     'is_billable',
     'accumulated_seconds',

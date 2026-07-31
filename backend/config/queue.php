@@ -130,4 +130,12 @@ return [
         'table' => 'failed_jobs',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Failed job retention (scheduled prune)
+    |--------------------------------------------------------------------------
+    */
+
+    'failed_jobs_retention_hours' => (int) env('QUEUE_FAILED_JOBS_RETENTION_HOURS', 168),
+
 ];

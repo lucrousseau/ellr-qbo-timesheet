@@ -49,7 +49,6 @@ describe('useTimesheetProvisioning', () => {
         name: 'Jane Doe',
         email: 'jane@example.com',
         qbo_employee_ref: '7',
-        qbo_employee_name: 'Jane Doe',
         supervisor_id: null,
       },
     ])

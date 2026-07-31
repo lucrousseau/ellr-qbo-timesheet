@@ -9,8 +9,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateTimeTrackerRequest;
 use App\Services\QuickBooksTokenResolverService;
+use App\Services\TimeEntryPresentationService;
 use App\Services\TimeTrackerService;
-use App\Support\TimeEntryApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,14 +21,14 @@ use Illuminate\Http\Response;
 class TimeTrackerController extends Controller
 {
     /**
-     * Injects timer persistence and QuickBooks token resolution.
-     *
      * @param  TimeTrackerService  $timeTracker  Active timer session service.
-     * @param  QuickBooksTokenResolverService  $tokenResolver  QuickBooks token resolver.
+     * @param  QuickBooksTokenResolverService  $tokenResolver  Organization QBO token resolver.
+     * @param  TimeEntryPresentationService  $presentation  Read-time QBO label resolver.
      */
     public function __construct(
         private readonly TimeTrackerService $timeTracker,
         private readonly QuickBooksTokenResolverService $tokenResolver,
+        private readonly TimeEntryPresentationService $presentation,
     ) {}
 
     /**
@@ -41,13 +41,15 @@ class TimeTrackerController extends Controller
     {
         $user = $request->user();
         $session = $this->timeTracker->findForUser($user);
+        $token = null;
 
-        if ($session !== null && $session->hasPickerSelections()) {
+        if ($session?->hasPickerSelections()) {
             $token = $this->tokenResolver->resolve($user);
             $session = $this->timeTracker->sanitizeForUser($user, $token, $session);
+            $token = $session->hasPickerSelections() ? $token : null;
         }
 
-        return response()->json(['data' => $this->timeTracker->toApi($session)]);
+        return response()->json(['data' => $this->timeTracker->toApi($session, $user, $token)]);
     }
 
     /**
@@ -65,7 +67,7 @@ class TimeTrackerController extends Controller
             : null;
         $session = $this->timeTracker->upsertForUser($user, $token, $validated);
 
-        return response()->json(['data' => $this->timeTracker->toApi($session)]);
+        return response()->json(['data' => $this->timeTracker->toApi($session, $user, $token)]);
     }
 
     /**
@@ -80,9 +82,7 @@ class TimeTrackerController extends Controller
         $token = $this->tokenResolver->resolve($user);
         $entry = $this->timeTracker->logForUser($user, $token);
 
-        return response()->json([
-            'data' => TimeEntryApiResponse::resource($entry->load('user')),
-        ]);
+        return response()->json(['data' => $this->presentation->resource($entry->load('user'), $user)]);
     }
 
     /**

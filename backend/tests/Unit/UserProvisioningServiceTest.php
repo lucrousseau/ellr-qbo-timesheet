@@ -24,12 +24,10 @@ it('lists only non-administrator users with a quickbooks employee mapping in the
     User::factory()->create([
         'organization_id' => $organization->id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     User::factory()->create([
         'organization_id' => $otherOrganization->id,
         'qbo_employee_ref' => '8',
-        'qbo_employee_name' => 'Other Org User',
     ]);
     User::factory()->admin()->create([
         'organization_id' => $organization->id,
@@ -81,7 +79,6 @@ it('revokes a provisioned timesheet user account', function () {
     $timesheetUser = User::factory()->create([
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $timesheetUser->createToken('timesheet');
 
@@ -103,7 +100,6 @@ it('rejects revoking a user from another organization', function () {
     $admin = User::factory()->admin()->create();
     $timesheetUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     expect(fn () => app(UserProvisioningService::class)->revokeTimesheetUser($admin, $timesheetUser))
@@ -115,7 +111,6 @@ it('clears password reset tokens when revoking a timesheet user', function () {
     $timesheetUser = User::factory()->create([
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     DB::table('password_reset_tokens')->insert([

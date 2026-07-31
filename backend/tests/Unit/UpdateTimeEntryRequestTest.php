@@ -21,11 +21,8 @@ it('accepts partial update payloads', function () {
 it('accepts picker field updates', function () {
     $validator = Validator::make([
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website',
         'item_ref' => '33',
-        'item_name' => 'Hours',
         'start_time' => '2026-07-27T10:00:00',
         'end_time' => '2026-07-27T18:00:00',
     ], (new UpdateTimeEntryRequest)->rules());
@@ -57,11 +54,8 @@ it('defines sometimes rules for all mutable fields', function () {
 
     expect($rules)->toHaveKeys([
         'customer_ref',
-        'customer_name',
         'project_ref',
-        'project_name',
         'item_ref',
-        'item_name',
         'start_time',
         'end_time',
         'description',

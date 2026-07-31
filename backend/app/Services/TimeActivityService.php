@@ -8,6 +8,7 @@ namespace App\Services;
 
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Support\TimeActivityRefPayload;
 use App\Support\TimeActivityTimeValidation;
 use App\Support\TimeActivityWriteResponse;
 use App\Support\UsesQuickBooksEmployeeScope;
@@ -28,6 +29,7 @@ class TimeActivityService
      * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
      * @param  TimeActivitySyncService  $sync  Fallback single-entity sync when write responses are sparse.
+     * @param  QboPickerDisplayNameService  $displayNames  Cached QuickBooks label resolver.
      */
     public function __construct(
         QuickBooksService $quickBooks,
@@ -35,6 +37,7 @@ class TimeActivityService
         QuickBooksApiErrorFormatterService $apiErrors,
         private readonly TimeActivitySnapshotService $snapshots,
         private readonly TimeActivitySyncService $sync,
+        private readonly QboPickerDisplayNameService $displayNames,
     ) {
         $this->initializeQuickBooksEmployeeScope($quickBooks, $employeeAuthorization, $apiErrors);
     }
@@ -53,8 +56,10 @@ class TimeActivityService
         $dataService = $this->quickBooks->dataService($token);
 
         $employeePayload = ['value' => $employeeRef];
-        if (! empty($user->qbo_employee_name)) {
-            $employeePayload['name'] = $user->qbo_employee_name;
+        $employeeName = $this->displayNames->employeeDisplayName($token, $employeeRef);
+
+        if ($employeeName !== null && $employeeName !== '') {
+            $employeePayload['name'] = $employeeName;
         }
 
         $timeActivityPayload = [
@@ -68,26 +73,15 @@ class TimeActivityService
             $timeActivityPayload['Description'] = $validated['description'];
         }
 
-        if (! empty($validated['customer_ref']) || ! empty($validated['project_ref'])) {
-            $customerRefValue = ! empty($validated['project_ref'])
-                ? $validated['project_ref']
-                : $validated['customer_ref'];
-            $customerNameValue = ! empty($validated['project_ref'])
-                ? ($validated['project_name'] ?? null)
-                : ($validated['customer_name'] ?? null);
+        $customerRef = TimeActivityRefPayload::customerRef($validated);
 
-            $customerRef = ['value' => $customerRefValue];
-            if (! empty($customerNameValue)) {
-                $customerRef['name'] = $customerNameValue;
-            }
+        if ($customerRef !== null) {
             $timeActivityPayload['CustomerRef'] = $customerRef;
         }
 
-        if (! empty($validated['item_ref'])) {
-            $itemRef = ['value' => $validated['item_ref']];
-            if (! empty($validated['item_name'])) {
-                $itemRef['name'] = $validated['item_name'];
-            }
+        $itemRef = TimeActivityRefPayload::itemRef($validated);
+
+        if ($itemRef !== null) {
             $timeActivityPayload['ItemRef'] = $itemRef;
         }
 

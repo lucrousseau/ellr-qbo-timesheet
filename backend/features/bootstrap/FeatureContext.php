@@ -7,8 +7,10 @@
 namespace Features\Bootstrap;
 
 use App\Models\Organization;
+use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
+use App\Services\QboCustomerListService;
 use Behat\Behat\Context\Context;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernel;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
@@ -17,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
+use Mockery;
 use RuntimeException;
 
 /**
@@ -87,6 +90,37 @@ class FeatureContext implements Context
     public function anAuthenticatedApiUser(): void
     {
         Sanctum::actingAs(User::factory()->admin()->create());
+    }
+
+    /**
+     * @Given quickbooks is connected for the authenticated user
+     * @return void
+     */
+    public function quickbooksIsConnectedForTheAuthenticatedUser(): void
+    {
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            throw new RuntimeException('No authenticated user.');
+        }
+
+        QuickBooksToken::factory()->forUser($user)->create();
+    }
+
+    /**
+     * @Given quickbooks customer :ref is named :name in the active customer list
+     * @param  string  $ref  QuickBooks customer reference.
+     * @param  string  $name  QuickBooks customer display name.
+     * @return void
+     */
+    public function quickbooksCustomerIsNamedInTheActiveCustomerList(string $ref, string $name): void
+    {
+        $mock = Mockery::mock(QboCustomerListService::class);
+        $row = ['id' => $ref, 'display_name' => $name];
+        $mock->shouldReceive('listForUser')->andReturn([$row]);
+        $mock->shouldReceive('listAllActive')->andReturn([$row]);
+
+        self::$app?->instance(QboCustomerListService::class, $mock);
     }
 
     /**
@@ -185,7 +219,6 @@ class FeatureContext implements Context
         $user = User::factory()->create([
             'organization_id' => $foreignOrganization->id,
             'qbo_employee_ref' => $ref,
-            'qbo_employee_name' => 'Foreign User',
         ]);
 
         $this->foreignTimesheetUserId = $user->id;
@@ -200,7 +233,6 @@ class FeatureContext implements Context
     {
         $attributes = [
             'qbo_employee_ref' => $ref,
-            'qbo_employee_name' => 'Jane Doe',
         ];
         $actor = auth()->user();
 
@@ -259,7 +291,6 @@ class FeatureContext implements Context
         $user->forceFill(['qbo_all_customers_access' => false])->save();
         $user->qboCustomers()->create([
             'qbo_customer_ref' => $ref,
-            'qbo_customer_name' => $name,
         ]);
     }
 
@@ -474,6 +505,10 @@ class FeatureContext implements Context
 
         if (self::$app?->bound(HttpKernel::class)) {
             self::$app->forgetInstance(HttpKernel::class);
+        }
+
+        if (self::$app?->bound(QboCustomerListService::class)) {
+            self::$app->forgetInstance(QboCustomerListService::class);
         }
 
         auth()->shouldUse((string) config('auth.defaults.guard'));

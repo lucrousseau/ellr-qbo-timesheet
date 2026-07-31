@@ -20,14 +20,16 @@ use Illuminate\Support\Facades\DB;
 class TimeTrackerService
 {
     /**
-     * Injects time entry creation and picker validation for logging completed sessions.
+     * Injects time entry creation, picker validation, and display name resolution.
      *
      * @param  TimeEntryService  $timeEntries  Local time entry service.
      * @param  QboPickerValidationService  $pickerValidation  QuickBooks picker reference validator.
+     * @param  QboPickerDisplayNameService  $displayNames  Cached QuickBooks label resolver.
      */
     public function __construct(
         private readonly TimeEntryService $timeEntries,
         private readonly QboPickerValidationService $pickerValidation,
+        private readonly QboPickerDisplayNameService $displayNames,
     ) {}
 
     /**
@@ -53,11 +55,8 @@ class TimeTrackerService
     {
         $current = [
             'customer_ref' => $session->customer_ref,
-            'customer_name' => $session->customer_name,
             'project_ref' => $session->project_ref,
-            'project_name' => $session->project_name,
             'service_ref' => $session->service_ref,
-            'service_name' => $session->service_name,
         ];
 
         $sanitized = $this->pickerValidation->sanitizeSessionSelections($user, $token, $current);
@@ -140,11 +139,8 @@ class TimeTrackerService
             ['user_id' => $user->id],
             [
                 'customer_ref' => $validated['customer_ref'] ?? null,
-                'customer_name' => $validated['customer_name'] ?? null,
                 'project_ref' => $validated['project_ref'] ?? null,
-                'project_name' => $validated['project_name'] ?? null,
                 'service_ref' => $validated['service_ref'] ?? null,
-                'service_name' => $validated['service_name'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'is_billable' => $isBillable,
                 'accumulated_seconds' => $accumulated,
@@ -207,21 +203,31 @@ class TimeTrackerService
      * Maps an active session to a JSON-friendly API shape.
      *
      * @param  ActiveTimeSession|null  $session  Active session or null when absent.
+     * @param  User|null  $user  Session owner when labels should be resolved.
+     * @param  QuickBooksToken|null  $token  Connected QuickBooks token for label resolution.
      * @return array<string, mixed>|null
      */
-    public function toApi(?ActiveTimeSession $session): ?array
+    public function toApi(?ActiveTimeSession $session, ?User $user = null, ?QuickBooksToken $token = null): ?array
     {
         if ($session === null) {
             return null;
         }
 
+        $labels = $user !== null && $token !== null
+            ? $this->displayNames->sessionDisplayNames($token, $user, $session)
+            : [
+                'customer_name' => null,
+                'project_name' => null,
+                'service_name' => null,
+            ];
+
         return [
             'customer_ref' => $session->customer_ref,
-            'customer_name' => $session->customer_name,
+            'customer_name' => $labels['customer_name'],
             'project_ref' => $session->project_ref,
-            'project_name' => $session->project_name,
+            'project_name' => $labels['project_name'],
             'service_ref' => $session->service_ref,
-            'service_name' => $session->service_name,
+            'service_name' => $labels['service_name'],
             'description' => $session->description,
             'is_billable' => $session->is_billable,
             'accumulated_seconds' => $session->accumulated_seconds,

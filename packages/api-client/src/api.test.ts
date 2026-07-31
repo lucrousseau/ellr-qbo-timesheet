@@ -903,18 +903,16 @@ describe('auth helpers', () => {
             name: 'Jane',
             email: 'jane@example.com',
             qbo_employee_ref: '7',
-            qbo_employee_name: 'Jane Doe',
           },
         }),
       })
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(updateQboEmployee('7', 'Jane Doe')).resolves.toEqual({
+    await expect(updateQboEmployee('7')).resolves.toEqual({
       id: 1,
       name: 'Jane',
       email: 'jane@example.com',
       qbo_employee_ref: '7',
-      qbo_employee_name: 'Jane Doe',
     })
 
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -924,7 +922,6 @@ describe('auth helpers', () => {
         method: 'PATCH',
         body: JSON.stringify({
           qbo_employee_ref: '7',
-          qbo_employee_name: 'Jane Doe',
         }),
       }),
     )
@@ -944,18 +941,16 @@ describe('auth helpers', () => {
             name: 'Bob',
             email: 'bob@example.com',
             qbo_employee_ref: '9',
-            qbo_employee_name: 'Bob Smith',
           },
         }),
       })
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(updateUserQboEmployee(2, '9', 'Bob Smith')).resolves.toEqual({
+    await expect(updateUserQboEmployee(2, '9')).resolves.toEqual({
       id: 2,
       name: 'Bob',
       email: 'bob@example.com',
       qbo_employee_ref: '9',
-      qbo_employee_name: 'Bob Smith',
     })
 
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -965,7 +960,6 @@ describe('auth helpers', () => {
         method: 'PATCH',
         body: JSON.stringify({
           qbo_employee_ref: '9',
-          qbo_employee_name: 'Bob Smith',
         }),
       }),
     )

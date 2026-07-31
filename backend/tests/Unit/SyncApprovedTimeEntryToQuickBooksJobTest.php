@@ -19,6 +19,10 @@ covers(SyncApprovedTimeEntryToQuickBooksJob::class);
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    mockQboEntryDisplayNames();
+});
+
 it('stores the quickbooks identifier for an approved entry', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);

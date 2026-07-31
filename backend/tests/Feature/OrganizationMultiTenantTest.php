@@ -41,12 +41,10 @@ it('isolates admin user listings by organization', function () {
     User::factory()->create([
         'organization_id' => $organizationA->id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Org A User',
     ]);
     User::factory()->create([
         'organization_id' => $organizationB->id,
         'qbo_employee_ref' => '8',
-        'qbo_employee_name' => 'Org B User',
     ]);
 
     $this->actingAs($adminA)
@@ -60,7 +58,6 @@ it('does not allow an admin to revoke users from another organization', function
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $this->actingAs($admin)
@@ -74,7 +71,6 @@ it('returns not found when an admin requests a foreign organization user by id',
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $this->actingAs($admin)
@@ -93,7 +89,6 @@ it('resolves quickbooks tokens within the same organization only', function () {
     $timesheetUser = User::factory()->create([
         'organization_id' => $organizationA->id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Timesheet User',
     ]);
 
     QuickBooksToken::factory()->forUser($adminA)->create(['realm_id' => 'realm-a']);
@@ -130,7 +125,6 @@ it('rejects duplicate quickbooks employee refs within the same organization', fu
     User::factory()->create([
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Existing User',
     ]);
 
     $this->actingAs($admin)
@@ -149,7 +143,6 @@ it('allows the same quickbooks employee ref when provisioning in another organiz
     User::factory()->create([
         'organization_id' => $organizationA->id,
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Org A User',
     ]);
 
     Notification::fake();
@@ -179,7 +172,6 @@ it('returns not found when an admin maps a qbo employee for a foreign organizati
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $this->actingAs($admin)
@@ -193,7 +185,6 @@ it('returns not found when an admin lists time activities for a foreign organiza
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $this->actingAs($admin)
@@ -205,7 +196,6 @@ it('returns not found when an admin updates time activities for a foreign organi
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $this->actingAs($admin)
@@ -219,7 +209,6 @@ it('returns not found when an admin syncs customers for a foreign organization u
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $this->actingAs($admin)

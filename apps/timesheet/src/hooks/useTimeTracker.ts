@@ -87,11 +87,8 @@ function sessionToState(session: TimeTrackerSession): TimerState {
 function stateToPayload(state: TimerState, options?: { accumulatedSeconds?: number }) {
   return {
     customer_ref: state.customer?.id ?? null,
-    customer_name: state.customer?.display_name ?? null,
     project_ref: state.project?.id ?? null,
-    project_name: state.project?.display_name ?? null,
     service_ref: state.service?.id ?? null,
-    service_name: state.service?.display_name ?? null,
     description: state.description || null,
     is_billable: state.isBillable,
     is_running: state.runningSince !== null,

@@ -25,7 +25,6 @@ class UserQboCustomer extends Model
     protected $fillable = [
         'user_id',
         'qbo_customer_ref',
-        'qbo_customer_name',
     ];
 
     /**

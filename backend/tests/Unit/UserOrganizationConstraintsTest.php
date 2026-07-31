@@ -63,7 +63,6 @@ it('resolves route bindings within the authenticated users organization', functi
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $this->actingAs($admin);
@@ -77,7 +76,6 @@ it('resolves route bindings for users in the same organization', function () {
     $timesheetUser = User::factory()->create([
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Same Org User',
     ]);
 
     $this->actingAs($admin);
@@ -92,7 +90,6 @@ it('resolves route bindings using a custom route key field', function () {
     $timesheetUser = User::factory()->create([
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Same Org User',
     ]);
 
     $this->actingAs($admin);
@@ -105,7 +102,6 @@ it('resolves route bindings using a custom route key field', function () {
 it('returns not found when resolving route bindings without an authenticated actor', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Unscoped User',
     ]);
 
     expect(fn () => $user->resolveRouteBinding($user->getKey()))

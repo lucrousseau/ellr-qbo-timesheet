@@ -17,6 +17,10 @@ covers(TimeEntryApprovalService::class);
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    mockQboEntryDisplayNames();
+});
+
 it('lists only pending entries for administrators', function () {
     $admin = User::factory()->admin()->create();
     $employee = User::factory()->create([
@@ -122,7 +126,6 @@ it('validates picker references before approving entries with quickbooks fields'
     ]);
     $entry = TimeEntry::factory()->forUser($employee)->create([
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
     ]);
 
     $this->mock(QboPickerValidationService::class, function ($mock) {

@@ -38,18 +38,15 @@ it('persists all optional create fields from validated input', function () {
         'end_time' => '2026-07-27T17:00:00',
         'description' => 'Notes',
         'customer_ref' => '11',
-        'customer_name' => 'Acme',
         'project_ref' => '22',
-        'project_name' => 'Site',
         'item_ref' => '33',
-        'item_name' => 'Hours',
         'is_billable' => true,
     ]);
 
     expect($entry->organization_id)->toBe($employee->organization_id)
-        ->and($entry->customer_name)->toBe('Acme')
-        ->and($entry->project_name)->toBe('Site')
-        ->and($entry->item_name)->toBe('Hours')
+        ->and($entry->customer_ref)->toBe('11')
+        ->and($entry->project_ref)->toBe('22')
+        ->and($entry->item_ref)->toBe('33')
         ->and($entry->is_billable)->toBeTrue();
 });
 
@@ -118,7 +115,6 @@ it('creates a time entry with picker fields and validates selections', function 
         'start_time' => '2026-07-27T09:00:00',
         'end_time' => '2026-07-27T17:00:00',
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
         'item_ref' => '33',
         'is_billable' => true,
@@ -165,11 +161,9 @@ it('updates picker fields and revalidates selections when references remain', fu
 
     $updated = app(TimeEntryService::class)->updateForUser($employee, $entry->id, [
         'customer_ref' => '12',
-        'customer_name' => 'New Client',
     ]);
 
-    expect($updated->customer_ref)->toBe('12')
-        ->and($updated->customer_name)->toBe('New Client');
+    expect($updated->customer_ref)->toBe('12');
 });
 
 it('updates time range and description fields', function () {

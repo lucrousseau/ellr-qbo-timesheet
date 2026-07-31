@@ -41,7 +41,9 @@ class AdminUserCustomerController extends Controller
     {
         $this->assignments->ensureTimesheetUser($request->user(), $user);
 
-        return response()->json($this->assignments->describeAccess($user));
+        $token = $this->tokenResolver->resolve($request->user());
+
+        return response()->json($this->assignments->describeAccess($user, $token));
     }
 
     /**

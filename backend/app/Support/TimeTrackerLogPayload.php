@@ -18,7 +18,7 @@ final class TimeTrackerLogPayload
      * Maps a timer session and elapsed seconds to a time activity create payload.
      *
      * @param  ActiveTimeSession  $session  Active timer session.
-     * @param  int  $elapsedSeconds  Total elapsed seconds to log.
+     * @param  int  $elapsedSeconds  Elapsed seconds to log.
      * @return array<string, mixed>
      */
     public static function forSession(ActiveTimeSession $session, int $elapsedSeconds): array
@@ -38,23 +38,14 @@ final class TimeTrackerLogPayload
 
         if ($session->customer_ref) {
             $payload['customer_ref'] = $session->customer_ref;
-            if ($session->customer_name) {
-                $payload['customer_name'] = $session->customer_name;
-            }
         }
 
         if ($session->project_ref) {
             $payload['project_ref'] = $session->project_ref;
-            if ($session->project_name) {
-                $payload['project_name'] = $session->project_name;
-            }
         }
 
         if ($session->service_ref) {
             $payload['item_ref'] = $session->service_ref;
-            if ($session->service_name) {
-                $payload['item_name'] = $session->service_name;
-            }
         }
 
         return $payload;

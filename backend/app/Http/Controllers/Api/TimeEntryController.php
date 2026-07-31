@@ -14,8 +14,8 @@ use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Services\QuickBooksTokenResolverService;
 use App\Services\TimeEntryListService;
+use App\Services\TimeEntryPresentationService;
 use App\Services\TimeEntryService;
-use App\Support\TimeEntryApiResponse;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,16 +26,16 @@ use Illuminate\Http\Request;
 class TimeEntryController extends Controller
 {
     /**
-     * Injects list, create, and update services for local time entries.
-     *
-     * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves organization QBO token.
-     * @param  TimeEntryListService  $timeEntryList  Unified employee list service.
-     * @param  TimeEntryService  $timeEntries  Local time entry write service.
+     * @param  QuickBooksTokenResolverService  $tokenResolver  Organization QBO token resolver.
+     * @param  TimeEntryListService  $timeEntryList  Merged local and snapshot list service.
+     * @param  TimeEntryService  $timeEntries  Local time entry writer.
+     * @param  TimeEntryPresentationService  $presentation  Read-time QBO label resolver.
      */
     public function __construct(
         private readonly QuickBooksTokenResolverService $tokenResolver,
         private readonly TimeEntryListService $timeEntryList,
         private readonly TimeEntryService $timeEntries,
+        private readonly TimeEntryPresentationService $presentation,
     ) {}
 
     /**
@@ -69,7 +69,7 @@ class TimeEntryController extends Controller
         $entry = $this->timeEntries->createForUser($request->user(), $request->validated());
 
         return response()->json([
-            'data' => TimeEntryApiResponse::resource($entry->load('user')),
+            'data' => $this->presentation->resource($entry->load('user'), $request->user()),
         ], 201);
     }
 
@@ -89,7 +89,7 @@ class TimeEntryController extends Controller
         );
 
         return response()->json([
-            'data' => TimeEntryApiResponse::resource($entry->load('user')),
+            'data' => $this->presentation->resource($entry->load('user'), $request->user()),
         ]);
     }
 

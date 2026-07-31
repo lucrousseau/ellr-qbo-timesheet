@@ -40,11 +40,8 @@ export type TimeEntry = {
  */
 export type TimeEntryPayload = {
   customer_ref?: string
-  customer_name?: string
   project_ref?: string
-  project_name?: string
   item_ref?: string
-  item_name?: string
   start_time: string
   end_time: string
   description?: string | null

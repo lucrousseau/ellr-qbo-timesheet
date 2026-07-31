@@ -30,6 +30,18 @@ return Application::configure(basePath: dirname(__DIR__))
             $schedule->command('quickbooks:reconcile-time-activities --scheduled')
                 ->cron((string) config('quickbooks.time_activities_reconcile_cron', '0 * * * *'));
         }
+
+        if ((int) config('quickbooks.snapshot_soft_delete_retention_days', 90) > 0) {
+            $schedule->command('quickbooks:prune-time-activity-snapshots')->daily();
+        }
+
+        $failedJobRetentionHours = (int) config('queue.failed_jobs_retention_hours', 168);
+
+        if ($failedJobRetentionHours > 0) {
+            $schedule->command('queue:prune-failed', [
+                '--hours' => $failedJobRetentionHours,
+            ])->daily();
+        }
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();

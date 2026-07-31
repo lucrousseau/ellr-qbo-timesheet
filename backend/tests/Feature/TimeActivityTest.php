@@ -69,7 +69,6 @@ describe('authenticated time activities', function () {
 
         $employee = timesheetUserFor($admin, [
             'qbo_employee_ref' => '8',
-            'qbo_employee_name' => 'Jane Doe',
         ]);
         Sanctum::actingAs($employee);
         seedListedTimeActivities($token, '8', 1);
@@ -285,10 +284,10 @@ describe('authenticated time activities', function () {
 
     it('includes customer reference when provided on create', function () {
         QuickBooksToken::factory()->forUser(ActingUser::current())->create(['realm_id' => 'realm-create']);
+        mockQboEntryDisplayNames(['customer_name' => 'Acme Corp']);
 
         $this->postJson('/api/time-activities', [
             'customer_ref' => '42',
-            'customer_name' => 'Acme Corp',
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
         ])->assertCreated()
@@ -298,6 +297,7 @@ describe('authenticated time activities', function () {
 
     it('includes customer reference without name when only ref is provided', function () {
         QuickBooksToken::factory()->forUser(ActingUser::current())->create(['realm_id' => 'realm-create']);
+        mockQboEntryDisplayNames();
 
         $this->postJson('/api/time-activities', [
             'customer_ref' => '42',
@@ -317,12 +317,10 @@ describe('authenticated time activities', function () {
             ->assertJsonPath('data.description', null);
     });
 
-    it('omits empty customer names on create', function () {
-        ActingUser::current()->update(['qbo_employee_name' => null]);
+    it('omits empty customer refs on create', function () {
 
         $this->postJson('/api/time-activities', [
             'customer_ref' => '',
-            'customer_name' => '',
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
         ])->assertCreated()

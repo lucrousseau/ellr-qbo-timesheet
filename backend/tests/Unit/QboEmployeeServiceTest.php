@@ -51,7 +51,6 @@ it('updates a user mapping when the employee exists in quickbooks', function () 
     $target->shouldReceive('isAdmin')->andReturn(false);
     $target->shouldReceive('update')->once()->with([
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Jane Doe',
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
@@ -88,7 +87,6 @@ it('casts numeric employee refs before quickbooks lookup', function () {
     $target->shouldReceive('isAdmin')->andReturn(false);
     $target->shouldReceive('update')->once()->with([
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Jane Doe',
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
@@ -191,7 +189,6 @@ it('syncs a timesheet user from quickbooks identity', function () {
         'name' => 'Old Name',
         'email' => 'old@example.com',
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Old Name',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
@@ -220,7 +217,6 @@ it('skips sync when quickbooks identity is already applied', function () {
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $updatedAt = $user->updated_at;
 
@@ -309,54 +305,11 @@ it('rejects employee identity resolution when email is missing', function () {
     }
 });
 
-it('syncs when only the stored quickbooks employee name differs', function () {
-    $user = User::factory()->create([
-        'name' => 'Jane Doe',
-        'email' => 'jane@example.com',
-        'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Old QBO Name',
-    ]);
-
-    $service = makeQboEmployeeService(
-        Mockery::mock(QuickBooksService::class),
-        Mockery::mock(QuickBooksTokenResolverService::class),
-    );
-
-    $synced = $service->syncTimesheetUserFromIdentity($user, [
-        'display_name' => 'Jane Doe',
-        'email' => 'jane@example.com',
-    ]);
-
-    expect($synced->qbo_employee_name)->toBe('Jane Doe');
-});
-
 it('syncs when only the email address changes', function () {
-    $user = User::factory()->create([
-        'name' => 'Jane Doe',
-        'email' => 'old@example.com',
-        'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
-
-    $service = makeQboEmployeeService(
-        Mockery::mock(QuickBooksService::class),
-        Mockery::mock(QuickBooksTokenResolverService::class),
-    );
-
-    $synced = $service->syncTimesheetUserFromIdentity($user, [
-        'display_name' => 'Jane Doe',
-        'email' => 'jane@example.com',
-    ]);
-
-    expect($synced->email)->toBe('jane@example.com');
-});
-
-it('syncs when only the display name changes', function () {
     $user = User::factory()->create([
         'name' => 'Old Name',
         'email' => 'jane@example.com',
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Old Name',
     ]);
 
     $service = makeQboEmployeeService(
@@ -399,7 +352,6 @@ it('casts numeric quickbooks employee refs during quickbooks sync', function () 
         'qbo_employee_ref' => 42,
         'name' => 'Jane Doe',
         'email' => 'jane@example.com',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
@@ -483,7 +435,6 @@ it('rejects mapping updates for users in another organization', function () {
     $admin = User::factory()->admin()->create();
     $foreignUser = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     $service = makeQboEmployeeService(
@@ -523,8 +474,7 @@ it('keeps administrator profile fields when updating mapping', function () {
     $fresh = $target->fresh();
 
     expect($fresh->email)->toBe('admin-target@example.com')
-        ->and($fresh->qbo_employee_ref)->toBe('42')
-        ->and($fresh->qbo_employee_name)->toBe('Jane Doe');
+        ->and($fresh->qbo_employee_ref)->toBe('42');
 });
 
 it('updates changed quickbooks identity fields during sync', function () {
@@ -532,7 +482,6 @@ it('updates changed quickbooks identity fields during sync', function () {
         'name' => 'Old Name',
         'email' => 'old@example.com',
         'qbo_employee_ref' => '42',
-        'qbo_employee_name' => 'Old Name',
     ]);
 
     $service = makeQboEmployeeService(
@@ -546,6 +495,5 @@ it('updates changed quickbooks identity fields during sync', function () {
     ]);
 
     expect($synced->name)->toBe('Jane Doe')
-        ->and($synced->email)->toBe('old@example.com')
-        ->and($synced->qbo_employee_name)->toBe('Jane Doe');
+        ->and($synced->email)->toBe('old@example.com');
 });

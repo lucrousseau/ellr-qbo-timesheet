@@ -14,7 +14,6 @@ const targetUser: User = {
   name: 'Jane Doe',
   email: 'jane@example.com',
   qbo_employee_ref: '7',
-  qbo_employee_name: 'Jane Doe',
   supervisor_id: null,
 }
 
@@ -23,7 +22,6 @@ const supervisor: User = {
   name: 'Bob Supervisor',
   email: 'bob@example.com',
   qbo_employee_ref: '8',
-  qbo_employee_name: 'Bob Supervisor',
 }
 
 describe('AssignSupervisorDialog', () => {

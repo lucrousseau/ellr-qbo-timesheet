@@ -738,7 +738,6 @@ describe('Admin App', () => {
       name: 'Jane Doe',
       email: 'jane@example.com',
       qbo_employee_ref: '42',
-      qbo_employee_name: 'Jane Doe',
     })
 
     render(<App />)
@@ -867,7 +866,6 @@ describe('Admin App', () => {
       name: 'Jane Doe',
       email: 'jane@example.com',
       qbo_employee_ref: '7',
-      qbo_employee_name: 'Jane Doe',
     })
 
     render(<App />)
@@ -909,7 +907,6 @@ describe('Admin App', () => {
         name: 'Jane Doe',
         email: 'jane@example.com',
         qbo_employee_ref: '7',
-        qbo_employee_name: 'Jane Doe',
         all_customers_access: false,
         assigned_customers: [{ id: '11', display_name: 'Acme Corp' }],
       },
@@ -965,7 +962,6 @@ describe('Admin App', () => {
         name: 'Jane Doe',
         email: 'jane@example.com',
         qbo_employee_ref: '7',
-        qbo_employee_name: 'Jane Doe',
       },
     ])
     vi.mocked(deleteTimesheetUser).mockResolvedValue(undefined)
@@ -1008,7 +1004,6 @@ describe('Admin App', () => {
         name: 'Jane Doe',
         email: 'jane@example.com',
         qbo_employee_ref: '7',
-        qbo_employee_name: 'Jane Doe',
       },
     ])
     vi.mocked(deleteTimesheetUser).mockRejectedValue(new Error('delete failed'))

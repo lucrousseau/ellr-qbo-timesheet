@@ -7,7 +7,9 @@ Feature: Timesheet user customer access
     Given an authenticated API user
 
   Scenario: Read customer access for a provisioned timesheet user
-    Given a timesheet user is mapped to quickbooks employee "7"
+    Given quickbooks is connected for the authenticated user
+    And quickbooks customer "11" is named "Acme Corp" in the active customer list
+    And a timesheet user is mapped to quickbooks employee "7"
     And the timesheet user is assigned quickbooks customer "11" named "Acme Corp"
     When I request "GET" "/api/admin/users/{timesheet_user_id}/customers"
     Then the response status should be 200

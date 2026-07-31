@@ -13,27 +13,27 @@ use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Services\QuickBooksTokenResolverService;
 use App\Services\TimeActivityListService;
 use App\Services\TimeActivityService;
+use App\Services\TimeEntryPresentationService;
 use App\Services\TimeEntryService;
-use App\Support\TimeEntryApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Authorizes requests and delegates time activity CRUD to TimeActivityService.
- */
+/** Lists and mutates QuickBooks time activities and local pending entries. */
 class TimeActivityController extends Controller
 {
     /**
-     * @param  QuickBooksTokenResolverService  $tokenResolver  QBO token resolver.
+     * @param  QuickBooksTokenResolverService  $tokenResolver  Organization QBO token resolver.
      * @param  TimeActivityListService  $timeActivityList  Snapshot list service.
-     * @param  TimeActivityService  $timeActivities  QBO writer.
-     * @param  TimeEntryService  $timeEntries  Local entry writer.
+     * @param  TimeActivityService  $timeActivities  QBO time activity writer.
+     * @param  TimeEntryService  $timeEntries  Local time entry writer.
+     * @param  TimeEntryPresentationService  $presentation  Read-time QBO label resolver.
      */
     public function __construct(
         private readonly QuickBooksTokenResolverService $tokenResolver,
         private readonly TimeActivityListService $timeActivityList,
         private readonly TimeActivityService $timeActivities,
         private readonly TimeEntryService $timeEntries,
+        private readonly TimeEntryPresentationService $presentation,
     ) {}
 
     /**
@@ -67,7 +67,7 @@ class TimeActivityController extends Controller
         $entry = $this->timeEntries->createForUser($request->user(), $request->validated());
 
         return response()->json([
-            'data' => TimeEntryApiResponse::resource($entry->load('user')),
+            'data' => $this->presentation->resource($entry->load('user'), $request->user()),
         ], 201);
     }
 

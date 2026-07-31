@@ -107,7 +107,6 @@ it('resolves an administrator quickbooks token for non-admin users without a tok
     $employee = User::factory()->create([
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     $quickBooks = Mockery::mock(QuickBooksService::class);
@@ -128,7 +127,6 @@ it('aborts when the resolved token realm does not match the organization realm',
     $employee = User::factory()->create([
         'organization_id' => $organization->id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     try {

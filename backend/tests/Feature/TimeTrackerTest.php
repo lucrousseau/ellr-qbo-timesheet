@@ -29,8 +29,9 @@ it('lists quickbooks customers assigned to the signed-in employee', function () 
     $employee = timesheetUserFor($admin);
     $employee->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
+
+    mockQboCustomerList();
 
     $this->actingAs($employee)
         ->getJson('/api/quickbooks/customers', frontendHeaders())
@@ -95,11 +96,8 @@ it('persists and restores active timer sessions per user', function () {
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => 'Support',
         'is_running' => true,
     ], frontendHeaders())
@@ -121,11 +119,8 @@ it('returns timer sessions without picker refs without quickbooks sanitization',
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => 'Support tickets',
         'accumulated_seconds' => 45,
         'running_since' => null,
@@ -144,11 +139,8 @@ it('does not sanitize timer sessions with blank picker refs on load', function (
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => '   ',
-        'customer_name' => 'Ignored',
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => 'Draft',
         'accumulated_seconds' => 15,
         'running_since' => null,
@@ -162,7 +154,7 @@ it('does not sanitize timer sessions with blank picker refs on load', function (
         ->getJson('/api/time-tracker', frontendHeaders())
         ->assertOk()
         ->assertJsonPath('data.customer_ref', '   ')
-        ->assertJsonPath('data.customer_name', 'Ignored');
+        ->assertJsonPath('data.customer_name', null);
 });
 
 it('clears unassigned customers from persisted timer sessions on load', function () {
@@ -172,17 +164,16 @@ it('clears unassigned customers from persisted timer sessions on load', function
     $employee = timesheetUserFor($admin);
     $employee->qboCustomers()->create([
         'qbo_customer_ref' => '12',
-        'qbo_customer_name' => 'Beta LLC',
     ]);
 
     ActiveTimeSession::factory()->for($employee)->create([
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website redesign',
         'accumulated_seconds' => 120,
         'running_since' => null,
     ]);
+
+    mockQboCustomerList([['id' => '12', 'display_name' => 'Beta LLC']]);
 
     $this->actingAs($employee)
         ->getJson('/api/time-tracker', frontendHeaders())
@@ -206,11 +197,8 @@ it('rejects timer updates with customer refs that are not allowed for the employ
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => '99',
-        'customer_name' => 'Unknown Corp',
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => null,
         'is_running' => false,
     ], frontendHeaders())
@@ -226,11 +214,8 @@ it('logs elapsed time as a pending local entry and clears the session', function
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => 'Support call',
         'accumulated_seconds' => 3600,
         'running_since' => null,
@@ -274,11 +259,8 @@ it('pauses a running timer through the api', function () {
 
         $this->putJson('/api/time-tracker', [
             'customer_ref' => null,
-            'customer_name' => null,
             'project_ref' => null,
-            'project_name' => null,
             'service_ref' => null,
-            'service_name' => null,
             'description' => null,
             'is_running' => false,
         ], frontendHeaders())
@@ -298,11 +280,8 @@ it('rejects logging when the timer has no elapsed time', function () {
 
     ActiveTimeSession::factory()->for($user)->create([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'accumulated_seconds' => 0,
         'running_since' => null,
     ]);
@@ -330,8 +309,9 @@ it('lists quickbooks customers with refresh enabled', function () {
     $employee = timesheetUserFor($admin);
     $employee->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
+
+    mockQboCustomerList();
 
     $this->actingAs($employee)
         ->getJson('/api/quickbooks/customers?refresh=1', frontendHeaders())
@@ -361,11 +341,8 @@ it('updates timer state without quickbooks validation when picker refs are blank
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => '   ',
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => 'Support',
         'is_running' => true,
     ], frontendHeaders())
@@ -393,11 +370,8 @@ it('rejects timer updates with invalid service refs', function () {
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => '99',
-        'service_name' => 'Unknown service',
         'description' => null,
         'is_running' => false,
     ], frontendHeaders())
@@ -413,11 +387,8 @@ it('rejects timer updates with project refs but no customer', function () {
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => '22',
-        'project_name' => 'Website',
         'service_ref' => null,
-        'service_name' => null,
         'description' => null,
         'is_running' => false,
     ], frontendHeaders())
@@ -434,11 +405,8 @@ it('updates accumulated seconds through the api', function () {
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => null,
         'is_running' => false,
         'accumulated_seconds' => 300,
@@ -453,11 +421,8 @@ it('updates billable flag through the api', function () {
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => null,
         'is_running' => false,
         'is_billable' => true,
@@ -471,11 +436,8 @@ it('preserves billable flag when update omits is_billable', function () {
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => null,
         'is_running' => false,
         'is_billable' => true,
@@ -485,11 +447,8 @@ it('preserves billable flag when update omits is_billable', function () {
     $this->actingAs($user)
         ->putJson('/api/time-tracker', [
             'customer_ref' => null,
-            'customer_name' => null,
             'project_ref' => null,
-            'project_name' => null,
             'service_ref' => null,
-            'service_name' => null,
             'description' => 'Support',
             'is_running' => false,
         ], frontendHeaders())
@@ -504,11 +463,8 @@ it('rejects accumulated seconds above the configured maximum', function () {
 
     $this->putJson('/api/time-tracker', [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
         'description' => null,
         'is_running' => false,
         'accumulated_seconds' => 301,

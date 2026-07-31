@@ -11,12 +11,10 @@ covers(UserQboCustomer::class);
 it('belongs to the assigned timesheet user', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     $assignment = $user->qboCustomers()->create([
         'qbo_customer_ref' => '11',
-        'qbo_customer_name' => 'Acme Corp',
     ]);
 
     expect($assignment)->toBeInstanceOf(UserQboCustomer::class)

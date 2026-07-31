@@ -27,11 +27,8 @@ class ActiveTimeSessionFactory extends Factory
         return [
             'user_id' => User::factory(),
             'customer_ref' => '1',
-            'customer_name' => 'Acme Corp',
             'project_ref' => null,
-            'project_name' => null,
             'service_ref' => null,
-            'service_name' => null,
             'description' => null,
             'is_billable' => false,
             'accumulated_seconds' => 0,

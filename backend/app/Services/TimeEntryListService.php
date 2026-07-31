@@ -11,7 +11,7 @@ use App\Models\TimeActivitySnapshot;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Support\TimeEntryApiResponse;
-use Illuminate\Database\Query\Builder;
+use App\Support\TimeEntryMergedListQuery;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -27,12 +27,14 @@ class TimeEntryListService
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
      * @param  TimeActivityReconcileCoordinatorService  $reconcileCoordinator  Reconcile dispatch and inline refresh.
      * @param  OrganizationTimezoneService  $organizationTimezone  Tenant company timezone resolver.
+     * @param  TimeEntryPresentationService  $presentation  Read-time label resolution for local rows.
      */
     public function __construct(
         private readonly QboEmployeeAuthorizationService $employeeAuthorization,
         private readonly TimeActivitySnapshotService $snapshots,
         private readonly TimeActivityReconcileCoordinatorService $reconcileCoordinator,
         private readonly OrganizationTimezoneService $organizationTimezone,
+        private readonly TimeEntryPresentationService $presentation,
     ) {}
 
     /**
@@ -56,18 +58,9 @@ class TimeEntryListService
         $maxResults = max(1, $maxResults); // @pest-mutate-ignore list pagination clamp
         $offset = max(0, $startPosition - 1); // @pest-mutate-ignore list pagination clamp
 
-        $linkedQboIds = TimeEntry::query()
-            ->where('user_id', $user->id)
-            ->whereNotNull('qbo_id')
-            ->pluck('qbo_id')
-            ->filter(fn (?string $qboId): bool => $qboId !== null && $qboId !== '') // @pest-mutate-ignore linked QBO id normalization
-            ->values()
-            ->all();
-
         $context = $this->legacySnapshotContext($user, $token, $refresh);
-        $union = $this->mergedUnionQuery($user, $context, $linkedQboIds);
-
-        $total = (int) DB::query()->fromSub($union, 'merged_rows')->count(); // @pest-mutate-ignore merged list total count
+        $total = TimeEntryMergedListQuery::count($user, $context);
+        $union = TimeEntryMergedListQuery::unionQuery($user, $context);
 
         $orderedRows = DB::query()
             ->fromSub($union, 'merged_rows')
@@ -77,7 +70,7 @@ class TimeEntryListService
             ->limit($maxResults)
             ->get();
 
-        $data = $this->hydrateMergedRows($orderedRows, $context);
+        $data = $this->hydrateMergedRows($orderedRows, $context, $user, $token);
         $count = count($data);
 
         return [
@@ -124,67 +117,15 @@ class TimeEntryListService
     }
 
     /**
-     * Builds the union query that merges local entries with legacy snapshot rows.
-     *
-     * @param  User  $user  Employee whose entries are listed.
-     * @param  array{realm_id: string, employee_ref: string}|null  $context  Snapshot query context.
-     * @param  list<string>  $linkedQboIds  QuickBooks ids already linked to local rows.
-     * @return Builder
-     */
-    private function mergedUnionQuery(User $user, ?array $context, array $linkedQboIds): Builder
-    {
-        $localListId = $this->prefixedIdExpression('local', 'id');
-        $localQuery = TimeEntry::query()
-            ->where('user_id', $user->id)
-            ->selectRaw($localListId.' as list_id')
-            ->selectRaw('COALESCE(start_time, created_at) as sort_time') // @pest-mutate-ignore merged list sort key
-            ->selectRaw("'local' as row_source")
-            ->selectRaw('id as local_id')
-            ->selectRaw('NULL as qbo_id');
-
-        if ($context === null) { // @pest-mutate-ignore legacy snapshot context guard
-            return $localQuery->toBase();
-        }
-
-        $snapshotListId = $this->prefixedIdExpression('qbo', 'qbo_id');
-        $snapshotQuery = TimeActivitySnapshot::query()
-            ->where('realm_id', $context['realm_id'])
-            ->where('qbo_employee_ref', $context['employee_ref'])
-            ->when($linkedQboIds !== [], fn ($query) => $query->whereNotIn('qbo_id', $linkedQboIds)) // @pest-mutate-ignore linked QBO id exclusion
-            ->selectRaw($snapshotListId.' as list_id') // @pest-mutate-ignore unified list identifier prefix
-            ->selectRaw('COALESCE(start_time, last_synced_at) as sort_time') // @pest-mutate-ignore merged list sort key
-            ->selectRaw("'snapshot' as row_source")
-            ->selectRaw('NULL as local_id')
-            ->selectRaw('qbo_id as qbo_id');
-
-        return $localQuery->toBase()->unionAll($snapshotQuery->toBase());
-    }
-
-    /**
-     * Builds a database-specific expression that prefixes an identifier column.
-     *
-     * @param  string  $prefix  Stable list identifier prefix.
-     * @param  string  $column  Source column name.
-     * @return string
-     */
-    private function prefixedIdExpression(string $prefix, string $column): string
-    {
-        $quotedPrefix = "'{$prefix}:'";
-
-        return match (DB::connection()->getDriverName()) {
-            'sqlite' => $quotedPrefix.' || CAST('.$column.' AS TEXT)',
-            default => "CONCAT({$quotedPrefix}, {$column})",
-        };
-    }
-
-    /**
      * Hydrates ordered union rows into API payloads.
      *
      * @param  Collection<int, \stdClass>  $rows  Ordered union page rows.
      * @param  array{realm_id: string, employee_ref: string}|null  $context  Snapshot query context.
+     * @param  User  $user  Employee whose entries are listed.
+     * @param  QuickBooksToken|null  $token  Organization QuickBooks token when available.
      * @return list<array<string, mixed>>
      */
-    private function hydrateMergedRows(Collection $rows, ?array $context): array
+    private function hydrateMergedRows(Collection $rows, ?array $context, User $user, ?QuickBooksToken $token): array
     {
         if ($rows->isEmpty()) { // @pest-mutate-ignore merged list hydration shortcut
             return [];
@@ -230,7 +171,7 @@ class TimeEntryListService
                 $entry = $entries->get($listId);
 
                 if ($entry !== null) {
-                    $payloads[] = TimeEntryApiResponse::resource($entry);
+                    $payloads[] = $this->presentation->resource($entry, $user, $token);
                 }
 
                 continue;

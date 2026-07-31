@@ -253,7 +253,6 @@ describe('Timesheet App', () => {
   it('renders the timer panel when only the employee ref is configured', async () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
-      qbo_employee_name: null,
     })
 
     render(<App />)
@@ -948,7 +947,6 @@ describe('Timesheet App', () => {
       expect(updateTimeTracker).toHaveBeenCalledWith(
         expect.objectContaining({
           customer_ref: null,
-          customer_name: null,
         }),
       )
     })

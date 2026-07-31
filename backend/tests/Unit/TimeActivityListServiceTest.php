@@ -81,7 +81,6 @@ function makeTimeActivityListService(?DataService $dataService = null): TimeActi
 it('lists time activities for a user from snapshots', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = quickBooksTokenWithListedActivities($user, '7', 1);
 
@@ -95,7 +94,6 @@ it('lists time activities for a user from snapshots', function () {
 it('filters out activities that belong to other employees', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
     TimeActivitySnapshot::factory()->forRealm($token->realm_id)->forEmployee('7')->create(['qbo_id' => '1']);
@@ -110,7 +108,6 @@ it('filters out activities that belong to other employees', function () {
 it('clamps invalid pagination arguments before reading snapshots', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = quickBooksTokenWithListedActivities($user, '7', 1);
 
@@ -123,7 +120,6 @@ it('clamps invalid pagination arguments before reading snapshots', function () {
 it('marks list responses as truncated when more snapshot rows exist', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = quickBooksTokenWithListedActivities($user, '7', 101);
 
@@ -136,7 +132,6 @@ it('marks list responses as truncated when more snapshot rows exist', function (
 it('does not mark list responses as truncated when all rows fit on one page', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = quickBooksTokenWithListedActivities($user, '7', 50);
 
@@ -161,7 +156,6 @@ it('purges stale snapshots when reconciling from quickbooks', function () {
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
     TimeActivitySnapshot::factory()->forRealm($token->realm_id)->forEmployee('7')->create([
@@ -198,7 +192,6 @@ it('does not purge snapshots when the reconcile scan is truncated', function () 
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
     TimeActivitySnapshot::factory()->forRealm($token->realm_id)->forEmployee('7')->create([
@@ -221,7 +214,6 @@ it('does not purge snapshots when reconcile sees no quickbooks activities', func
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
     TimeActivitySnapshot::factory()->forRealm($token->realm_id)->forEmployee('7')->create([
@@ -249,7 +241,6 @@ it('purges snapshots with null txn_date inside the lookback window', function ()
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
     TimeActivitySnapshot::factory()->forRealm($token->realm_id)->forEmployee('7')->create([
@@ -267,7 +258,6 @@ it('queues a backfill when the realm has no snapshots', function () {
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
@@ -283,7 +273,6 @@ it('returns an empty list when no snapshots exist yet and reconcile is queued', 
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
@@ -302,7 +291,6 @@ it('clamps max results to the configured quickbooks maximum', function () {
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = quickBooksTokenWithListedActivities($user, '7', 30);
 
@@ -315,7 +303,6 @@ it('clamps max results to the configured quickbooks maximum', function () {
 it('does not mark the final full page as truncated', function () {
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
     $token = quickBooksTokenWithListedActivities($user, '7', 100);
 

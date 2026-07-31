@@ -13,7 +13,6 @@ it('aborts when actor and target belong to different organizations', function ()
     $actor = User::factory()->admin()->create();
     $target = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     expect(fn () => app(OrganizationAccessService::class)->ensureSameOrganization($actor, $target))
@@ -24,7 +23,6 @@ it('aborts when a timesheet user belongs to another organization', function () {
     $actor = User::factory()->admin()->create();
     $target = User::factory()->create([
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Foreign User',
     ]);
 
     expect(fn () => app(OrganizationAccessService::class)->ensureTimesheetUser($actor, $target))
@@ -36,7 +34,6 @@ it('allows access when actor and target share the same organization', function (
     $target = User::factory()->create([
         'organization_id' => $actor->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     app(OrganizationAccessService::class)->ensureSameOrganization($actor, $target);
@@ -49,7 +46,6 @@ it('allows access to provisioned timesheet users in the same organization', func
     $target = User::factory()->create([
         'organization_id' => $actor->organization_id,
         'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
     ]);
 
     app(OrganizationAccessService::class)->ensureTimesheetUser($actor, $target);

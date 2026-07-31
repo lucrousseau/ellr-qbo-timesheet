@@ -105,22 +105,16 @@ class QboPickerValidationService
      * @param  array<string, mixed>  $selections  Stored timer picker fields.
      * @return array{
      *     customer_ref: string|null,
-     *     customer_name: string|null,
      *     project_ref: string|null,
-     *     project_name: string|null,
-     *     service_ref: string|null,
-     *     service_name: string|null
+     *     service_ref: string|null
      * }
      */
     public function sanitizeSessionSelections(User $user, QuickBooksToken $token, array $selections): array
     {
         $sanitized = [
             'customer_ref' => $this->nullableString($selections['customer_ref'] ?? null),
-            'customer_name' => $this->nullableString($selections['customer_name'] ?? null),
             'project_ref' => $this->nullableString($selections['project_ref'] ?? null),
-            'project_name' => $this->nullableString($selections['project_name'] ?? null),
             'service_ref' => $this->nullableString($selections['service_ref'] ?? null),
-            'service_name' => $this->nullableString($selections['service_name'] ?? null),
         ];
 
         $customerRef = QboRefNormalizer::normalize($sanitized['customer_ref']);
@@ -139,13 +133,11 @@ class QboPickerValidationService
         if ($projectRef !== null) {
             if ($customerRef === null) {
                 $sanitized['project_ref'] = null;
-                $sanitized['project_name'] = null;
             } elseif (! QboRefNormalizer::optionExists(
                 $this->projects->listForCustomer($token, $customerRef),
                 $projectRef,
             )) {
                 $sanitized['project_ref'] = null;
-                $sanitized['project_name'] = null;
             } else {
                 $sanitized['project_ref'] = $projectRef;
             }
@@ -158,7 +150,6 @@ class QboPickerValidationService
             $serviceRef,
         )) {
             $sanitized['service_ref'] = null;
-            $sanitized['service_name'] = null;
         } else {
             $sanitized['service_ref'] = $serviceRef;
         }
@@ -184,7 +175,7 @@ class QboPickerValidationService
     }
 
     /**
-     * Returns a nullable trimmed string for persisted picker labels and refs.
+     * Returns a nullable trimmed string for persisted picker refs.
      *
      * @param  mixed  $value  Raw stored value.
      * @return string|null
@@ -211,9 +202,7 @@ class QboPickerValidationService
         return [
             ...$selections,
             'customer_ref' => null,
-            'customer_name' => null,
             'project_ref' => null,
-            'project_name' => null,
         ];
     }
 }

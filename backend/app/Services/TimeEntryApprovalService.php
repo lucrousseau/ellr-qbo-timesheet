@@ -8,9 +8,10 @@ namespace App\Services;
 
 use App\Enums\TimeEntryStatus;
 use App\Jobs\SyncApprovedTimeEntryToQuickBooksJob;
+use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
-use App\Support\TimeEntryApiResponse;
+use App\Support\TimeEntryQboPayload;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -24,11 +25,15 @@ class TimeEntryApprovalService
      * @param  TimeEntryAuthorizationService  $authorization  Review permission checks.
      * @param  QboPickerValidationService  $pickerValidation  QuickBooks picker reference validator.
      * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves organization QBO token.
+     * @param  QboPickerDisplayNameService  $displayNames  Cached QuickBooks label resolver.
+     * @param  TimeEntryPresentationService  $presentation  Read-time label resolution for API rows.
      */
     public function __construct(
         private readonly TimeEntryAuthorizationService $authorization,
         private readonly QboPickerValidationService $pickerValidation,
         private readonly QuickBooksTokenResolverService $tokenResolver,
+        private readonly QboPickerDisplayNameService $displayNames,
+        private readonly TimeEntryPresentationService $presentation,
     ) {}
 
     /**
@@ -46,7 +51,9 @@ class TimeEntryApprovalService
             ->where('organization_id', $actor->organization_id) // @pest-mutate-ignore approval list tenant filter
             ->where('status', TimeEntryStatus::Pending) // @pest-mutate-ignore approval list status filter
             ->when(! $actor->isAdmin(), function ($builder) use ($actor): void { // @pest-mutate-ignore supervisor scoped approval list
-                $builder->whereHas('user', fn ($userQuery) => $userQuery->where('supervisor_id', $actor->id));
+                $builder->whereIn('user_id', User::query()
+                    ->select('id')
+                    ->where('supervisor_id', $actor->id));
             })
             ->orderBy('start_time') // @pest-mutate-ignore approval list ordering
             ->orderBy('id'); // @pest-mutate-ignore approval list ordering
@@ -57,7 +64,7 @@ class TimeEntryApprovalService
         $count = $entries->count(); // @pest-mutate-ignore approval list pagination
 
         return [
-            'data' => TimeEntryApiResponse::collection($entries),
+            'data' => $this->presentation->collection($entries, $actor),
             'meta' => [
                 'count' => $count, // @pest-mutate-ignore pagination metadata
                 'max_results' => $maxResults, // @pest-mutate-ignore pagination metadata
@@ -76,7 +83,7 @@ class TimeEntryApprovalService
      */
     public function approve(User $actor, int $id): TimeEntry
     {
-        [$entry, $employee, $token, $payload] = DB::transaction(function () use ($actor, $id): array { // @pest-mutate-ignore approval transaction boundary
+        [$entry, $employee, $token] = DB::transaction(function () use ($actor, $id): array { // @pest-mutate-ignore approval transaction boundary
             $entry = $this->findPendingEntry($id, lock: true); // @pest-mutate-ignore pessimistic lock for approval workflow
             $this->authorization->assertCanReview($actor, $entry); // @pest-mutate-ignore approval authorization guard
 
@@ -98,9 +105,10 @@ class TimeEntryApprovalService
                 $entry->refresh()->load(['user', 'reviewedBy']), // @pest-mutate-ignore approval response eager loading
                 $employee,
                 $token,
-                $this->toQboPayload($entry),
             ];
         });
+
+        $payload = $this->toQboPayload($entry, $token, $employee);
 
         SyncApprovedTimeEntryToQuickBooksJob::dispatch(
             $entry->id, // @pest-mutate-ignore approval async dispatch
@@ -164,22 +172,16 @@ class TimeEntryApprovalService
      * Maps a local entry to the QuickBooks create payload shape.
      *
      * @param  TimeEntry  $entry  Approved local entry.
+     * @param  QuickBooksToken  $token  Connected QuickBooks token.
+     * @param  User  $employee  Entry owner.
      * @return array<string, mixed>
      */
-    private function toQboPayload(TimeEntry $entry): array
+    private function toQboPayload(TimeEntry $entry, QuickBooksToken $token, User $employee): array
     {
-        return [
-            'customer_ref' => $entry->customer_ref, // @pest-mutate-ignore QBO sync payload mapping
-            'customer_name' => $entry->customer_name, // @pest-mutate-ignore QBO sync payload mapping
-            'project_ref' => $entry->project_ref, // @pest-mutate-ignore QBO sync payload mapping
-            'project_name' => $entry->project_name, // @pest-mutate-ignore QBO sync payload mapping
-            'item_ref' => $entry->item_ref, // @pest-mutate-ignore QBO sync payload mapping
-            'item_name' => $entry->item_name, // @pest-mutate-ignore QBO sync payload mapping
-            'start_time' => $entry->start_time?->toIso8601String(), // @pest-mutate-ignore QBO sync payload mapping
-            'end_time' => $entry->end_time?->toIso8601String(), // @pest-mutate-ignore QBO sync payload mapping
-            'description' => $entry->description, // @pest-mutate-ignore QBO sync payload mapping
-            'is_billable' => $entry->is_billable, // @pest-mutate-ignore QBO sync payload mapping
-        ];
+        return TimeEntryQboPayload::fromEntry(
+            $entry,
+            $this->displayNames->entryDisplayNames($token, $employee, $entry),
+        );
     }
 
     /**

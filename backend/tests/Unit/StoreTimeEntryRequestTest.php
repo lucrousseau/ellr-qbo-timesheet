@@ -15,11 +15,8 @@ it('accepts a valid time entry create payload', function () {
         'end_time' => '2026-07-27T17:00:00',
         'description' => 'Support',
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website',
         'item_ref' => '33',
-        'item_name' => 'Hours',
         'is_billable' => true,
     ], (new StoreTimeEntryRequest)->rules());
 
@@ -60,11 +57,8 @@ it('defines optional picker and billable fields in validation rules', function (
 
     expect($rules)->toHaveKeys([
         'customer_ref',
-        'customer_name',
         'project_ref',
-        'project_name',
         'item_ref',
-        'item_name',
         'description',
         'is_billable',
     ])

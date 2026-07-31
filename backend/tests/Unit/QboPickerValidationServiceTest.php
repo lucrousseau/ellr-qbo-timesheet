@@ -280,18 +280,12 @@ it('clears customer and project selections that are no longer allowed', function
 
     expect($service->sanitizeSessionSelections($user, $token, [
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website',
         'service_ref' => '33',
-        'service_name' => 'Consulting',
     ]))->toBe([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => '33',
-        'service_name' => 'Consulting',
     ]);
 });
 
@@ -322,18 +316,12 @@ it('clears project selections when the customer is missing during sanitize', fun
 
     expect($service->sanitizeSessionSelections($user, $token, [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => '22',
-        'project_name' => 'Website',
         'service_ref' => null,
-        'service_name' => null,
     ]))->toBe([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
     ]);
 });
 
@@ -354,18 +342,12 @@ it('keeps valid customer and project selections during sanitize', function () {
 
     expect(app(QboPickerValidationService::class)->sanitizeSessionSelections($user, $token, [
         'customer_ref' => 'Customer-11',
-        'customer_name' => ' Acme Corp ',
         'project_ref' => '22',
-        'project_name' => ' Website ',
         'service_ref' => null,
-        'service_name' => null,
     ]))->toBe([
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '22',
-        'project_name' => 'Website',
         'service_ref' => null,
-        'service_name' => null,
     ]);
 });
 
@@ -381,39 +363,27 @@ it('clears invalid service selections during sanitize', function () {
 
     expect(app(QboPickerValidationService::class)->sanitizeSessionSelections($user, $token, [
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => '99',
-        'service_name' => 'Unknown',
     ]))->toBe([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
     ]);
 });
 
-it('trims whitespace-only picker labels to null during sanitize', function () {
+it('trims whitespace-only picker refs to null during sanitize', function () {
     $user = User::factory()->create(['qbo_employee_ref' => '7']);
     $token = QuickBooksToken::factory()->create();
 
     expect(app(QboPickerValidationService::class)->sanitizeSessionSelections($user, $token, [
-        'customer_ref' => null,
-        'customer_name' => '   ',
-        'project_ref' => null,
-        'project_name' => '   ',
-        'service_ref' => null,
-        'service_name' => '   ',
+        'customer_ref' => '   ',
+        'project_ref' => '   ',
+        'service_ref' => '   ',
     ]))->toBe([
         'customer_ref' => null,
-        'customer_name' => null,
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
     ]);
 });
 
@@ -434,17 +404,11 @@ it('clears only invalid project selections when the customer remains allowed', f
 
     expect(app(QboPickerValidationService::class)->sanitizeSessionSelections($user, $token, [
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => '99',
-        'project_name' => 'Unknown',
         'service_ref' => null,
-        'service_name' => null,
     ]))->toBe([
         'customer_ref' => '11',
-        'customer_name' => 'Acme Corp',
         'project_ref' => null,
-        'project_name' => null,
         'service_ref' => null,
-        'service_name' => null,
     ]);
 });

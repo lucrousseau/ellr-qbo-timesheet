@@ -11,10 +11,12 @@ import type { TimeActivityRow } from './timeActivityFormat'
  * @returns Normalized row for shared time activity tables.
  */
 export function parseTimeEntryRow(entry: TimeEntry): TimeActivityRow {
+  const customerLabel = entry.customer_name ?? entry.customer_ref ?? null
+  const projectLabel = entry.project_name ?? entry.project_ref ?? null
   const customerName =
-    entry.project_name && entry.customer_name && entry.project_name !== entry.customer_name
-      ? `${entry.customer_name} / ${entry.project_name}`
-      : entry.customer_name ?? entry.project_name ?? null
+    projectLabel && customerLabel && projectLabel !== customerLabel
+      ? `${customerLabel} / ${projectLabel}`
+      : customerLabel ?? projectLabel
 
   return {
     id: entry.list_id ?? String(entry.id ?? entry.qbo_id ?? ''),
@@ -23,7 +25,7 @@ export function parseTimeEntryRow(entry: TimeEntry): TimeActivityRow {
     endTime: entry.end_time,
     durationSeconds: entry.duration_seconds,
     customerName,
-    serviceName: entry.item_name ?? null,
+    serviceName: entry.item_name ?? entry.item_ref ?? null,
     description: entry.description ?? null,
     isBillable: entry.is_billable,
     billableLocked: false,

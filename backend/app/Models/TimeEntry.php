@@ -34,11 +34,8 @@ class TimeEntry extends Model
      */
     protected $fillable = [
         'customer_ref',
-        'customer_name',
         'project_ref',
-        'project_name',
         'item_ref',
-        'item_name',
         'start_time',
         'end_time',
         'description',
