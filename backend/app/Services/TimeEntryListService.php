@@ -25,13 +25,13 @@ class TimeEntryListService
      *
      * @param  QboEmployeeAuthorizationService  $employeeAuthorization  QBO employee ownership checks.
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
-     * @param  TimeActivitySyncService  $sync  Realm-wide reconcile from QuickBooks.
+     * @param  TimeActivityReconcileCoordinatorService  $reconcileCoordinator  Reconcile dispatch and inline refresh.
      * @param  OrganizationTimezoneService  $organizationTimezone  Tenant company timezone resolver.
      */
     public function __construct(
         private readonly QboEmployeeAuthorizationService $employeeAuthorization,
         private readonly TimeActivitySnapshotService $snapshots,
-        private readonly TimeActivitySyncService $sync,
+        private readonly TimeActivityReconcileCoordinatorService $reconcileCoordinator,
         private readonly OrganizationTimezoneService $organizationTimezone,
     ) {}
 
@@ -114,7 +114,7 @@ class TimeEntryListService
         $realmId = $token->realm_id;
 
         if ($refresh || ! $this->snapshots->realmHasSnapshots($realmId)) { // @pest-mutate-ignore legacy snapshot reconcile guard
-            $this->sync->reconcileRealm($token);
+            $this->reconcileCoordinator->prepareRealmForList($token, $refresh);
         }
 
         return [

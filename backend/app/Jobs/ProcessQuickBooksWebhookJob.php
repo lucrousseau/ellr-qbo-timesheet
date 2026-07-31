@@ -8,6 +8,7 @@ namespace App\Jobs;
 
 use App\Exceptions\QuickBooksException;
 use App\Services\QuickBooksWebhookProcessorService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -16,9 +17,14 @@ use Throwable;
 /**
  * Applies webhook entity changes asynchronously.
  */
-class ProcessQuickBooksWebhookJob implements ShouldQueue
+class ProcessQuickBooksWebhookJob implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
+
+    /**
+     * Seconds to keep an identical webhook payload deduplicated in the queue.
+     */
+    public int $uniqueFor = 300;
 
     /**
      * @param  array<string, mixed>  $payload  Decoded Intuit webhook JSON body.
@@ -26,6 +32,16 @@ class ProcessQuickBooksWebhookJob implements ShouldQueue
     public function __construct(
         public readonly array $payload,
     ) {}
+
+    /**
+     * Deduplicates identical webhook payloads while a prior job is pending.
+     *
+     * @return string
+     */
+    public function uniqueId(): string
+    {
+        return 'quickbooks:webhook:'.hash('sha256', json_encode($this->payload, JSON_THROW_ON_ERROR));
+    }
 
     /**
      * Dispatches entity changes to the webhook processor.

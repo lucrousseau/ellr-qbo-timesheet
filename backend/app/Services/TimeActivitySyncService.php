@@ -6,11 +6,14 @@
 
 namespace App\Services;
 
+use App\Enums\TimeActivityReconcileScope;
 use App\Exceptions\QuickBooksException;
 use App\Models\QboRealmSyncState;
 use App\Models\QuickBooksToken;
 use App\Support\TimeActivityQuery;
+use App\Support\TimeActivityReconcileLookback;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Scans QuickBooks and upserts realm-wide time activity snapshots.
@@ -34,10 +37,13 @@ class TimeActivitySyncService
      * Imports time activities for a realm within the configured lookback windows.
      *
      * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  TimeActivityReconcileScope  $scope  Recent imports one window; Full imports all steps.
      * @return int Number of rows upserted.
      */
-    public function reconcileRealm(QuickBooksToken $token): int
-    {
+    public function reconcileRealm(
+        QuickBooksToken $token,
+        TimeActivityReconcileScope $scope = TimeActivityReconcileScope::Full,
+    ): int {
         $token->loadMissing('user.organization'); // @pest-mutate-ignore reconcile timezone sync preload
         $organization = $token->user?->organization;
 
@@ -57,7 +63,7 @@ class TimeActivitySyncService
         $purgeSeenQboIds = [];
         $purgeEligible = false;
 
-        foreach ($this->lookbackSteps() as $index => $lookbackDays) {
+        foreach (TimeActivityReconcileLookback::stepsForScope($scope) as $index => $lookbackDays) {
             $minTxnDate = Carbon::now()->subDays($lookbackDays)->toDateString();
             [$windowUpserted, $windowIds, $windowComplete] = $this->importWindow(
                 $dataService,
@@ -126,9 +132,10 @@ class TimeActivitySyncService
     /**
      * Reconciles every connected QuickBooks company realm.
      *
+     * @param  bool  $scheduled  When true, skips recently synced realms and imports one window only.
      * @return int Total rows upserted.
      */
-    public function reconcileAllRealms(): int
+    public function reconcileAllRealms(bool $scheduled = false): int
     {
         $total = 0;
         $realmIds = QuickBooksToken::query()
@@ -137,6 +144,10 @@ class TimeActivitySyncService
             ->pluck('realm_id');
 
         foreach ($realmIds as $realmId) {
+            if ($scheduled && TimeActivityReconcileLookback::shouldSkipScheduledReconcile($realmId)) {
+                continue;
+            }
+
             $token = QuickBooksToken::query()
                 ->where('realm_id', $realmId)
                 ->latest('id')
@@ -146,7 +157,8 @@ class TimeActivitySyncService
                 continue;
             }
 
-            $total += $this->reconcileRealm($token);
+            $scope = $scheduled ? TimeActivityReconcileScope::Recent : TimeActivityReconcileScope::Full;
+            $total += $this->reconcileRealm($token, $scope);
         }
 
         return $total;
@@ -191,11 +203,20 @@ class TimeActivitySyncService
 
             if ($pageObjects !== []) {
                 try {
-                    foreach ($this->snapshots->upsertBatchFromQboEntities($realmId, $dataService, $pageObjects) as $snapshot) {
+                    foreach ($this->snapshots->upsertBatchFromQboEntities(
+                        $realmId,
+                        $dataService,
+                        $pageObjects,
+                        resolveMissingNames: false,
+                    ) as $snapshot) {
                         $seenQboIds[] = $snapshot->qbo_id;
                         $upserted++;
                     }
-                } catch (\InvalidArgumentException) { // @pest-mutate-ignore reconcile batch snapshot upsert guard
+                } catch (\InvalidArgumentException $exception) { // @pest-mutate-ignore reconcile batch snapshot upsert guard
+                    Log::warning('QuickBooks reconcile skipped invalid time activity row', [ // @pest-mutate-ignore reconcile invalid row observability
+                        'realm_id' => $realmId,
+                        'message' => $exception->getMessage(),
+                    ]);
                 }
             }
 
@@ -207,33 +228,5 @@ class TimeActivitySyncService
         }
 
         return [$upserted, $seenQboIds, false];
-    }
-
-    /**
-     * @return list<int>
-     */
-    private function lookbackSteps(): array
-    {
-        $configured = config('quickbooks.time_activities_lookback_steps');
-        $steps = is_array($configured) ? $configured : [14, 30, 90]; // @pest-mutate-ignore default lookback ladder when config is missing
-        $maxLookback = (int) config('quickbooks.time_activities_lookback_days', 90); // @pest-mutate-ignore
-        $normalized = [];
-
-        foreach ($steps as $step) {
-            $days = (int) $step;
-
-            if ($days > 0 && $days <= $maxLookback) {
-                $normalized[$days] = $days;
-            }
-        }
-
-        if ($normalized === []) {
-            $normalized[$maxLookback] = $maxLookback;
-        }
-
-        $values = array_values($normalized);
-        sort($values);
-
-        return $values;
     }
 }

@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\QboRealmSyncState;
 use App\Models\QuickBooksToken;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Applies TimeActivity webhook events to the local snapshot read model.
@@ -90,7 +91,7 @@ class QuickBooksWebhookProcessorService
             ->first();
 
         if ($token === null) {
-            Log::warning('QuickBooks webhook ignored unknown realm', [ // @pest-mutate-ignore webhook observability logging
+            Log::warning('QuickBooks webhook ignored claimed realm without token', [ // @pest-mutate-ignore webhook observability logging
                 'realm_id' => $realmId,
             ]);
 
@@ -140,7 +141,7 @@ class QuickBooksWebhookProcessorService
             return;
         }
 
-        if ($this->idempotency->wasProcessed($token->realm_id, $entity)) {
+        if (! $this->idempotency->tryClaim($token->realm_id, $entity)) {
             Log::debug('QuickBooks webhook skipped duplicate entity notification', [ // @pest-mutate-ignore webhook observability logging
                 'realm_id' => $token->realm_id,
                 'qbo_id' => $id,
@@ -150,14 +151,18 @@ class QuickBooksWebhookProcessorService
             return;
         }
 
-        if (in_array($operation, ['delete', 'void'], true)) { // @pest-mutate-ignore webhook delete operation matching
-            $this->snapshots->softDeleteByQboId($token->realm_id, $id);
-            $this->idempotency->markProcessed($token->realm_id, $entity); // @pest-mutate-ignore webhook replay bookkeeping
+        try {
+            if (in_array($operation, ['delete', 'void'], true)) { // @pest-mutate-ignore webhook delete operation matching
+                $this->snapshots->softDeleteByQboId($token->realm_id, $id);
 
-            return;
+                return;
+            }
+
+            $this->sync->syncOneById($token, $id, resolveMissingNames: false);
+        } catch (Throwable $exception) {
+            $this->idempotency->releaseClaim($token->realm_id, $entity); // @pest-mutate-ignore webhook replay release on failure
+
+            throw $exception;
         }
-
-        $this->sync->syncOneById($token, $id, resolveMissingNames: false);
-        $this->idempotency->markProcessed($token->realm_id, $entity); // @pest-mutate-ignore webhook replay bookkeeping
     }
 }

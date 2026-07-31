@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TimeActivityReconcileScope;
 use App\Exceptions\QuickBooksException;
 use App\Models\QboRealmSyncState;
 use App\Models\QuickBooksToken;
@@ -15,6 +16,7 @@ use App\Support\QboCustomerResolver;
 use App\Support\TimeActivityReferenceNameLookup;
 use App\Support\TimeActivitySnapshotMapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(TimeActivitySyncService::class);
@@ -237,6 +239,35 @@ it('skips invalid activity rows and incomplete multi-page scans avoid purge', fu
         ->and(TimeActivitySnapshot::query()->where('qbo_id', 'stale')->exists())->toBeTrue();
 });
 
+it('logs invalid quickbooks rows encountered during reconcile import', function () {
+    Log::spy();
+
+    config([
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->andReturn([
+            (object) ['Id' => 'invalid'],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(0);
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->with('QuickBooks reconcile skipped invalid time activity row', Mockery::on(function (array $context) use ($token): bool {
+            return ($context['realm_id'] ?? '') === $token->realm_id
+                && str_contains((string) ($context['message'] ?? ''), 'EmployeeRef');
+        }));
+});
+
 it('throws when reconcile queries return quickbooks errors', function () {
     config([
         'quickbooks.time_activities_lookback_steps' => [30],
@@ -304,4 +335,40 @@ it('uses default lookback steps when configured steps are not an array', functio
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
     expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(0);
+});
+
+it('imports only the smallest lookback window in recent reconcile scope', function () {
+    config([
+        'quickbooks.time_activities_lookback_steps' => [14, 30, 90],
+        'quickbooks.time_activities_lookback_days' => 90,
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')->once()->andReturn([]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $user = User::factory()->create();
+    $token = QuickBooksToken::factory()->forUser($user)->create();
+
+    makeTimeActivitySyncService($dataService)->reconcileRealm($token, TimeActivityReconcileScope::Recent);
+});
+
+it('skips scheduled reconcile for realms synced recently via webhook', function () {
+    config([
+        'quickbooks.time_activities_reconcile_skip_hours' => 2,
+        'quickbooks.time_activities_lookback_steps' => [30],
+        'quickbooks.time_activities_lookback_days' => 30,
+    ]);
+
+    $user = User::factory()->create();
+    QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-recent']);
+    QboRealmSyncState::query()->create([
+        'realm_id' => 'realm-recent',
+        'last_webhook_at' => now()->subHour(),
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldNotReceive('Query');
+
+    expect(makeTimeActivitySyncService($dataService)->reconcileAllRealms(scheduled: true))->toBe(0);
 });

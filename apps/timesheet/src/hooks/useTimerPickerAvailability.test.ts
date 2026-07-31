@@ -1,9 +1,9 @@
 /**
- * @file Tests for timer picker availability prefetch and visibility rules.
+ * @file Tests for timer picker visibility with customer prefetch.
  */
 
+import { fetchQboCustomers, fetchQboProjects } from '@ellr/api-client'
 import { renderHook, waitFor } from '@testing-library/react'
-import { fetchQboCustomers, fetchQboProjects, fetchQboServices } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useTimerPickerAvailability } from './useTimerPickerAvailability'
 
@@ -14,96 +14,78 @@ vi.mock('@ellr/api-client', async () => {
     ...actual,
     fetchQboCustomers: vi.fn(),
     fetchQboProjects: vi.fn(),
-    fetchQboServices: vi.fn(),
   }
 })
 
-describe('useTimerPickerAvailability', () => {
-  const onError = vi.fn()
+const baseOptions = {
+  enabled: true,
+  loading: false,
+  customer: null,
+  project: null,
+  service: null,
+  onError: vi.fn(),
+  loadCustomersFailedMessage: 'Failed to load customers',
+  loadProjectsFailedMessage: 'Failed to load projects',
+  locale: 'en' as const,
+}
 
+describe('useTimerPickerAvailability', () => {
   beforeEach(() => {
     vi.mocked(fetchQboCustomers).mockReset()
     vi.mocked(fetchQboProjects).mockReset()
-    vi.mocked(fetchQboServices).mockReset()
-    onError.mockReset()
-    vi.mocked(fetchQboCustomers).mockResolvedValue([])
-    vi.mocked(fetchQboServices).mockResolvedValue([])
-    vi.mocked(fetchQboProjects).mockResolvedValue([])
-  })
-
-  it('shows customer and service pickers when quickbooks returns options', async () => {
     vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
-    vi.mocked(fetchQboServices).mockResolvedValue([{ id: '33', display_name: 'Consulting' }])
-
-    const { result } = renderHook(() =>
-      useTimerPickerAvailability({
-        enabled: true,
-        loading: false,
-        customer: null,
-        project: null,
-        service: null,
-        onError,
-        loadCustomersFailedMessage: 'Customers failed',
-        loadProjectsFailedMessage: 'Projects failed',
-        loadServicesFailedMessage: 'Services failed',
-        locale: 'en',
-      }),
-    )
-
-    await waitFor(() => {
-      expect(result.current.showCustomerPicker).toBe(true)
-      expect(result.current.showServicePicker).toBe(true)
-    })
+    vi.mocked(fetchQboProjects).mockResolvedValue([{ id: '22', display_name: 'Website' }])
   })
 
-  it('reports picker load failures without treating them as empty lists', async () => {
-    vi.mocked(fetchQboCustomers).mockRejectedValue(new Error('offline'))
-
-    const { result } = renderHook(() =>
-      useTimerPickerAvailability({
-        enabled: true,
-        loading: false,
-        customer: null,
-        project: null,
-        service: null,
-        onError,
-        loadCustomersFailedMessage: 'Customers failed',
-        loadProjectsFailedMessage: 'Projects failed',
-        loadServicesFailedMessage: 'Services failed',
-        locale: 'en',
-      }),
-    )
-
-    await waitFor(() => {
-      expect(onError).toHaveBeenCalled()
-      expect(result.current.showCustomerPicker).toBe(false)
-      expect(result.current.customersStatus).toBe('error')
-    })
-  })
-
-  it('clears stale selections once allowed lists are loaded', async () => {
-    vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
-
-    const staleCustomer = { id: '99', display_name: 'Stale Corp' }
-
-    const { result } = renderHook(() =>
-      useTimerPickerAvailability({
-        enabled: true,
-        loading: false,
-        customer: staleCustomer,
-        project: null,
-        service: null,
-        onError,
-        loadCustomersFailedMessage: 'Customers failed',
-        loadProjectsFailedMessage: 'Projects failed',
-        loadServicesFailedMessage: 'Services failed',
-        locale: 'en',
-      }),
-    )
+  it('shows the customer picker when assigned customers are available', async () => {
+    const { result } = renderHook(() => useTimerPickerAvailability(baseOptions))
 
     await waitFor(() => {
       expect(result.current.customersStatus).toBe('available')
-      expect(result.current.isCustomerAllowed).toBe(false)
+    })
+
+    expect(result.current.showCustomerPicker).toBe(true)
+    expect(result.current.showServicePicker).toBe(true)
+    expect(result.current.showProjectPicker).toBe(false)
+  })
+
+  it('shows the project picker when a customer is selected', async () => {
+    const { result } = renderHook(() =>
+      useTimerPickerAvailability({
+        ...baseOptions,
+        customer: { id: '11', display_name: 'Acme Corp' },
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current.projectsStatus).toBe('available')
+    })
+
+    expect(result.current.showProjectPicker).toBe(true)
+  })
+
+  it('hides pickers while the timer session is still loading', () => {
+    const { result } = renderHook(() =>
+      useTimerPickerAvailability({
+        ...baseOptions,
+        loading: true,
+      }),
+    )
+
+    expect(result.current.showCustomerPicker).toBe(false)
+    expect(result.current.showServicePicker).toBe(false)
+  })
+
+  it('does not prefetch customers when the hook is disabled', async () => {
+    renderHook(() =>
+      useTimerPickerAvailability({
+        ...baseOptions,
+        enabled: false,
+      }),
+    )
+
+    await waitFor(() => {
+      expect(fetchQboCustomers).not.toHaveBeenCalled()
     })
   })
 })

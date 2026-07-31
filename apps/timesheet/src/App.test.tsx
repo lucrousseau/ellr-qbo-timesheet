@@ -1107,7 +1107,6 @@ describe('Timesheet App', () => {
     })
 
     expect(screen.queryByLabelText(/^project$/i)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/^service$/i)).not.toBeInTheDocument()
 
     await user.click(screen.getByLabelText(/^client$/i))
     await waitFor(() => {
@@ -1119,8 +1118,6 @@ describe('Timesheet App', () => {
       expect(fetchQboProjects).toHaveBeenCalled()
       expect(screen.getByLabelText(/^project$/i)).toBeInTheDocument()
     })
-
-    expect(screen.queryByLabelText(/^service$/i)).not.toBeInTheDocument()
 
     await user.click(screen.getByLabelText(/^project$/i))
 
@@ -1134,17 +1131,13 @@ describe('Timesheet App', () => {
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
     vi.mocked(fetchQboProjects).mockResolvedValue([])
-    vi.mocked(fetchQboServices).mockResolvedValue([])
 
     render(<App />)
 
     await waitFor(() => {
       expect(fetchQboCustomers).toHaveBeenCalled()
       expect(screen.getByLabelText(/^client$/i)).toBeInTheDocument()
-      expect(fetchQboServices).toHaveBeenCalled()
     })
-
-    expect(screen.queryByLabelText(/^service$/i)).not.toBeInTheDocument()
 
     await user.click(screen.getByLabelText(/^client$/i))
     await waitFor(() => {
@@ -1167,13 +1160,16 @@ describe('Timesheet App', () => {
     render(<App />)
 
     await waitFor(() => {
-      expect(fetchQboServices).toHaveBeenCalled()
+      expect(fetchQboCustomers).toHaveBeenCalled()
       expect(screen.getByLabelText(/^service$/i)).toBeInTheDocument()
     })
+
+    expect(fetchQboServices).not.toHaveBeenCalled()
 
     await user.click(screen.getByLabelText(/^service$/i))
 
     await waitFor(() => {
+      expect(fetchQboServices).toHaveBeenCalled()
       expect(screen.getByText('Consulting')).toBeInTheDocument()
     })
   })

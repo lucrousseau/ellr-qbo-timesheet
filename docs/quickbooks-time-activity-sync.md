@@ -22,12 +22,13 @@ Two procedures: **local** (Docker) and **production**. Use **local with webhooks
 
 | Trigger | What happens |
 |---------|----------------|
-| First list or empty realm | Reconcile from QBO by `TxnDate`, upsert snapshots |
-| `GET /api/time-activities?refresh=1` | Reconcile, then read from DB |
+| First list or empty realm | Queues `ReconcileRealmTimeActivitiesJob` (full lookback); returns DB snapshots immediately (often empty until the job finishes) |
+| `GET /api/time-activities?refresh=1` | Full inline reconcile from QBO, then read from DB |
 | Create / update / delete in this app | QBO write, then snapshot update |
 | OAuth connect (admin) | Backfill job queued |
 | Intuit webhook (prod) | Job queued, sync one TimeActivity |
-| Scheduled reconcile | `quickbooks:reconcile-time-activities` (default: hourly); purges ghosts only when the smallest lookback scan completes fully |
+| Scheduled reconcile | `quickbooks:reconcile-time-activities --scheduled` (default: hourly); recent window only, skips recently synced realms |
+| Manual reconcile | `quickbooks:reconcile-time-activities` (no flags); full lookback for every realm |
 
 Webhook handler only processes **TimeActivity** (`Create`, `Update`, `Delete`, `Void`).
 

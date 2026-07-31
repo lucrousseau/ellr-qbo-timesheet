@@ -26,6 +26,30 @@ class QuickBooksWebhookIdempotencyService
     }
 
     /**
+     * Atomically claims an entity notification for processing.
+     *
+     * @param  string  $realmId  QuickBooks company realm identifier.
+     * @param  array<string, mixed>  $entity  One changed entity descriptor.
+     * @return bool True when this worker should process the notification.
+     */
+    public function tryClaim(string $realmId, array $entity): bool
+    {
+        return Cache::add($this->cacheKey($realmId, $entity), true, now()->addHours(24)); // @pest-mutate-ignore webhook replay claim
+    }
+
+    /**
+     * Releases a processing claim so a failed sync can be retried.
+     *
+     * @param  string  $realmId  QuickBooks company realm identifier.
+     * @param  array<string, mixed>  $entity  One changed entity descriptor.
+     * @return void
+     */
+    public function releaseClaim(string $realmId, array $entity): void
+    {
+        Cache::forget($this->cacheKey($realmId, $entity)); // @pest-mutate-ignore webhook replay release
+    }
+
+    /**
      * Records a successfully processed entity notification.
      *
      * @param  string  $realmId  QuickBooks company realm identifier.

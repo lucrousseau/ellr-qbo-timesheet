@@ -1,12 +1,11 @@
 /**
- * @file Prefetches QBO picker lists and derives conditional picker visibility.
+ * @file Prefetches assigned customers and derives timer picker visibility.
  */
 
 import { useEffect, useRef, useState } from 'react'
 import {
   fetchQboCustomers,
   fetchQboProjects,
-  fetchQboServices,
   qboRefsMatch,
   type QboPickerOption,
   type UserLocale,
@@ -24,14 +23,13 @@ type UseTimerPickerAvailabilityOptions = {
   onError: (message: string) => void
   loadCustomersFailedMessage: string
   loadProjectsFailedMessage: string
-  loadServicesFailedMessage: string
   locale: UserLocale
 }
 
 /**
- * Prefetches customers and services on mount, and projects when a client is selected.
+ * Prefetches customers on mount; services and projects load lazily when comboboxes open.
  * @param options Enable flags, selected values, and error handling.
- * @returns Prefetched lists, load status, and picker visibility flags.
+ * @returns Customer list, load status, and picker visibility flags.
  */
 export function useTimerPickerAvailability({
   enabled,
@@ -42,84 +40,57 @@ export function useTimerPickerAvailability({
   onError,
   loadCustomersFailedMessage,
   loadProjectsFailedMessage,
-  loadServicesFailedMessage,
   locale,
 }: UseTimerPickerAvailabilityOptions) {
   const [customers, setCustomers] = useState<QboPickerOption[]>([])
-  const [services, setServices] = useState<QboPickerOption[]>([])
   const [projects, setProjects] = useState<QboPickerOption[]>([])
   const [customersStatus, setCustomersStatus] = useState<PickerLoadStatus>('unknown')
-  const [servicesStatus, setServicesStatus] = useState<PickerLoadStatus>('unknown')
   const [projectsStatus, setProjectsStatus] = useState<PickerLoadStatus>('unknown')
   const onErrorRef = useRef(onError)
   onErrorRef.current = onError
   const customerRef = customer?.id ?? null
+  const timerReady = enabled && !loading
 
   useEffect(() => {
     if (!enabled || loading) {
       setCustomers([])
-      setServices([])
       setCustomersStatus('unknown')
-      setServicesStatus('unknown')
 
       return
     }
 
     const controller = new AbortController()
 
-    const loadSharedPickers = async () => {
+    const loadCustomers = async () => {
       setCustomers([])
-      setServices([])
       setCustomersStatus('unknown')
-      setServicesStatus('unknown')
 
       try {
-        const [customersResult, servicesResult] = await Promise.allSettled([
-          fetchQboCustomers({ signal: controller.signal }),
-          fetchQboServices({ signal: controller.signal }),
-        ])
+        const nextCustomers = await fetchQboCustomers({ signal: controller.signal })
 
         if (controller.signal.aborted) {
           return
         }
 
-        if (customersResult.status === 'fulfilled') {
-          setCustomers(customersResult.value)
-          setCustomersStatus(customersResult.value.length > 0 ? 'available' : 'empty')
-        } else {
-          setCustomers([])
-          setCustomersStatus('error')
-          onErrorRef.current(
-            getApiErrorMessage(customersResult.reason, loadCustomersFailedMessage, locale),
-          )
-        }
-
-        if (servicesResult.status === 'fulfilled') {
-          setServices(servicesResult.value)
-          setServicesStatus(servicesResult.value.length > 0 ? 'available' : 'empty')
-        } else {
-          setServices([])
-          setServicesStatus('error')
-          onErrorRef.current(getApiErrorMessage(servicesResult.reason, loadServicesFailedMessage, locale))
-        }
-      } catch {
+        setCustomers(nextCustomers)
+        setCustomersStatus(nextCustomers.length > 0 ? 'available' : 'empty')
+      } catch (caught) {
         if (controller.signal.aborted) {
           return
         }
 
         setCustomers([])
-        setServices([])
         setCustomersStatus('error')
-        setServicesStatus('error')
+        onErrorRef.current(getApiErrorMessage(caught, loadCustomersFailedMessage, locale))
       }
     }
 
-    void loadSharedPickers()
+    void loadCustomers()
 
     return () => {
       controller.abort()
     }
-  }, [enabled, loadCustomersFailedMessage, loadServicesFailedMessage, loading, locale])
+  }, [enabled, loadCustomersFailedMessage, loading, locale])
 
   useEffect(() => {
     if (!enabled || loading || customerRef === null) {
@@ -164,46 +135,38 @@ export function useTimerPickerAvailability({
   }, [customerRef, enabled, loadProjectsFailedMessage, loading, locale])
 
   const showCustomerPicker = customer !== null || customersStatus === 'available'
-  const showServicePicker = service !== null || servicesStatus === 'available'
+  const showServicePicker = service !== null || timerReady
   const showProjectPicker =
     customer !== null && (project !== null || projectsStatus === 'available')
 
-  const isOptionAllowed = (
-    selected: QboPickerOption | null,
-    status: PickerLoadStatus,
-    items: QboPickerOption[],
-  ): boolean => {
-    if (selected === null) {
+  const isCustomerAllowed = (() => {
+    if (customer === null) {
       return true
     }
 
-    if (status === 'unknown' || status === 'error') {
+    if (customersStatus === 'unknown' || customersStatus === 'error') {
       return true
     }
 
-    if (status === 'empty') {
+    if (customersStatus === 'empty') {
       return false
     }
 
-    return items.some((item) => qboRefsMatch(item.id, selected.id))
-  }
-
-  const isCustomerAllowed = isOptionAllowed(customer, customersStatus, customers)
-  const isProjectAllowed = isOptionAllowed(project, projectsStatus, projects)
-  const isServiceAllowed = isOptionAllowed(service, servicesStatus, services)
+    return customers.some((item) => qboRefsMatch(item.id, customer.id))
+  })()
 
   return {
     customers,
-    services,
+    services: [] as QboPickerOption[],
     projects,
     customersStatus,
-    servicesStatus,
+    servicesStatus: 'unknown' as PickerLoadStatus,
     projectsStatus,
     showCustomerPicker,
     showServicePicker,
     showProjectPicker,
     isCustomerAllowed,
-    isProjectAllowed,
-    isServiceAllowed,
+    isProjectAllowed: true,
+    isServiceAllowed: true,
   }
 }

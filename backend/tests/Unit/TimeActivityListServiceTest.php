@@ -1,6 +1,6 @@
 <?php
 
-use App\Exceptions\QuickBooksException;
+use App\Jobs\ReconcileRealmTimeActivitiesJob;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
@@ -10,6 +10,7 @@ use App\Services\QuickBooksApiErrorFormatterService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivityDisplayEnricherService;
 use App\Services\TimeActivityListService;
+use App\Services\TimeActivityReconcileCoordinatorService;
 use App\Services\TimeActivitySnapshotService;
 use App\Services\TimeActivitySyncService;
 use App\Support\QboCustomerResolver;
@@ -18,6 +19,7 @@ use App\Support\TimeActivitySnapshotMapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(TimeActivityListService::class);
@@ -65,13 +67,14 @@ function makeTimeActivityListService(?DataService $dataService = null): TimeActi
         $snapshots,
         app(OrganizationTimezoneService::class),
     );
+    $coordinator = new TimeActivityReconcileCoordinatorService($snapshots, $sync);
 
     return new TimeActivityListService(
         $quickBooks,
         new QboEmployeeAuthorizationService,
         new QuickBooksApiErrorFormatterService,
         $snapshots,
-        $sync,
+        $coordinator,
     );
 }
 
@@ -259,18 +262,8 @@ it('purges snapshots with null txn_date inside the lookback window', function ()
     expect(TimeActivitySnapshot::query()->where('qbo_id', 'ghost')->exists())->toBeFalse();
 });
 
-it('reconciles from quickbooks when the realm has no snapshots', function () {
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')
-        ->once()
-        ->with(LIST_PAGE_QUERY)
-        ->andReturn([(object) [
-            'Id' => '1',
-            'EmployeeRef' => (object) ['value' => '7'],
-            'StartTime' => '2026-07-29T09:00:00',
-            'TxnDate' => '2026-07-29',
-        ]]);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
+it('queues a backfill when the realm has no snapshots', function () {
+    Queue::fake();
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
@@ -278,16 +271,15 @@ it('reconciles from quickbooks when the realm has no snapshots', function () {
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
-    $result = makeTimeActivityListService($dataService)->listForUser($user, $token);
+    $result = makeTimeActivityListService()->listForUser($user, $token);
 
-    expect($result['data'])->toHaveCount(1)
-        ->and($result['data'][0]->Id)->toBe('1');
+    Queue::assertPushed(ReconcileRealmTimeActivitiesJob::class, fn (ReconcileRealmTimeActivitiesJob $job) => $job->tokenId === $token->id
+        && $job->fullLookback === true);
+    expect($result['data'])->toBe([]);
 });
 
-it('returns an empty list when quickbooks reconcile returns a non-array result', function () {
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn(null);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
+it('returns an empty list when no snapshots exist yet and reconcile is queued', function () {
+    Queue::fake();
 
     $user = User::factory()->create([
         'qbo_employee_ref' => '7',
@@ -295,25 +287,8 @@ it('returns an empty list when quickbooks reconcile returns a non-array result',
     ]);
     $token = QuickBooksToken::factory()->forUser($user)->create();
 
-    expect(makeTimeActivityListService($dataService)->listForUser($user, $token)['data'])->toBe([]);
+    expect(makeTimeActivityListService()->listForUser($user, $token)['data'])->toBe([]);
 });
-
-it('throws when reconciling time activities fails in quickbooks', function () {
-    $error = Mockery::mock();
-    $error->shouldReceive('getResponseBody')->andReturn('query failed');
-
-    $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Query')->once()->andReturn([]);
-    $dataService->shouldReceive('getLastError')->andReturn($error);
-
-    $user = User::factory()->create([
-        'qbo_employee_ref' => '7',
-        'qbo_employee_name' => 'Jane Doe',
-    ]);
-    $token = QuickBooksToken::factory()->forUser($user)->create();
-
-    makeTimeActivityListService($dataService)->listForUser($user, $token);
-})->throws(QuickBooksException::class);
 
 it('aborts when the qbo employee is missing', function () {
     $user = User::factory()->create(['qbo_employee_ref' => null]);

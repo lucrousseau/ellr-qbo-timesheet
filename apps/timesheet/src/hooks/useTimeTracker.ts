@@ -400,7 +400,6 @@ export function useTimeTracker(enabled = true, options: UseTimeTrackerOptions = 
     onError: showError,
     loadCustomersFailedMessage: t('timesheet.loadCustomersFailed'),
     loadProjectsFailedMessage: t('timesheet.loadProjectsFailed'),
-    loadServicesFailedMessage: t('timesheet.loadServicesFailed'),
     locale,
   })
 
@@ -415,28 +414,6 @@ export function useTimeTracker(enabled = true, options: UseTimeTrackerOptions = 
       project: null,
     }))
   }, [applyState, pickerAvailability.isCustomerAllowed, state.customer])
-
-  useEffect(() => {
-    if (pickerAvailability.isProjectAllowed || state.project === null) {
-      return
-    }
-
-    applyState((current) => ({
-      ...current,
-      project: null,
-    }))
-  }, [applyState, pickerAvailability.isProjectAllowed, state.project])
-
-  useEffect(() => {
-    if (pickerAvailability.isServiceAllowed || state.service === null) {
-      return
-    }
-
-    applyState((current) => ({
-      ...current,
-      service: null,
-    }))
-  }, [applyState, pickerAvailability.isServiceAllowed, state.service])
 
   useEffect(() => {
     if (!enabled || loading || pickerAvailability.customersStatus !== 'empty') {
@@ -499,7 +476,6 @@ export function useTimeTracker(enabled = true, options: UseTimeTrackerOptions = 
     fetch: fetchServices,
     onError: (errorMessage) => showError(errorMessage),
     errorMessage: t('timesheet.loadServicesFailed'),
-    seedItems: pickerAvailability.services,
   })
 
   const { run: onLogTime, pending: logging } = useGuardedAction(async () => {

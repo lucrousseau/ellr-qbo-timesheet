@@ -9,6 +9,7 @@ namespace App\Services;
 use App\Models\QuickBooksToken;
 use App\Models\User;
 use App\Support\TimeActivityTimeValidation;
+use App\Support\TimeActivityWriteResponse;
 use App\Support\UsesQuickBooksEmployeeScope;
 use QuickBooksOnline\API\Facades\TimeActivity;
 
@@ -26,7 +27,7 @@ class TimeActivityService
      * @param  QboEmployeeAuthorizationService  $employeeAuthorization  QBO employee ownership checks.
      * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
-     * @param  TimeActivitySyncService  $sync  Single-entity QuickBooks sync.
+     * @param  TimeActivitySyncService  $sync  Fallback single-entity sync when write responses are sparse.
      */
     public function __construct(
         QuickBooksService $quickBooks,
@@ -101,7 +102,7 @@ class TimeActivityService
             abort($this->apiErrors->jsonResponse($error));
         }
 
-        $this->persistSnapshotAfterWrite($token, (string) $result->Id);
+        TimeActivityWriteResponse::persistSnapshot($this->snapshots, $this->sync, $token, $dataService, $result);
 
         return $result;
     }
@@ -178,9 +179,10 @@ class TimeActivityService
             abort($this->apiErrors->jsonResponse($error));
         }
 
-        $this->persistSnapshotAfterWrite($token, $id);
+        $merged = TimeActivityWriteResponse::merge($existing, $result);
+        TimeActivityWriteResponse::persistSnapshot($this->snapshots, $this->sync, $token, $dataService, $merged);
 
-        return $result;
+        return $merged;
     }
 
     /**
@@ -228,17 +230,5 @@ class TimeActivityService
         $this->employeeAuthorization->assertActivityBelongsToUser($user, $activity);
 
         return $activity;
-    }
-
-    /**
-     * Refreshes the local snapshot for one time activity after a QuickBooks write.
-     *
-     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
-     * @param  string  $id  QuickBooks time activity identifier.
-     * @return void
-     */
-    private function persistSnapshotAfterWrite(QuickBooksToken $token, string $id): void
-    {
-        $this->sync->syncOneById($token, $id);
     }
 }

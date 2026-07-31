@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\TimeActivityReconcileScope;
 use App\Exceptions\QuickBooksException;
 use App\Http\Controllers\Api\TimeActivityController;
+use App\Jobs\ReconcileRealmTimeActivitiesJob;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
@@ -11,6 +13,7 @@ use App\Services\TimeActivitySyncService;
 use App\Support\TimeActivityTimeValidation;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
 use QuickBooksOnline\API\Data\IPPTimeActivity;
 use QuickBooksOnline\API\DataService\DataService;
@@ -144,15 +147,23 @@ describe('authenticated time activities', function () {
             ->assertJsonValidationErrors(['max_results']);
     });
 
-    it('returns an empty list when quickbooks query result is not an array', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Query')->once()->andReturn(null);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
+    it('queues a backfill job when the realm has no snapshots', function () {
+        Queue::fake();
 
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
+        $token = QuickBooksToken::factory()->forUser(ActingUser::current())->create();
+
+        $this->getJson('/api/time-activities')
+            ->assertOk()
+            ->assertJsonPath('data', [])
+            ->assertJsonPath('meta.count', 0);
+
+        Queue::assertPushed(ReconcileRealmTimeActivitiesJob::class, fn (ReconcileRealmTimeActivitiesJob $job) => $job->tokenId === $token->id
+            && $job->fullLookback === true);
+    });
+
+    it('returns an empty list when no snapshots exist yet', function () {
+        Queue::fake();
+        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
 
         $this->getJson('/api/time-activities')
             ->assertOk()
@@ -174,7 +185,7 @@ describe('authenticated time activities', function () {
             $mock->shouldReceive('dataService')->once()->andReturn($dataService);
         });
 
-        $this->getJson('/api/time-activities')
+        $this->getJson('/api/time-activities?refresh=1')
             ->assertUnprocessable()
             ->assertJsonPath('message', 'QuickBooks API error')
             ->assertJsonMissingPath('error');
@@ -187,10 +198,11 @@ describe('authenticated time activities', function () {
         $this->mock(TimeActivitySyncService::class, function ($mock) {
             $mock->shouldReceive('reconcileRealm')
                 ->once()
+                ->with(Mockery::type(QuickBooksToken::class), TimeActivityReconcileScope::Full)
                 ->andThrow(new QuickBooksException(__('api.quickbooks_api_error'), 'query failed', 422));
         });
 
-        $this->getJson('/api/time-activities')
+        $this->getJson('/api/time-activities?refresh=1')
             ->assertUnprocessable()
             ->assertJsonPath('error', 'query failed');
     });
@@ -421,7 +433,7 @@ describe('authenticated time activities', function () {
         $existing->StartTime = '2026-07-27T09:00:00';
         $existing->EmployeeRef = (object) ['value' => '7'];
         $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->twice()->with('TimeActivity', '12')->andReturn($existing);
+        $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '12')->andReturn($existing);
         $dataService->shouldReceive('Update')->once()->andReturn((object) ['Id' => '12']);
         $dataService->shouldReceive('getLastError')->andReturn(null);
 
@@ -475,7 +487,7 @@ describe('authenticated time activities', function () {
         $existing->EndTime = '2026-07-27T18:00:00';
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->twice()->with('TimeActivity', '12')->andReturn($existing);
+        $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '12')->andReturn($existing);
         $dataService->shouldReceive('Update')
             ->once()
             ->with(Mockery::capture($captured))
@@ -506,7 +518,7 @@ describe('authenticated time activities', function () {
         $existing->EmployeeRef = (object) ['value' => '7'];
         $captured = null;
         $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->twice()->with('TimeActivity', '12')->andReturn($existing);
+        $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '12')->andReturn($existing);
         $dataService->shouldReceive('Update')
             ->once()
             ->with(Mockery::capture($captured))
@@ -663,16 +675,14 @@ describe('authenticated time activities', function () {
             'realm_id' => $token->realm_id,
         ]);
 
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Query')
-            ->once()
-            ->with(TIME_ACTIVITY_LIST_QUERY)
-            ->andReturn([]);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
+        TimeActivitySnapshot::factory()
+            ->forRealm($token->realm_id)
+            ->forEmployee($user->qbo_employee_ref ?? '7')
+            ->create(['qbo_id' => '1']);
 
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService, $token, $refreshed) {
+        $this->partialMock(QuickBooksService::class, function ($mock) use ($token, $refreshed) {
             $mock->shouldReceive('refreshToken')->once()->with(Mockery::on(fn ($arg) => $arg->is($token)))->andReturn($refreshed);
-            $mock->shouldReceive('dataService')->once()->with(Mockery::on(fn ($arg) => $arg->is($refreshed)))->andReturn($dataService);
+            $mock->shouldNotReceive('dataService');
         });
 
         $this->getJson('/api/time-activities')->assertOk();
@@ -707,25 +717,15 @@ describe('authenticated time activities', function () {
     });
 
     it('uses the latest quickbooks token for the authenticated user', function () {
+        Queue::fake();
+
         $user = ActingUser::current();
         QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'old-realm']);
         $latest = QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'new-realm']);
 
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('Query')
-            ->once()
-            ->with(TIME_ACTIVITY_LIST_QUERY)
-            ->andReturn([]);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService, $latest) {
-            $mock->shouldReceive('dataService')
-                ->once()
-                ->with(Mockery::on(fn ($arg) => $arg->is($latest)))
-                ->andReturn($dataService);
-        });
-
         $this->getJson('/api/time-activities')->assertOk();
+
+        Queue::assertPushed(ReconcileRealmTimeActivitiesJob::class, fn (ReconcileRealmTimeActivitiesJob $job) => $job->tokenId === $latest->id);
     });
 
     it('uses the authenticated users quickbooks token', function () {

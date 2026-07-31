@@ -1,8 +1,10 @@
 <?php
 
+use App\Exceptions\QuickBooksException;
 use App\Models\QboRealmSyncState;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Services\QuickBooksWebhookIdempotencyService;
 use App\Services\QuickBooksWebhookProcessorService;
 use App\Services\TimeActivitySnapshotService;
 use App\Services\TimeActivitySyncService;
@@ -278,6 +280,70 @@ it('logs when webhook notifications reference unclaimed realms', function () {
     Log::shouldHaveReceived('warning')
         ->once()
         ->with('QuickBooks webhook ignored unclaimed realm', ['realm_id' => 'missing-realm']);
+});
+
+it('logs when webhook notifications reference a claimed realm without a token', function () {
+    Log::spy();
+
+    $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
+
+    app(QuickBooksWebhookProcessorService::class)->process([
+        'eventNotifications' => [
+            [
+                'realmId' => 'realm-1',
+                'dataChangeEvent' => [
+                    'entities' => [
+                        ['name' => 'TimeActivity', 'id' => '1', 'operation' => 'Update'],
+                    ],
+                ],
+            ],
+        ],
+    ]);
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->with('QuickBooks webhook ignored claimed realm without token', ['realm_id' => 'realm-1']);
+});
+
+it('releases idempotency claims when sync fails so retries can proceed', function () {
+    Cache::flush();
+
+    $sync = Mockery::mock(TimeActivitySyncService::class);
+    $sync->shouldReceive('syncOneById')
+        ->once()
+        ->with(Mockery::type(QuickBooksToken::class), '42', false)
+        ->andThrow(new QuickBooksException('QuickBooks API error.', null, 422));
+
+    $processor = makeQuickBooksWebhookProcessor($sync);
+
+    $user = User::factory()->create();
+    $user->organization->update(['realm_id' => 'realm-1']);
+    QuickBooksToken::factory()->forUser($user)->create(['realm_id' => 'realm-1']);
+
+    $payload = [
+        'eventNotifications' => [
+            [
+                'realmId' => 'realm-1',
+                'dataChangeEvent' => [
+                    'entities' => [
+                        [
+                            'name' => 'TimeActivity',
+                            'id' => '42',
+                            'operation' => 'Update',
+                            'lastUpdated' => '2026-07-30T12:00:00Z',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ];
+
+    expect(fn () => $processor->process($payload))->toThrow(QuickBooksException::class)
+        ->and(app(QuickBooksWebhookIdempotencyService::class)->wasProcessed(
+            'realm-1',
+            $payload['eventNotifications'][0]['dataChangeEvent']['entities'][0],
+        ))->toBeFalse();
 });
 
 it('ignores payloads without an eventNotifications key', function () {

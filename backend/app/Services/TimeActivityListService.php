@@ -26,14 +26,14 @@ class TimeActivityListService
      * @param  QboEmployeeAuthorizationService  $employeeAuthorization  QBO employee ownership checks.
      * @param  QuickBooksApiErrorFormatterService  $apiErrors  QuickBooks API error JSON formatter.
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
-     * @param  TimeActivitySyncService  $sync  Realm-wide reconcile from QuickBooks.
+     * @param  TimeActivityReconcileCoordinatorService  $reconcileCoordinator  Reconcile dispatch and inline refresh.
      */
     public function __construct(
         QuickBooksService $quickBooks,
         QboEmployeeAuthorizationService $employeeAuthorization,
         QuickBooksApiErrorFormatterService $apiErrors,
         private readonly TimeActivitySnapshotService $snapshots,
-        private readonly TimeActivitySyncService $sync,
+        private readonly TimeActivityReconcileCoordinatorService $reconcileCoordinator,
     ) {
         $this->initializeQuickBooksEmployeeScope($quickBooks, $employeeAuthorization, $apiErrors);
     }
@@ -62,7 +62,7 @@ class TimeActivityListService
         $startPosition = max(1, $startPosition);
 
         if ($refresh || ! $this->snapshots->realmHasSnapshots($realmId)) {
-            $this->sync->reconcileRealm($token);
+            $this->reconcileCoordinator->prepareRealmForList($token, $refresh);
         }
 
         [$items, $total] = $this->snapshots->listApiObjectsForEmployee(

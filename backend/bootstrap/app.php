@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         if (config('quickbooks.time_activities_reconcile_enabled', true)) {
-            $schedule->command('quickbooks:reconcile-time-activities')
+            $schedule->command('quickbooks:reconcile-time-activities --scheduled')
                 ->cron((string) config('quickbooks.time_activities_reconcile_cron', '0 * * * *'));
         }
     })

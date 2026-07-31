@@ -21,7 +21,6 @@ Intuit enforces per-app rate limits. Treat every QBO SDK call as costly.
 | **Normalize SDK query results** | `QboQueryResult::entities()` wraps single objects into arrays |
 | **FindById over re-list** | Login guard and mapping use `FindById` for one employee, not a full list |
 | **Paginate large queries** | Time activities: progressive TxnDate windows, per-employee scan cache, page caps |
-| **Avoid probe unless needed** | `time_activities_probe_truncated` defaults true; disable only when latency matters more than accuracy |
 
 ## QBO list cache (reference)
 

@@ -61,7 +61,7 @@ it('updates a provisioned user time activity billable status', function () {
     $existing->EmployeeRef = (object) ['value' => '7'];
     $captured = null;
     $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('FindById')->twice()->with('TimeActivity', '12')->andReturn($existing);
+    $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '12')->andReturn($existing);
     $dataService->shouldReceive('Update')
         ->once()
         ->with(Mockery::capture($captured))

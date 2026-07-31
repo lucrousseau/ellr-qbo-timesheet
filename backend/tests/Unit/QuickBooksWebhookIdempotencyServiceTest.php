@@ -84,3 +84,36 @@ it('normalizes missing entity fields when building cache keys', function () {
             'lastUpdated' => '2026-07-30T12:00:00Z',
         ]))->toBeTrue();
 });
+
+it('claims entity notifications atomically for concurrent workers', function () {
+    Cache::flush();
+
+    $service = app(QuickBooksWebhookIdempotencyService::class);
+    $entity = [
+        'id' => '42',
+        'operation' => 'Update',
+        'lastUpdated' => '2026-07-30T12:00:00Z',
+    ];
+
+    expect($service->tryClaim('realm-1', $entity))->toBeTrue()
+        ->and($service->tryClaim('realm-1', $entity))->toBeFalse()
+        ->and($service->wasProcessed('realm-1', $entity))->toBeTrue();
+});
+
+it('releases claims so failed sync notifications can be retried', function () {
+    Cache::flush();
+
+    $service = app(QuickBooksWebhookIdempotencyService::class);
+    $entity = [
+        'id' => '42',
+        'operation' => 'Update',
+        'lastUpdated' => '2026-07-30T12:00:00Z',
+    ];
+
+    expect($service->tryClaim('realm-1', $entity))->toBeTrue();
+
+    $service->releaseClaim('realm-1', $entity);
+
+    expect($service->wasProcessed('realm-1', $entity))->toBeFalse()
+        ->and($service->tryClaim('realm-1', $entity))->toBeTrue();
+});

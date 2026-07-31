@@ -17,7 +17,7 @@ class ReconcileTimeActivitiesCommand extends Command
     /**
      * @var string
      */
-    protected $signature = 'quickbooks:reconcile-time-activities';
+    protected $signature = 'quickbooks:reconcile-time-activities {--scheduled : Lightweight cron mode (recent window, skip recently synced realms)}';
 
     /**
      * @var string
@@ -32,7 +32,7 @@ class ReconcileTimeActivitiesCommand extends Command
      */
     public function handle(TimeActivitySyncService $sync): int
     {
-        $upserted = $sync->reconcileAllRealms();
+        $upserted = $sync->reconcileAllRealms(scheduled: $this->option('scheduled') === true);
         $this->info("Reconciled {$upserted} time activity snapshot(s).");
 
         return self::SUCCESS;

@@ -50,19 +50,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Time activity truncated probe
-    |--------------------------------------------------------------------------
-    |
-    | When true, list responses probe QuickBooks for one more row to set
-    | meta.truncated accurately. When false, truncated is true whenever the
-    | page is full (faster, but may over-report additional pages).
-    |
-    */
-
-    'time_activities_probe_truncated' => (bool) env('QUICKBOOKS_TIME_ACTIVITIES_PROBE_TRUNCATED', true),
-
-    /*
-    |--------------------------------------------------------------------------
     | Time activity list scan window
     |--------------------------------------------------------------------------
     |
@@ -82,12 +69,7 @@ return [
 
     'time_activities_query_batch_size' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_QUERY_BATCH_SIZE', 100),
 
-    'time_activities_scan_max_pages' => (int) env(
-        'QUICKBOOKS_TIME_ACTIVITIES_SCAN_MAX_PAGES',
-        env('QUICKBOOKS_EMPLOYEE_CUSTOMER_SCAN_MAX_PAGES', 10),
-    ),
-
-    'time_activities_list_cache_ttl_minutes' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_LIST_CACHE_TTL_MINUTES', 5),
+    'time_activities_scan_max_pages' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_SCAN_MAX_PAGES', 10),
 
     /*
     |--------------------------------------------------------------------------
@@ -110,18 +92,6 @@ return [
     ),
 
     'list_scan_max_pages' => (int) env('QUICKBOOKS_LIST_SCAN_MAX_PAGES', 10), // @pest-mutate-ignore quickbooks list scan config
-
-    /*
-    |--------------------------------------------------------------------------
-    | Employee customer scan pages
-    |--------------------------------------------------------------------------
-    |
-    | When building the customer picker, the API scans time activities for the
-    | signed-in employee. This caps how many paginated QBO queries are issued.
-    |
-    */
-
-    'employee_customer_scan_max_pages' => (int) env('QUICKBOOKS_EMPLOYEE_CUSTOMER_SCAN_MAX_PAGES', 25),
 
     /*
     |--------------------------------------------------------------------------
@@ -155,6 +125,8 @@ return [
     'time_activities_reconcile_enabled' => (bool) env('QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_ENABLED', true),
 
     'time_activities_reconcile_cron' => env('QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_CRON', '0 * * * *'),
+
+    'time_activities_reconcile_skip_hours' => (int) env('QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_SKIP_HOURS', 1),
 
     /*
     |--------------------------------------------------------------------------
