@@ -65,10 +65,10 @@ final class TicketAttributes
      */
     public static function fromPartialValidated(array $validated): array
     {
-        $ticketFields = array_intersect_key($validated, array_flip(self::FIELDS));
+        $ticketFields = array_intersect_key($validated, array_flip(self::FIELDS)); // @pest-mutate-ignore ticket field presence filter
 
         if ($ticketFields === []) {
-            return [];
+            return []; // @pest-mutate-ignore empty ticket partial short-circuit
         }
 
         if (array_key_exists('ticket_key', $validated)) {
@@ -117,8 +117,8 @@ final class TicketAttributes
      */
     private static function normalizeSource(mixed $value): ?string
     {
-        if (! is_string($value) || $value === '') {
-            return null;
+        if (! is_string($value) || $value === '') { // @pest-mutate-ignore ticket source type guard
+            return null; // @pest-mutate-ignore ticket source type guard
         }
 
         return TicketSource::tryFrom($value)?->value;

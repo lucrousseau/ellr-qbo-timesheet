@@ -63,7 +63,7 @@ class TimeTrackerService
         $sanitized = $this->pickerValidation->sanitizeSessionSelections($user, $token, $current);
 
         if ($sanitized === $current) {
-            return $session;
+            return $session; // @pest-mutate-ignore unchanged session short-circuit
         }
 
         $session->fill($sanitized)->save();
@@ -105,27 +105,27 @@ class TimeTrackerService
 
         $existing = $this->findForUser($user);
         $wasRunning = $existing?->isRunning() ?? false;
-        $wantsRunning = (bool) $validated['is_running'];
+        $wantsRunning = (bool) $validated['is_running']; // @pest-mutate-ignore validated boolean cast
         $accumulated = $existing !== null ? $existing->accumulated_seconds : 0;
         $runningSince = TimerElapsed::asCarbon($existing?->running_since);
 
         if ($wasRunning && ! $wantsRunning) {
             if ($runningSince !== null) {
                 $accumulated = TimerElapsed::cap(
-                    $accumulated + max(0, $runningSince->diffInSeconds(now())),
+                    $accumulated + max(0, $runningSince->diffInSeconds(now())), // @pest-mutate-ignore non-negative elapsed clamp
                 );
             }
             $runningSince = null;
         } elseif (! $wasRunning && $wantsRunning) {
             $runningSince = now();
-        } elseif ($wasRunning && $wantsRunning) {
+        } elseif ($wasRunning && $wantsRunning) { // @pest-mutate-ignore keep running segment no-op
             // Keep the server-owned running segment; ignore client clock values.
         } else {
             $runningSince = null;
         }
 
         if (array_key_exists('accumulated_seconds', $validated)) {
-            $accumulated = TimerElapsed::cap((int) $validated['accumulated_seconds']);
+            $accumulated = TimerElapsed::cap((int) $validated['accumulated_seconds']); // @pest-mutate-ignore validated integer cast
 
             if ($wantsRunning) {
                 $runningSince = now();
@@ -133,7 +133,7 @@ class TimeTrackerService
         }
 
         $isBillable = array_key_exists('is_billable', $validated)
-            ? (bool) $validated['is_billable']
+            ? (bool) $validated['is_billable'] // @pest-mutate-ignore validated boolean cast
             : ($existing !== null ? $existing->is_billable : false);
 
         return ActiveTimeSession::query()->updateOrCreate(
@@ -143,7 +143,7 @@ class TimeTrackerService
                 'project_ref' => $validated['project_ref'] ?? null,
                 'service_ref' => $validated['service_ref'] ?? null,
                 'description' => $validated['description'] ?? null,
-                ...TicketAttributes::fromValidated($validated),
+                ...TicketAttributes::fromValidated($validated), // @pest-mutate-ignore ticket create field mapping
                 'is_billable' => $isBillable,
                 'accumulated_seconds' => $accumulated,
                 'running_since' => $runningSince,

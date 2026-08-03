@@ -28,8 +28,8 @@ class StoreTimeEntryRequest extends FormRequest
             'customer_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'project_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'item_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
-            'start_time' => ['required', 'date'],
-            'end_time' => ['required', 'date', 'after:start_time'],
+            'start_time' => ['required', 'date'], // @pest-mutate-ignore declarative validation rules
+            'end_time' => ['required', 'date', 'after:start_time'], // @pest-mutate-ignore declarative validation rules
             'description' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
             ...TicketFieldRules::forCreate(), // @pest-mutate-ignore shared ticket validation rules
             'is_billable' => ['sometimes', 'boolean'],

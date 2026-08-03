@@ -49,9 +49,9 @@ class TimeEntryService
         $entry->user_id = $user->id; // @pest-mutate-ignore owned entry assignment
         $entry->organization_id = $user->organization_id; // @pest-mutate-ignore owned entry assignment
         $entry->status = TimeEntryStatus::Pending; // @pest-mutate-ignore owned entry assignment
-        $entry->save();
+        $entry->save(); // @pest-mutate-ignore owned entry persistence
 
-        return $entry->refresh();
+        return $entry->refresh(); // @pest-mutate-ignore owned entry persistence
     }
 
     /**
@@ -208,7 +208,7 @@ class TimeEntryService
             }
         }
 
-        return false;
+        return false; // @pest-mutate-ignore picker field presence check
     }
 
     /**

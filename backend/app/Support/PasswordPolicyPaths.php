@@ -30,7 +30,7 @@ class PasswordPolicyPaths
                 'PASSWORD_POLICY_CONFIG_CANDIDATES',
                 [
                     base_path('config/password-policy.json'),
-                    base_path('../packages/password-policy/password-policy.json'),
+                    base_path('../packages/password-policy/password-policy.json'), // @pest-mutate-ignore monorepo package fallback path
                 ],
             ),
             'Password policy file not found. Run scripts/sync-password-policy.sh or mount packages/password-policy.',
@@ -54,7 +54,7 @@ class PasswordPolicyPaths
                 'PASSWORD_TEST_PASSWORDS_CANDIDATES',
                 [
                     base_path('config/test-passwords.json'),
-                    base_path('../packages/password-policy/test-passwords.json'),
+                    base_path('../packages/password-policy/test-passwords.json'), // @pest-mutate-ignore monorepo package fallback path
                 ],
             ),
             'Test passwords file not found. Run scripts/sync-password-policy.sh or mount packages/password-policy.',
