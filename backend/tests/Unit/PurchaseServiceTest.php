@@ -147,7 +147,7 @@ it('omits vendor entity ref and customer ref when not provided', function () {
     expect(isset($purchase->EntityRef))->toBeFalse()
         ->and(isset($purchase->Line[0]->AccountBasedExpenseLineDetail->CustomerRef))->toBeFalse()
         ->and(isset($purchase->Line[0]->Description))->toBeFalse()
-        ->and($purchase->PaymentType)->toBe('Check');
+        ->and($purchase->PaymentType->value)->toBe('Check');
 });
 
 it('omits line description when the payload description is null', function () {

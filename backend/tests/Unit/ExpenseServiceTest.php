@@ -144,10 +144,17 @@ it('rejects updates to approved expenses', function () {
     $employee = User::factory()->create();
     $expense = Expense::factory()->forUser($employee)->approved()->create();
 
-    app(ExpenseService::class)->updateForUser($employee, $expense->id, [
-        'description' => 'Too late',
-    ]);
-})->throws(HttpResponseException::class);
+    try {
+        app(ExpenseService::class)->updateForUser($employee, $expense->id, [
+            'description' => 'Too late',
+        ]);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(422)
+            ->and($exception->getResponse()->getData(true)['error'])->toBe('expense_not_editable')
+            ->and($exception->getResponse()->getData(true)['message'])->not->toBeEmpty();
+    }
+});
 
 it('rejects updates to rejected expenses', function () {
     $employee = User::factory()->create();
@@ -174,16 +181,29 @@ it('rejects deleting approved expenses', function () {
     $employee = User::factory()->create();
     $expense = Expense::factory()->forUser($employee)->approved()->create();
 
-    app(ExpenseService::class)->deleteForUser($employee, $expense->id);
-})->throws(HttpResponseException::class);
+    try {
+        app(ExpenseService::class)->deleteForUser($employee, $expense->id);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(422)
+            ->and($exception->getResponse()->getData(true)['error'])->toBe('expense_not_deletable')
+            ->and($exception->getResponse()->getData(true)['message'])->not->toBeEmpty();
+    }
+});
 
 it('returns not found when the expense is not owned by the employee', function () {
     $employee = User::factory()->create();
     $otherEmployee = User::factory()->create();
     $expense = Expense::factory()->forUser($otherEmployee)->create();
 
-    app(ExpenseService::class)->findOwnedExpense($employee, $expense->id);
-})->throws(HttpResponseException::class);
+    try {
+        app(ExpenseService::class)->findOwnedExpense($employee, $expense->id);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(404)
+            ->and($exception->getResponse()->getData(true)['message'])->not->toBeEmpty();
+    }
+});
 
 it('validates picker selections on create', function () {
     $admin = User::factory()->admin()->create();

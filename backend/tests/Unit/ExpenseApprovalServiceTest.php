@@ -68,8 +68,12 @@ it('marks pending approval lists as truncated when more rows exist', function ()
     $response = app(ExpenseApprovalService::class)->listPendingForReviewer($admin, 1, 2);
 
     expect($response['data'])->toHaveCount(2)
-        ->and($response['meta']['truncated'])->toBeTrue()
-        ->and($response['meta']['count'])->toBe(2);
+        ->and($response['meta'])->toBe([
+            'count' => 2,
+            'max_results' => 2,
+            'start_position' => 1,
+            'truncated' => true,
+        ]);
 });
 
 it('rejects a pending expense without syncing to quickbooks', function () {

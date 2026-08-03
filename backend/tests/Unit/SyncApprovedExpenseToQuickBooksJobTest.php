@@ -66,6 +66,8 @@ it('stores the quickbooks identifier for an approved expense', function () {
 });
 
 it('keeps the approval decision when quickbooks synchronization fails', function () {
+    Log::spy();
+
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
     $employee = User::factory()->create([
@@ -98,6 +100,15 @@ it('keeps the approval decision when quickbooks synchronization fails', function
     expect($expense->status)->toBe(ExpenseStatus::Approved)
         ->and($expense->reviewed_by_id)->toBe($admin->id)
         ->and($expense->qbo_id)->toBeNull();
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(function (string $message, array $context) use ($expense, $employee): bool {
+            return str_contains($message, 'synchronization failed')
+                && ($context['expense_id'] ?? null) === $expense->id
+                && ($context['employee_id'] ?? null) === $employee->id
+                && isset($context['exception']);
+        });
 });
 
 it('skips sync when prerequisites are missing or the expense is already linked', function () {

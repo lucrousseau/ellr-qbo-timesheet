@@ -10,7 +10,7 @@ covers(ExpenseQboPayload::class);
 uses(RefreshDatabase::class);
 
 it('maps stored expense fields to a quickbooks purchase payload', function () {
-    $expense = Expense::factory()->forUser(User::factory()->create())->make([
+    $expense = Expense::factory()->forUser(User::factory()->create())->create([
         'amount' => 42.5,
         'txn_date' => '2026-08-03',
         'payment_account_ref' => '35',
@@ -35,7 +35,7 @@ it('maps stored expense fields to a quickbooks purchase payload', function () {
         'project_ref' => '22',
         'description' => 'AI credits',
         'is_billable' => true,
-    ]);
+    ])->and($payload['amount'])->toBeFloat();
 });
 
 it('omits optional refs when expense fields are empty', function () {

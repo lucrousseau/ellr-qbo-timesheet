@@ -39,8 +39,15 @@ it('forbids employees from reviewing their own expenses', function () {
     $employee = User::factory()->create(['qbo_employee_ref' => '7']);
     $expense = Expense::factory()->forUser($employee)->create();
 
-    app(ExpenseAuthorizationService::class)->assertCanReview($employee, $expense);
-})->throws(HttpResponseException::class);
+    try {
+        app(ExpenseAuthorizationService::class)->assertCanReview($employee, $expense);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(403)
+            ->and($exception->getResponse()->getData(true)['error'])->toBe('expense_self_review_forbidden')
+            ->and($exception->getResponse()->getData(true)['message'])->not->toBeEmpty();
+    }
+});
 
 it('forbids unrelated employees from reviewing expenses', function () {
     $admin = User::factory()->admin()->create();
@@ -51,8 +58,15 @@ it('forbids unrelated employees from reviewing expenses', function () {
     ]);
     $expense = Expense::factory()->forUser($employee)->create();
 
-    app(ExpenseAuthorizationService::class)->assertCanReview($otherEmployee, $expense);
-})->throws(HttpResponseException::class);
+    try {
+        app(ExpenseAuthorizationService::class)->assertCanReview($otherEmployee, $expense);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(403)
+            ->and($exception->getResponse()->getData(true)['error'])->toBe('expense_review_forbidden')
+            ->and($exception->getResponse()->getData(true)['message'])->not->toBeEmpty();
+    }
+});
 
 it('forbids supervisors from reviewing entries outside their direct reports', function () {
     $admin = User::factory()->admin()->create();
