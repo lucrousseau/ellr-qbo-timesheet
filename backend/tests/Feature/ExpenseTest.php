@@ -20,6 +20,7 @@ use App\Services\ExpenseService;
 use App\Services\PurchaseService;
 use App\Services\QuickBooksService;
 use App\Support\ExpenseApiResponse;
+use Illuminate\Testing\TestResponse;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(ExpenseController::class);
@@ -38,6 +39,19 @@ covers(UpdateExpenseRequest::class);
 covers(ListExpenseRequest::class);
 covers(RejectExpenseRequest::class);
 
+/**
+ * Asserts expense resource fields returned by the API.
+ *
+ * @param  TestResponse  $response
+ * @param  array<string, mixed>  $expected
+ */
+function assertExpenseResourceFields($response, array $expected): void
+{
+    foreach ($expected as $field => $value) {
+        $response->assertJsonPath("data.{$field}", $value);
+    }
+}
+
 it('requires authentication for expenses', function () {
     $this->getJson('/api/expenses')->assertUnauthorized();
 });
@@ -52,41 +66,142 @@ describe('employee expenses', function () {
     });
 
     it('creates a pending expense', function () {
-        $this->postJson('/api/expenses', [
+        $user = auth()->user();
+
+        $response = $this->postJson('/api/expenses', [
             'amount' => 42.5,
             'txn_date' => '2026-08-03',
             'payment_type' => 'Cash',
             'payment_account_ref' => '35',
             'expense_account_ref' => '7',
             'description' => 'AI tooling credits',
-        ], frontendHeaders())
-            ->assertCreated()
-            ->assertJsonPath('data.status', 'pending')
-            ->assertJsonPath('data.amount', '42.50')
-            ->assertJsonPath('data.description', 'AI tooling credits');
+        ], frontendHeaders());
+
+        $response->assertCreated();
+
+        assertExpenseResourceFields($response, [
+            'user_id' => $user->id,
+            'employee_name' => $user->name,
+            'amount' => '42.50',
+            'txn_date' => '2026-08-03',
+            'payment_type' => 'Cash',
+            'payment_account_ref' => '35',
+            'payment_account_name' => 'Checking',
+            'expense_account_ref' => '7',
+            'expense_account_name' => 'Office Expenses',
+            'vendor_ref' => null,
+            'vendor_name' => null,
+            'customer_ref' => null,
+            'customer_name' => null,
+            'project_ref' => null,
+            'project_name' => null,
+            'description' => 'AI tooling credits',
+            'is_billable' => false,
+            'status' => 'pending',
+            'reviewed_by_id' => null,
+            'reviewed_by_name' => null,
+            'reviewed_at' => null,
+            'rejection_reason' => null,
+            'qbo_id' => null,
+        ]);
+
+        expect($response->json('data.id'))->toBeInt()
+            ->and($response->json('data.created_at'))->not->toBeNull();
     });
 
     it('lists expenses for the signed-in employee', function () {
         $user = auth()->user();
-        Expense::factory()->forUser($user)->create([
+        $expense = Expense::factory()->forUser($user)->create([
+            'amount' => 25.00,
+            'txn_date' => '2026-08-02',
             'description' => 'Listed expense',
+            'payment_account_ref' => '35',
+            'expense_account_ref' => '7',
         ]);
 
-        $this->getJson('/api/expenses', frontendHeaders())
-            ->assertOk()
-            ->assertJsonPath('data.0.description', 'Listed expense')
-            ->assertJsonPath('data.0.status', 'pending');
+        $response = $this->getJson('/api/expenses', frontendHeaders())->assertOk();
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    [
+                        'id',
+                        'user_id',
+                        'employee_name',
+                        'amount',
+                        'txn_date',
+                        'payment_type',
+                        'payment_account_ref',
+                        'payment_account_name',
+                        'expense_account_ref',
+                        'expense_account_name',
+                        'vendor_ref',
+                        'vendor_name',
+                        'customer_ref',
+                        'customer_name',
+                        'project_ref',
+                        'project_name',
+                        'description',
+                        'is_billable',
+                        'status',
+                        'reviewed_by_id',
+                        'reviewed_by_name',
+                        'reviewed_at',
+                        'rejection_reason',
+                        'qbo_id',
+                        'created_at',
+                    ],
+                ],
+            ]);
+
+        expect($response->json('data.0.id'))->toBe($expense->id)
+            ->and($response->json('data.0.user_id'))->toBe($user->id)
+            ->and($response->json('data.0.employee_name'))->toBe($user->name)
+            ->and($response->json('data.0.amount'))->toBe('25.00')
+            ->and($response->json('data.0.txn_date'))->toBe('2026-08-02')
+            ->and($response->json('data.0.payment_account_name'))->toBe('Checking')
+            ->and($response->json('data.0.expense_account_name'))->toBe('Office Expenses')
+            ->and($response->json('data.0.description'))->toBe('Listed expense')
+            ->and($response->json('data.0.status'))->toBe('pending')
+            ->and($response->json('data.0.is_billable'))->toBeFalse()
+            ->and($response->json('data.0.qbo_id'))->toBeNull();
     });
 
     it('updates a pending expense', function () {
         $user = auth()->user();
         $expense = Expense::factory()->forUser($user)->create();
 
-        $this->patchJson("/api/expenses/{$expense->id}", [
+        $response = $this->patchJson("/api/expenses/{$expense->id}", [
             'description' => 'Updated notes',
-        ], frontendHeaders())
-            ->assertOk()
-            ->assertJsonPath('data.description', 'Updated notes');
+            'is_billable' => true,
+        ], frontendHeaders())->assertOk();
+
+        assertExpenseResourceFields($response, [
+            'id' => $expense->id,
+            'user_id' => $user->id,
+            'employee_name' => $user->name,
+            'amount' => (string) $expense->amount,
+            'txn_date' => $expense->txn_date?->toDateString(),
+            'payment_type' => $expense->payment_type->value,
+            'payment_account_ref' => $expense->payment_account_ref,
+            'payment_account_name' => 'Checking',
+            'expense_account_ref' => $expense->expense_account_ref,
+            'expense_account_name' => 'Office Expenses',
+            'vendor_ref' => $expense->vendor_ref,
+            'vendor_name' => null,
+            'customer_ref' => $expense->customer_ref,
+            'customer_name' => null,
+            'project_ref' => $expense->project_ref,
+            'project_name' => null,
+            'description' => 'Updated notes',
+            'is_billable' => true,
+            'status' => 'pending',
+            'reviewed_by_id' => null,
+            'reviewed_by_name' => null,
+            'reviewed_at' => null,
+            'rejection_reason' => null,
+            'qbo_id' => null,
+        ]);
     });
 
     it('rejects updates to approved expenses', function () {
@@ -133,10 +248,36 @@ describe('expense approvals', function () {
             $mock->shouldReceive('dataService')->andReturn($dataService);
         });
 
-        $this->postJson("/api/admin/expense-approvals/{$expense->id}/approve", [], frontendHeaders())
-            ->assertOk()
-            ->assertJsonPath('data.status', 'approved')
-            ->assertJsonPath('data.qbo_id', '501');
+        $response = $this->postJson("/api/admin/expense-approvals/{$expense->id}/approve", [], frontendHeaders())
+            ->assertOk();
+
+        assertExpenseResourceFields($response, [
+            'user_id' => $employee->id,
+            'employee_name' => $employee->name,
+            'amount' => '12.34',
+            'txn_date' => $expense->txn_date?->toDateString(),
+            'payment_type' => $expense->payment_type->value,
+            'payment_account_ref' => $expense->payment_account_ref,
+            'payment_account_name' => 'Checking',
+            'expense_account_ref' => $expense->expense_account_ref,
+            'expense_account_name' => 'Office Expenses',
+            'vendor_ref' => $expense->vendor_ref,
+            'vendor_name' => null,
+            'customer_ref' => $expense->customer_ref,
+            'customer_name' => null,
+            'project_ref' => $expense->project_ref,
+            'project_name' => null,
+            'description' => 'Ready for approval',
+            'is_billable' => false,
+            'status' => 'approved',
+            'reviewed_by_id' => $admin->id,
+            'reviewed_by_name' => $admin->name,
+            'rejection_reason' => null,
+            'qbo_id' => '501',
+        ]);
+
+        expect($response->json('data.reviewed_at'))->not->toBeNull()
+            ->and($response->json('data.id'))->toBe($expense->id);
     });
 
     it('lets a supervisor approve direct report expenses', function () {
@@ -179,14 +320,39 @@ describe('expense approvals', function () {
         $employee = timesheetUserFor($admin);
         $expense = Expense::factory()->forUser($employee)->create();
 
-        $this->actingAs($admin)
+        $response = $this->actingAs($admin)
             ->postJson("/api/admin/expense-approvals/{$expense->id}/reject", [
                 'reason' => 'Wrong category',
             ], frontendHeaders())
-            ->assertOk()
-            ->assertJsonPath('data.status', 'rejected')
-            ->assertJsonPath('data.rejection_reason', 'Wrong category')
-            ->assertJsonPath('data.qbo_id', null);
+            ->assertOk();
+
+        assertExpenseResourceFields($response, [
+            'user_id' => $employee->id,
+            'employee_name' => $employee->name,
+            'amount' => (string) $expense->amount,
+            'txn_date' => $expense->txn_date?->toDateString(),
+            'payment_type' => $expense->payment_type->value,
+            'payment_account_ref' => $expense->payment_account_ref,
+            'payment_account_name' => 'Checking',
+            'expense_account_ref' => $expense->expense_account_ref,
+            'expense_account_name' => 'Office Expenses',
+            'vendor_ref' => $expense->vendor_ref,
+            'vendor_name' => null,
+            'customer_ref' => $expense->customer_ref,
+            'customer_name' => null,
+            'project_ref' => $expense->project_ref,
+            'project_name' => null,
+            'description' => $expense->description,
+            'is_billable' => false,
+            'status' => 'rejected',
+            'reviewed_by_id' => $admin->id,
+            'reviewed_by_name' => $admin->name,
+            'rejection_reason' => 'Wrong category',
+            'qbo_id' => null,
+        ]);
+
+        expect($response->json('data.reviewed_at'))->not->toBeNull()
+            ->and($response->json('data.id'))->toBe($expense->id);
     });
 
     it('lists pending expenses for administrators', function () {
@@ -196,10 +362,48 @@ describe('expense approvals', function () {
         Expense::factory()->forUser($employee)->create(['description' => 'Needs review']);
         Expense::factory()->forUser($employee)->approved()->create();
 
-        $this->getJson('/api/admin/expense-approvals', frontendHeaders())
+        $response = $this->getJson('/api/admin/expense-approvals', frontendHeaders())
             ->assertOk()
-            ->assertJsonPath('data.0.description', 'Needs review')
             ->assertJsonCount(1, 'data');
+
+        $response->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    [
+                        'id',
+                        'user_id',
+                        'employee_name',
+                        'amount',
+                        'txn_date',
+                        'payment_type',
+                        'payment_account_ref',
+                        'payment_account_name',
+                        'expense_account_ref',
+                        'expense_account_name',
+                        'vendor_ref',
+                        'vendor_name',
+                        'customer_ref',
+                        'customer_name',
+                        'project_ref',
+                        'project_name',
+                        'description',
+                        'is_billable',
+                        'status',
+                        'reviewed_by_id',
+                        'reviewed_by_name',
+                        'reviewed_at',
+                        'rejection_reason',
+                        'qbo_id',
+                        'created_at',
+                    ],
+                ],
+            ]);
+
+        expect($response->json('data.0.description'))->toBe('Needs review')
+            ->and($response->json('data.0.status'))->toBe('pending')
+            ->and($response->json('data.0.employee_name'))->toBe($employee->name)
+            ->and($response->json('data.0.payment_account_name'))->toBe('Checking')
+            ->and($response->json('data.0.expense_account_name'))->toBe('Office Expenses');
     });
 });
 
