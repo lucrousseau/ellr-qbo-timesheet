@@ -77,6 +77,18 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
     await auth.handleLogout()
   }
 
+  const onDiscardDraft = () => {
+    void tracker.onDiscard()
+  }
+
+  const notifySuccess = (message: string) => {
+    auth.setPreferenceNotice(message, 'success')
+  }
+
+  const notifyError = (message: string) => {
+    auth.setPreferenceNotice(message, 'error')
+  }
+
   return (
     <AppShell
       title={t('timesheet.appTitle')}
@@ -129,13 +141,13 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
               allCustomersAccess={user.all_customers_access === true}
               hasDraftSession={tracker.hasDraftSession}
               discarding={tracker.discarding}
-              onDiscard={() => void tracker.onDiscard()}
+              onDiscard={onDiscardDraft}
             />
           ) : !tracker.canTrackTime && tracker.customersStatus === 'error' ? (
             <CustomerLoadError
               hasDraftSession={tracker.hasDraftSession}
               discarding={tracker.discarding}
-              onDiscard={() => void tracker.onDiscard()}
+              onDiscard={onDiscardDraft}
             />
           ) : (
             <>
@@ -193,8 +205,8 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
         >
           <ExpensesPanel
             enabled
-            onSuccess={(message) => auth.setPreferenceNotice(message, 'success')}
-            onError={(message) => auth.setPreferenceNotice(message, 'error')}
+            onSuccess={notifySuccess}
+            onError={notifyError}
           />
         </div>
       ) : activeTabId === 'approvals' ? (
@@ -207,14 +219,14 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
           <TimesheetTimeEntryApprovalsPanel
             enabled={user.can_review_time_entries === true}
             useAdminRoutes={user.is_admin === true}
-            onSuccess={(message) => auth.setPreferenceNotice(message, 'success')}
-            onError={(message) => auth.setPreferenceNotice(message, 'error')}
+            onSuccess={notifySuccess}
+            onError={notifyError}
           />
           <TimesheetExpenseApprovalsPanel
             enabled={user.can_review_time_entries === true}
             useAdminRoutes={user.is_admin === true}
-            onSuccess={(message) => auth.setPreferenceNotice(message, 'success')}
-            onError={(message) => auth.setPreferenceNotice(message, 'error')}
+            onSuccess={notifySuccess}
+            onError={notifyError}
           />
         </div>
       ) : (

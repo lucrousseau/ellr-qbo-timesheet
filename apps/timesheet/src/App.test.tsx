@@ -795,6 +795,43 @@ describe('Timesheet App', () => {
     })
   })
 
+  it('opens the expenses tab for authenticated users', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /expenses/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('tab', { name: /expenses/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /record an expense/i })).toBeInTheDocument()
+    })
+  })
+
+  it('opens the approvals tab for reviewers', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      can_review_time_entries: true,
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /approvals/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('tab', { name: /approvals/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /pending team time entries|pending expense approvals/i })).toBeInTheDocument()
+    })
+  })
+
   it('saves locale preferences from the timesheet app', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue({
