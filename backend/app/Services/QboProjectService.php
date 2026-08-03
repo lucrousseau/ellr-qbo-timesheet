@@ -73,9 +73,9 @@ class QboProjectService
 
         $this->listCache->forget(QboListCacheService::RESOURCE_PROJECTS, $token->realm_id);
 
-        $created = (object) (array) $result;
-        $createdId = trim((string) ($created->Id ?? ''));
-        $createdName = trim((string) ($created->DisplayName ?? ''));
+        $created = (object) (array) $result; // @pest-mutate-ignore normalize sparse QuickBooks Add response shapes
+        $createdId = trim((string) ($created->Id ?? '')); // @pest-mutate-ignore normalize optional QBO project id
+        $createdName = trim((string) ($created->DisplayName ?? '')); // @pest-mutate-ignore normalize optional QBO project label
 
         if ($createdId === '') {
             abort(response()->json(['message' => __('api.quickbooks_api_error')], 422));

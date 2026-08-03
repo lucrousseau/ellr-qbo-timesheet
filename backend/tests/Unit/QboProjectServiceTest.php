@@ -43,7 +43,7 @@ it('creates a quickbooks project under a valid parent customer', function () {
         ->once()
         ->with(Mockery::capture($captured))
         ->andReturn((object) ['Id' => '55', 'DisplayName' => 'Website redesign']);
-    $dataService->shouldReceive('getLastError')->andReturn(null);
+    $dataService->shouldReceive('getLastError')->once()->andReturn(null);
 
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
@@ -74,8 +74,71 @@ it('creates a quickbooks project under a valid parent customer', function () {
     $payload = MockeryCapture::unwrap($captured);
     expect((string) $payload->DisplayName)->toBe('Website redesign')
         ->and((string) $payload->Job)->toBe('true')
+        ->and((string) $payload->BillWithParent)->toBe('true')
         ->and((string) $payload->ParentRef->value)->toBe('11')
         ->and((string) $payload->ParentRef->name)->toBe('Acme Corp');
+});
+
+it('falls back to the submitted name when quickbooks omits display name', function () {
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')
+        ->once()
+        ->andReturn((object) ['Id' => '55', 'DisplayName' => '']);
+    $dataService->shouldReceive('getLastError')->once()->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')->once()->andReturn([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ]);
+
+    $listCache = Mockery::mock(QboListCacheService::class);
+    $listCache->shouldReceive('forget')->once();
+
+    $service = makeQboProjectService($quickBooks, $customers, $listCache);
+
+    expect($service->createForCustomer($token, [
+        'customer_ref' => '11',
+        'display_name' => 'Website redesign',
+    ]))->toBe([
+        'id' => '55',
+        'display_name' => 'Website redesign',
+    ]);
+});
+
+it('prefers the display name returned by quickbooks when present', function () {
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')
+        ->once()
+        ->andReturn((object) ['Id' => '55', 'DisplayName' => 'Website Redesign (QBO)']);
+    $dataService->shouldReceive('getLastError')->once()->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->andReturn($dataService);
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')->once()->andReturn([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+    ]);
+
+    $listCache = Mockery::mock(QboListCacheService::class);
+    $listCache->shouldReceive('forget')->once();
+
+    $service = makeQboProjectService($quickBooks, $customers, $listCache);
+
+    expect($service->createForCustomer($token, [
+        'customer_ref' => '11',
+        'display_name' => 'Website redesign',
+    ]))->toBe([
+        'id' => '55',
+        'display_name' => 'Website Redesign (QBO)',
+    ]);
 });
 
 it('rejects project creation when the parent customer is unknown', function () {
@@ -125,7 +188,35 @@ it('rejects blank project names after trimming', function () {
         ]);
         expect(false)->toBeTrue('Expected abort');
     } catch (HttpResponseException $exception) {
-        expect($exception->getResponse()->getStatusCode())->toBe(422);
+        expect($exception->getResponse()->getStatusCode())->toBe(422)
+            ->and($exception->getResponse()->getData(true))->toBe([
+                'message' => __('api.admin_invalid_project_parent'),
+            ]);
+    }
+});
+
+it('rejects blank customer references after normalization', function () {
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-42']);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldNotReceive('dataService');
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldNotReceive('listAllActive');
+
+    $service = makeQboProjectService($quickBooks, $customers);
+
+    try {
+        $service->createForCustomer($token, [
+            'customer_ref' => 'abc',
+            'display_name' => 'Website redesign',
+        ]);
+        expect(false)->toBeTrue('Expected abort');
+    } catch (HttpResponseException $exception) {
+        expect($exception->getResponse()->getStatusCode())->toBe(422)
+            ->and($exception->getResponse()->getData(true))->toBe([
+                'message' => __('api.admin_invalid_project_parent'),
+            ]);
     }
 });
 
@@ -135,8 +226,10 @@ it('aborts when quickbooks returns an sdk error', function () {
     $error->shouldReceive('getResponseBody')->andReturn('Duplicate Name Exists Error');
 
     $dataService = Mockery::mock(DataService::class);
-    $dataService->shouldReceive('Add')->once()->andReturn(null);
-    $dataService->shouldReceive('getLastError')->andReturn($error);
+    $dataService->shouldReceive('Add')
+        ->once()
+        ->andReturn((object) ['Id' => '55', 'DisplayName' => 'Website redesign']);
+    $dataService->shouldReceive('getLastError')->once()->andReturn($error);
 
     $quickBooks = Mockery::mock(QuickBooksService::class);
     $quickBooks->shouldReceive('dataService')->once()->andReturn($dataService);
@@ -146,7 +239,10 @@ it('aborts when quickbooks returns an sdk error', function () {
         ['id' => '11', 'display_name' => 'Acme Corp'],
     ]);
 
-    $service = makeQboProjectService($quickBooks, $customers);
+    $listCache = Mockery::mock(QboListCacheService::class);
+    $listCache->shouldNotReceive('forget');
+
+    $service = makeQboProjectService($quickBooks, $customers, $listCache);
 
     try {
         $service->createForCustomer($token, [
@@ -189,7 +285,10 @@ it('aborts when quickbooks returns a project without an id', function () {
         ]);
         expect(false)->toBeTrue('Expected abort');
     } catch (HttpResponseException $exception) {
-        expect($exception->getResponse()->getStatusCode())->toBe(422);
+        expect($exception->getResponse()->getStatusCode())->toBe(422)
+            ->and($exception->getResponse()->getData(true))->toBe([
+                'message' => __('api.quickbooks_api_error'),
+            ]);
     }
 });
 
