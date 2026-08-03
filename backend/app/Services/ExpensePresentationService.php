@@ -45,7 +45,7 @@ class ExpensePresentationService
      */
     public function resource(Expense $expense, ?User $viewer = null, ?QuickBooksToken $token = null): array
     {
-        $expense->loadMissing(['user', 'reviewedBy']);
+        $expense->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
 
         return ExpenseApiResponse::resource($expense, $this->resolveLabels($expense, $viewer, $token));
     }

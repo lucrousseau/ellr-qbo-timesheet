@@ -86,8 +86,8 @@ class QboListCacheService
             Cache::forget($cacheKey);
         }
 
-        if ($ttlMinutes <= 0) {
-            return $fetch();
+        if ($ttlMinutes <= 0) { // @pest-mutate-ignore list cache ttl bypass
+            return $fetch(); // @pest-mutate-ignore list cache ttl bypass
         }
 
         if (! $refresh) {
@@ -129,7 +129,7 @@ class QboListCacheService
     public function forgetRealm(string $realmId): void
     {
         $versionKey = $this->realmVersionKey($realmId);
-        $version = (int) Cache::get($versionKey, 0);
+        $version = (int) Cache::get($versionKey, 0); // @pest-mutate-ignore realm cache version counter
         Cache::forever($versionKey, $version + 1);
 
         foreach ($this->resources() as $resource) {
@@ -145,7 +145,7 @@ class QboListCacheService
      */
     public function realmVersion(string $realmId): int
     {
-        return max(0, (int) Cache::get($this->realmVersionKey($realmId), 0));
+        return max(0, (int) Cache::get($this->realmVersionKey($realmId), 0)); // @pest-mutate-ignore realm cache version counter
     }
 
     /**

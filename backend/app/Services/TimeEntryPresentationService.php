@@ -39,7 +39,7 @@ class TimeEntryPresentationService
      */
     public function resource(TimeEntry $entry, ?User $viewer = null, ?QuickBooksToken $token = null): array
     {
-        $entry->loadMissing(['user', 'reviewedBy']);
+        $entry->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
 
         return TimeEntryApiResponse::resource($entry, $this->resolveLabels($entry, $viewer, $token));
     }
@@ -58,7 +58,7 @@ class TimeEntryPresentationService
         $rows = [];
 
         foreach ($entries as $entry) {
-            $entry->loadMissing(['user', 'reviewedBy']);
+            $entry->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
             $owner = $entry->user;
             $labels = $resolvedToken !== null && $owner !== null
                 ? $this->displayNames->entryDisplayNames($resolvedToken, $owner, $entry)

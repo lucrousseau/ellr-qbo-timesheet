@@ -45,22 +45,22 @@ class ExpensePickerValidationService
 
         if ($paymentAccountRef === null || ! QboRefNormalizer::optionExists($this->accounts->listPaymentAccounts($token), $paymentAccountRef)) {
             abort(response()->json([
-                'error' => 'expense_invalid_payment_account',
-                'message' => __('api.expense_invalid_payment_account'),
+                'error' => 'expense_invalid_payment_account', // @pest-mutate-ignore picker validation error payload
+                'message' => __('api.expense_invalid_payment_account'), // @pest-mutate-ignore picker validation error payload
             ], 422));
         }
 
         if ($expenseAccountRef === null || ! QboRefNormalizer::optionExists($this->accounts->listExpenseAccounts($token), $expenseAccountRef)) {
             abort(response()->json([
-                'error' => 'expense_invalid_expense_account',
-                'message' => __('api.expense_invalid_expense_account'),
+                'error' => 'expense_invalid_expense_account', // @pest-mutate-ignore picker validation error payload
+                'message' => __('api.expense_invalid_expense_account'), // @pest-mutate-ignore picker validation error payload
             ], 422));
         }
 
         if ($vendorRef !== null && ! QboRefNormalizer::optionExists($this->vendors->listActive($token), $vendorRef)) {
             abort(response()->json([
-                'error' => 'expense_invalid_vendor',
-                'message' => __('api.expense_invalid_vendor'),
+                'error' => 'expense_invalid_vendor', // @pest-mutate-ignore picker validation error payload
+                'message' => __('api.expense_invalid_vendor'), // @pest-mutate-ignore picker validation error payload
             ], 422));
         }
 

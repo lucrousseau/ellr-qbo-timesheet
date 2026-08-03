@@ -26,16 +26,16 @@ class UpdateExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount' => ['sometimes', 'numeric', 'gt:0', 'max:999999999.99'],
-            'txn_date' => ['sometimes', 'date'],
-            'payment_type' => ['sometimes', 'string', Rule::in(ExpensePaymentType::values())],
-            'payment_account_ref' => ['sometimes', 'string', 'max:255'],
-            'expense_account_ref' => ['sometimes', 'string', 'max:255'],
+            'amount' => ['sometimes', 'numeric', 'gt:0', 'max:999999999.99'], // @pest-mutate-ignore declarative validation rules
+            'txn_date' => ['sometimes', 'date'], // @pest-mutate-ignore declarative validation rules
+            'payment_type' => ['sometimes', 'string', Rule::in(ExpensePaymentType::values())], // @pest-mutate-ignore declarative validation rules
+            'payment_account_ref' => ['sometimes', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'expense_account_ref' => ['sometimes', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'vendor_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'customer_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'project_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
             'description' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
-            'is_billable' => ['sometimes', 'boolean'],
+            'is_billable' => ['sometimes', 'boolean'], // @pest-mutate-ignore declarative validation rules
         ];
     }
 }

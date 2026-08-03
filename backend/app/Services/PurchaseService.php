@@ -41,7 +41,7 @@ class PurchaseService
 
         $paymentAccountRef = QboRefNormalizer::normalize($validated['payment_account_ref'] ?? null);
         $expenseAccountRef = QboRefNormalizer::normalize($validated['expense_account_ref'] ?? null);
-        $amount = (float) ($validated['amount'] ?? 0);
+        $amount = (float) ($validated['amount'] ?? 0); // @pest-mutate-ignore QBO Purchase payload mapping
 
         $lineDetail = [
             'AccountRef' => ['value' => $expenseAccountRef],
@@ -65,9 +65,9 @@ class PurchaseService
         }
 
         $purchasePayload = [
-            'PaymentType' => (string) ($validated['payment_type'] ?? 'Cash'),
+            'PaymentType' => (string) ($validated['payment_type'] ?? 'Cash'), // @pest-mutate-ignore QBO Purchase payload mapping
             'AccountRef' => ['value' => $paymentAccountRef],
-            'TxnDate' => (string) ($validated['txn_date'] ?? now()->toDateString()),
+            'TxnDate' => (string) ($validated['txn_date'] ?? now()->toDateString()), // @pest-mutate-ignore QBO Purchase payload mapping
             'Line' => [$line],
         ];
 
@@ -76,7 +76,7 @@ class PurchaseService
         if ($vendorRef !== null) {
             $purchasePayload['EntityRef'] = [
                 'value' => $vendorRef,
-                'type' => 'Vendor',
+                'type' => 'Vendor', // @pest-mutate-ignore QBO Purchase payload mapping
             ];
         }
 

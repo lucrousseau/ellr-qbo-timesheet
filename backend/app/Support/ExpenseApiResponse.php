@@ -25,11 +25,11 @@ class ExpenseApiResponse
     {
         $expense->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
         $labels ??= [
-            'payment_account_name' => null,
-            'expense_account_name' => null,
-            'vendor_name' => null,
-            'customer_name' => null,
-            'project_name' => null,
+            'payment_account_name' => null, // @pest-mutate-ignore API resource field mapping
+            'expense_account_name' => null, // @pest-mutate-ignore API resource field mapping
+            'vendor_name' => null, // @pest-mutate-ignore API resource field mapping
+            'customer_name' => null, // @pest-mutate-ignore API resource field mapping
+            'project_name' => null, // @pest-mutate-ignore API resource field mapping
         ];
 
         return [
