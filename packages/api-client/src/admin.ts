@@ -40,6 +40,14 @@ export type CreateTimesheetUserPayload = {
 }
 
 /**
+ * Payload for creating a QuickBooks project under a parent customer.
+ */
+export type CreateQboProjectPayload = {
+  customer_ref: string
+  display_name: string
+}
+
+/**
  * Lists active QuickBooks employees for the connected company.
  * @param options Optional fetch options (`refresh` bypasses server cache).
  * @returns Employee id, display name, and optional email.
@@ -102,6 +110,20 @@ export async function fetchAdminQboCustomers(options?: {
   const query = options?.refresh ? '?refresh=1' : ''
   const response = await apiFetch<{ data: QboCustomerOption[] }>(`/admin/quickbooks/customers${query}`, {
     signal: options?.signal,
+  })
+
+  return response.data
+}
+
+/**
+ * Creates a QuickBooks project (job customer) under a parent client.
+ * @param payload Parent customer reference and project display name.
+ * @returns Created project id and display name.
+ */
+export async function createQboProject(payload: CreateQboProjectPayload): Promise<QboCustomerOption> {
+  const response = await apiFetch<{ data: QboCustomerOption }>('/admin/quickbooks/projects', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   })
 
   return response.data

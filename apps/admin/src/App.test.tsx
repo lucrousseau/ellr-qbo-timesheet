@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserPreferences } from '@ellr/api-client'
+import { ApiError, changePassword, connectQuickBooks, createQboProject, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserPreferences } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
@@ -13,6 +13,7 @@ vi.mock('@ellr/api-client', async () =>
     fetchQboEmployees: vi.fn(),
     fetchTimesheetUsers: vi.fn(),
     createTimesheetUser: vi.fn(),
+    createQboProject: vi.fn(),
     deleteTimesheetUser: vi.fn(),
     fetchAdminQboCustomers: vi.fn(),
     fetchTimesheetUserCustomers: vi.fn(),
@@ -107,8 +108,10 @@ describe('Admin App', () => {
     vi.mocked(fetchQboEmployees).mockReset()
     vi.mocked(fetchTimesheetUsers).mockReset()
     vi.mocked(createTimesheetUser).mockReset()
+    vi.mocked(createQboProject).mockReset()
     vi.mocked(deleteTimesheetUser).mockReset()
     vi.mocked(fetchAdminQboCustomers).mockReset()
+    vi.mocked(fetchAdminQboCustomers).mockResolvedValue([])
     vi.mocked(fetchTimesheetUserCustomers).mockReset()
     vi.mocked(syncTimesheetUserCustomers).mockReset()
     vi.mocked(fetchSuperAdminOrganizations).mockReset()
@@ -893,6 +896,52 @@ describe('Admin App', () => {
         qbo_employee_ref: '7',
       })
       expect(screen.getByText(/timesheet access created/i)).toBeInTheDocument()
+    })
+  })
+
+  it('creates a quickbooks project under a selected client', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchAdminQboCustomers).mockResolvedValue([
+      { id: '11', display_name: 'Acme Corp' },
+    ])
+    vi.mocked(createQboProject).mockResolvedValue({
+      id: '55',
+      display_name: 'Website redesign',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
+    })
+
+    await openIntegrationsTab(user)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /quickbooks projects/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /choose a client/i }))
+
+    await waitFor(() => {
+      expect(fetchAdminQboCustomers).toHaveBeenCalledWith(
+        expect.objectContaining({ refresh: false }),
+      )
+      expect(screen.getByRole('option', { name: /acme corp/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('option', { name: /acme corp/i }))
+    await user.type(screen.getByLabelText(/project name/i), 'Website redesign')
+    await user.click(screen.getByRole('button', { name: /^create project$/i }))
+
+    await waitFor(() => {
+      expect(createQboProject).toHaveBeenCalledWith({
+        customer_ref: '11',
+        display_name: 'Website redesign',
+      })
+      expect(screen.getByText(/project "website redesign" created/i)).toBeInTheDocument()
     })
   })
 

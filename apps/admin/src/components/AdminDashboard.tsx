@@ -10,19 +10,15 @@ import {
   type AdminTab,
 } from '../adminTabStorage'
 import { AccountPanel } from './AccountPanel'
-import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
+import { IntegrationsTabContent } from './IntegrationsTabContent'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
 import { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
+import { useCreateQboProject } from '../hooks/useCreateQboProject'
 import { useSuperAdminOrganizations } from '../hooks/useSuperAdminOrganizations'
 
 const TimeEntryApprovalsPanel = lazy(async () => {
   const module = await import('./TimeEntryApprovalsPanel')
   return { default: module.TimeEntryApprovalsPanel }
-})
-
-const TimesheetUserProvisioningPanel = lazy(async () => {
-  const module = await import('./TimesheetUserProvisioningPanel')
-  return { default: module.TimesheetUserProvisioningPanel }
 })
 
 const SuperAdminOrganizationsPanel = lazy(async () => {
@@ -102,6 +98,14 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
     onSuccess: admin.showSuccess,
   })
 
+  const projectCreate = useCreateQboProject({
+    status: admin.status,
+    isAdministrator: isTenantAdministrator,
+    integrationsTabActive: activeTabId === 'integrations',
+    onError: admin.showError,
+    onSuccess: admin.showSuccess,
+  })
+
   const clientOrganizations = useSuperAdminOrganizations({
     enabled: isSuperAdministrator && activeTabId === 'clients',
     onError: admin.showError,
@@ -168,39 +172,12 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           id={tabPanelId(TAB_ID_PREFIX, 'integrations')}
           role="tabpanel"
           aria-labelledby={`${TAB_ID_PREFIX}-tab-integrations`}
-          className="space-y-6"
         >
-          <QuickBooksConnectionPanel
-            status={admin.status}
-            connecting={admin.connecting}
-            disconnecting={admin.disconnecting}
-            onConnect={admin.connectQuickBooksFlow}
-            onDisconnect={admin.disconnectQuickBooksFlow}
+          <IntegrationsTabContent
+            admin={admin}
+            projectCreate={projectCreate}
+            provisioning={provisioning}
           />
-          <Suspense fallback={<LoadingScreen />}>
-            <TimesheetUserProvisioningPanel
-            connected={admin.status?.connected === true}
-            employees={provisioning.employees}
-            users={provisioning.users}
-            loadingEmployees={provisioning.loadingEmployees}
-            employeesLoaded={provisioning.employeesLoaded}
-            loadingUsers={provisioning.loadingUsers}
-            selectedEmployee={provisioning.selectedEmployee}
-            creating={provisioning.creating}
-            removing={provisioning.removing}
-            removingUserId={provisioning.removingUserId}
-            onEmployeeChange={provisioning.onEmployeeChange}
-            onEmployeeDropdownOpen={provisioning.onEmployeeDropdownOpen}
-            onEmployeeDropdownClose={provisioning.onEmployeeDropdownClose}
-            onSubmit={provisioning.onCreateTimesheetUser}
-            onRemoveTimesheetUser={provisioning.onRemoveTimesheetUser}
-            onClientAssignmentsSaved={provisioning.onClientAssignmentsSaved}
-            assignSupervisor={provisioning.assignSupervisor}
-            assigningSupervisor={provisioning.assigningSupervisor}
-            onError={admin.showError}
-            onSuccess={admin.showSuccess}
-          />
-          </Suspense>
         </div>
       )}
     </div>

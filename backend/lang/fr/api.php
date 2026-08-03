@@ -22,6 +22,7 @@ return [
     'qbo_employee_email_missing' => 'L\'employé QuickBooks n\'a pas d\'adresse courriel configurée.',
     'qbo_employee_email_conflict' => 'Le courriel de l\'employé QuickBooks est déjà utilisé par un autre compte.',
     'admin_invalid_customer_assignment' => 'Un ou plusieurs clients sélectionnés ne sont pas disponibles dans QuickBooks.',
+    'admin_invalid_project_parent' => 'Le client sélectionné n\'est pas disponible dans QuickBooks.',
     'time_activity_not_found' => 'Activité de temps introuvable',
     'time_entry_not_found' => 'Entrée de temps introuvable',
     'time_entry_not_editable' => 'Seules les entrées en attente peuvent être modifiées.',

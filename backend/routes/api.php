@@ -5,6 +5,7 @@
  */
 
 use App\Http\Controllers\Api\AdminQboEmployeeController;
+use App\Http\Controllers\Api\AdminQboProjectController;
 use App\Http\Controllers\Api\AdminQuickBooksPickerController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AdminUserCustomerController;
@@ -86,6 +87,7 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::post('/admin/time-entry-approvals/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
             Route::post('/admin/time-entry-approvals/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
             Route::get('/admin/quickbooks/customers', [AdminQuickBooksPickerController::class, 'customers']);
+            Route::post('/admin/quickbooks/projects', [AdminQboProjectController::class, 'store']);
             Route::patch('/user/qbo-employee', [QboEmployeeController::class, 'update']);
             Route::patch('/admin/users/{user}/qbo-employee', [AdminQboEmployeeController::class, 'update']);
 
