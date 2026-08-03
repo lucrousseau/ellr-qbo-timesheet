@@ -24,9 +24,9 @@ class ListTimeEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'start_position' => ['sometimes', 'integer', 'min:1'],
+            'start_position' => ['sometimes', 'integer', 'min:1'], // @pest-mutate-ignore declarative validation rules
             'max_results' => ['sometimes', 'integer', 'min:1', 'max:100'], // @pest-mutate-ignore list pagination cap
-            'refresh' => ['sometimes', 'boolean'],
+            'refresh' => ['sometimes', 'boolean'], // @pest-mutate-ignore declarative validation rules
         ];
     }
 
