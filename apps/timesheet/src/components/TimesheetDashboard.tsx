@@ -143,6 +143,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 project={tracker.state.project}
                 service={tracker.state.service}
                 description={tracker.state.description}
+                ticketKey={tracker.state.ticketKey}
                 isBillable={tracker.state.isBillable}
                 elapsedSeconds={tracker.elapsedSeconds}
                 maxAccumulatedSeconds={tracker.maxAccumulatedSeconds}
@@ -161,6 +162,8 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 onServiceChange={tracker.onServiceChange}
                 onDescriptionChange={tracker.onDescriptionChange}
                 onDescriptionBlur={tracker.onDescriptionBlur}
+                onTicketKeyChange={tracker.onTicketKeyChange}
+                onTicketKeyBlur={tracker.onTicketKeyBlur}
                 onBillableChange={tracker.onBillableChange}
                 onToggleTimer={tracker.onToggleTimer}
                 commitElapsedSeconds={tracker.commitElapsedSeconds}

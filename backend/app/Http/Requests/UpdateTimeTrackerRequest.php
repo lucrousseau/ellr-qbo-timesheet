@@ -7,6 +7,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Concerns\AllowsAuthenticatedApiUser;
+use App\Support\TicketFieldRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -28,6 +29,7 @@ class UpdateTimeTrackerRequest extends FormRequest
             'project_ref' => ['nullable', 'string', 'max:255'],
             'service_ref' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
+            ...TicketFieldRules::forCreate(),
             'is_billable' => ['sometimes', 'boolean'],
             'is_running' => ['required', 'boolean'],
             'accumulated_seconds' => [

@@ -13,6 +13,10 @@ export const DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS = 86_400
 export type AppConfig = {
   require_email_verification: boolean
   time_tracker_max_accumulated_seconds: number
+  ticket_integrations: {
+    jira_enabled: boolean
+    linear_enabled: boolean
+  }
 }
 
 /**
@@ -25,9 +29,14 @@ export async function fetchAppConfig(): Promise<AppConfig> {
     service: string
     require_email_verification: boolean
     time_tracker_max_accumulated_seconds?: number
+    ticket_integrations?: {
+      jira_enabled?: boolean
+      linear_enabled?: boolean
+    }
   }>('/health')
 
   const maxAccumulated = response.time_tracker_max_accumulated_seconds
+  const ticketIntegrations = response.ticket_integrations
 
   return {
     require_email_verification: response.require_email_verification,
@@ -35,5 +44,9 @@ export async function fetchAppConfig(): Promise<AppConfig> {
       typeof maxAccumulated === 'number' && maxAccumulated > 0
         ? maxAccumulated
         : DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS,
+    ticket_integrations: {
+      jira_enabled: Boolean(ticketIntegrations?.jira_enabled),
+      linear_enabled: Boolean(ticketIntegrations?.linear_enabled),
+    },
   }
 }

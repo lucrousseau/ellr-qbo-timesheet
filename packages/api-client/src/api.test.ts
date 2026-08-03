@@ -1090,6 +1090,10 @@ describe('app config', () => {
     await expect(fetchAppConfig()).resolves.toEqual({
       require_email_verification: true,
       time_tracker_max_accumulated_seconds: DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS,
+      ticket_integrations: {
+        jira_enabled: false,
+        linear_enabled: false,
+      },
     })
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -1116,6 +1120,10 @@ describe('app config', () => {
     await expect(fetchAppConfig()).resolves.toEqual({
       require_email_verification: false,
       time_tracker_max_accumulated_seconds: 7200,
+      ticket_integrations: {
+        jira_enabled: false,
+        linear_enabled: false,
+      },
     })
   })
 })

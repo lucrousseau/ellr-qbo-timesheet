@@ -15,6 +15,10 @@ const { mockActiveSession, defaultCustomers } = vi.hoisted(() => ({
     service_ref: null,
     service_name: null,
     description: null,
+    ticket_key: null,
+    ticket_source: null,
+    ticket_url: null,
+    ticket_title: null,
     is_billable: false,
     accumulated_seconds: 3600,
     running_since: null,
@@ -46,6 +50,7 @@ vi.mock('@ellr/api-client', async () =>
     fetchAppConfig: vi.fn().mockResolvedValue({
       require_email_verification: false,
       time_tracker_max_accumulated_seconds: 86_400,
+      ticket_integrations: { jira_enabled: false, linear_enabled: false },
     }),
     listTimeEntries: vi.fn().mockResolvedValue({
       data: [],
@@ -82,6 +87,7 @@ describe('Timesheet App', () => {
     vi.mocked(fetchAppConfig).mockResolvedValue({
       require_email_verification: false,
       time_tracker_max_accumulated_seconds: 86_400,
+      ticket_integrations: { jira_enabled: false, linear_enabled: false },
     })
     vi.mocked(requestPasswordReset).mockReset()
     vi.mocked(resetPassword).mockReset()
@@ -541,6 +547,7 @@ describe('Timesheet App', () => {
     vi.mocked(fetchAppConfig).mockResolvedValue({
       require_email_verification: true,
       time_tracker_max_accumulated_seconds: 86_400,
+      ticket_integrations: { jira_enabled: false, linear_enabled: false },
     })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
@@ -558,6 +565,7 @@ describe('Timesheet App', () => {
     vi.mocked(fetchAppConfig).mockResolvedValue({
       require_email_verification: false,
       time_tracker_max_accumulated_seconds: 86_400,
+      ticket_integrations: { jira_enabled: false, linear_enabled: false },
     })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
@@ -735,6 +743,7 @@ describe('Timesheet App', () => {
     vi.mocked(fetchAppConfig).mockResolvedValue({
       require_email_verification: true,
       time_tracker_max_accumulated_seconds: 86_400,
+      ticket_integrations: { jira_enabled: false, linear_enabled: false },
     })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,
@@ -761,6 +770,7 @@ describe('Timesheet App', () => {
     vi.mocked(fetchAppConfig).mockResolvedValue({
       require_email_verification: true,
       time_tracker_max_accumulated_seconds: 86_400,
+      ticket_integrations: { jira_enabled: false, linear_enabled: false },
     })
     vi.mocked(fetchCurrentUser).mockResolvedValue({
       ...authenticatedUser,

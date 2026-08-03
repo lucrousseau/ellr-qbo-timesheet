@@ -17,6 +17,9 @@ export type TimeActivityRow = {
   customerName: string | null
   serviceName: string | null
   description: string | null
+  ticketKey?: string | null
+  ticketUrl?: string | null
+  ticketTitle?: string | null
   isBillable: boolean
   billableLocked: boolean
   approvalStatus?: 'pending' | 'approved' | 'rejected' | null
@@ -111,6 +114,9 @@ export function parseTimeActivityRow(activity: TimeActivity): TimeActivityRow {
     customerName: formatClientProjectLabel(activity),
     serviceName: readRefName(activity.ItemRef),
     description: typeof activity.Description === 'string' ? activity.Description : null,
+    ticketKey: null,
+    ticketUrl: null,
+    ticketTitle: null,
     isBillable: billableStatus === 'Billable',
     billableLocked: billableStatus === 'HasBeenBilled',
   }

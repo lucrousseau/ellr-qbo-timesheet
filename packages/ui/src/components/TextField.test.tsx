@@ -29,4 +29,10 @@ describe('TextField', () => {
 
     expect(onChange).toHaveBeenCalled()
   })
+
+  it('renders optional hint text', () => {
+    render(<TextField label="Ticket" hint="Optional work item key" />)
+
+    expect(screen.getByText('Optional work item key')).toBeInTheDocument()
+  })
 })

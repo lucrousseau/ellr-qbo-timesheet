@@ -7,6 +7,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Concerns\AllowsAuthenticatedApiUser;
+use App\Support\TicketFieldRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -30,6 +31,7 @@ class UpdateTimeEntryRequest extends FormRequest
             'start_time' => ['sometimes', 'date'],
             'end_time' => ['sometimes', 'date', 'after:start_time'],
             'description' => ['sometimes', 'nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
+            ...TicketFieldRules::forUpdate(),
             'is_billable' => ['sometimes', 'boolean'],
         ];
     }

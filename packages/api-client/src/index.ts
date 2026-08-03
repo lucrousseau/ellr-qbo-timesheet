@@ -86,6 +86,13 @@ export {
   type QuickBooksStatus,
 } from './quickbooks'
 export {
+  fetchTicketIntegrationStatus,
+  searchTickets,
+  type TicketIntegrationStatus,
+  type TicketSearchResult,
+  type TicketSource,
+} from './ticketIntegrations'
+export {
   formatTimeActivityDuration,
   fromDateTimeLocalValue,
   parseTimeActivityRow,

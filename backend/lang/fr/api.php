@@ -34,6 +34,7 @@ return [
     'time_tracker_invalid_customer' => 'Le client sélectionné n\'est pas disponible pour votre employé QuickBooks.',
     'time_tracker_invalid_project' => 'Le projet sélectionné n\'est pas disponible pour le client choisi.',
     'time_tracker_invalid_service' => 'Le service sélectionné n\'est pas disponible dans QuickBooks.',
+    'integration_disabled' => 'Cette intégration de tickets n\'est pas encore connectée.',
     'password_reset_sent' => 'Si ce courriel existe, un lien de réinitialisation a été envoyé.',
     'password_reset_success' => 'Mot de passe réinitialisé avec succès.',
     'password_reset_failed' => 'Impossible de réinitialiser le mot de passe. Demandez un nouveau lien et réessayez.',

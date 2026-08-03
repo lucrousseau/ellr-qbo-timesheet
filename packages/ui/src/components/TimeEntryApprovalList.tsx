@@ -58,6 +58,28 @@ export function TimeEntryApprovalList({
                 {entry.serviceName ?? t('timeActivity.noValue')}
               </p>
               {entry.description?.trim() ? <p>{entry.description}</p> : null}
+              {entry.ticketKey?.trim() ? (
+                <p>
+                  {t('timeActivity.ticket')}
+                  {': '}
+                  {entry.ticketUrl ? (
+                    <a
+                      href={entry.ticketUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-slate-900 underline"
+                    >
+                      {entry.ticketKey}
+                      {entry.ticketTitle ? `: ${entry.ticketTitle}` : ''}
+                    </a>
+                  ) : (
+                    <span className="font-medium text-slate-900">
+                      {entry.ticketKey}
+                      {entry.ticketTitle ? `: ${entry.ticketTitle}` : ''}
+                    </span>
+                  )}
+                </p>
+              ) : null}
               <p className="text-slate-500">
                 {entry.isBillable ? t('timeActivity.billableYes') : t('timeActivity.billableNo')}
               </p>

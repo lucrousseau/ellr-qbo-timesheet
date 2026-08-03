@@ -51,6 +51,10 @@ class TimeEntryApiResponse
             'end_time' => $endTime?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
             'duration_seconds' => $durationSeconds, // @pest-mutate-ignore computed duration field
             'description' => $entry->description, // @pest-mutate-ignore API resource field mapping
+            'ticket_key' => $entry->ticket_key, // @pest-mutate-ignore API resource field mapping
+            'ticket_source' => $entry->ticket_source, // @pest-mutate-ignore API resource field mapping
+            'ticket_url' => $entry->ticket_url, // @pest-mutate-ignore API resource field mapping
+            'ticket_title' => $entry->ticket_title, // @pest-mutate-ignore API resource field mapping
             'is_billable' => $entry->is_billable, // @pest-mutate-ignore API resource field mapping
             'status' => $entry->status->value, // @pest-mutate-ignore API resource field mapping
             'reviewed_by_id' => $entry->reviewed_by_id, // @pest-mutate-ignore API resource field mapping
@@ -109,6 +113,10 @@ class TimeEntryApiResponse
             'end_time' => $snapshot->end_time?->toIso8601String(), // @pest-mutate-ignore legacy snapshot resource mapping
             'duration_seconds' => $durationSeconds, // @pest-mutate-ignore computed duration field
             'description' => $snapshot->description, // @pest-mutate-ignore legacy snapshot resource mapping
+            'ticket_key' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'ticket_source' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'ticket_url' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'ticket_title' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'is_billable' => $snapshot->billable_status === 'Billable', // @pest-mutate-ignore legacy snapshot billable mapping
             'status' => TimeEntryStatus::Approved->value, // @pest-mutate-ignore legacy snapshot status mapping
             'reviewed_by_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping

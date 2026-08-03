@@ -25,7 +25,7 @@ final class TimeEntryQboPayload
         $payload = [
             'start_time' => $entry->start_time?->toIso8601String(),
             'end_time' => $entry->end_time?->toIso8601String(),
-            'description' => $entry->description,
+            'description' => TimeEntryQboDescription::compose($entry->ticket_key, $entry->description),
             'is_billable' => $entry->is_billable,
         ];
 

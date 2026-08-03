@@ -32,6 +32,7 @@ const enApiErrors = {
   time_entry_not_editable: 'Only pending time entries can be edited.',
   time_entry_not_deletable: 'Only pending or rejected time entries can be deleted.',
   supervisor_self_assignment: 'An employee cannot be their own supervisor.',
+  integration_disabled: 'This ticket integration is not connected yet.',
 } satisfies Record<ApiErrorMessageKey, string>
 
 export const enMessages = {
@@ -83,6 +84,15 @@ export const enMessages = {
     tabClients: 'Client organizations',
     quickbooksTitle: 'QuickBooks Online connection',
     quickbooksConnectionHelp: 'Connect with a QuickBooks company administrator account to manage employees.',
+    ticketIntegrationsTitle: 'Ticket trackers',
+    ticketIntegrationsHelp:
+      'Let employees pick Jira or Linear tickets when logging time. Connect flows ship next; the timer already stores a structured ticket key.',
+    ticketIntegrationsJira: 'Jira',
+    ticketIntegrationsLinear: 'Linear',
+    ticketIntegrationsComingSoon: 'Coming soon',
+    ticketIntegrationsConnected: 'Connected',
+    ticketIntegrationsDisabled: 'Not connected',
+    ticketIntegrationsEnabledPending: 'Enabled in config (OAuth not connected yet)',
     quickbooksEmployeeTitle: 'QuickBooks employee',
     quickbooksEmployeeHelp: 'Link this account to a QBO employee for the timesheet app.',
     qboEmployeeId: 'QBO employee ID',
@@ -228,6 +238,9 @@ export const enMessages = {
     end: 'End',
     description: 'Description',
     descriptionPlaceholder: 'What are you working on?',
+    ticket: 'Ticket',
+    ticketPlaceholder: 'PROJ-123',
+    ticketHelp: 'Optional work item key from Jira, Linear, or your tracker.',
     billable: 'Billable',
     savedSuccess: 'Time saved to QuickBooks Online.',
     saveFailed: 'Error while saving.',
@@ -292,6 +305,7 @@ export const enMessages = {
     client: 'Client / project',
     service: 'Service',
     description: 'Description',
+    ticket: 'Ticket',
     duration: 'Duration',
     billable: 'Billable',
     billableYes: 'Billable',

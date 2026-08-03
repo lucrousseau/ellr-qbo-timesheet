@@ -23,10 +23,15 @@ it('returns api health status', function () {
             'service' => 'ellr-qbo-timesheet-api',
             'require_email_verification' => true,
             'time_tracker_max_accumulated_seconds' => 86400,
+            'ticket_integrations' => [
+                'jira_enabled' => false,
+                'linear_enabled' => false,
+            ],
         ]);
 
     expect($response->json('require_email_verification'))->toBeBool();
     expect($response->json('time_tracker_max_accumulated_seconds'))->toBeInt();
+    expect($response->json('ticket_integrations.jira_enabled'))->toBeBool();
 });
 
 it('returns require_email_verification as false when disabled', function () {

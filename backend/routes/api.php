@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\QuickBooksEmployeeController;
 use App\Http\Controllers\Api\QuickBooksPickerController;
 use App\Http\Controllers\Api\QuickBooksWebhookController;
 use App\Http\Controllers\Api\SuperAdminOrganizationController;
+use App\Http\Controllers\Api\TicketIntegrationController;
 use App\Http\Controllers\Api\TimeActivityController;
 use App\Http\Controllers\Api\TimeEntryApprovalController;
 use App\Http\Controllers\Api\TimeEntryController;
@@ -109,6 +110,9 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
         Route::get('/quickbooks/customers', [QuickBooksPickerController::class, 'customers']);
         Route::get('/quickbooks/projects', [QuickBooksPickerController::class, 'projects']);
         Route::get('/quickbooks/services', [QuickBooksPickerController::class, 'services']);
+
+        Route::get('/integrations/tickets/status', [TicketIntegrationController::class, 'status']);
+        Route::get('/integrations/tickets', [TicketIntegrationController::class, 'search']);
 
         Route::get('/time-tracker', [TimeTrackerController::class, 'show']);
         Route::put('/time-tracker', [TimeTrackerController::class, 'update']);

@@ -20,6 +20,7 @@ it('maps stored refs and resolved labels to a quickbooks payload', function () {
         'is_billable' => true,
         'start_time' => '2026-07-27 09:00:00',
         'end_time' => '2026-07-27 17:00:00',
+        'ticket_key' => 'PROJ-9',
     ]);
 
     $payload = TimeEntryQboPayload::fromEntry($entry, [
@@ -35,7 +36,7 @@ it('maps stored refs and resolved labels to a quickbooks payload', function () {
         'project_name' => 'Website redesign',
         'item_ref' => '33',
         'item_name' => 'Consulting',
-        'description' => 'Support',
+        'description' => '[PROJ-9] Support',
         'is_billable' => true,
     ]);
 });

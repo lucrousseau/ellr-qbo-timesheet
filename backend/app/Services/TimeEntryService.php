@@ -9,6 +9,7 @@ namespace App\Services;
 use App\Enums\TimeEntryStatus;
 use App\Models\TimeEntry;
 use App\Models\User;
+use App\Support\TicketAttributes;
 
 /**
  * Manages the local time entry write model for employees.
@@ -140,6 +141,7 @@ class TimeEntryService
             'start_time' => $validated['start_time'], // @pest-mutate-ignore required create field mapping
             'end_time' => $validated['end_time'], // @pest-mutate-ignore required create field mapping
             'description' => $validated['description'] ?? null, // @pest-mutate-ignore optional create field mapping
+            ...TicketAttributes::fromValidated($validated),
             'is_billable' => (bool) ($validated['is_billable'] ?? false), // @pest-mutate-ignore optional create field mapping
         ];
     }
@@ -166,6 +168,8 @@ class TimeEntryService
                 $attributes[$field] = $validated[$field];
             }
         }
+
+        $attributes = [...$attributes, ...TicketAttributes::fromPartialValidated($validated)];
 
         if (array_key_exists('is_billable', $validated)) { // @pest-mutate-ignore partial update field mapping
             $attributes['is_billable'] = (bool) $validated['is_billable']; // @pest-mutate-ignore partial update field mapping

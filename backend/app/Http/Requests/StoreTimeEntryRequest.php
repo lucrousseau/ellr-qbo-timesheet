@@ -7,6 +7,7 @@
 namespace App\Http\Requests;
 
 use App\Http\Concerns\AllowsAuthenticatedApiUser;
+use App\Support\TicketFieldRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -30,6 +31,7 @@ class StoreTimeEntryRequest extends FormRequest
             'start_time' => ['required', 'date'],
             'end_time' => ['required', 'date', 'after:start_time'],
             'description' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
+            ...TicketFieldRules::forCreate(),
             'is_billable' => ['sometimes', 'boolean'],
         ];
     }

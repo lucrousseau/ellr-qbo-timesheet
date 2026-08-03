@@ -29,6 +29,10 @@ function buildSession(overrides: Record<string, unknown> = {}) {
     service_ref: null,
     service_name: null,
     description: null,
+    ticket_key: null,
+    ticket_source: null,
+    ticket_url: null,
+    ticket_title: null,
     is_billable: false,
     accumulated_seconds: 0,
     running_since: null,
@@ -62,6 +66,7 @@ describe('useTimeTracker elapsed persistence', () => {
     vi.mocked(fetchAppConfig).mockResolvedValue({
       require_email_verification: false,
       time_tracker_max_accumulated_seconds: DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS,
+      ticket_integrations: { jira_enabled: false, linear_enabled: false },
     })
     vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme Corp' }])
     vi.mocked(fetchQboProjects).mockResolvedValue([])

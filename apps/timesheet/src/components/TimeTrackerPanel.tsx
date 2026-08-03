@@ -7,15 +7,14 @@ import {
   Alert,
   Button,
   cardClass,
-  CheckboxField,
   LazySearchCombobox,
   LoadingScreen,
-  TextAreaField,
   useLocale,
 } from '@ellr/ui'
 import { useRef } from 'react'
 import type { QboPickerOption } from '../hooks/useTimeTracker'
 import { TimerDisplay, type TimerDisplayHandle } from './TimerDisplay'
+import { TimerNotesFields } from './TimerNotesFields'
 
 type PickerSelect = {
   items: QboPickerOption[]
@@ -32,6 +31,7 @@ type TimeTrackerPanelProps = {
   project: QboPickerOption | null
   service: QboPickerOption | null
   description: string
+  ticketKey: string
   isBillable: boolean
   elapsedSeconds: number
   maxAccumulatedSeconds: number
@@ -50,6 +50,8 @@ type TimeTrackerPanelProps = {
   onServiceChange: (value: QboPickerOption | null) => void
   onDescriptionChange: (value: string) => void
   onDescriptionBlur: () => void
+  onTicketKeyChange: (value: string) => void
+  onTicketKeyBlur: () => void
   onBillableChange: (value: boolean) => void
   onToggleTimer: () => void | Promise<void>
   commitElapsedSeconds: (seconds: number) => Promise<boolean>
@@ -69,6 +71,7 @@ export function TimeTrackerPanel({
   project,
   service,
   description,
+  ticketKey,
   isBillable,
   elapsedSeconds,
   maxAccumulatedSeconds,
@@ -87,6 +90,8 @@ export function TimeTrackerPanel({
   onServiceChange,
   onDescriptionChange,
   onDescriptionBlur,
+  onTicketKeyChange,
+  onTicketKeyBlur,
   onBillableChange,
   onToggleTimer,
   commitElapsedSeconds,
@@ -185,19 +190,15 @@ export function TimeTrackerPanel({
         />
       )}
 
-      <TextAreaField
-        label={t('timesheet.description')}
-        placeholder={t('timesheet.descriptionPlaceholder')}
-        rows={4}
-        value={description}
-        onChange={(event) => onDescriptionChange(event.target.value)}
-        onBlur={onDescriptionBlur}
-      />
-
-      <CheckboxField
-        label={t('timesheet.billable')}
-        checked={isBillable}
-        onChange={onBillableChange}
+      <TimerNotesFields
+        ticketKey={ticketKey}
+        description={description}
+        isBillable={isBillable}
+        onTicketKeyChange={onTicketKeyChange}
+        onTicketKeyBlur={onTicketKeyBlur}
+        onDescriptionChange={onDescriptionChange}
+        onDescriptionBlur={onDescriptionBlur}
+        onBillableChange={onBillableChange}
       />
 
       <Button type="button" disabled={logging || elapsedSeconds <= 0} onClick={() => void handleLogTime()}>
@@ -208,7 +209,7 @@ export function TimeTrackerPanel({
         <Button
           type="button"
           variant="link"
-          disabled={discarding || (elapsedSeconds <= 0 && !customer && !project && !service && !description)}
+          disabled={discarding || (elapsedSeconds <= 0 && !customer && !project && !service && !description && !ticketKey)}
           onClick={() => void onDiscard()}
         >
           {t('timesheet.discard')}

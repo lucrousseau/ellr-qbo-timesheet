@@ -25,6 +25,10 @@ export type TimeEntry = {
   end_time: string
   duration_seconds: number
   description?: string | null
+  ticket_key?: string | null
+  ticket_source?: 'manual' | 'jira' | 'linear' | null
+  ticket_url?: string | null
+  ticket_title?: string | null
   is_billable: boolean
   status: TimeEntryStatus
   reviewed_by_id?: number | null
@@ -45,6 +49,10 @@ export type TimeEntryPayload = {
   start_time: string
   end_time: string
   description?: string | null
+  ticket_key?: string | null
+  ticket_source?: 'manual' | 'jira' | 'linear' | null
+  ticket_url?: string | null
+  ticket_title?: string | null
   is_billable?: boolean
 }
 

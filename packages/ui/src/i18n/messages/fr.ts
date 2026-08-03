@@ -33,6 +33,7 @@ const frApiErrors = {
   time_entry_not_editable: 'Seules les entrées en attente peuvent être modifiées.',
   time_entry_not_deletable: 'Seules les entrées en attente ou refusées peuvent être supprimées.',
   supervisor_self_assignment: 'Un employé ne peut pas être son propre supérieur.',
+  integration_disabled: 'Cette intégration de tickets n\'est pas encore connectée.',
 } satisfies Record<ApiErrorMessageKey, string>
 
 export const frMessages: Messages = {
@@ -84,6 +85,15 @@ export const frMessages: Messages = {
     tabClients: 'Organisations clientes',
     quickbooksTitle: 'Connexion QuickBooks Online',
     quickbooksConnectionHelp: 'Connectez-vous avec un compte administrateur QuickBooks pour gérer les employés.',
+    ticketIntegrationsTitle: 'Suivi de tickets',
+    ticketIntegrationsHelp:
+      'Permet aux employés de choisir un ticket Jira ou Linear en saisissant du temps. La connexion OAuth arrive ensuite; la minuterie enregistre déjà une clé de ticket structurée.',
+    ticketIntegrationsJira: 'Jira',
+    ticketIntegrationsLinear: 'Linear',
+    ticketIntegrationsComingSoon: 'Bientôt disponible',
+    ticketIntegrationsConnected: 'Connecté',
+    ticketIntegrationsDisabled: 'Non connecté',
+    ticketIntegrationsEnabledPending: 'Activé en config (OAuth pas encore connecté)',
     quickbooksEmployeeTitle: 'Employé QuickBooks',
     quickbooksEmployeeHelp: 'Associez ce compte à un employé QBO pour l\'application feuille de temps.',
     qboEmployeeId: 'ID employé QBO',
@@ -229,6 +239,9 @@ export const frMessages: Messages = {
     end: 'Fin',
     description: 'Description',
     descriptionPlaceholder: 'Sur quoi travaillez-vous ?',
+    ticket: 'Ticket',
+    ticketPlaceholder: 'PROJ-123',
+    ticketHelp: 'Clé optionnelle de l\'item de travail (Jira, Linear ou autre).',
     billable: 'Facturable',
     savedSuccess: 'Temps enregistré dans QuickBooks Online.',
     saveFailed: 'Erreur lors de l\'enregistrement.',
@@ -293,6 +306,7 @@ export const frMessages: Messages = {
     client: 'Client / projet',
     service: 'Service',
     description: 'Description',
+    ticket: 'Ticket',
     duration: 'Durée',
     billable: 'Facturable',
     billableYes: 'Facturable',

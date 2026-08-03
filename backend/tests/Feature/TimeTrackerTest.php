@@ -472,3 +472,30 @@ it('rejects accumulated seconds above the configured maximum', function () {
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['accumulated_seconds']);
 });
+
+it('persists structured ticket metadata on the active timer session', function () {
+    actingAsWithQboEmployee();
+
+    $this->putJson('/api/time-tracker', [
+        'customer_ref' => null,
+        'project_ref' => null,
+        'service_ref' => null,
+        'description' => 'Fix auth redirect',
+        'ticket_key' => 'ELLR-42',
+        'ticket_source' => 'manual',
+        'ticket_url' => 'https://linear.app/ellr/issue/ELLR-42',
+        'ticket_title' => 'Fix auth redirect',
+        'is_running' => false,
+        'accumulated_seconds' => 120,
+    ], frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.ticket_key', 'ELLR-42')
+        ->assertJsonPath('data.ticket_source', 'manual')
+        ->assertJsonPath('data.ticket_url', 'https://linear.app/ellr/issue/ELLR-42')
+        ->assertJsonPath('data.ticket_title', 'Fix auth redirect');
+
+    $this->getJson('/api/time-tracker', frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('data.ticket_key', 'ELLR-42')
+        ->assertJsonPath('data.description', 'Fix auth redirect');
+});

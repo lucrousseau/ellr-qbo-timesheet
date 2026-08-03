@@ -19,6 +19,10 @@ export type TimeActivityPayload = {
   start_time: string
   end_time: string
   description?: string | null
+  ticket_key?: string | null
+  ticket_source?: 'manual' | 'jira' | 'linear' | null
+  ticket_url?: string | null
+  ticket_title?: string | null
 }
 
 /**
@@ -130,6 +134,10 @@ export type TimeTrackerSession = {
   service_ref: string | null
   service_name: string | null
   description: string | null
+  ticket_key: string | null
+  ticket_source: 'manual' | 'jira' | 'linear' | null
+  ticket_url: string | null
+  ticket_title: string | null
   is_billable: boolean
   accumulated_seconds: number
   running_since: string | null
@@ -148,6 +156,10 @@ export type TimeTrackerPayload = {
   service_ref?: string | null
   service_name?: string | null
   description?: string | null
+  ticket_key?: string | null
+  ticket_source?: 'manual' | 'jira' | 'linear' | null
+  ticket_url?: string | null
+  ticket_title?: string | null
   is_billable?: boolean
   is_running: boolean
   accumulated_seconds?: number

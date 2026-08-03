@@ -33,6 +33,7 @@ export const API_ERROR_MESSAGE_KEYS = [
   'time_entry_not_editable',
   'time_entry_not_deletable',
   'supervisor_self_assignment',
+  'integration_disabled',
 ] as const
 
 /** Stable catalog keys for known API business errors. */
@@ -158,6 +159,10 @@ export function resolveApiError(error: unknown): ApiErrorResolution {
     }
 
     if (error.status === 503) {
+      if (error.code === 'integration_disabled') {
+        return { type: 'catalog', key: 'integration_disabled' }
+      }
+
       return { type: 'catalog', key: 'quickbooks_busy' }
     }
 

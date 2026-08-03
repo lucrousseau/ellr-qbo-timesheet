@@ -28,6 +28,10 @@ type TimerState = {
   project: QboPickerOption | null
   service: QboPickerOption | null
   description: string
+  ticketKey: string
+  ticketSource: 'manual' | 'jira' | 'linear' | null
+  ticketUrl: string | null
+  ticketTitle: string | null
   isBillable: boolean
   accumulatedSeconds: number
   runningSince: string | null
@@ -42,6 +46,10 @@ const emptyTimerState = (): TimerState => ({
   project: null,
   service: null,
   description: '',
+  ticketKey: '',
+  ticketSource: null,
+  ticketUrl: null,
+  ticketTitle: null,
   isBillable: false,
   accumulatedSeconds: 0,
   runningSince: null,
@@ -73,6 +81,10 @@ function sessionToState(session: TimeTrackerSession): TimerState {
         }
       : null,
     description: session.description ?? '',
+    ticketKey: session.ticket_key ?? '',
+    ticketSource: session.ticket_source,
+    ticketUrl: session.ticket_url,
+    ticketTitle: session.ticket_title,
     isBillable: session.is_billable,
     accumulatedSeconds: session.accumulated_seconds,
     runningSince: session.is_running ? session.running_since : null,
@@ -90,6 +102,12 @@ function stateToPayload(state: TimerState, options?: { accumulatedSeconds?: numb
     project_ref: state.project?.id ?? null,
     service_ref: state.service?.id ?? null,
     description: state.description || null,
+    ticket_key: state.ticketKey || null,
+    ticket_source: state.ticketKey
+      ? (state.ticketSource ?? 'manual')
+      : null,
+    ticket_url: state.ticketKey ? state.ticketUrl : null,
+    ticket_title: state.ticketKey ? state.ticketTitle : null,
     is_billable: state.isBillable,
     is_running: state.runningSince !== null,
     ...(options?.accumulatedSeconds !== undefined
@@ -294,6 +312,25 @@ export function useTimeTracker(enabled = true, options: UseTimeTrackerOptions = 
   }, [])
 
   const onDescriptionBlur = useCallback(() => {
+    void syncToServer(stateRef.current)
+  }, [syncToServer])
+
+  const onTicketKeyChange = useCallback((ticketKey: string) => {
+    setState((current) => {
+      const nextState: TimerState = {
+        ...current,
+        ticketKey,
+        ticketSource: ticketKey.trim() ? (current.ticketSource ?? 'manual') : null,
+        ticketUrl: ticketKey.trim() ? current.ticketUrl : null,
+        ticketTitle: ticketKey.trim() ? current.ticketTitle : null,
+      }
+      stateRef.current = nextState
+
+      return nextState
+    })
+  }, [])
+
+  const onTicketKeyBlur = useCallback(() => {
     void syncToServer(stateRef.current)
   }, [syncToServer])
 
@@ -535,6 +572,7 @@ export function useTimeTracker(enabled = true, options: UseTimeTrackerOptions = 
   const hasDraftSession =
     elapsedSeconds > 0 ||
     state.description.trim() !== '' ||
+    state.ticketKey.trim() !== '' ||
     state.customer !== null ||
     state.project !== null ||
     state.service !== null ||
@@ -564,6 +602,8 @@ export function useTimeTracker(enabled = true, options: UseTimeTrackerOptions = 
     onServiceChange,
     onDescriptionChange,
     onDescriptionBlur,
+    onTicketKeyChange,
+    onTicketKeyBlur,
     onBillableChange,
     onToggleTimer,
     onElapsedChange,

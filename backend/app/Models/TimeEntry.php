@@ -39,6 +39,10 @@ class TimeEntry extends Model
         'start_time',
         'end_time',
         'description',
+        'ticket_key',
+        'ticket_source',
+        'ticket_url',
+        'ticket_title',
         'is_billable',
     ];
 

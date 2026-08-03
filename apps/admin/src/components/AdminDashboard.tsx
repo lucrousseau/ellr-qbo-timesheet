@@ -11,6 +11,7 @@ import {
 } from '../adminTabStorage'
 import { AccountPanel } from './AccountPanel'
 import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
+import { TicketIntegrationsPanel } from './TicketIntegrationsPanel'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
 import { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
 import { useSuperAdminOrganizations } from '../hooks/useSuperAdminOrganizations'
@@ -177,6 +178,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
             onConnect={admin.connectQuickBooksFlow}
             onDisconnect={admin.disconnectQuickBooksFlow}
           />
+          <TicketIntegrationsPanel />
           <Suspense fallback={<LoadingScreen />}>
             <TimesheetUserProvisioningPanel
             connected={admin.status?.connected === true}

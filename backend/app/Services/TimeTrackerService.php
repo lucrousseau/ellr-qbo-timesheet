@@ -10,6 +10,7 @@ use App\Models\ActiveTimeSession;
 use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
+use App\Support\TicketAttributes;
 use App\Support\TimerElapsed;
 use App\Support\TimeTrackerLogPayload;
 use Illuminate\Support\Facades\DB;
@@ -142,6 +143,7 @@ class TimeTrackerService
                 'project_ref' => $validated['project_ref'] ?? null,
                 'service_ref' => $validated['service_ref'] ?? null,
                 'description' => $validated['description'] ?? null,
+                ...TicketAttributes::fromValidated($validated),
                 'is_billable' => $isBillable,
                 'accumulated_seconds' => $accumulated,
                 'running_since' => $runningSince,
@@ -229,6 +231,10 @@ class TimeTrackerService
             'service_ref' => $session->service_ref,
             'service_name' => $labels['service_name'],
             'description' => $session->description,
+            'ticket_key' => $session->ticket_key,
+            'ticket_source' => $session->ticket_source,
+            'ticket_url' => $session->ticket_url,
+            'ticket_title' => $session->ticket_title,
             'is_billable' => $session->is_billable,
             'accumulated_seconds' => $session->accumulated_seconds,
             'running_since' => TimerElapsed::asCarbon($session->running_since)?->toIso8601String(),

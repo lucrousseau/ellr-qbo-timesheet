@@ -34,6 +34,7 @@ return [
     'time_tracker_invalid_customer' => 'Selected client is not available for your QuickBooks employee.',
     'time_tracker_invalid_project' => 'Selected project is not available for the chosen client.',
     'time_tracker_invalid_service' => 'Selected service is not available in QuickBooks.',
+    'integration_disabled' => 'This ticket integration is not connected yet.',
     'password_reset_sent' => 'If that email exists, a reset link has been sent.',
     'password_reset_success' => 'Password reset successfully.',
     'password_reset_failed' => 'Unable to reset the password. Request a new reset link and try again.',

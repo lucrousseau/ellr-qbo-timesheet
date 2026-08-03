@@ -36,6 +36,17 @@ final class TimeTrackerLogPayload
             $payload['description'] = $session->description;
         }
 
+        $ticket = TicketAttributes::fromValidated([
+            'ticket_key' => $session->ticket_key,
+            'ticket_source' => $session->ticket_source,
+            'ticket_url' => $session->ticket_url,
+            'ticket_title' => $session->ticket_title,
+        ]);
+
+        if ($ticket['ticket_key'] !== null) {
+            $payload = [...$payload, ...$ticket];
+        }
+
         if ($session->customer_ref) {
             $payload['customer_ref'] = $session->customer_ref;
         }

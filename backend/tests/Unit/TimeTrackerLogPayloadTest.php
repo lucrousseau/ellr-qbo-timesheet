@@ -14,6 +14,10 @@ it('maps session fields to a quickbooks time activity payload', function () {
         'project_ref' => '22',
         'service_ref' => '33',
         'description' => 'Support tickets',
+        'ticket_key' => 'ELLR-1',
+        'ticket_source' => 'manual',
+        'ticket_url' => 'https://example.com/ELLR-1',
+        'ticket_title' => 'Timer ticket',
         'is_billable' => true,
     ]);
 
@@ -24,6 +28,10 @@ it('maps session fields to a quickbooks time activity payload', function () {
         'end_time' => '2026-07-28T12:00:00+00:00',
         'is_billable' => true,
         'description' => 'Support tickets',
+        'ticket_key' => 'ELLR-1',
+        'ticket_source' => 'manual',
+        'ticket_url' => 'https://example.com/ELLR-1',
+        'ticket_title' => 'Timer ticket',
         'customer_ref' => '11',
         'project_ref' => '22',
         'item_ref' => '33',
