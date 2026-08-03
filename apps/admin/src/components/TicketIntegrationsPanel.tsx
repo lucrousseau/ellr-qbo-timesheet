@@ -2,9 +2,8 @@
  * @file Admin scaffold panel for Jira / Linear ticket integrations.
  */
 
-import { useEffect, useState } from 'react'
-import { fetchAppConfig, fetchTicketIntegrationStatus, type TicketIntegrationStatus } from '@ellr/api-client'
 import { cardClass, useLocale } from '@ellr/ui'
+import { useTicketIntegrations } from '../hooks/useTicketIntegrations'
 
 type ProviderRow = {
   id: 'jira' | 'linear'
@@ -19,34 +18,7 @@ type ProviderRow = {
  */
 export function TicketIntegrationsPanel() {
   const { t } = useLocale()
-  const [status, setStatus] = useState<TicketIntegrationStatus | null>(null)
-  const [configEnabled, setConfigEnabled] = useState({ jira: false, linear: false })
-
-  useEffect(() => {
-    let cancelled = false
-
-    void Promise.all([fetchAppConfig(), fetchTicketIntegrationStatus()])
-      .then(([config, integrationStatus]) => {
-        if (cancelled) {
-          return
-        }
-
-        setConfigEnabled({
-          jira: config.ticket_integrations.jira_enabled,
-          linear: config.ticket_integrations.linear_enabled,
-        })
-        setStatus(integrationStatus)
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setStatus(null)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const { status, configEnabled } = useTicketIntegrations()
 
   const providers: ProviderRow[] = [
     {

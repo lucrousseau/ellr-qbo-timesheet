@@ -171,4 +171,67 @@ describe('useTimeTracker elapsed persistence', () => {
     )
     expect(logTimeTracker).toHaveBeenCalled()
   })
+
+  it('syncs ticket key metadata on blur', async () => {
+    const { result } = renderHook(() => useTimeTracker(true), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    act(() => {
+      result.current.onTicketKeyChange('ELLR-42')
+    })
+
+    expect(result.current.state.ticketKey).toBe('ELLR-42')
+
+    await act(async () => {
+      result.current.onTicketKeyBlur()
+    })
+
+    await waitFor(() => {
+      expect(updateTimeTracker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticket_key: 'ELLR-42',
+          ticket_source: 'manual',
+        }),
+      )
+    })
+  })
+
+  it('clears ticket metadata when the key is emptied', async () => {
+    vi.mocked(fetchTimeTracker).mockResolvedValue(
+      buildSession({
+        ticket_key: 'ELLR-42',
+        ticket_source: 'manual',
+        ticket_url: 'https://example.com/ELLR-42',
+        ticket_title: 'Auth fix',
+      }),
+    )
+
+    const { result } = renderHook(() => useTimeTracker(true), { wrapper })
+
+    await waitFor(() => {
+      expect(result.current.state.ticketKey).toBe('ELLR-42')
+    })
+
+    act(() => {
+      result.current.onTicketKeyChange('')
+    })
+
+    await act(async () => {
+      result.current.onTicketKeyBlur()
+    })
+
+    await waitFor(() => {
+      expect(updateTimeTracker).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ticket_key: null,
+          ticket_source: null,
+          ticket_url: null,
+          ticket_title: null,
+        }),
+      )
+    })
+  })
 })
