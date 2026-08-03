@@ -65,16 +65,9 @@ final class TicketAttributes
      */
     public static function fromPartialValidated(array $validated): array
     {
-        $hasTicketField = false;
+        $ticketFields = array_intersect_key($validated, array_flip(self::FIELDS));
 
-        foreach (self::FIELDS as $field) {
-            if (array_key_exists($field, $validated)) {
-                $hasTicketField = true;
-                break;
-            }
-        }
-
-        if (! $hasTicketField) {
+        if ($ticketFields === []) {
             return [];
         }
 

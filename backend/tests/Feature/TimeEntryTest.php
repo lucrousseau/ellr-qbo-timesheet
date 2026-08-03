@@ -49,10 +49,18 @@ describe('employee time entries', function () {
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
             'description' => 'Draft work',
+            'ticket_key' => 'ELLR-7',
+            'ticket_source' => 'jira',
+            'ticket_url' => 'https://example.atlassian.net/browse/ELLR-7',
+            'ticket_title' => 'Draft ticket',
         ], frontendHeaders())
             ->assertCreated()
             ->assertJsonPath('data.status', 'pending')
-            ->assertJsonPath('data.description', 'Draft work');
+            ->assertJsonPath('data.description', 'Draft work')
+            ->assertJsonPath('data.ticket_key', 'ELLR-7')
+            ->assertJsonPath('data.ticket_source', 'jira')
+            ->assertJsonPath('data.ticket_url', 'https://example.atlassian.net/browse/ELLR-7')
+            ->assertJsonPath('data.ticket_title', 'Draft ticket');
     });
 
     it('lists time entries for the signed-in employee', function () {
@@ -117,9 +125,15 @@ describe('employee time entries', function () {
 
         $this->patchJson("/api/time-entries/{$entry->id}", [
             'description' => 'Updated notes',
+            'ticket_key' => 'LIN-3',
+            'ticket_source' => 'linear',
+            'ticket_title' => 'Updated ticket',
         ], frontendHeaders())
             ->assertOk()
-            ->assertJsonPath('data.description', 'Updated notes');
+            ->assertJsonPath('data.description', 'Updated notes')
+            ->assertJsonPath('data.ticket_key', 'LIN-3')
+            ->assertJsonPath('data.ticket_source', 'linear')
+            ->assertJsonPath('data.ticket_title', 'Updated ticket');
     });
 
     it('rejects updates to approved entries', function () {

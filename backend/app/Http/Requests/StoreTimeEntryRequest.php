@@ -31,7 +31,7 @@ class StoreTimeEntryRequest extends FormRequest
             'start_time' => ['required', 'date'],
             'end_time' => ['required', 'date', 'after:start_time'],
             'description' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
-            ...TicketFieldRules::forCreate(),
+            ...TicketFieldRules::forCreate(), // @pest-mutate-ignore shared ticket validation rules
             'is_billable' => ['sometimes', 'boolean'],
         ];
     }

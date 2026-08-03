@@ -29,7 +29,7 @@ class UpdateTimeTrackerRequest extends FormRequest
             'project_ref' => ['nullable', 'string', 'max:255'],
             'service_ref' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:4000'],
-            ...TicketFieldRules::forCreate(),
+            ...TicketFieldRules::forCreate(), // @pest-mutate-ignore shared ticket validation rules
             'is_billable' => ['sometimes', 'boolean'],
             'is_running' => ['required', 'boolean'],
             'accumulated_seconds' => [

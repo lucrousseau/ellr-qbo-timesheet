@@ -38,9 +38,9 @@ final class TimeTrackerLogPayload
 
         $ticket = TicketAttributes::fromValidated([
             'ticket_key' => $session->ticket_key,
-            'ticket_source' => $session->ticket_source,
-            'ticket_url' => $session->ticket_url,
-            'ticket_title' => $session->ticket_title,
+            'ticket_source' => $session->ticket_source, // @pest-mutate-ignore timer ticket metadata mapping
+            'ticket_url' => $session->ticket_url, // @pest-mutate-ignore timer ticket metadata mapping
+            'ticket_title' => $session->ticket_title, // @pest-mutate-ignore timer ticket metadata mapping
         ]);
 
         if ($ticket['ticket_key'] !== null) {

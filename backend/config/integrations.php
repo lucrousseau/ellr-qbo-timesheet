@@ -18,11 +18,15 @@ return [
 
     'jira' => [
         'enabled' => (bool) env('INTEGRATIONS_JIRA_ENABLED', false),
+        // Scaffold only: stays false until OAuth connect stores organization credentials.
+        'connected' => (bool) env('INTEGRATIONS_JIRA_CONNECTED', false),
         'base_url' => env('INTEGRATIONS_JIRA_BASE_URL'),
     ],
 
     'linear' => [
         'enabled' => (bool) env('INTEGRATIONS_LINEAR_ENABLED', false),
+        // Scaffold only: stays false until OAuth connect stores organization credentials.
+        'connected' => (bool) env('INTEGRATIONS_LINEAR_CONNECTED', false),
         'base_url' => env('INTEGRATIONS_LINEAR_BASE_URL', 'https://linear.app'),
     ],
 ];

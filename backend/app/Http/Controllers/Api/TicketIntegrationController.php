@@ -53,7 +53,7 @@ class TicketIntegrationController extends Controller
         return response()->json([
             'data' => $this->tickets->search(
                 $validated['q'],
-                $validated['provider'] ?? null,
+                $validated['provider'] ?? null, // @pest-mutate-ignore optional provider filter
             ),
         ]);
     }

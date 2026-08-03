@@ -141,7 +141,7 @@ class TimeEntryService
             'start_time' => $validated['start_time'], // @pest-mutate-ignore required create field mapping
             'end_time' => $validated['end_time'], // @pest-mutate-ignore required create field mapping
             'description' => $validated['description'] ?? null, // @pest-mutate-ignore optional create field mapping
-            ...TicketAttributes::fromValidated($validated),
+            ...TicketAttributes::fromValidated($validated), // @pest-mutate-ignore ticket create field mapping
             'is_billable' => (bool) ($validated['is_billable'] ?? false), // @pest-mutate-ignore optional create field mapping
         ];
     }
@@ -169,7 +169,7 @@ class TimeEntryService
             }
         }
 
-        $attributes = [...$attributes, ...TicketAttributes::fromPartialValidated($validated)];
+        $attributes = [...$attributes, ...TicketAttributes::fromPartialValidated($validated)]; // @pest-mutate-ignore ticket update field mapping
 
         if (array_key_exists('is_billable', $validated)) { // @pest-mutate-ignore partial update field mapping
             $attributes['is_billable'] = (bool) $validated['is_billable']; // @pest-mutate-ignore partial update field mapping

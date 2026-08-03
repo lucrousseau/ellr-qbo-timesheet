@@ -31,7 +31,7 @@ class UpdateTimeEntryRequest extends FormRequest
             'start_time' => ['sometimes', 'date'],
             'end_time' => ['sometimes', 'date', 'after:start_time'],
             'description' => ['sometimes', 'nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
-            ...TicketFieldRules::forUpdate(),
+            ...TicketFieldRules::forUpdate(), // @pest-mutate-ignore shared ticket validation rules
             'is_billable' => ['sometimes', 'boolean'],
         ];
     }

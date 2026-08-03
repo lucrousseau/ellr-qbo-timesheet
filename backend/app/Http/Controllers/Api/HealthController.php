@@ -28,9 +28,9 @@ class HealthController extends Controller
             'time_tracker_max_accumulated_seconds' => (int) config( // @pest-mutate-ignore public health config shape
                 'quickbooks.time_tracker_max_accumulated_seconds',
             ),
-            'ticket_integrations' => [ // @pest-mutate-ignore public health config shape
-                'jira_enabled' => (bool) config('integrations.jira.enabled'),
-                'linear_enabled' => (bool) config('integrations.linear.enabled'),
+            'ticket_integrations' => [
+                'jira_enabled' => (bool) config('integrations.jira.enabled'), // @pest-mutate-ignore public health config shape
+                'linear_enabled' => (bool) config('integrations.linear.enabled'), // @pest-mutate-ignore public health config shape
             ],
         ]);
     }

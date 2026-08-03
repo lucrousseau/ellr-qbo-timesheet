@@ -26,7 +26,15 @@ it('returns ticket integration status for authenticated users', function () {
 it('returns integration_disabled when searching tickets without oauth', function () {
     actingAsWithQboEmployee();
 
-    $this->getJson('/api/integrations/tickets?q=PROJ', frontendHeaders())
+    $this->getJson('/api/integrations/tickets?q=PROJ&provider=jira', frontendHeaders())
         ->assertStatus(503)
-        ->assertJsonPath('error', 'integration_disabled');
+        ->assertJsonPath('error', 'integration_disabled')
+        ->assertJsonStructure(['error', 'message']);
+});
+
+it('rejects unknown ticket search providers', function () {
+    actingAsWithQboEmployee();
+
+    $this->getJson('/api/integrations/tickets?q=PROJ&provider=github', frontendHeaders())
+        ->assertUnprocessable();
 });

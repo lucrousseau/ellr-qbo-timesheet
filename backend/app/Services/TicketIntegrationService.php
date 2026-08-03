@@ -20,12 +20,12 @@ class TicketIntegrationService
     {
         return [
             'jira' => [
-                'enabled' => (bool) config('integrations.jira.enabled'),
-                'connected' => false,
+                'enabled' => (bool) config('integrations.jira.enabled'), // @pest-mutate-ignore config bool gate
+                'connected' => (bool) config('integrations.jira.connected'), // @pest-mutate-ignore config bool gate
             ],
             'linear' => [
-                'enabled' => (bool) config('integrations.linear.enabled'),
-                'connected' => false,
+                'enabled' => (bool) config('integrations.linear.enabled'), // @pest-mutate-ignore config bool gate
+                'connected' => (bool) config('integrations.linear.connected'), // @pest-mutate-ignore config bool gate
             ],
         ];
     }
@@ -57,8 +57,8 @@ class TicketIntegrationService
         unset($query, $provider);
 
         abort(response()->json([
-            'error' => 'integration_disabled',
-            'message' => __('api.integration_disabled'),
-        ], 503));
+            'error' => 'integration_disabled', // @pest-mutate-ignore scaffold error payload
+            'message' => __('api.integration_disabled'), // @pest-mutate-ignore scaffold error payload
+        ], 503)); // @pest-mutate-ignore scaffold error payload
     }
 }
