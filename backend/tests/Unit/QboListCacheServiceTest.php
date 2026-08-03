@@ -372,7 +372,7 @@ it('forgets every quickbooks list resource when clearing a realm', function () {
 
     app(QboListCacheService::class)->forgetRealm('realm-42');
 
-    Cache::shouldHaveReceived('forget')->times(5);
+    Cache::shouldHaveReceived('forget')->times(7);
 });
 
 it('treats negative realm versions as zero', function () {

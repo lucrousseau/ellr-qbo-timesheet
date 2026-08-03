@@ -20,6 +20,11 @@ const TimeEntryApprovalsPanel = lazy(async () => {
   return { default: module.TimeEntryApprovalsPanel }
 })
 
+const ExpensesPanel = lazy(async () => {
+  const module = await import('./ExpensesPanel')
+  return { default: module.ExpensesPanel }
+})
+
 const TimesheetUserProvisioningPanel = lazy(async () => {
   const module = await import('./TimesheetUserProvisioningPanel')
   return { default: module.TimesheetUserProvisioningPanel }
@@ -65,6 +70,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
     if (isTenantAdministrator) {
       items.push({ id: 'integrations', label: t('admin.tabIntegrations') })
       items.push({ id: 'approvals', label: t('admin.tabApprovals') })
+      items.push({ id: 'expenses', label: t('admin.tabExpenses') })
     }
 
     if (isSuperAdministrator) {
@@ -158,6 +164,22 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           <Suspense fallback={<LoadingScreen />}>
             <TimeEntryApprovalsPanel
               enabled={activeTabId === 'approvals'}
+              onError={admin.showError}
+              onSuccess={admin.showSuccess}
+            />
+          </Suspense>
+        </div>
+      ) : activeTabId === 'expenses' ? (
+        <div
+          id={tabPanelId(TAB_ID_PREFIX, 'expenses')}
+          role="tabpanel"
+          aria-labelledby={`${TAB_ID_PREFIX}-tab-expenses`}
+        >
+          <Suspense fallback={<LoadingScreen />}>
+            <ExpensesPanel
+              enabled={activeTabId === 'expenses'}
+              showApprovals
+              adminApprovals
               onError={admin.showError}
               onSuccess={admin.showSuccess}
             />

@@ -6,6 +6,7 @@
 
 namespace Features\Bootstrap;
 
+use App\Models\Expense;
 use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
@@ -44,6 +45,10 @@ class FeatureContext implements Context
 
     private ?int $foreignPendingTimeEntryId = null;
 
+    private ?int $pendingExpenseId = null;
+
+    private ?int $foreignPendingExpenseId = null;
+
     private ?string $webhookVerifier = null;
 
     /**
@@ -62,6 +67,8 @@ class FeatureContext implements Context
         $this->foreignTimesheetUserId = null;
         $this->pendingTimeEntryId = null;
         $this->foreignPendingTimeEntryId = null;
+        $this->pendingExpenseId = null;
+        $this->foreignPendingExpenseId = null;
         $this->webhookVerifier = null;
     }
 
@@ -78,6 +85,8 @@ class FeatureContext implements Context
         $this->foreignTimesheetUserId = null;
         $this->pendingTimeEntryId = null;
         $this->foreignPendingTimeEntryId = null;
+        $this->pendingExpenseId = null;
+        $this->foreignPendingExpenseId = null;
         $this->webhookVerifier = null;
         $this->resetAuthenticationState();
         self::$app = null;
@@ -273,6 +282,36 @@ class FeatureContext implements Context
         $user = User::query()->findOrFail($this->foreignTimesheetUserId);
         $entry = TimeEntry::factory()->forUser($user)->create();
         $this->foreignPendingTimeEntryId = $entry->id;
+    }
+
+    /**
+     * @Given the timesheet user has a pending expense
+     * @return void
+     */
+    public function theTimesheetUserHasAPendingExpense(): void
+    {
+        if ($this->timesheetUserId === null) {
+            throw new RuntimeException('No timesheet user id was captured.');
+        }
+
+        $user = User::query()->findOrFail($this->timesheetUserId);
+        $expense = Expense::factory()->forUser($user)->create();
+        $this->pendingExpenseId = $expense->id;
+    }
+
+    /**
+     * @Given the foreign timesheet user has a pending expense
+     * @return void
+     */
+    public function theForeignTimesheetUserHasAPendingExpense(): void
+    {
+        if ($this->foreignTimesheetUserId === null) {
+            throw new RuntimeException('No foreign timesheet user id was captured.');
+        }
+
+        $user = User::query()->findOrFail($this->foreignTimesheetUserId);
+        $expense = Expense::factory()->forUser($user)->create();
+        $this->foreignPendingExpenseId = $expense->id;
     }
 
     /**
@@ -540,6 +579,14 @@ class FeatureContext implements Context
 
         if ($this->foreignPendingTimeEntryId !== null) {
             $path = str_replace('{foreign_pending_time_entry_id}', (string) $this->foreignPendingTimeEntryId, $path);
+        }
+
+        if ($this->pendingExpenseId !== null) {
+            $path = str_replace('{pending_expense_id}', (string) $this->pendingExpenseId, $path);
+        }
+
+        if ($this->foreignPendingExpenseId !== null) {
+            $path = str_replace('{foreign_pending_expense_id}', (string) $this->foreignPendingExpenseId, $path);
         }
 
         if (str_contains($path, '{admin_user_id}')) {

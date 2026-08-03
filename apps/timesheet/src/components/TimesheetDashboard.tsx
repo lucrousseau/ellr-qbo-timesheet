@@ -5,6 +5,7 @@
 import {
   Alert,
   AppShell,
+  ExpensesPanel,
   LoadingScreen,
   TabNav,
   tabPanelId,
@@ -23,6 +24,7 @@ import { AssignedClientsWarning } from './AssignedClientsWarning'
 import { CustomerLoadError } from './CustomerLoadError'
 import { QboEmployeeWarning } from './QboEmployeeWarning'
 import { TimeTrackerPanel } from './TimeTrackerPanel'
+import { TimesheetExpenseApprovalsPanel } from './TimesheetExpenseApprovalsPanel'
 import { TimesheetTimeEntryApprovalsPanel } from './TimesheetTimeEntryApprovalsPanel'
 
 const TAB_ID_PREFIX = 'timesheet'
@@ -49,6 +51,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
   const tabs = useMemo(() => {
     const items: { id: TimesheetTab; label: string }[] = [
       { id: 'timer', label: t('timesheet.tabTimer') },
+      { id: 'expenses', label: t('timesheet.tabExpenses') },
     ]
 
     if (user.can_review_time_entries) {
@@ -181,14 +184,33 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
             </>
           )}
         </div>
+      ) : activeTabId === 'expenses' ? (
+        <div
+          id={tabPanelId(TAB_ID_PREFIX, 'expenses')}
+          role="tabpanel"
+          aria-labelledby={`${TAB_ID_PREFIX}-tab-expenses`}
+          className="mt-6"
+        >
+          <ExpensesPanel
+            enabled
+            onSuccess={(message) => auth.setPreferenceNotice(message, 'success')}
+            onError={(message) => auth.setPreferenceNotice(message, 'error')}
+          />
+        </div>
       ) : activeTabId === 'approvals' ? (
         <div
           id={tabPanelId(TAB_ID_PREFIX, 'approvals')}
           role="tabpanel"
           aria-labelledby={`${TAB_ID_PREFIX}-tab-approvals`}
-          className="mt-6"
+          className="mt-6 space-y-6"
         >
           <TimesheetTimeEntryApprovalsPanel
+            enabled={user.can_review_time_entries === true}
+            useAdminRoutes={user.is_admin === true}
+            onSuccess={(message) => auth.setPreferenceNotice(message, 'success')}
+            onError={(message) => auth.setPreferenceNotice(message, 'error')}
+          />
+          <TimesheetExpenseApprovalsPanel
             enabled={user.can_review_time_entries === true}
             useAdminRoutes={user.is_admin === true}
             onSuccess={(message) => auth.setPreferenceNotice(message, 'success')}

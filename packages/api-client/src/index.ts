@@ -111,13 +111,33 @@ export {
   type TimeEntryStatus,
   type TimeEntryUpdatePayload,
 } from './timeEntries'
+export {
+  approveExpense,
+  createExpense,
+  deleteExpense,
+  listExpenses,
+  listPendingExpenseApprovals,
+  rejectExpense,
+  updateExpense,
+  type Expense,
+  type ExpenseListMeta,
+  type ExpenseListResponse,
+  type ExpensePayload,
+  type ExpensePaymentType,
+  type ExpenseStatus,
+  type ExpenseUpdatePayload,
+  type ListExpensesParams,
+} from './expenses'
 export { parseTimeEntryRow } from './timeEntryFormat'
 export {
   createTimeActivity,
   discardTimeTracker,
   fetchQboCustomers,
+  fetchQboExpenseAccounts,
+  fetchQboPaymentAccounts,
   fetchQboProjects,
   fetchQboServices,
+  fetchQboVendors,
   fetchTimeTracker,
   listTimeActivities,
   logTimeTracker,

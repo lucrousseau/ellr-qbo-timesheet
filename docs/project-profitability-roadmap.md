@@ -303,7 +303,7 @@ Every phase follows the same template: **question answered**, **in/out of scope*
 
 - EAC / forward projection (C)
 - Portfolio ranking (C–D)
-- Direct expense sync from Purchase/Bill (later increment)
+- Direct expense sync from Purchase/Bill (later increment; local Purchase capture via Ellr expenses has started, see `docs/expense-recording.md`)
 - Blocking on AI-suggested time categorization
 
 #### Deliverables

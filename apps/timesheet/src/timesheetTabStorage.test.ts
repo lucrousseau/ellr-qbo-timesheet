@@ -8,6 +8,7 @@ describe('timesheetTabStorage', () => {
 
   it('accepts known tab ids', () => {
     expect(isTimesheetTab('timer')).toBe(true)
+    expect(isTimesheetTab('expenses')).toBe(true)
     expect(isTimesheetTab('preferences')).toBe(true)
     expect(isTimesheetTab('unknown')).toBe(false)
   })

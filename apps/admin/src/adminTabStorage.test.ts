@@ -25,6 +25,7 @@ describe('adminTabStorage', () => {
   it('validates known admin tab ids', () => {
     expect(isAdminTab('preferences')).toBe(true)
     expect(isAdminTab('integrations')).toBe(true)
+    expect(isAdminTab('expenses')).toBe(true)
     expect(isAdminTab(LEGACY_ADMIN_TAB_ID)).toBe(false)
     expect(isAdminTab('invalid')).toBe(false)
   })

@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\AdminUserSupervisorController;
 use App\Http\Controllers\Api\AdminUserTimeActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailVerificationController;
+use App\Http\Controllers\Api\ExpenseApprovalController;
+use App\Http\Controllers\Api\ExpenseController;
+use App\Http\Controllers\Api\ExpensePickerController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\QboEmployeeController;
@@ -85,6 +88,9 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::get('/admin/time-entry-approvals', [TimeEntryApprovalController::class, 'index']);
             Route::post('/admin/time-entry-approvals/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
             Route::post('/admin/time-entry-approvals/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
+            Route::get('/admin/expense-approvals', [ExpenseApprovalController::class, 'index']);
+            Route::post('/admin/expense-approvals/{expense}/approve', [ExpenseApprovalController::class, 'approve']);
+            Route::post('/admin/expense-approvals/{expense}/reject', [ExpenseApprovalController::class, 'reject']);
             Route::get('/admin/quickbooks/customers', [AdminQuickBooksPickerController::class, 'customers']);
             Route::patch('/user/qbo-employee', [QboEmployeeController::class, 'update']);
             Route::patch('/admin/users/{user}/qbo-employee', [AdminQboEmployeeController::class, 'update']);
@@ -99,6 +105,7 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
 
         Route::apiResource('time-activities', TimeActivityController::class);
         Route::apiResource('time-entries', TimeEntryController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::apiResource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy']);
 
         Route::prefix('time-entry-approvals')->group(function () {
             Route::get('/', [TimeEntryApprovalController::class, 'index']);
@@ -106,9 +113,18 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::post('/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
         });
 
+        Route::prefix('expense-approvals')->group(function () {
+            Route::get('/', [ExpenseApprovalController::class, 'index']);
+            Route::post('/{expense}/approve', [ExpenseApprovalController::class, 'approve']);
+            Route::post('/{expense}/reject', [ExpenseApprovalController::class, 'reject']);
+        });
+
         Route::get('/quickbooks/customers', [QuickBooksPickerController::class, 'customers']);
         Route::get('/quickbooks/projects', [QuickBooksPickerController::class, 'projects']);
         Route::get('/quickbooks/services', [QuickBooksPickerController::class, 'services']);
+        Route::get('/quickbooks/expense-accounts', [ExpensePickerController::class, 'expenseAccounts']);
+        Route::get('/quickbooks/payment-accounts', [ExpensePickerController::class, 'paymentAccounts']);
+        Route::get('/quickbooks/vendors', [ExpensePickerController::class, 'vendors']);
 
         Route::get('/time-tracker', [TimeTrackerController::class, 'show']);
         Route::put('/time-tracker', [TimeTrackerController::class, 'update']);

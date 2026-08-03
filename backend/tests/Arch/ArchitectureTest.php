@@ -37,6 +37,7 @@ arch('controllers do not import qbo sdk')
     ->not->toUse([
         'QuickBooksOnline\API\DataService\DataService',
         'QuickBooksOnline\API\Facades\TimeActivity',
+        'QuickBooksOnline\API\Facades\Purchase',
         'QuickBooksOnline\API\Core\OAuth\OAuth2\OAuth2LoginHelper',
     ]);
 

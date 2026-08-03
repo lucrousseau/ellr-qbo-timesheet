@@ -211,6 +211,59 @@ export async function fetchQboServices(options?: {
 }
 
 /**
+ * Lists expense-category Chart of Accounts rows from QuickBooks.
+ * @param options Optional refresh and abort signal.
+ * @returns Expense account picker options.
+ */
+export async function fetchQboExpenseAccounts(options?: {
+  refresh?: boolean
+  signal?: AbortSignal
+}): Promise<QboPickerOption[]> {
+  const query = options?.refresh ? '?refresh=1' : ''
+  const response = await apiFetch<{ data: QboPickerOption[] }>(
+    `/quickbooks/expense-accounts${query}`,
+    { signal: options?.signal },
+  )
+
+  return response.data
+}
+
+/**
+ * Lists payment (bank / credit card) Chart of Accounts rows from QuickBooks.
+ * @param options Optional refresh and abort signal.
+ * @returns Payment account picker options.
+ */
+export async function fetchQboPaymentAccounts(options?: {
+  refresh?: boolean
+  signal?: AbortSignal
+}): Promise<QboPickerOption[]> {
+  const query = options?.refresh ? '?refresh=1' : ''
+  const response = await apiFetch<{ data: QboPickerOption[] }>(
+    `/quickbooks/payment-accounts${query}`,
+    { signal: options?.signal },
+  )
+
+  return response.data
+}
+
+/**
+ * Lists active vendors from QuickBooks for expense EntityRef pickers.
+ * @param options Optional refresh and abort signal.
+ * @returns Vendor picker options.
+ */
+export async function fetchQboVendors(options?: {
+  refresh?: boolean
+  signal?: AbortSignal
+}): Promise<QboPickerOption[]> {
+  const query = options?.refresh ? '?refresh=1' : ''
+  const response = await apiFetch<{ data: QboPickerOption[] }>(`/quickbooks/vendors${query}`, {
+    signal: options?.signal,
+  })
+
+  return response.data
+}
+
+/**
  * Returns the active timer session for the signed-in user.
  * @returns Session data or null when no session exists.
  */

@@ -4,8 +4,11 @@ use App\Models\Organization;
 use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\User;
+use App\Services\QboAccountListService;
 use App\Services\QboCustomerListService;
 use App\Services\QboPickerDisplayNameService;
+use App\Services\QboProjectListService;
+use App\Services\QboVendorListService;
 use App\Services\QuickBooksWebhookIdempotencyService;
 use App\Services\QuickBooksWebhookProcessorService;
 use App\Services\TimeActivitySnapshotService;
@@ -217,6 +220,60 @@ function mockQboEntryDisplayNames(array $labels = [
             'project_name' => null,
             'service_name' => null,
         ]);
+    });
+}
+
+/**
+ * Mocks Chart of Accounts and vendor picker lists for expense feature tests.
+ *
+ * @param  array{
+ *     payment?: array<int, array{id: string, display_name: string, account_type?: string}>,
+ *     expense?: array<int, array{id: string, display_name: string, account_type?: string}>,
+ *     vendors?: array<int, array{id: string, display_name: string}>,
+ *     customers?: array<int, array{id: string, display_name: string}>,
+ *     projects?: array<int, array{id: string, display_name: string}>
+ * }  $options
+ */
+function mockQboExpensePickers(array $options = []): void
+{
+    $payment = $options['payment'] ?? [[
+        'id' => '35',
+        'display_name' => 'Checking',
+        'account_type' => 'Bank',
+    ]];
+    $expense = $options['expense'] ?? [[
+        'id' => '7',
+        'display_name' => 'Office Expenses',
+        'account_type' => 'Expense',
+    ]];
+    $vendors = $options['vendors'] ?? [[
+        'id' => '56',
+        'display_name' => 'Office Depot',
+    ]];
+    $customers = $options['customers'] ?? [[
+        'id' => '11',
+        'display_name' => 'Acme Corp',
+    ]];
+    $projects = $options['projects'] ?? [];
+
+    test()->mock(QboAccountListService::class, function ($mock) use ($payment, $expense): void {
+        $all = array_merge($payment, $expense);
+        $mock->shouldReceive('listPaymentAccounts')->andReturn($payment);
+        $mock->shouldReceive('listExpenseAccounts')->andReturn($expense);
+        $mock->shouldReceive('listAll')->andReturn($all);
+    });
+
+    test()->mock(QboVendorListService::class, function ($mock) use ($vendors): void {
+        $mock->shouldReceive('listActive')->andReturn($vendors);
+    });
+
+    test()->mock(QboCustomerListService::class, function ($mock) use ($customers): void {
+        $mock->shouldReceive('listForUser')->andReturn($customers);
+        $mock->shouldReceive('listAllActive')->andReturn($customers);
+    });
+
+    test()->mock(QboProjectListService::class, function ($mock) use ($projects): void {
+        $mock->shouldReceive('listForCustomer')->andReturn($projects);
     });
 }
 
