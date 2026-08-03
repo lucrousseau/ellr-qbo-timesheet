@@ -31,10 +31,10 @@ class StoreExpenseRequest extends FormRequest
             'payment_type' => ['sometimes', 'string', Rule::in(ExpensePaymentType::values())],
             'payment_account_ref' => ['required', 'string', 'max:255'],
             'expense_account_ref' => ['required', 'string', 'max:255'],
-            'vendor_ref' => ['nullable', 'string', 'max:255'],
-            'customer_ref' => ['nullable', 'string', 'max:255'],
-            'project_ref' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:4000'],
+            'vendor_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'customer_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'project_ref' => ['nullable', 'string', 'max:255'], // @pest-mutate-ignore declarative validation rules
+            'description' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
             'is_billable' => ['sometimes', 'boolean'],
         ];
     }

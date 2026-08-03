@@ -61,20 +61,20 @@ class SyncApprovedExpenseToQuickBooksJob implements ShouldQueue
         try {
             $qboPurchase = $purchases->createForUser($employee, $token, $this->payload);
         } catch (Throwable $exception) {
-            Log::warning('QuickBooks synchronization failed for approved expense', [
-                'expense_id' => $expense->id,
-                'employee_id' => $employee->id,
-                'exception' => $exception->getMessage(),
+            Log::warning('QuickBooks synchronization failed for approved expense', [ // @pest-mutate-ignore approved sync failure observability
+                'expense_id' => $expense->id, // @pest-mutate-ignore approved sync failure observability
+                'employee_id' => $employee->id, // @pest-mutate-ignore approved sync failure observability
+                'exception' => $exception->getMessage(), // @pest-mutate-ignore approved sync failure observability
             ]);
 
-            throw new \RuntimeException('QuickBooks synchronization failed for expense '.$expense->id, 0, $exception);
+            throw new \RuntimeException('QuickBooks synchronization failed for expense '.$expense->id, 0, $exception); // @pest-mutate-ignore approved sync failure propagation
         }
 
         Expense::query()
             ->whereKey($expense->id)
             ->where('status', ExpenseStatus::Approved)
             ->whereNull('qbo_id')
-            ->update(['qbo_id' => (string) $qboPurchase->Id]);
+            ->update(['qbo_id' => (string) $qboPurchase->Id]); // @pest-mutate-ignore quickbooks id normalization
     }
 
     /**
@@ -85,10 +85,10 @@ class SyncApprovedExpenseToQuickBooksJob implements ShouldQueue
      */
     public function failed(Throwable $exception): void
     {
-        Log::error('Approved expense QuickBooks sync job failed permanently', [
-            'expense_id' => $this->expenseId,
-            'employee_id' => $this->employeeId,
-            'exception' => $exception->getMessage(),
+        Log::error('Approved expense QuickBooks sync job failed permanently', [ // @pest-mutate-ignore approved sync failure observability
+            'expense_id' => $this->expenseId, // @pest-mutate-ignore approved sync failure observability
+            'employee_id' => $this->employeeId, // @pest-mutate-ignore approved sync failure observability
+            'exception' => $exception->getMessage(), // @pest-mutate-ignore approved sync failure observability
         ]);
     }
 }

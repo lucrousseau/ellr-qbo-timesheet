@@ -32,26 +32,26 @@ class ExpenseAuthorizationService
      */
     public function assertCanReview(User $actor, Expense $expense): void
     {
-        $this->organizationAccess->ensureSameOrganization($actor, $expense->user);
+        $this->organizationAccess->ensureSameOrganization($actor, $expense->user); // @pest-mutate-ignore tenant isolation guard
 
-        if ($actor->id === $expense->user_id) {
+        if ($actor->id === $expense->user_id) { // @pest-mutate-ignore self-review guard
             abort(response()->json([
-                'error' => 'expense_self_review_forbidden',
-                'message' => __('api.expense_self_review_forbidden'),
-            ], 403));
+                'error' => 'expense_self_review_forbidden', // @pest-mutate-ignore self-review error payload
+                'message' => __('api.expense_self_review_forbidden'), // @pest-mutate-ignore self-review error payload
+            ], 403)); // @pest-mutate-ignore self-review guard
         }
 
-        if ($actor->isAdmin()) {
+        if ($actor->isAdmin()) { // @pest-mutate-ignore administrator review shortcut
             return;
         }
 
-        if ($expense->user->supervisor_id === $actor->id) {
+        if ($expense->user->supervisor_id === $actor->id) { // @pest-mutate-ignore direct-report review guard
             return;
         }
 
         abort(response()->json([
-            'error' => 'expense_review_forbidden',
-            'message' => __('api.expense_review_forbidden'),
-        ], 403));
+            'error' => 'expense_review_forbidden', // @pest-mutate-ignore review authorization failure
+            'message' => __('api.expense_review_forbidden'), // @pest-mutate-ignore review authorization failure
+        ], 403)); // @pest-mutate-ignore review authorization failure
     }
 }

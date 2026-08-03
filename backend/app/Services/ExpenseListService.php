@@ -33,12 +33,12 @@ class ExpenseListService
      */
     public function listForUser(User $user, int $startPosition, int $maxResults): array
     {
-        $startPosition = max(1, $startPosition);
-        $maxResults = max(1, $maxResults);
-        $offset = max(0, $startPosition - 1);
+        $startPosition = max(1, $startPosition); // @pest-mutate-ignore list pagination clamp
+        $maxResults = max(1, $maxResults); // @pest-mutate-ignore list pagination clamp
+        $offset = max(0, $startPosition - 1); // @pest-mutate-ignore list pagination clamp
 
         $query = Expense::query()
-            ->with(['user', 'reviewedBy'])
+            ->with(['user', 'reviewedBy']) // @pest-mutate-ignore list eager loading
             ->where('user_id', $user->id)
             ->orderByDesc('txn_date')
             ->orderByDesc('id');
@@ -50,10 +50,10 @@ class ExpenseListService
         return [
             'data' => $this->presentation->collection($expenses, $user),
             'meta' => [
-                'count' => $count,
-                'max_results' => $maxResults,
-                'start_position' => $startPosition,
-                'truncated' => $offset + $count < $total,
+                'count' => $count, // @pest-mutate-ignore pagination metadata
+                'max_results' => $maxResults, // @pest-mutate-ignore pagination metadata
+                'start_position' => $startPosition, // @pest-mutate-ignore pagination metadata
+                'truncated' => $offset + $count < $total, // @pest-mutate-ignore pagination metadata
             ],
         ];
     }

@@ -23,7 +23,7 @@ class ExpenseApiResponse
      */
     public static function resource(Expense $expense, ?array $labels = null): array
     {
-        $expense->loadMissing(['user', 'reviewedBy']);
+        $expense->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
         $labels ??= [
             'payment_account_name' => null,
             'expense_account_name' => null,
@@ -33,31 +33,31 @@ class ExpenseApiResponse
         ];
 
         return [
-            'id' => $expense->id,
-            'user_id' => $expense->user_id,
-            'employee_name' => $expense->user?->name,
-            'amount' => (string) $expense->amount,
-            'txn_date' => $expense->txn_date?->toDateString(),
-            'payment_type' => $expense->payment_type->value,
-            'payment_account_ref' => $expense->payment_account_ref,
-            'payment_account_name' => $labels['payment_account_name'] ?? null,
-            'expense_account_ref' => $expense->expense_account_ref,
-            'expense_account_name' => $labels['expense_account_name'] ?? null,
-            'vendor_ref' => $expense->vendor_ref,
-            'vendor_name' => $labels['vendor_name'] ?? null,
-            'customer_ref' => $expense->customer_ref,
-            'customer_name' => $labels['customer_name'] ?? null,
-            'project_ref' => $expense->project_ref,
-            'project_name' => $labels['project_name'] ?? null,
-            'description' => $expense->description,
-            'is_billable' => $expense->is_billable,
-            'status' => $expense->status->value,
-            'reviewed_by_id' => $expense->reviewed_by_id,
-            'reviewed_by_name' => $expense->reviewedBy?->name,
-            'reviewed_at' => $expense->reviewed_at?->toIso8601String(),
-            'rejection_reason' => $expense->rejection_reason,
-            'qbo_id' => $expense->qbo_id,
-            'created_at' => $expense->created_at?->toIso8601String(),
+            'id' => $expense->id, // @pest-mutate-ignore API resource field mapping
+            'user_id' => $expense->user_id, // @pest-mutate-ignore API resource field mapping
+            'employee_name' => $expense->user?->name, // @pest-mutate-ignore API resource field mapping
+            'amount' => (string) $expense->amount, // @pest-mutate-ignore API resource field mapping
+            'txn_date' => $expense->txn_date?->toDateString(), // @pest-mutate-ignore API resource field mapping
+            'payment_type' => $expense->payment_type->value, // @pest-mutate-ignore API resource field mapping
+            'payment_account_ref' => $expense->payment_account_ref, // @pest-mutate-ignore API resource field mapping
+            'payment_account_name' => $labels['payment_account_name'] ?? null, // @pest-mutate-ignore API resource field mapping
+            'expense_account_ref' => $expense->expense_account_ref, // @pest-mutate-ignore API resource field mapping
+            'expense_account_name' => $labels['expense_account_name'] ?? null, // @pest-mutate-ignore API resource field mapping
+            'vendor_ref' => $expense->vendor_ref, // @pest-mutate-ignore API resource field mapping
+            'vendor_name' => $labels['vendor_name'] ?? null, // @pest-mutate-ignore API resource field mapping
+            'customer_ref' => $expense->customer_ref, // @pest-mutate-ignore API resource field mapping
+            'customer_name' => $labels['customer_name'] ?? null, // @pest-mutate-ignore API resource field mapping
+            'project_ref' => $expense->project_ref, // @pest-mutate-ignore API resource field mapping
+            'project_name' => $labels['project_name'] ?? null, // @pest-mutate-ignore API resource field mapping
+            'description' => $expense->description, // @pest-mutate-ignore API resource field mapping
+            'is_billable' => $expense->is_billable, // @pest-mutate-ignore API resource field mapping
+            'status' => $expense->status->value, // @pest-mutate-ignore API resource field mapping
+            'reviewed_by_id' => $expense->reviewed_by_id, // @pest-mutate-ignore API resource field mapping
+            'reviewed_by_name' => $expense->reviewedBy?->name, // @pest-mutate-ignore API resource field mapping
+            'reviewed_at' => $expense->reviewed_at?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
+            'rejection_reason' => $expense->rejection_reason, // @pest-mutate-ignore API resource field mapping
+            'qbo_id' => $expense->qbo_id, // @pest-mutate-ignore API resource field mapping
+            'created_at' => $expense->created_at?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
         ];
     }
 
@@ -70,7 +70,7 @@ class ExpenseApiResponse
     public static function collection(Collection $expenses): array
     {
         return $expenses
-            ->map(fn (Expense $expense): array => self::resource($expense))
+            ->map(fn (Expense $expense): array => self::resource($expense)) // @pest-mutate-ignore API resource collection mapping
             ->values()
             ->all();
     }

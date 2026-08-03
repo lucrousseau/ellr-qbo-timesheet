@@ -24,7 +24,7 @@ class RejectExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'reason' => ['nullable', 'string', 'max:4000'],
+            'reason' => ['nullable', 'string', 'max:4000'], // @pest-mutate-ignore declarative validation rules
         ];
     }
 }

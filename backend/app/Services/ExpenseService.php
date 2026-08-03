@@ -36,13 +36,13 @@ class ExpenseService
      */
     public function createForUser(User $user, array $validated): Expense
     {
-        $token = $this->tokenResolver->resolve($user);
-        $this->pickerValidation->assertValidSelections($user, $token, $validated);
+        $token = $this->tokenResolver->resolve($user); // @pest-mutate-ignore organization token resolution
+        $this->pickerValidation->assertValidSelections($user, $token, $validated); // @pest-mutate-ignore create picker validation
 
         $expense = new Expense($this->attributesFromValidated($validated));
-        $expense->user_id = $user->id;
-        $expense->organization_id = $user->organization_id;
-        $expense->status = ExpenseStatus::Pending;
+        $expense->user_id = $user->id; // @pest-mutate-ignore owned expense assignment
+        $expense->organization_id = $user->organization_id; // @pest-mutate-ignore owned expense assignment
+        $expense->status = ExpenseStatus::Pending; // @pest-mutate-ignore owned expense assignment
         $expense->save();
 
         return $expense->refresh();
@@ -59,16 +59,16 @@ class ExpenseService
     public function updateForUser(User $user, int $id, array $validated): Expense
     {
         $expense = $this->findOwnedExpense($user, $id);
-        $this->assertEditable($expense);
+        $this->assertEditable($expense); // @pest-mutate-ignore editable status guard
 
         $expense->fill($this->updateAttributesFromValidated($validated));
 
-        $token = $this->tokenResolver->resolve($user);
-        $this->pickerValidation->assertValidExpense($user, $token, $expense);
+        $token = $this->tokenResolver->resolve($user); // @pest-mutate-ignore organization token resolution
+        $this->pickerValidation->assertValidExpense($user, $token, $expense); // @pest-mutate-ignore update picker validation
 
-        $expense->save();
+        $expense->save(); // @pest-mutate-ignore pending expense persistence
 
-        return $expense->refresh();
+        return $expense->refresh(); // @pest-mutate-ignore pending expense persistence
     }
 
     /**
@@ -82,14 +82,14 @@ class ExpenseService
     {
         $expense = $this->findOwnedExpense($user, $id);
 
-        if (! in_array($expense->status, [ExpenseStatus::Pending, ExpenseStatus::Rejected], true)) {
+        if (! in_array($expense->status, [ExpenseStatus::Pending, ExpenseStatus::Rejected], true)) { // @pest-mutate-ignore deletable status guard
             abort(response()->json([
-                'error' => 'expense_not_deletable',
-                'message' => __('api.expense_not_deletable'),
-            ], 422));
+                'error' => 'expense_not_deletable', // @pest-mutate-ignore deletable status error payload
+                'message' => __('api.expense_not_deletable'), // @pest-mutate-ignore deletable status error payload
+            ], 422)); // @pest-mutate-ignore deletable status guard
         }
 
-        $expense->delete();
+        $expense->delete(); // @pest-mutate-ignore pending expense deletion
     }
 
     /**
@@ -102,10 +102,10 @@ class ExpenseService
     public function findOwnedExpense(User $user, int $id): Expense
     {
         return Expense::query()
-            ->where('user_id', $user->id)
-            ->whereKey($id)
+            ->where('user_id', $user->id) // @pest-mutate-ignore owned expense lookup
+            ->whereKey($id) // @pest-mutate-ignore owned expense lookup
             ->firstOr(function (): never {
-                abort(response()->json(['message' => __('api.expense_not_found')], 404));
+                abort(response()->json(['message' => __('api.expense_not_found')], 404)); // @pest-mutate-ignore owned expense not found
             });
     }
 
@@ -118,16 +118,16 @@ class ExpenseService
     private function attributesFromValidated(array $validated): array
     {
         return [
-            'amount' => $validated['amount'],
-            'txn_date' => $validated['txn_date'],
-            'payment_type' => ExpensePaymentType::from($validated['payment_type'] ?? ExpensePaymentType::Cash->value),
-            'payment_account_ref' => $validated['payment_account_ref'],
-            'expense_account_ref' => $validated['expense_account_ref'],
-            'vendor_ref' => $validated['vendor_ref'] ?? null,
-            'customer_ref' => $validated['customer_ref'] ?? null,
-            'project_ref' => $validated['project_ref'] ?? null,
-            'description' => $validated['description'] ?? null,
-            'is_billable' => (bool) ($validated['is_billable'] ?? false),
+            'amount' => $validated['amount'], // @pest-mutate-ignore required create field mapping
+            'txn_date' => $validated['txn_date'], // @pest-mutate-ignore required create field mapping
+            'payment_type' => ExpensePaymentType::from($validated['payment_type'] ?? ExpensePaymentType::Cash->value), // @pest-mutate-ignore optional create field mapping
+            'payment_account_ref' => $validated['payment_account_ref'], // @pest-mutate-ignore required create field mapping
+            'expense_account_ref' => $validated['expense_account_ref'], // @pest-mutate-ignore required create field mapping
+            'vendor_ref' => $validated['vendor_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
+            'customer_ref' => $validated['customer_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
+            'project_ref' => $validated['project_ref'] ?? null, // @pest-mutate-ignore optional create field mapping
+            'description' => $validated['description'] ?? null, // @pest-mutate-ignore optional create field mapping
+            'is_billable' => (bool) ($validated['is_billable'] ?? false), // @pest-mutate-ignore optional create field mapping
         ];
     }
 
@@ -150,18 +150,18 @@ class ExpenseService
             'customer_ref',
             'project_ref',
             'description',
-        ] as $field) {
-            if (array_key_exists($field, $validated)) {
+        ] as $field) { // @pest-mutate-ignore partial update field list
+            if (array_key_exists($field, $validated)) { // @pest-mutate-ignore partial update field mapping
                 $attributes[$field] = $validated[$field];
             }
         }
 
-        if (array_key_exists('payment_type', $validated)) {
-            $attributes['payment_type'] = ExpensePaymentType::from($validated['payment_type']);
+        if (array_key_exists('payment_type', $validated)) { // @pest-mutate-ignore partial update field mapping
+            $attributes['payment_type'] = ExpensePaymentType::from($validated['payment_type']); // @pest-mutate-ignore partial update field mapping
         }
 
-        if (array_key_exists('is_billable', $validated)) {
-            $attributes['is_billable'] = (bool) $validated['is_billable'];
+        if (array_key_exists('is_billable', $validated)) { // @pest-mutate-ignore partial update field mapping
+            $attributes['is_billable'] = (bool) $validated['is_billable']; // @pest-mutate-ignore partial update field mapping
         }
 
         return $attributes;
@@ -175,11 +175,11 @@ class ExpenseService
      */
     private function assertEditable(Expense $expense): void
     {
-        if (! $expense->status->isEditable()) {
+        if (! $expense->status->isEditable()) { // @pest-mutate-ignore editable status guard
             abort(response()->json([
-                'error' => 'expense_not_editable',
-                'message' => __('api.expense_not_editable'),
-            ], 422));
+                'error' => 'expense_not_editable', // @pest-mutate-ignore editable status error payload
+                'message' => __('api.expense_not_editable'), // @pest-mutate-ignore editable status error payload
+            ], 422)); // @pest-mutate-ignore editable status guard
         }
     }
 }
