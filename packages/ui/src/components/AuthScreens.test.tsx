@@ -180,6 +180,10 @@ describe('auth and layout screens', () => {
     expect(screen.getByText('Dashboard content')).toBeInTheDocument()
     expect(screen.getByText('ellr')).toBeInTheDocument()
     expect(screen.getByText(/Signed in as user@example.com/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /contact support/i })).toHaveAttribute(
+      'href',
+      'mailto:hello@ellr.ca?subject=Ellr%20Timesheet%20support',
+    )
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(onLogout).toHaveBeenCalled()

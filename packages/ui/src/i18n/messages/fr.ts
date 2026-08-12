@@ -59,6 +59,7 @@ export const frMessages: Messages = {
     cancel: 'Annuler',
     administration: 'Administration',
     signedInAs: 'Connecté en tant que {{email}}',
+    contactSupport: 'Contacter le support ({{email}})',
   },
   api: {
     errors: frApiErrors,

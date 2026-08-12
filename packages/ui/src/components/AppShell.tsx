@@ -7,6 +7,7 @@ import { useLocale } from '../i18n/LocaleProvider'
 import { pageMainClass, pageSubtitleClass, pageTitleClass } from '../styles/tokens'
 import { Button } from './Button'
 import { EllrLogoMark } from './EllrLogoMark'
+import { SupportContactLink } from './SupportContactLink'
 
 type AppShellProps = {
   title: string
@@ -40,17 +41,20 @@ export function AppShell({ title, subtitle, userEmail, onLogout, loggingOut = fa
             <p className={pageSubtitleClass}>{t('common.signedInAs', { email: userEmail })}</p>
           )}
         </div>
-        {userEmail && onLogout && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="compact"
-            onClick={onLogout}
-            disabled={loggingOut}
-          >
-            {loggingOut ? t('common.signingOut') : t('common.signOut')}
-          </Button>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <SupportContactLink />
+          {userEmail && onLogout ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="compact"
+              onClick={onLogout}
+              disabled={loggingOut}
+            >
+              {loggingOut ? t('common.signingOut') : t('common.signOut')}
+            </Button>
+          ) : null}
+        </div>
       </header>
       {children}
     </main>

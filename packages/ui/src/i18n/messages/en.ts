@@ -58,6 +58,7 @@ export const enMessages = {
     cancel: 'Cancel',
     administration: 'Administration',
     signedInAs: 'Signed in as {{email}}',
+    contactSupport: 'Contact support ({{email}})',
   },
   api: {
     errors: enApiErrors,

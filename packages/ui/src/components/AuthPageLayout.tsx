@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react'
 import { pageMainClass, pageSubtitleClass, pageTitleClass } from '../styles/tokens'
 import { EllrLogoMark } from './EllrLogoMark'
+import { SupportContactLink } from './SupportContactLink'
 
 type AuthPageLayoutProps = {
   title: string
@@ -20,10 +21,13 @@ type AuthPageLayoutProps = {
 export function AuthPageLayout({ title, subtitle, children }: AuthPageLayoutProps) {
   return (
     <main className={pageMainClass}>
-      <header className="mb-8">
-        <EllrLogoMark showTagline size="md" />
-        <h1 className={`mt-6 ${pageTitleClass}`}>{title}</h1>
-        {subtitle ? <p className={pageSubtitleClass}>{subtitle}</p> : null}
+      <header className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <EllrLogoMark showTagline size="md" />
+          <h1 className={`mt-6 ${pageTitleClass}`}>{title}</h1>
+          {subtitle ? <p className={pageSubtitleClass}>{subtitle}</p> : null}
+        </div>
+        <SupportContactLink />
       </header>
       {children}
     </main>

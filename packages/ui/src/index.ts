@@ -20,6 +20,13 @@ export {
 export { Alert } from './components/Alert'
 export { AppShell } from './components/AppShell'
 export { AuthPageLayout } from './components/AuthPageLayout'
+export { SupportContactLink } from './components/SupportContactLink'
+export {
+  SUPPORT_EMAIL_EN,
+  SUPPORT_EMAIL_FR,
+  supportEmailForLocale,
+  supportMailtoHref,
+} from './supportContact'
 export { EllrLogoGraphic } from './components/EllrLogoGraphic'
 export { EllrLogoMark } from './components/EllrLogoMark'
 export { PasswordPolicyRequirements } from './components/PasswordPolicyRequirements'
