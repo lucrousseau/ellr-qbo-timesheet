@@ -85,11 +85,12 @@ MAIL_MAILER=smtp
 
 ## Cron (Shared)
 
-One cron entry is enough when drain is enabled:
+SiteGround Shared may not expose `crontab` over SSH. Prefer **Site Tools → Devs → Cron Jobs** (or **Site → Cron Jobs**):
 
-```cron
-* * * * * cd /path/to/backend && php artisan schedule:run >> /dev/null 2>&1
-```
+| Field | Value |
+|-------|--------|
+| Schedule | Every minute (`* * * * *`) |
+| Command | `cd /home/customer/www/api.timesheet.ellr.ca && /usr/local/php83/bin/php-cli artisan schedule:run` |
 
 This runs reconcile (hourly), snapshot/failed-job prune, and the queue drain every minute.
 
@@ -162,7 +163,14 @@ On the API path only:
 1. Ensure `backend/.env` exists on the server (production Shared baseline above). Never let CI overwrite it (workflow excludes `.env`).
 2. `storage/` and `bootstrap/cache` must be writable by the PHP user.
 3. Configure the minute cron above.
-4. Optional dry check: `php -v` (8.3+) and `composer -V` over SSH.
+SiteGround Shared often defaults the account PHP CLI to 8.2. The workflow must call:
+
+```bash
+/usr/local/php83/bin/php-cli /usr/local/bin/composer.phar …
+/usr/local/php83/bin/php-cli artisan …
+```
+
+Also set the **API site** PHP version to **8.3** in Site Tools (Devs / PHP Manager) so `public_html` requests match Composer.
 
 ### 6. Run the workflow
 

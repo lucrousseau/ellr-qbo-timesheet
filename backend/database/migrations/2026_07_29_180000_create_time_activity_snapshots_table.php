@@ -30,9 +30,9 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            $table->unique(['realm_id', 'qbo_id']);
-            $table->index(['realm_id', 'qbo_employee_ref', 'start_time']);
-            $table->index(['realm_id', 'deleted_at']);
+            $table->unique(['realm_id', 'qbo_id'], 'tas_realm_qbo_unique');
+            $table->index(['realm_id', 'qbo_employee_ref', 'start_time'], 'tas_realm_employee_start_idx');
+            $table->index(['realm_id', 'deleted_at'], 'tas_realm_deleted_idx');
         });
 
         Schema::create('qbo_realm_sync_states', function (Blueprint $table) {

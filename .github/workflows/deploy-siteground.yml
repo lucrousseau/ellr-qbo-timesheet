@@ -126,8 +126,11 @@ jobs:
               echo "Missing backend/.env on the server. Create it before deploying."
               exit 1
             fi
-            composer install --no-dev --optimize-autoloader --no-interaction
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+            PHP=/usr/local/php83/bin/php-cli
+            mkdir -p storage/framework/{sessions,views,cache} storage/logs storage/app/public bootstrap/cache resources/views
+            chmod -R ug+rwx storage bootstrap/cache
+            "$PHP" -d memory_limit=512M /usr/local/bin/composer.phar install --no-dev --optimize-autoloader --no-interaction
+            "$PHP" artisan migrate --force
+            "$PHP" artisan config:cache
+            "$PHP" artisan route:cache
+            "$PHP" artisan view:cache
