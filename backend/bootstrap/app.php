@@ -4,7 +4,6 @@
  * Laravel application bootstrap: API routing, stateful Sanctum middleware, and JSON errors for /api.
  */
 
-use App\Console\SharedHostingQueueDrain;
 use App\Exceptions\QuickBooksException;
 use App\Http\Middleware\EnsureEmailVerifiedIfRequired;
 use App\Http\Middleware\EnsureUserHasOrganization;
@@ -44,7 +43,15 @@ return Application::configure(basePath: dirname(__DIR__))
             ])->daily();
         }
 
-        (new SharedHostingQueueDrain)->register($schedule);
+        // SiteGround Shared: drain the queue from cron. Cloud/VPS: leave false and use Supervisor.
+        if (config('queue.shared_hosting_drain')) {
+            $maxTime = (int) config('queue.shared_hosting_drain_max_time');
+            $tries = (int) config('queue.shared_hosting_drain_tries');
+
+            $schedule->command("queue:work --stop-when-empty --max-time={$maxTime} --tries={$tries}")
+                ->everyMinute()
+                ->withoutOverlapping(5);
+        }
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
