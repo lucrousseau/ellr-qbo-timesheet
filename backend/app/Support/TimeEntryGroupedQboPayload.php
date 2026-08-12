@@ -45,8 +45,7 @@ final class TimeEntryGroupedQboPayload
         }
 
         $startTime = $entries
-            ->map(fn (TimeEntry $entry): ?Carbon => $entry->start_time)
-            ->filter()
+            ->map(fn (TimeEntry $entry): Carbon => $entry->start_time ?? Carbon::now())
             ->sortBy(fn (Carbon $time): int => $time->getTimestamp())
             ->first();
 

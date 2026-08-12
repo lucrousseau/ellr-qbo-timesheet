@@ -82,7 +82,7 @@ class TimeEntryQboGroupSyncService
             $qboId = (string) $qboActivity->Id;
 
             TimeEntry::query()
-                ->whereKey($entries->modelKeys())
+                ->whereKey($entries->pluck('id')->all())
                 ->where('status', TimeEntryStatus::Approved)
                 ->whereNull('qbo_id')
                 ->update([
