@@ -99,6 +99,7 @@ export {
   approveTimeEntry,
   createTimeEntry,
   deleteTimeEntry,
+  fetchTimeEntrySyncGroup,
   listPendingTimeEntryApprovals,
   listTimeEntries,
   rejectTimeEntry,
@@ -111,6 +112,7 @@ export {
   type TimeEntryListResponse,
   type TimeEntryPayload,
   type TimeEntryStatus,
+  type TimeEntrySyncGroup,
   type TimeEntryUpdatePayload,
 } from './timeEntries'
 export { parseTimeEntryRow } from './timeEntryFormat'

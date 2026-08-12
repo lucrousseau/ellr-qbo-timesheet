@@ -28,6 +28,8 @@ class OrganizationFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name).'-'.Str::lower(Str::random(6)),
             'realm_id' => null,
+            // Avoid accidental QuickBooks CompanyInfo calls from syncIfMissing in unit tests.
+            'company_timezone' => 'UTC',
         ];
     }
 

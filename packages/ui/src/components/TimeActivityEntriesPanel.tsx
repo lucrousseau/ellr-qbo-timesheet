@@ -57,6 +57,7 @@ export type TimeActivityEntriesPanelProps = {
   reviewingId?: string | null
   onApproveEntry?: (id: string) => Promise<void>
   onRejectEntry?: (id: string, reason?: string | null) => Promise<void>
+  onViewSyncGroup?: (publicId: string) => void
 }
 
 /**
@@ -83,6 +84,7 @@ export function TimeActivityEntriesPanel({
   reviewingId = null,
   onApproveEntry,
   onRejectEntry,
+  onViewSyncGroup,
 }: TimeActivityEntriesPanelProps) {
   const { t, locale } = useLocale()
 
@@ -161,7 +163,22 @@ export function TimeActivityEntriesPanel({
                     ) : null}
                     {showApprovalStatus ? (
                       <td className="px-3 py-3 text-brand-primary">
-                        {formatApprovalStatus(entry.approvalStatus, t)}
+                        <div className="flex flex-col gap-1">
+                          <span>{formatApprovalStatus(entry.approvalStatus, t)}</span>
+                          {entry.syncGroupPublicId && onViewSyncGroup ? (
+                            <Button
+                              type="button"
+                              variant="link"
+                              onClick={() => onViewSyncGroup(entry.syncGroupPublicId!)}
+                            >
+                              {entry.syncGroupMemberCount && entry.syncGroupMemberCount > 1
+                                ? t('timeActivity.syncGroupGrouped', {
+                                    count: entry.syncGroupMemberCount,
+                                  })
+                                : t('timeActivity.syncGroupView')}
+                            </Button>
+                          ) : null}
+                        </div>
                       </td>
                     ) : null}
                     {reviewable && onApproveEntry && onRejectEntry ? (

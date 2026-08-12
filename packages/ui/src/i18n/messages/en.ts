@@ -31,6 +31,8 @@ const enApiErrors = {
   time_entry_self_review_forbidden: 'You cannot review your own time entries.',
   time_entry_not_editable: 'Only pending time entries can be edited.',
   time_entry_not_deletable: 'Only pending or rejected time entries can be deleted.',
+  time_entry_sync_group_not_found: 'Time entry sync group not found.',
+  time_entry_sync_group_forbidden: 'You are not allowed to view this time entry sync group.',
   supervisor_self_assignment: 'An employee cannot be their own supervisor.',
 } satisfies Record<ApiErrorMessageKey, string>
 
@@ -194,7 +196,8 @@ export const enMessages = {
     rejectingEntry: 'Rejecting...',
     rejectionReasonLabel: 'Rejection reason (optional)',
     approvalSuccess: 'Time entry approved and sent to QuickBooks.',
-    approvalSuccessQueued: 'Time entry approved. QuickBooks sync is in progress.',
+    approvalSuccessQueued:
+      'Time entry approved. Matching entries may group into one QuickBooks activity shortly.',
     rejectionSuccess: 'Time entry rejected.',
     approvalFailed: 'Unable to review the time entry.',
     assignSupervisor: 'Assign supervisor',
@@ -337,9 +340,18 @@ export const enMessages = {
     timeApprovalsHelp: 'Review and approve direct report time entries before they sync to QuickBooks.',
     noPendingApprovals: 'No pending time entries require your review.',
     approvalSuccess: 'Time entry approved and sent to QuickBooks.',
-    approvalSuccessQueued: 'Time entry approved. QuickBooks sync is in progress.',
+    approvalSuccessQueued:
+      'Time entry approved. Matching entries may group into one QuickBooks activity shortly.',
     rejectionSuccess: 'Time entry rejected.',
     approvalFailed: 'Unable to review the time entry.',
+    syncGroupTitle: 'Grouped QuickBooks time',
+    syncGroupHelp:
+      'These local entries were combined into one QuickBooks TimeActivity. Use this view for audit detail.',
+    syncGroupQboId: 'QuickBooks activity',
+    syncGroupMembers: 'Grouped entries',
+    syncGroupView: 'View group',
+    syncGroupGrouped: 'Grouped ({{count}})',
+    syncGroupLoadFailed: 'Unable to load the grouped time details.',
   },
   auth: {
     forgotPassword: 'Forgot password?',

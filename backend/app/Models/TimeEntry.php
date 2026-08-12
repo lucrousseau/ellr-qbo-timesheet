@@ -89,6 +89,16 @@ class TimeEntry extends Model
     }
 
     /**
+     * Relationship to the QuickBooks sync group that aggregated this entry.
+     *
+     * @return BelongsTo<TimeEntrySyncGroup, $this>
+     */
+    public function syncGroup(): BelongsTo
+    {
+        return $this->belongsTo(TimeEntrySyncGroup::class, 'sync_group_id');
+    }
+
+    /**
      * Indicates whether the entry has been synchronized to QuickBooks.
      *
      * @return bool

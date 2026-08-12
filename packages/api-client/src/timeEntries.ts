@@ -32,7 +32,32 @@ export type TimeEntry = {
   reviewed_at?: string | null
   rejection_reason?: string | null
   qbo_id?: string | null
+  sync_group_id?: number | null
+  sync_group_public_id?: string | null
+  sync_group_member_count?: number | null
   created_at?: string | null
+}
+
+/**
+ * QuickBooks sync group detail returned for accountant drill-down.
+ */
+export type TimeEntrySyncGroup = {
+  id: number
+  public_id: string
+  user_id: number
+  employee_name?: string | null
+  txn_date: string | null
+  customer_ref?: string | null
+  project_ref?: string | null
+  item_ref?: string | null
+  is_billable: boolean
+  member_count: number
+  total_duration_seconds: number
+  qbo_id?: string | null
+  qbo_description?: string | null
+  synced_at?: string | null
+  detail_url: string
+  entries: TimeEntry[]
 }
 
 /**
@@ -205,6 +230,19 @@ export async function rejectTimeEntry(
     method: 'POST',
     body: JSON.stringify({ reason: reason ?? null }),
   })
+
+  return response.data
+}
+
+/**
+ * Loads a QuickBooks sync group and its local member entries.
+ * @param publicId Sync group UUID from the QuickBooks note deep link.
+ * @returns Sync group detail payload.
+ */
+export async function fetchTimeEntrySyncGroup(publicId: string): Promise<TimeEntrySyncGroup> {
+  const response = await apiFetch<{ data: TimeEntrySyncGroup }>(
+    `/time-entry-sync-groups/${encodeURIComponent(publicId)}`,
+  )
 
   return response.data
 }

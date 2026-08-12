@@ -7,6 +7,7 @@
 namespace App\Services;
 
 use App\Models\TimeEntry;
+use App\Models\TimeEntrySyncGroup;
 use App\Models\User;
 
 /**
@@ -53,6 +54,36 @@ class TimeEntryAuthorizationService
             'error' => 'time_entry_review_forbidden', // @pest-mutate-ignore review authorization failure
             'message' => __('api.time_entry_review_forbidden'), // @pest-mutate-ignore review authorization failure
         ], 403)); // @pest-mutate-ignore review authorization failure
+    }
+
+    /**
+     * Ensures the actor may inspect a QuickBooks sync group and its members.
+     *
+     * @param  User  $actor  Authenticated employee, supervisor, or administrator.
+     * @param  TimeEntrySyncGroup  $group  Sync group being inspected.
+     * @return void
+     */
+    public function assertCanViewSyncGroup(User $actor, TimeEntrySyncGroup $group): void
+    {
+        $group->loadMissing('user'); // @pest-mutate-ignore sync group visibility preload
+        $this->organizationAccess->ensureSameOrganization($actor, $group->user); // @pest-mutate-ignore tenant isolation guard
+
+        if ($actor->isAdmin()) { // @pest-mutate-ignore administrator sync group shortcut
+            return;
+        }
+
+        if ($actor->id === $group->user_id) { // @pest-mutate-ignore employee sync group ownership
+            return;
+        }
+
+        if ($group->user?->supervisor_id === $actor->id) { // @pest-mutate-ignore supervisor sync group visibility
+            return;
+        }
+
+        abort(response()->json([
+            'error' => 'time_entry_sync_group_forbidden', // @pest-mutate-ignore sync group authorization failure
+            'message' => __('api.time_entry_sync_group_forbidden'), // @pest-mutate-ignore sync group authorization failure
+        ], 403)); // @pest-mutate-ignore sync group authorization failure
     }
 
     /**

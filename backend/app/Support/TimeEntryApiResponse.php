@@ -26,7 +26,7 @@ class TimeEntryApiResponse
      */
     public static function resource(TimeEntry $entry, ?array $labels = null): array
     {
-        $entry->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
+        $entry->loadMissing(['user', 'reviewedBy', 'syncGroup']); // @pest-mutate-ignore API resource relation preload
         $labels ??= [
             'customer_name' => null,
             'project_name' => null,
@@ -35,6 +35,7 @@ class TimeEntryApiResponse
 
         [$startTime, $endTime] = TimeActivityDuration::normalizeRange($entry->start_time, $entry->end_time);
         $durationSeconds = TimeActivityDuration::secondsBetween($startTime, $endTime); // @pest-mutate-ignore computed duration field
+        $syncGroup = $entry->syncGroup;
 
         return [
             'id' => $entry->id, // @pest-mutate-ignore API resource field mapping
@@ -58,6 +59,9 @@ class TimeEntryApiResponse
             'reviewed_at' => $entry->reviewed_at?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
             'rejection_reason' => $entry->rejection_reason, // @pest-mutate-ignore API resource field mapping
             'qbo_id' => $entry->qbo_id, // @pest-mutate-ignore API resource field mapping
+            'sync_group_id' => $entry->sync_group_id, // @pest-mutate-ignore API resource field mapping
+            'sync_group_public_id' => $syncGroup?->public_id, // @pest-mutate-ignore API resource field mapping
+            'sync_group_member_count' => $syncGroup?->member_count, // @pest-mutate-ignore API resource field mapping
             'created_at' => $entry->created_at?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
         ];
     }
@@ -116,6 +120,9 @@ class TimeEntryApiResponse
             'reviewed_at' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'rejection_reason' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'qbo_id' => $snapshot->qbo_id, // @pest-mutate-ignore legacy snapshot resource mapping
+            'sync_group_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'sync_group_public_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'sync_group_member_count' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'created_at' => $snapshot->last_synced_at?->toIso8601String(), // @pest-mutate-ignore legacy snapshot resource mapping
         ];
     }

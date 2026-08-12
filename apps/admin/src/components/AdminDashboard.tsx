@@ -2,7 +2,15 @@
  * @file Tabbed admin dashboard grouped by responsibility.
  */
 
-import { Alert, LoadingScreen, TabNav, tabPanelId, useLocale } from '@ellr/ui'
+import {
+  Alert,
+  LoadingScreen,
+  TabNav,
+  tabPanelId,
+  TimeEntrySyncGroupDialog,
+  useLocale,
+  useTimeEntrySyncGroupViewer,
+} from '@ellr/ui'
 import { lazy, Suspense, useEffect, useMemo } from 'react'
 import {
   LEGACY_ADMIN_ACTIVE_TAB_STORAGE_KEY,
@@ -111,6 +119,8 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
     onError: admin.showError,
     onSuccess: admin.showSuccess,
   })
+  const syncGroupViewer = useTimeEntrySyncGroupViewer()
+  const displayTimezone = admin.user?.effective_display_timezone ?? 'UTC'
 
   return (
     <div className="space-y-6">
@@ -180,6 +190,12 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           />
         </div>
       )}
+
+      <TimeEntrySyncGroupDialog
+        publicId={syncGroupViewer.syncGroupPublicId}
+        onClose={syncGroupViewer.closeSyncGroup}
+        displayTimezone={displayTimezone}
+      />
     </div>
   )
 }

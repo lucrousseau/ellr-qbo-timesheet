@@ -32,6 +32,8 @@ export const API_ERROR_MESSAGE_KEYS = [
   'time_entry_self_review_forbidden',
   'time_entry_not_editable',
   'time_entry_not_deletable',
+  'time_entry_sync_group_not_found',
+  'time_entry_sync_group_forbidden',
   'supervisor_self_assignment',
 ] as const
 
@@ -129,7 +131,23 @@ export function resolveApiError(error: unknown): ApiErrorResolution {
         return { type: 'catalog', key: 'qbo_insufficient_permissions' }
       }
 
+      if (error.code === 'time_entry_review_forbidden') {
+        return { type: 'catalog', key: 'time_entry_review_forbidden' }
+      }
+
+      if (error.code === 'time_entry_self_review_forbidden') {
+        return { type: 'catalog', key: 'time_entry_self_review_forbidden' }
+      }
+
+      if (error.code === 'time_entry_sync_group_forbidden') {
+        return { type: 'catalog', key: 'time_entry_sync_group_forbidden' }
+      }
+
       return { type: 'catalog', key: 'access_denied' }
+    }
+
+    if (error.status === 404 && error.code === 'time_entry_sync_group_not_found') {
+      return { type: 'catalog', key: 'time_entry_sync_group_not_found' }
     }
 
     if (error.status === 422) {

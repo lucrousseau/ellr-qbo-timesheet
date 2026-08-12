@@ -9,9 +9,11 @@ import {
   TabNav,
   tabPanelId,
   TimeActivityEntriesPanel,
+  TimeEntrySyncGroupDialog,
   UserPreferencesPanel,
   useLocale,
   useSessionStorageState,
+  useTimeEntrySyncGroupViewer,
 } from '@ellr/ui'
 import { useMemo } from 'react'
 import { isTimesheetTab, timesheetActiveTabStorageKey, type TimesheetTab } from '../timesheetTabStorage'
@@ -69,6 +71,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
     enabled: showTimeTracking && !tracker.loading && tracker.canTrackTime,
     refreshToken: tracker.entriesRefreshToken,
   })
+  const syncGroupViewer = useTimeEntrySyncGroupViewer()
 
   const onLogout = async () => {
     await auth.handleLogout()
@@ -177,6 +180,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 onLoadMore={recentEntries.loadMore}
                 showApprovalStatus
                 displayTimezone={displayTimezone}
+                onViewSyncGroup={syncGroupViewer.openSyncGroup}
               />
             </>
           )}
@@ -213,6 +217,12 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
           />
         </div>
       )}
+
+      <TimeEntrySyncGroupDialog
+        publicId={syncGroupViewer.syncGroupPublicId}
+        onClose={syncGroupViewer.closeSyncGroup}
+        displayTimezone={displayTimezone}
+      />
     </AppShell>
   )
 }

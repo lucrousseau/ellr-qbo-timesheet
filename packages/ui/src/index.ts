@@ -39,6 +39,11 @@ export { ResetPasswordForm } from './components/ResetPasswordForm'
 export { TabNav, tabButtonId, tabPanelId, type TabNavItem } from './components/TabNav'
 export { TimeActivityEntriesPanel, type TimeActivityEntriesPanelProps } from './components/TimeActivityEntriesPanel'
 export { TimeEntryApprovalList } from './components/TimeEntryApprovalList'
+export {
+  TimeEntrySyncGroupDialog,
+  type TimeEntrySyncGroupDialogProps,
+} from './components/TimeEntrySyncGroupDialog'
+export { useTimeEntrySyncGroupViewer } from './hooks/useTimeEntrySyncGroupViewer'
 export { UserPreferencesPanel } from './components/UserPreferencesPanel'
 export { LocaleProvider, useLocale } from './i18n/LocaleProvider'
 export {

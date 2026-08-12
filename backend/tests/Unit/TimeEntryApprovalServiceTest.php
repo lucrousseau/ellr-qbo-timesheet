@@ -5,6 +5,7 @@ use App\Jobs\SyncApprovedTimeEntryToQuickBooksJob;
 use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
+use App\Services\OrganizationTimezoneService;
 use App\Services\QboPickerValidationService;
 use App\Services\QuickBooksService;
 use App\Services\TimeEntryApprovalService;
@@ -117,7 +118,7 @@ it('approves a pending entry and stores the quickbooks identifier', function () 
         ->and($approved->qbo_id)->toBe('88');
 });
 
-it('dispatches resolved quickbooks labels in the approval sync payload', function () {
+it('queues a grouped sync job keyed by employee day and service', function () {
     Queue::fake();
     mockQboEntryDisplayNames([
         'customer_name' => 'Acme Corp',
@@ -145,9 +146,17 @@ it('dispatches resolved quickbooks labels in the approval sync payload', functio
 
     Queue::assertPushed(
         SyncApprovedTimeEntryToQuickBooksJob::class,
-        fn (SyncApprovedTimeEntryToQuickBooksJob $job): bool => $job->payload['customer_name'] === 'Acme Corp'
-            && $job->payload['project_name'] === 'Website redesign'
-            && $job->payload['item_name'] === 'Consulting',
+        function (SyncApprovedTimeEntryToQuickBooksJob $job) use ($entry, $employee): bool {
+            $expectedKey = SyncApprovedTimeEntryToQuickBooksJob::groupKeyFor(
+                $entry->fresh(['organization']),
+                app(OrganizationTimezoneService::class),
+            );
+
+            return $job->timeEntryId === $entry->id
+                && $job->employeeId === $employee->id
+                && $job->groupKey === $expectedKey
+                && str_contains($job->groupKey, '|33|');
+        },
     );
 });
 
