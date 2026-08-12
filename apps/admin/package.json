@@ -8,9 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint src",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:mutation": "stryker run",
+    "test": "NODE_OPTIONS=\"--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}\" vitest run",
+    "test:coverage": "NODE_OPTIONS=\"--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}\" vitest run --coverage",
+    "test:mutation": "NODE_OPTIONS=\"--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}\" stryker run",
     "preview": "vite preview"
   },
   "dependencies": {
