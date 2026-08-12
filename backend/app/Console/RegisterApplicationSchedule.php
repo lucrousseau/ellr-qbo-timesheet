@@ -38,9 +38,9 @@ final class RegisterApplicationSchedule
             ])->daily();
         }
 
-        if (config('queue.shared_hosting_drain', false)) {
-            $maxTime = (int) config('queue.shared_hosting_drain_max_time', 50);
-            $tries = (int) config('queue.shared_hosting_drain_tries', 3);
+        if (config('queue.shared_hosting_drain')) {
+            $maxTime = (int) config('queue.shared_hosting_drain_max_time');
+            $tries = (int) config('queue.shared_hosting_drain_tries');
 
             $schedule->command("queue:work --stop-when-empty --max-time={$maxTime} --tries={$tries}")
                 ->everyMinute()

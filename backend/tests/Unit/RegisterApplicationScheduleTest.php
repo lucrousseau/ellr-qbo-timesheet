@@ -34,12 +34,35 @@ it('registers shared hosting queue drain when enabled', function () {
     (new RegisterApplicationSchedule)($schedule);
 
     $commands = scheduledCommands($schedule);
+    $drainEvent = $schedule->events()[0];
 
     expect($commands)->toHaveCount(1)
         ->and($commands[0])->toContain('queue:work')
         ->and($commands[0])->toContain('--stop-when-empty')
         ->and($commands[0])->toContain('--max-time=45')
-        ->and($commands[0])->toContain('--tries=2');
+        ->and($commands[0])->toContain('--tries=2')
+        ->and($drainEvent->withoutOverlapping)->toBeTrue()
+        ->and($drainEvent->expiresAt)->toBe(5);
+});
+
+it('uses queue config defaults for shared hosting drain timing', function () {
+    config([
+        'quickbooks.time_activities_reconcile_enabled' => false,
+        'quickbooks.snapshot_soft_delete_retention_days' => 0,
+        'queue.failed_jobs_retention_hours' => 0,
+        'queue.shared_hosting_drain' => true,
+        'queue.shared_hosting_drain_max_time' => 50,
+        'queue.shared_hosting_drain_tries' => 3,
+    ]);
+
+    $schedule = new Schedule(app());
+    (new RegisterApplicationSchedule)($schedule);
+
+    $commands = scheduledCommands($schedule);
+
+    expect($commands)->toHaveCount(1)
+        ->and($commands[0])->toContain('--max-time=50')
+        ->and($commands[0])->toContain('--tries=3');
 });
 
 it('skips shared hosting queue drain when disabled for cloud workers', function () {
