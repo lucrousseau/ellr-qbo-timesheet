@@ -1,9 +1,9 @@
 <?php
 
-use App\Console\RegisterApplicationSchedule;
+use App\Console\SharedHostingQueueDrain;
 use Illuminate\Console\Scheduling\Schedule;
 
-covers(RegisterApplicationSchedule::class);
+covers(SharedHostingQueueDrain::class);
 
 /**
  * Collects scheduled Artisan command strings from a schedule instance.
@@ -22,16 +22,13 @@ function scheduledCommands(Schedule $schedule): array
 
 it('registers shared hosting queue drain when enabled', function () {
     config([
-        'quickbooks.time_activities_reconcile_enabled' => false,
-        'quickbooks.snapshot_soft_delete_retention_days' => 0,
-        'queue.failed_jobs_retention_hours' => 0,
         'queue.shared_hosting_drain' => true,
         'queue.shared_hosting_drain_max_time' => 45,
         'queue.shared_hosting_drain_tries' => 2,
     ]);
 
     $schedule = new Schedule(app());
-    (new RegisterApplicationSchedule)($schedule);
+    (new SharedHostingQueueDrain)->register($schedule);
 
     $commands = scheduledCommands($schedule);
     $drainEvent = $schedule->events()[0];
@@ -45,18 +42,15 @@ it('registers shared hosting queue drain when enabled', function () {
         ->and($drainEvent->expiresAt)->toBe(5);
 });
 
-it('uses queue config defaults for shared hosting drain timing', function () {
+it('uses queue config values for shared hosting drain timing', function () {
     config([
-        'quickbooks.time_activities_reconcile_enabled' => false,
-        'quickbooks.snapshot_soft_delete_retention_days' => 0,
-        'queue.failed_jobs_retention_hours' => 0,
         'queue.shared_hosting_drain' => true,
         'queue.shared_hosting_drain_max_time' => 50,
         'queue.shared_hosting_drain_tries' => 3,
     ]);
 
     $schedule = new Schedule(app());
-    (new RegisterApplicationSchedule)($schedule);
+    (new SharedHostingQueueDrain)->register($schedule);
 
     $commands = scheduledCommands($schedule);
 
@@ -66,35 +60,10 @@ it('uses queue config defaults for shared hosting drain timing', function () {
 });
 
 it('skips shared hosting queue drain when disabled for cloud workers', function () {
-    config([
-        'quickbooks.time_activities_reconcile_enabled' => false,
-        'quickbooks.snapshot_soft_delete_retention_days' => 0,
-        'queue.failed_jobs_retention_hours' => 0,
-        'queue.shared_hosting_drain' => false,
-    ]);
+    config(['queue.shared_hosting_drain' => false]);
 
     $schedule = new Schedule(app());
-    (new RegisterApplicationSchedule)($schedule);
+    (new SharedHostingQueueDrain)->register($schedule);
 
-    $commands = scheduledCommands($schedule);
-
-    expect($commands)->toBeEmpty();
-});
-
-it('still registers reconcile when shared drain is off', function () {
-    config([
-        'quickbooks.time_activities_reconcile_enabled' => true,
-        'quickbooks.time_activities_reconcile_cron' => '0 * * * *',
-        'quickbooks.snapshot_soft_delete_retention_days' => 0,
-        'queue.failed_jobs_retention_hours' => 0,
-        'queue.shared_hosting_drain' => false,
-    ]);
-
-    $schedule = new Schedule(app());
-    (new RegisterApplicationSchedule)($schedule);
-
-    $commands = scheduledCommands($schedule);
-
-    expect($commands)->toHaveCount(1)
-        ->and($commands[0])->toContain('quickbooks:reconcile-time-activities');
+    expect(scheduledCommands($schedule))->toBeEmpty();
 });
