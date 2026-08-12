@@ -97,7 +97,9 @@ describe('useTimeEntryApprovals', () => {
       await result.current.approveEntry('local:12')
     })
 
-    expect(onSuccess).toHaveBeenCalledWith('Time entry approved. QuickBooks sync is in progress.')
+    expect(onSuccess).toHaveBeenCalledWith(
+      'Time entry approved. Matching entries may group into one QuickBooks activity shortly.',
+    )
   })
 
   it('approves an entry and refreshes the list', async () => {
