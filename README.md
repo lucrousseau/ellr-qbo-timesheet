@@ -228,7 +228,7 @@ Two hosting modes share the same codebase. Switch with `.env` only:
 ```env
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://api.yourdomain.com
+APP_URL=https://api.timesheet.ellr.ca
 LOG_LEVEL=info
 
 ALLOW_REGISTRATION=false
@@ -241,7 +241,7 @@ SESSION_DRIVER=database
 SESSION_SECURE_COOKIE=true
 SESSION_SAME_SITE=lax
 SESSION_ENCRYPT=true
-SESSION_DOMAIN=.yourdomain.com
+SESSION_DOMAIN=.timesheet.ellr.ca
 
 CACHE_STORE=database
 QUEUE_CONNECTION=database
@@ -250,24 +250,26 @@ TRUSTED_PROXIES=*
 
 QUICKBOOKS_CLIENT_ID=…
 QUICKBOOKS_CLIENT_SECRET=…
-QUICKBOOKS_REDIRECT_URI=https://api.yourdomain.com/api/quickbooks/callback
+QUICKBOOKS_REDIRECT_URI=https://api.timesheet.ellr.ca/api/quickbooks/callback
 QUICKBOOKS_BASE_URL=production
 QUICKBOOKS_EXPOSE_API_ERRORS=false
 QUICKBOOKS_WEBHOOK_VERIFIER=…
 
-FRONTEND_ADMIN_URL=https://admin.yourdomain.com
-FRONTEND_TIMESHEET_URL=https://timesheet.yourdomain.com
-FRONTEND_AUTH_URL=https://timesheet.yourdomain.com
-SANCTUM_STATEFUL_DOMAINS=admin.yourdomain.com,timesheet.yourdomain.com
+FRONTEND_ADMIN_URL=https://admin.timesheet.ellr.ca
+FRONTEND_TIMESHEET_URL=https://timesheet.ellr.ca
+FRONTEND_AUTH_URL=https://timesheet.ellr.ca
+SANCTUM_STATEFUL_DOMAINS=admin.timesheet.ellr.ca,timesheet.ellr.ca
 
 MAIL_MAILER=smtp
 MAIL_HOST=…
 MAIL_PORT=587
 MAIL_USERNAME=…
 MAIL_PASSWORD=…
-MAIL_FROM_ADDRESS=no-reply@yourdomain.com
+MAIL_FROM_ADDRESS=no-reply@ellr.ca
 MAIL_FROM_NAME="${APP_NAME}"
 ```
+
+SiteGround Shared deploy over GitHub Actions (SSH/rsync, no FTP): see [`docs/siteground-shared-hosting.md`](docs/siteground-shared-hosting.md#github-actions-deploy-no-ftp).
 
 ### Cloud / VPS overrides (when you leave Shared)
 
@@ -296,7 +298,7 @@ Keep a minute cron for `php artisan schedule:run` (reconcile + prune). Details: 
 
 ```bash
 # Build variables (e.g. apps/admin/.env.production)
-VITE_API_URL=https://api.yourdomain.com/api
+VITE_API_URL=https://api.timesheet.ellr.ca/api
 
 npm run build:admin
 npm run build:timesheet
@@ -304,7 +306,7 @@ npm run build:timesheet
 
 Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (Apache document roots or CDN). Each `dist/` includes an `.htaccess` SPA fallback for password-reset deep links. Apps call only the Laravel API via `@ellr/api-client`.
 
-API document root must be `backend/public` (never the repo root).
+API document root must be `backend/public` (never the repo root). Production hosts: `api.timesheet.ellr.ca`, `admin.timesheet.ellr.ca`, `timesheet.ellr.ca`.
 
 ### Security
 
@@ -313,7 +315,7 @@ API document root must be `backend/public` (never the repo root).
 - `QUICKBOOKS_EXPOSE_API_ERRORS=false`: do not expose Intuit error bodies
 - OAuth tokens encrypted in DB (`quickbooks_tokens`), never logged
 - CORS/Sanctum: front domains in `SANCTUM_STATEFUL_DOMAINS`; `config/cors.php` with `supports_credentials`
-- Session cookies: parent `SESSION_DOMAIN` (e.g. `.yourdomain.com`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
+- Session cookies: parent `SESSION_DOMAIN` (e.g. `.timesheet.ellr.ca`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
 - `TRUSTED_PROXIES=*`: required behind SiteGround / CDN TLS termination
 - QBO employee per user (`qbo_employee_ref`): unique per account, set from admin, validated by the API
 - QuickBooks OAuth: administrators connect in the admin app; timesheet users reuse the latest administrator token when they have no token of their own

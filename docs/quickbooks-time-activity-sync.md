@@ -242,11 +242,11 @@ Use this when deploying the API to a public HTTPS host.
 ### 1. Environment (secrets / `backend/.env`)
 
 ```env
-APP_URL=https://api.yourdomain.com
+APP_URL=https://api.timesheet.ellr.ca
 APP_ENV=production
 APP_DEBUG=false
 
-QUICKBOOKS_REDIRECT_URI=https://api.yourdomain.com/api/quickbooks/callback
+QUICKBOOKS_REDIRECT_URI=https://api.timesheet.ellr.ca/api/quickbooks/callback
 QUICKBOOKS_WEBHOOK_VERIFIER=<from-intuit-portal>
 QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_ENABLED=true
 QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_CRON="0 * * * *"
@@ -297,7 +297,7 @@ Runs `quickbooks:reconcile-time-activities` hourly by default (backup if a webho
 2. **Endpoint URL:**
 
    ```text
-   https://api.yourdomain.com/api/quickbooks/webhook
+   https://api.timesheet.ellr.ca/api/quickbooks/webhook
    ```
 
 3. **Show verifier token** → copy to `QUICKBOOKS_WEBHOOK_VERIFIER`
@@ -311,14 +311,14 @@ Runs `quickbooks:reconcile-time-activities` hourly by default (backup if a webho
 In Intuit OAuth settings and `.env`:
 
 ```text
-https://api.yourdomain.com/api/quickbooks/callback
+https://api.timesheet.ellr.ca/api/quickbooks/callback
 ```
 
 Must match `QUICKBOOKS_REDIRECT_URI`.
 
 ### 7. Verify after deploy
 
-1. `curl -s https://api.yourdomain.com/api/health`
+1. `curl -s https://api.timesheet.ellr.ca/api/health`
 2. Admin connects QBO (backfill job)
 3. Change a time entry in QBO UI → list updates within seconds (webhook)
 4. If stale: `php artisan quickbooks:reconcile-time-activities` on the server
