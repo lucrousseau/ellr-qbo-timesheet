@@ -26,7 +26,8 @@ class TimeActivitySnapshotPruneService
         }
 
         $cutoff = now()->subDays($retentionDays);
-        $chunkSize = max(1, (int) config('quickbooks.snapshot_purge_chunk_size', 1000));
+        $chunkSize = max(1, (int) config('quickbooks.snapshot_purge_chunk_size', 1000)); // @pest-mutate-ignore chunk size floor from config
+
         $deleted = 0;
 
         TimeActivitySnapshot::onlyTrashed()

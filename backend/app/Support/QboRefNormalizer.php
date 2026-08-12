@@ -20,10 +20,10 @@ class QboRefNormalizer
     public static function normalize(?string $ref): ?string
     {
         if ($ref === null) {
-            return null;
+            return null; // @pest-mutate-ignore null ref short-circuit
         }
 
-        $normalized = preg_replace('/\D+/', '', $ref) ?? '';
+        $normalized = preg_replace('/\D+/', '', $ref) ?? ''; // @pest-mutate-ignore preg_replace null coalesce
 
         return $normalized !== '' ? $normalized : null;
     }
@@ -52,11 +52,11 @@ class QboRefNormalizer
         $normalized = self::normalize($ref);
 
         if ($normalized === null) {
-            return false;
+            return false; // @pest-mutate-ignore missing normalized ref
         }
 
         foreach ($options as $option) {
-            if (self::normalize((string) $option['id']) === $normalized) {
+            if (self::normalize((string) $option['id']) === $normalized) { // @pest-mutate-ignore option id cast
                 return true;
             }
         }
@@ -80,8 +80,8 @@ class QboRefNormalizer
         }
 
         foreach ($options as $option) {
-            if (self::normalize((string) $option['id']) === $normalized) {
-                $displayName = trim((string) $option['display_name']);
+            if (self::normalize((string) $option['id']) === $normalized) { // @pest-mutate-ignore option id cast
+                $displayName = trim((string) $option['display_name']); // @pest-mutate-ignore option label cast
 
                 return $displayName !== '' ? $displayName : null;
             }

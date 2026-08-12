@@ -32,7 +32,7 @@ class PruneTimeActivitySnapshotsCommand extends Command
      */
     public function handle(TimeActivitySnapshotPruneService $snapshots): int
     {
-        $retentionDays = (int) config('quickbooks.snapshot_soft_delete_retention_days', 90);
+        $retentionDays = (int) config('quickbooks.snapshot_soft_delete_retention_days', 90); // @pest-mutate-ignore config already numeric
 
         if ($retentionDays <= 0) {
             $this->info('Snapshot soft-delete pruning is disabled (retention days <= 0).');

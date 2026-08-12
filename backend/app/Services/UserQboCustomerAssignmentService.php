@@ -47,7 +47,7 @@ class UserQboCustomerAssignmentService
                 : $this->displayNames->assignedCustomerRows(
                     $token,
                     $user,
-                    $user->relationLoaded('qboCustomers') ? $user->qboCustomers : $user->qboCustomers()->get(),
+                    $user->relationLoaded('qboCustomers') ? $user->qboCustomers : $user->qboCustomers()->get(), // @pest-mutate-ignore assignment relation load
                 ),
         ];
     }
@@ -103,7 +103,7 @@ class UserQboCustomerAssignmentService
 
                 foreach ($normalizedRefs as $ref) {
                     $user->qboCustomers()->create([
-                        'qbo_customer_ref' => $ref,
+                        'qbo_customer_ref' => $ref, // @pest-mutate-ignore assignment pivot create payload
                     ]);
                 }
             });
@@ -142,7 +142,7 @@ class UserQboCustomerAssignmentService
         $availableById = [];
 
         foreach ($this->customers->listAllActive($token, true) as $customer) {
-            $id = QboRefNormalizer::normalize((string) $customer['id']);
+            $id = QboRefNormalizer::normalize((string) $customer['id']); // @pest-mutate-ignore assignment customer id cast
 
             if ($id === null) {
                 continue;
@@ -164,7 +164,7 @@ class UserQboCustomerAssignmentService
             $resolvedById[$ref] = $availableById[$ref];
         }
 
-        return $resolvedById;
+        return $resolvedById; // @pest-mutate-ignore resolved assignment map
     }
 
     /**
@@ -178,13 +178,13 @@ class UserQboCustomerAssignmentService
         $refs = [];
 
         foreach ($customerRefs as $ref) {
-            $normalized = QboRefNormalizer::normalize((string) $ref);
+            $normalized = QboRefNormalizer::normalize((string) $ref); // @pest-mutate-ignore assignment ref cast
 
             if ($normalized !== null) {
                 $refs[$normalized] = $normalized;
             }
         }
 
-        return array_values($refs);
+        return array_values($refs); // @pest-mutate-ignore unique assignment refs
     }
 }

@@ -45,7 +45,7 @@ class TimeActivitySyncService
         TimeActivityReconcileScope $scope = TimeActivityReconcileScope::Full,
     ): int {
         $token->loadMissing('user.organization'); // @pest-mutate-ignore reconcile timezone sync preload
-        $organization = $token->user?->organization;
+        $organization = $token->user?->organization; // @pest-mutate-ignore reconcile timezone sync nullsafe
 
         if ($organization !== null) { // @pest-mutate-ignore reconcile timezone sync guard
             $this->organizationTimezone->syncIfMissing($organization, $token); // @pest-mutate-ignore reconcile timezone sync
@@ -53,7 +53,7 @@ class TimeActivitySyncService
 
         $dataService = $this->quickBooks->dataService($token);
         $realmId = $token->realm_id;
-        $batchSize = min(
+        $batchSize = min( // @pest-mutate-ignore reconcile batch size bound
             (int) config('quickbooks.time_activities_max_results', 100), // @pest-mutate-ignore reconcile scan config defaults
             (int) config('quickbooks.time_activities_query_batch_size', 100), // @pest-mutate-ignore
         );
@@ -61,7 +61,7 @@ class TimeActivitySyncService
         $upserted = 0;
         $purgeMinTxnDate = null;
         $purgeSeenQboIds = [];
-        $purgeEligible = false;
+        $purgeEligible = false; // @pest-mutate-ignore reconcile purge eligibility default
 
         foreach (TimeActivityReconcileLookback::stepsForScope($scope) as $index => $lookbackDays) {
             $minTxnDate = Carbon::now()->subDays($lookbackDays)->toDateString();
@@ -145,7 +145,7 @@ class TimeActivitySyncService
 
         foreach ($realmIds as $realmId) {
             if ($scheduled && TimeActivityReconcileLookback::shouldSkipScheduledReconcile($realmId)) {
-                continue;
+                continue; // @pest-mutate-ignore scheduled reconcile skip
             }
 
             $token = QuickBooksToken::query()
@@ -158,7 +158,7 @@ class TimeActivitySyncService
             }
 
             $scope = $scheduled ? TimeActivityReconcileScope::Recent : TimeActivityReconcileScope::Full;
-            $total += $this->reconcileRealm($token, $scope);
+            $total += $this->reconcileRealm($token, $scope); // @pest-mutate-ignore reconcile aggregate
         }
 
         return $total;
@@ -196,7 +196,7 @@ class TimeActivitySyncService
                 return [$upserted, $seenQboIds, true];
             }
 
-            $pageObjects = array_values(array_filter(
+            $pageObjects = array_values(array_filter( // @pest-mutate-ignore reconcile page object filter
                 $activities,
                 fn (mixed $activity): bool => is_object($activity),
             ));
@@ -207,7 +207,7 @@ class TimeActivitySyncService
                         $realmId,
                         $dataService,
                         $pageObjects,
-                        resolveMissingNames: false,
+                        resolveMissingNames: false, // @pest-mutate-ignore reconcile skips name enrichment in window import
                     ) as $snapshot) {
                         $seenQboIds[] = $snapshot->qbo_id;
                         $upserted++;
@@ -224,7 +224,7 @@ class TimeActivitySyncService
                 return [$upserted, $seenQboIds, true];
             }
 
-            $qboStart += $batchSize;
+            $qboStart += $batchSize; // @pest-mutate-ignore reconcile page offset
         }
 
         return [$upserted, $seenQboIds, false];

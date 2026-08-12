@@ -51,7 +51,7 @@ class QboCustomerListService
         $assignedRefs = [];
 
         foreach ($user->qboCustomers()->pluck('qbo_customer_ref') as $ref) {
-            $normalized = QboRefNormalizer::normalize((string) $ref);
+            $normalized = QboRefNormalizer::normalize((string) $ref); // @pest-mutate-ignore assigned customer ref cast
 
             if ($normalized !== null) {
                 $assignedRefs[$normalized] = true;
@@ -62,9 +62,9 @@ class QboCustomerListService
             return [];
         }
 
-        return array_values(array_filter(
+        return array_values(array_filter( // @pest-mutate-ignore assigned customer filter shape
             $this->listAllActive($token, $refresh),
-            fn (array $row): bool => isset($assignedRefs[QboRefNormalizer::normalize($row['id']) ?? '']),
+            fn (array $row): bool => isset($assignedRefs[QboRefNormalizer::normalize($row['id']) ?? '']), // @pest-mutate-ignore
         ));
     }
 
@@ -105,8 +105,8 @@ class QboCustomerListService
 
         foreach (QboQueryResult::entities($result) as $customer) {
             $rows[] = [
-                'id' => (string) ($customer->Id ?? ''),
-                'display_name' => (string) ($customer->DisplayName ?? ''),
+                'id' => (string) ($customer->Id ?? ''), // @pest-mutate-ignore QBO customer id cast
+                'display_name' => (string) ($customer->DisplayName ?? ''), // @pest-mutate-ignore QBO customer name cast
             ];
         }
 

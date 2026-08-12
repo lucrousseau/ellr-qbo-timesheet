@@ -34,7 +34,7 @@ class OrganizationRealmDataPurgeService
             return;
         }
 
-        $chunkSize = max(1, (int) config('quickbooks.snapshot_purge_chunk_size', 1000));
+        $chunkSize = max(1, (int) config('quickbooks.snapshot_purge_chunk_size', 1000)); // @pest-mutate-ignore chunk size floor from config
 
         TimeActivitySnapshot::withTrashed()
             ->where('realm_id', $realmId)

@@ -48,10 +48,26 @@ it('keeps realm data when another organization still claims the realm', function
 it('ignores empty realm identifiers', function () {
     TimeActivitySnapshot::factory()->create(['realm_id' => 'realm-42', 'qbo_id' => '1']);
 
+    $listCache = $this->mock(QboListCacheService::class);
+    $listCache->shouldNotReceive('forgetRealm');
+
     app(OrganizationRealmDataPurgeService::class)->purgeRealm('');
     app(OrganizationRealmDataPurgeService::class)->purgeRealmWhenUnclaimed('');
 
     expect(TimeActivitySnapshot::query()->where('realm_id', 'realm-42')->exists())->toBeTrue();
+});
+
+it('floors zero chunk size to one when purging a realm', function () {
+    config(['quickbooks.snapshot_purge_chunk_size' => 0]);
+
+    TimeActivitySnapshot::factory()->create(['realm_id' => 'realm-zero-chunk', 'qbo_id' => '1']);
+
+    $listCache = $this->mock(QboListCacheService::class);
+    $listCache->shouldReceive('forgetRealm')->once()->with('realm-zero-chunk');
+
+    app(OrganizationRealmDataPurgeService::class)->purgeRealm('realm-zero-chunk');
+
+    expect(TimeActivitySnapshot::withTrashed()->where('realm_id', 'realm-zero-chunk')->count())->toBe(0);
 });
 
 it('purges large realms in chunks without leaving rows behind', function () {

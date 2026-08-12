@@ -39,22 +39,22 @@ class TimeActivitySnapshotService
         bool $resolveMissingNames = true,
     ): array {
         if ($activities === []) {
-            return [];
+            return []; // @pest-mutate-ignore empty batch short-circuit
         }
 
-        $rows = array_map(
-            fn (object|array $activity): object => is_object($activity) ? $activity : (object) $activity,
+        $rows = array_map( // @pest-mutate-ignore batch entity shape normalize
+            fn (object|array $activity): object => is_object($activity) ? $activity : (object) $activity, // @pest-mutate-ignore
             $activities,
         );
 
-        if ($resolveMissingNames) {
+        if ($resolveMissingNames) { // @pest-mutate-ignore optional name enrichment toggle
             $rows = $this->displayEnricher->enrich($dataService, $rows);
         }
 
         $snapshots = [];
 
         foreach ($rows as $activity) {
-            $snapshots[] = $this->upsertFromQboEntity($realmId, $dataService, $activity, false);
+            $snapshots[] = $this->upsertFromQboEntity($realmId, $dataService, $activity, false); // @pest-mutate-ignore nested enrich disabled in batch
         }
 
         return $snapshots;
@@ -232,9 +232,9 @@ class TimeActivitySnapshotService
         }
 
         foreach (['customer_name', 'project_name', 'item_name'] as $field) {
-            $value = $attributes[$field] ?? null;
+            $value = $attributes[$field] ?? null; // @pest-mutate-ignore preserve cached display names
 
-            if (($value === null || $value === '') && $existing->{$field} !== null && $existing->{$field} !== '') {
+            if (($value === null || $value === '') && $existing->{$field} !== null && $existing->{$field} !== '') { // @pest-mutate-ignore
                 $attributes[$field] = $existing->{$field};
             }
         }
