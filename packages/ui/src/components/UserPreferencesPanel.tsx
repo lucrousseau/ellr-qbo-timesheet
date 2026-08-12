@@ -8,7 +8,7 @@ import {
   timezonePreferenceOptions,
   type UserLocale,
 } from '@ellr/api-client'
-import { cardClass } from '../styles/tokens'
+import { cardClass, sectionHelpClass, sectionTitleClass } from '../styles/tokens'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Button } from './Button'
 import { StaticSelect } from './StaticSelect'
@@ -47,17 +47,17 @@ export function UserPreferencesPanel({
 
   return (
     <section className={cardClass}>
-      <h2 className="text-xl font-medium text-slate-900">{t('preferences.title')}</h2>
-      <p className="mt-2 text-sm text-slate-600">{t('preferences.languageHelp')}</p>
+      <h2 className={sectionTitleClass}>{t('preferences.title')}</h2>
+      <p className={sectionHelpClass}>{t('preferences.languageHelp')}</p>
 
       {companyTimezone ? (
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-brand-muted">
           {t('preferences.companyTimezone', {
             timezone: formatTimezoneLabel(companyTimezone, locale),
           })}
         </p>
       ) : (
-        <p className="mt-2 text-sm text-slate-600">{t('preferences.companyTimezonePending')}</p>
+        <p className="mt-2 text-sm text-brand-muted">{t('preferences.companyTimezonePending')}</p>
       )}
 
       <form className="mt-6 space-y-4" onSubmit={onSave}>
@@ -85,7 +85,7 @@ export function UserPreferencesPanel({
             return label
           }}
         />
-        <p className="text-sm text-slate-600">{t('preferences.timezoneHelp')}</p>
+        <p className="text-sm text-brand-muted">{t('preferences.timezoneHelp')}</p>
         <Button type="submit" variant="secondary" disabled={saving}>
           {saving ? t('common.saving') : t('common.save')}
         </Button>

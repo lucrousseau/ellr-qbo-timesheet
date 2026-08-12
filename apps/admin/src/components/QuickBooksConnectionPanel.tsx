@@ -6,6 +6,8 @@ import { useState } from 'react'
 import {
   Button,
   cardClass,
+  sectionTitleClass,
+  sectionHelpClass,
   ConfirmDialog,
   useLocale,
 } from '@ellr/ui'
@@ -67,13 +69,13 @@ export function QuickBooksConnectionPanel({
 
   return (
     <section className={cardClass}>
-      <h2 className="text-xl font-medium text-slate-900">{t('admin.quickbooksTitle')}</h2>
-      <p className="mt-2 text-sm text-slate-600">{t('admin.quickbooksConnectionHelp')}</p>
+      <h2 className={sectionTitleClass}>{t('admin.quickbooksTitle')}</h2>
+      <p className={sectionHelpClass}>{t('admin.quickbooksConnectionHelp')}</p>
 
       {statusLabel && (
-        <p className="mt-4 text-sm text-slate-600">
+        <p className="mt-4 text-sm text-brand-muted">
           {t('admin.statusLabel')}{' '}
-          <span className="font-medium text-slate-900">{statusLabel}</span>
+          <span className="font-medium text-brand-primary">{statusLabel}</span>
         </p>
       )}
 

@@ -8,7 +8,7 @@ import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
 import { Button } from './Button'
 import { TextField } from './TextField'
-import { cardClass } from '../styles/tokens'
+import { cardClass, sectionHelpClass, sectionTitleClass } from '../styles/tokens'
 
 type ChangePasswordPanelProps = {
   currentPassword: string
@@ -44,8 +44,8 @@ export function ChangePasswordPanel({
 
   return (
     <section className={cardClass}>
-      <h2 className="text-xl font-medium text-slate-900">{t('auth.changePasswordTitle')}</h2>
-      <p className="mt-2 text-sm text-slate-600">{t('auth.changePasswordHelp')}</p>
+      <h2 className={sectionTitleClass}>{t('auth.changePasswordTitle')}</h2>
+      <p className={sectionHelpClass}>{t('auth.changePasswordHelp')}</p>
 
       {error && (
         <div className="mt-4">

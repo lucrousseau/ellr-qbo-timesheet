@@ -107,12 +107,12 @@ export function TimeTrackerPanel({
   }
 
   if (loading) {
-    return <LoadingScreen />
+    return <LoadingScreen variant="inline" />
   }
 
   return (
     <section className={`space-y-5 ${cardClass}`}>
-      <header className="rounded-lg bg-slate-100 px-4 py-3 text-center text-sm font-medium text-slate-700">
+      <header className="rounded-lg bg-brand-surface-subtle px-4 py-3 text-center text-sm font-medium text-brand-primary">
         {headerLabel}
       </header>
 

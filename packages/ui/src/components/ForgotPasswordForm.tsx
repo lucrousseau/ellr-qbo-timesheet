@@ -5,9 +5,10 @@
 import type { FormEvent } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
+import { AuthPageLayout } from './AuthPageLayout'
 import { Button } from './Button'
 import { TextField } from './TextField'
-import { cardClass, pageMainClass, pageTitleClass } from '../styles/tokens'
+import { cardClass, sectionTitleClass } from '../styles/tokens'
 
 type ForgotPasswordFormProps = {
   title: string
@@ -40,13 +41,9 @@ export function ForgotPasswordForm({
   const { t } = useLocale()
 
   return (
-    <main className={pageMainClass}>
-      <header className="mb-8">
-        <h1 className={pageTitleClass}>{title}</h1>
-        <p className="mt-2 text-slate-600">{subtitle ?? t('auth.forgotPasswordSubtitle')}</p>
-      </header>
+    <AuthPageLayout title={title} subtitle={subtitle ?? t('auth.forgotPasswordSubtitle')}>
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">{t('auth.forgotPasswordTitle')}</h2>
+        <h2 className={sectionTitleClass}>{t('auth.forgotPasswordTitle')}</h2>
 
         {error ? (
           <div className="mt-4">
@@ -80,6 +77,6 @@ export function ForgotPasswordForm({
           </Button>
         </div>
       </section>
-    </main>
+    </AuthPageLayout>
   )
 }

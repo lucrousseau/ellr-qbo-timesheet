@@ -63,15 +63,15 @@ export function LazySearchComboboxContent<T>({
   return (
     <div className="relative mt-1">
       <ComboboxButton className={selectTriggerClass}>
-        <span className={value ? 'text-slate-900' : 'text-slate-500'}>
+        <span className={value ? 'text-brand-primary' : 'text-brand-muted-subtle'}>
           {value ? getOptionLabel(value) : placeholder}
         </span>
         <ChevronDownIcon />
       </ComboboxButton>
       <ComboboxOptions portal={false} className={selectOptionsPanelClass}>
-        {loading && <p className="px-3 py-2 text-sm text-slate-500">{loadingLabel}</p>}
+        {loading && <p className="px-3 py-2 text-sm text-brand-muted-subtle">{loadingLabel}</p>}
         {!loading && loaded && (
-          <div className="sticky top-0 border-b border-slate-200 bg-white p-2">
+          <div className="sticky top-0 border-b border-brand-border bg-white p-2">
             <input
               type="search"
               value={query}
@@ -84,10 +84,10 @@ export function LazySearchComboboxContent<T>({
           </div>
         )}
         {!loading && loaded && options.length === 0 && (
-          <p className="px-3 py-2 text-sm text-slate-500">{emptyLabel}</p>
+          <p className="px-3 py-2 text-sm text-brand-muted-subtle">{emptyLabel}</p>
         )}
         {!loading && loaded && options.length > 0 && filteredOptions.length === 0 && (
-          <p className="px-3 py-2 text-sm text-slate-500">{noResultsLabel}</p>
+          <p className="px-3 py-2 text-sm text-brand-muted-subtle">{noResultsLabel}</p>
         )}
         {!loading &&
           filteredOptions.map((option) => {

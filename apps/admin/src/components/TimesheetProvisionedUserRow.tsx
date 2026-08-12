@@ -38,21 +38,21 @@ export function TimesheetProvisionedUserRow({
   return (
     <li className="flex items-start justify-between gap-4 px-4 py-3 text-sm">
       <div>
-        <p className="font-medium text-slate-900">{user.name}</p>
-        <p className="text-slate-600">{user.email}</p>
-        <p className="text-slate-500">
+        <p className="font-medium text-brand-primary">{user.name}</p>
+        <p className="text-brand-muted">{user.email}</p>
+        <p className="text-brand-muted-subtle">
           {t('admin.mappedEmployee', {
             name: user.name,
           })}
         </p>
-        <p className="text-slate-500">
+        <p className="text-brand-muted-subtle">
           {hasAllClientsAccess
             ? t('admin.allClientsAccessEnabled')
             : assignedCount === 0
               ? t('admin.noAssignedClients')
               : t('admin.assignedClientCount', { count: assignedCount })}
         </p>
-        <p className="text-slate-500">
+        <p className="text-brand-muted-subtle">
           {supervisorName
             ? t('admin.supervisorAssigned', { name: supervisorName })
             : t('admin.noSupervisorAssigned')}

@@ -1,11 +1,12 @@
 /**
- * @file Shared application shell with header, sign-out, and layout chrome.
+ * @file Shared application shell with brand mark, header, and layout chrome.
  */
 
 import type { ReactNode } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
-import { pageMainClass, pageTitleClass } from '../styles/tokens'
+import { pageMainClass, pageSubtitleClass, pageTitleClass } from '../styles/tokens'
 import { Button } from './Button'
+import { EllrLogoMark } from './EllrLogoMark'
 
 type AppShellProps = {
   title: string
@@ -17,7 +18,7 @@ type AppShellProps = {
 }
 
 /**
- * Authenticated page shell with header and optional sign-out.
+ * Authenticated page shell with brand mark, header, and optional sign-out.
  * @param props.title Main application title.
  * @param props.subtitle Optional subtitle below the title.
  * @param props.userEmail Email shown with sign-out when provided.
@@ -32,10 +33,11 @@ export function AppShell({ title, subtitle, userEmail, onLogout, loggingOut = fa
     <main className={pageMainClass}>
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className={pageTitleClass}>{title}</h1>
-          {subtitle && <p className="mt-2 text-slate-600">{subtitle}</p>}
+          <EllrLogoMark />
+          <h1 className={`mt-6 ${pageTitleClass}`}>{title}</h1>
+          {subtitle && <p className={pageSubtitleClass}>{subtitle}</p>}
           {userEmail && !subtitle && (
-            <p className="mt-2 text-slate-600">{t('common.signedInAs', { email: userEmail })}</p>
+            <p className={pageSubtitleClass}>{t('common.signedInAs', { email: userEmail })}</p>
           )}
         </div>
         {userEmail && onLogout && (

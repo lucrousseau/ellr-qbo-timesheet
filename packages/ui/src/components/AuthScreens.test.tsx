@@ -46,6 +46,8 @@ describe('auth and layout screens', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Timesheet' })).toBeInTheDocument()
+    expect(screen.getByText('ellr')).toBeInTheDocument()
+    expect(screen.getByText('Technology + accounting expertise')).toBeInTheDocument()
     expect(screen.getByText('Invalid email or password.')).toBeInTheDocument()
     expect(screen.getByText('Need help?')).toBeInTheDocument()
 
@@ -176,6 +178,7 @@ describe('auth and layout screens', () => {
     )
 
     expect(screen.getByText('Dashboard content')).toBeInTheDocument()
+    expect(screen.getByText('ellr')).toBeInTheDocument()
     expect(screen.getByText(/Signed in as user@example.com/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Sign out' }))

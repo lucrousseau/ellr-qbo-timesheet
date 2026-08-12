@@ -4,8 +4,9 @@
 
 import type { FormEvent, ReactNode } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
-import { cardClass, pageMainClass, pageTitleClass } from '../styles/tokens'
+import { cardClass, sectionTitleClass } from '../styles/tokens'
 import { Alert } from './Alert'
+import { AuthPageLayout } from './AuthPageLayout'
 import { Button } from './Button'
 import { TextField } from './TextField'
 
@@ -53,13 +54,9 @@ export function LoginForm({
   const { t } = useLocale()
 
   return (
-    <main className={pageMainClass}>
-      <header className="mb-8">
-        <h1 className={pageTitleClass}>{title}</h1>
-        {subtitle && <p className="mt-2 text-slate-600">{subtitle}</p>}
-      </header>
+    <AuthPageLayout title={title} subtitle={subtitle}>
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">{heading ?? t('common.signIn')}</h2>
+        <h2 className={sectionTitleClass}>{heading ?? t('common.signIn')}</h2>
 
         {error && (
           <div className="mt-4">
@@ -90,6 +87,6 @@ export function LoginForm({
           {footer}
         </form>
       </section>
-    </main>
+    </AuthPageLayout>
   )
 }

@@ -75,7 +75,7 @@ export function AssignSupervisorDialog({
       onClose={onClose}
     >
       <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
-        <p className="text-sm text-slate-600">{t('admin.assignSupervisorHelp')}</p>
+        <p className="text-sm text-brand-muted">{t('admin.assignSupervisorHelp')}</p>
 
         <StaticSelect
           label={t('admin.supervisorLabel')}

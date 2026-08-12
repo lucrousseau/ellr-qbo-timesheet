@@ -253,6 +253,9 @@ QUICKBOOKS_TIME_ACTIVITIES_RECONCILE_CRON="0 * * * *"
 
 QUEUE_CONNECTION=database
 # or redis in multi-instance setups
+# SiteGround Shared: also set QUEUE_SHARED_HOSTING_DRAIN=true (see docs/siteground-shared-hosting.md)
+# Cloud/VPS with Supervisor: leave QUEUE_SHARED_HOSTING_DRAIN=false
+TRUSTED_PROXIES=*
 ```
 
 ### 2. Deploy and migrate
@@ -263,9 +266,9 @@ php artisan migrate --force
 
 Run on deploy (CI/CD or SSH on the server).
 
-### 3. Queue worker (always on)
+### 3. Queue processing (choose one)
 
-Example with Supervisor:
+**Cloud / VPS (preferred):** permanent worker via Supervisor:
 
 ```ini
 [program:ellr-queue]
@@ -275,6 +278,10 @@ autorestart=true
 user=www-data
 ```
 
+Set `QUEUE_SHARED_HOSTING_DRAIN=false` (default).
+
+**SiteGround Shared:** no Supervisor. Set `QUEUE_SHARED_HOSTING_DRAIN=true` and rely on the minute cron `schedule:run` to drain with `queue:work --stop-when-empty` (up to ~1 minute latency). Full runbook: [`docs/siteground-shared-hosting.md`](./siteground-shared-hosting.md).
+
 Or your platform equivalent (Railway worker, Forge daemon, etc.).
 
 ### 4. Scheduler (cron every minute)
@@ -283,8 +290,7 @@ Or your platform equivalent (Railway worker, Forge daemon, etc.).
 * * * * * cd /path/to/backend && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Runs `quickbooks:reconcile-time-activities` hourly by default (backup if a webhook is missed).
-
+Runs `quickbooks:reconcile-time-activities` hourly by default (backup if a webhook is missed). On Shared with drain enabled, the same cron also processes queued jobs.
 ### 5. Intuit Developer portal (Production)
 
 1. App > **Webhooks** > switch to **Production** (or production app)

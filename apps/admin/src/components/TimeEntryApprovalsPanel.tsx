@@ -2,7 +2,7 @@
  * @file Administrator panel for pending time entry approvals.
  */
 
-import { Alert, Button, LoadingScreen, TimeEntryApprovalList, cardClass, useLocale, useTimeEntryApprovals } from '@ellr/ui'
+import { Alert, Button, LoadingScreen, TimeEntryApprovalList, cardClass, sectionHelpClass, sectionTitleCompactClass, useLocale, useTimeEntryApprovals } from '@ellr/ui'
 
 type TimeEntryApprovalsPanelProps = {
   enabled: boolean
@@ -21,8 +21,8 @@ export function TimeEntryApprovalsPanel({ enabled, onSuccess, onError }: TimeEnt
 
   return (
     <section className={cardClass}>
-      <h2 className="text-lg font-medium text-slate-900">{t('admin.timeApprovalsTitle')}</h2>
-      <p className="mt-2 text-sm text-slate-600">{t('admin.timeApprovalsHelp')}</p>
+      <h2 className={sectionTitleCompactClass}>{t('admin.timeApprovalsTitle')}</h2>
+      <p className={sectionHelpClass}>{t('admin.timeApprovalsHelp')}</p>
 
       <div className="mt-4">
         {approvals.error ? (
@@ -30,9 +30,9 @@ export function TimeEntryApprovalsPanel({ enabled, onSuccess, onError }: TimeEnt
         ) : null}
 
         {approvals.loading ? (
-          <LoadingScreen />
+          <LoadingScreen variant="inline" />
         ) : approvals.entries.length === 0 ? (
-          <p className="text-sm text-slate-600">{t('admin.noPendingApprovals')}</p>
+          <p className="text-sm text-brand-muted">{t('admin.noPendingApprovals')}</p>
         ) : (
           <>
             <TimeEntryApprovalList

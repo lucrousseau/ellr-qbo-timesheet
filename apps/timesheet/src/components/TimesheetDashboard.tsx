@@ -120,7 +120,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
           {!user.qbo_employee_ref ? (
             <QboEmployeeWarning />
           ) : auth.showEmailVerification(user) ? null : tracker.loading || tracker.customersStatus === 'unknown' ? (
-            <LoadingScreen />
+            <LoadingScreen variant="inline" />
           ) : !tracker.canTrackTime && tracker.customersStatus === 'empty' ? (
             <AssignedClientsWarning
               allCustomersAccess={user.all_customers_access === true}

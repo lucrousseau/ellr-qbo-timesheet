@@ -62,24 +62,24 @@ export function ManageTimesheetUserClientsDialog({
         </>
       }
     >
-      <p className="text-sm text-slate-600">{t('admin.manageClientAccessHelp')}</p>
+      <p className="text-sm text-brand-muted">{t('admin.manageClientAccessHelp')}</p>
 
-      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-brand-border bg-brand-surface-subtle p-4 text-sm">
         <input
           type="checkbox"
-          className="mt-0.5 size-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+          className="mt-0.5 size-4 rounded border-brand-border accent-brand-accent focus:ring-brand-ring"
           checked={displayAllCustomersAccess}
           disabled={loading || saving}
           onChange={(event) => setAllCustomersAccess(event.target.checked)}
         />
         <span>
-          <span className="block font-medium text-slate-900">{t('admin.allClientsAccess')}</span>
-          <span className="mt-1 block text-slate-600">{t('admin.allClientsAccessHelp')}</span>
+          <span className="block font-medium text-brand-primary">{t('admin.allClientsAccess')}</span>
+          <span className="mt-1 block text-brand-muted">{t('admin.allClientsAccessHelp')}</span>
         </span>
       </label>
 
       {showClientAssignment && !accessReady ? (
-        <p className="mt-4 text-sm text-slate-600">{t('admin.loadingClients')}</p>
+        <p className="mt-4 text-sm text-brand-muted">{t('admin.loadingClients')}</p>
       ) : null}
 
       {showClientAssignment && accessReady ? (
@@ -94,9 +94,9 @@ export function ManageTimesheetUserClientsDialog({
           </div>
 
           {filteredCustomers.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-600">{t('admin.noClientsAvailable')}</p>
+            <p className="mt-4 text-sm text-brand-muted">{t('admin.noClientsAvailable')}</p>
           ) : (
-            <ul className="mt-4 max-h-72 space-y-2 overflow-y-auto rounded-lg border border-slate-200 p-3">
+            <ul className="mt-4 max-h-72 space-y-2 overflow-y-auto rounded-lg border border-brand-border p-3">
               {filteredCustomers.map((customer) => {
                 const checked = isCustomerSelected(customer.id)
                 const checkboxId = `client-${normalizeQboRef(customer.id)}`
@@ -107,11 +107,11 @@ export function ManageTimesheetUserClientsDialog({
                       <input
                         id={checkboxId}
                         type="checkbox"
-                        className="size-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                        className="size-4 rounded border-brand-border accent-brand-accent focus:ring-brand-ring"
                         checked={checked}
                         onChange={() => toggleCustomer(customer.id)}
                       />
-                      <span className="font-medium text-slate-900">{customer.display_name}</span>
+                      <span className="font-medium text-brand-primary">{customer.display_name}</span>
                     </label>
                   </li>
                 )
@@ -119,7 +119,7 @@ export function ManageTimesheetUserClientsDialog({
             </ul>
           )}
 
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-brand-muted-subtle">
             {t('admin.selectedClientCount', { count: selectedRefs.length })}
           </p>
         </>

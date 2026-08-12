@@ -6,9 +6,10 @@ import type { FormEvent } from 'react'
 import { PasswordPolicyRequirements } from './PasswordPolicyRequirements'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
+import { AuthPageLayout } from './AuthPageLayout'
 import { Button } from './Button'
 import { TextField } from './TextField'
-import { cardClass, pageMainClass, pageTitleClass } from '../styles/tokens'
+import { cardClass, sectionTitleClass } from '../styles/tokens'
 
 type ResetPasswordFormProps = {
   title: string
@@ -49,13 +50,9 @@ export function ResetPasswordForm({
   const { t } = useLocale()
 
   return (
-    <main className={pageMainClass}>
-      <header className="mb-8">
-        <h1 className={pageTitleClass}>{title}</h1>
-        <p className="mt-2 text-slate-600">{subtitle ?? t('auth.resetPasswordSubtitle')}</p>
-      </header>
+    <AuthPageLayout title={title} subtitle={subtitle ?? t('auth.resetPasswordSubtitle')}>
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">{t('auth.resetPasswordTitle')}</h2>
+        <h2 className={sectionTitleClass}>{t('auth.resetPasswordTitle')}</h2>
 
         {invalidLink && (
           <div className="mt-4">
@@ -77,7 +74,7 @@ export function ResetPasswordForm({
 
         {!invalidLink && !success && (
           <form className="mt-4 space-y-4" onSubmit={onSubmit}>
-            <p className="text-sm text-slate-600">{t('auth.resettingFor', { email })}</p>
+            <p className="text-sm text-brand-muted">{t('auth.resettingFor', { email })}</p>
             <PasswordPolicyRequirements />
             <TextField
               label={t('auth.newPassword')}
@@ -107,6 +104,6 @@ export function ResetPasswordForm({
           </Button>
         </div>
       </section>
-    </main>
+    </AuthPageLayout>
   )
 }

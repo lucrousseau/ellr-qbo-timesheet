@@ -2,7 +2,15 @@
  * @file Timesheet user provisioning UI for QuickBooks employees.
  */
 
-import { Button, cardClass, LazySearchCombobox, useLocale } from '@ellr/ui'
+import {
+  Button,
+  cardClass,
+  LazySearchCombobox,
+  nestedPanelClass,
+  sectionHelpClass,
+  sectionTitleClass,
+  useLocale,
+} from '@ellr/ui'
 import { useCallback, useState } from 'react'
 import { AssignSupervisorDialog } from './AssignSupervisorDialog'
 import { ManageTimesheetUserClientsDialog } from './ManageTimesheetUserClientsDialog'
@@ -80,18 +88,18 @@ export function TimesheetUserProvisioningPanel({
   if (!connected) {
     return (
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">{t('admin.timesheetAccessTitle')}</h2>
-        <p className="mt-2 text-sm text-slate-600">{t('admin.timesheetAccessConnectFirst')}</p>
+        <h2 className={sectionTitleClass}>{t('admin.timesheetAccessTitle')}</h2>
+        <p className={sectionHelpClass}>{t('admin.timesheetAccessConnectFirst')}</p>
       </section>
     )
   }
 
   return (
     <section className={cardClass}>
-      <h2 className="text-xl font-medium text-slate-900">{t('admin.timesheetAccessTitle')}</h2>
-      <p className="mt-2 text-sm text-slate-600">{t('admin.timesheetAccessHelp')}</p>
+      <h2 className={sectionTitleClass}>{t('admin.timesheetAccessTitle')}</h2>
+      <p className={sectionHelpClass}>{t('admin.timesheetAccessHelp')}</p>
 
-      <form className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4" onSubmit={onSubmit}>
+      <form className="mt-6 space-y-4 rounded-[9px] border border-brand-border p-4" onSubmit={onSubmit}>
         <LazySearchCombobox
           label={t('admin.selectQboEmployee')}
           placeholder={t('admin.chooseEmployee')}
@@ -113,19 +121,19 @@ export function TimesheetUserProvisioningPanel({
         />
 
         {selectedEmployee && (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-            <p className="font-medium text-slate-900">{t('admin.qboIdentityTitle')}</p>
+          <div className={nestedPanelClass}>
+            <p className="font-medium text-brand-primary">{t('admin.qboIdentityTitle')}</p>
             <dl className="mt-3 space-y-2">
               <div>
-                <dt className="text-slate-500">{t('admin.timesheetUserName')}</dt>
-                <dd className="font-medium text-slate-900">{selectedEmployee.display_name}</dd>
+                <dt className="text-brand-muted-subtle">{t('admin.timesheetUserName')}</dt>
+                <dd className="font-medium text-brand-primary">{selectedEmployee.display_name}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">{t('admin.timesheetUserEmail')}</dt>
-                <dd className="font-medium text-slate-900">{selectedEmployee.email}</dd>
+                <dt className="text-brand-muted-subtle">{t('admin.timesheetUserEmail')}</dt>
+                <dd className="font-medium text-brand-primary">{selectedEmployee.email}</dd>
               </div>
             </dl>
-            <p className="mt-3 text-slate-600">{t('admin.qboIdentityReadOnly')}</p>
+            <p className="mt-3 text-brand-muted">{t('admin.qboIdentityReadOnly')}</p>
           </div>
         )}
 
@@ -139,13 +147,13 @@ export function TimesheetUserProvisioningPanel({
       </form>
 
       <div className="mt-6">
-        <h3 className="text-sm font-medium text-slate-900">{t('admin.provisionedUsersTitle')}</h3>
+        <h3 className="text-sm font-medium text-brand-primary">{t('admin.provisionedUsersTitle')}</h3>
         {loadingUsers ? (
-          <p className="mt-2 text-sm text-slate-600">{t('admin.loadingUsers')}</p>
+          <p className={sectionHelpClass}>{t('admin.loadingUsers')}</p>
         ) : users.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-600">{t('admin.noProvisionedUsers')}</p>
+          <p className={sectionHelpClass}>{t('admin.noProvisionedUsers')}</p>
         ) : (
-          <ul className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
+          <ul className="mt-3 divide-y divide-brand-border rounded-lg border border-brand-border">
             {users.map((user) => (
               <TimesheetProvisionedUserRow
                 key={user.id}

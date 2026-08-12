@@ -27,7 +27,7 @@ export function CustomerLoadError({
       <Alert variant="error">{t('timesheet.loadCustomersFailed')}</Alert>
       {hasDraftSession && onDiscard ? (
         <div>
-          <p className="mb-3 text-sm text-slate-600">{t('timesheet.blockedDraftHelp')}</p>
+          <p className="mb-3 text-sm text-brand-muted">{t('timesheet.blockedDraftHelp')}</p>
           <Button variant="secondary" onClick={onDiscard} disabled={discarding}>
             {discarding ? t('timesheet.discardingDraft') : t('timesheet.discardDraft')}
           </Button>

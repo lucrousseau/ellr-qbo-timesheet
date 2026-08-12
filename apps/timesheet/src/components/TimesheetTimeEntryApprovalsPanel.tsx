@@ -2,7 +2,7 @@
  * @file Supervisor panel for pending time entry approvals in the timesheet app.
  */
 
-import { Alert, Button, LoadingScreen, TimeEntryApprovalList, cardClass, useLocale, useTimeEntryApprovals } from '@ellr/ui'
+import { Alert, Button, LoadingScreen, TimeEntryApprovalList, cardClass, sectionHelpClass, sectionTitleCompactClass, useLocale, useTimeEntryApprovals } from '@ellr/ui'
 
 type TimesheetTimeEntryApprovalsPanelProps = {
   enabled: boolean
@@ -38,16 +38,16 @@ export function TimesheetTimeEntryApprovalsPanel({
 
   return (
     <section className={cardClass}>
-      <h2 className="text-lg font-medium text-slate-900">{t('timesheet.timeApprovalsTitle')}</h2>
-      <p className="mt-2 text-sm text-slate-600">{t('timesheet.timeApprovalsHelp')}</p>
+      <h2 className={sectionTitleCompactClass}>{t('timesheet.timeApprovalsTitle')}</h2>
+      <p className={sectionHelpClass}>{t('timesheet.timeApprovalsHelp')}</p>
 
       <div className="mt-4">
         {approvals.error ? <Alert variant="error">{approvals.error}</Alert> : null}
 
         {approvals.loading ? (
-          <LoadingScreen />
+          <LoadingScreen variant="inline" />
         ) : approvals.entries.length === 0 ? (
-          <p className="text-sm text-slate-600">{t('timesheet.noPendingApprovals')}</p>
+          <p className="text-sm text-brand-muted">{t('timesheet.noPendingApprovals')}</p>
         ) : (
           <>
             <TimeEntryApprovalList

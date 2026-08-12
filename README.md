@@ -216,12 +216,20 @@ Use `@ellr/api-client` `listTimeActivities()` for the `{ data, meta }` response 
 
 Checklist before the first deploy (Laravel API + static Vite builds for admin/timesheet).
 
-### Laravel (`backend/.env`)
+Two hosting modes share the same codebase. Switch with `.env` only:
+
+| Mode | Guide | Queue processing |
+|------|-------|------------------|
+| **SiteGround Shared** (current) | [`docs/siteground-shared-hosting.md`](docs/siteground-shared-hosting.md) | `QUEUE_SHARED_HOSTING_DRAIN=true` + cron `schedule:run` |
+| **Cloud / VPS** (later) | Below + Supervisor | `QUEUE_SHARED_HOSTING_DRAIN=false` + permanent `queue:work` |
+
+### Laravel (`backend/.env`) — Shared baseline
 
 ```env
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://api.yourdomain.com
+LOG_LEVEL=info
 
 ALLOW_REGISTRATION=false
 REQUIRE_EMAIL_VERIFICATION=true
@@ -235,14 +243,17 @@ SESSION_SAME_SITE=lax
 SESSION_ENCRYPT=true
 SESSION_DOMAIN=.yourdomain.com
 
-CACHE_STORE=redis
-QUEUE_CONNECTION=redis
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+QUEUE_SHARED_HOSTING_DRAIN=true
+TRUSTED_PROXIES=*
 
 QUICKBOOKS_CLIENT_ID=…
 QUICKBOOKS_CLIENT_SECRET=…
 QUICKBOOKS_REDIRECT_URI=https://api.yourdomain.com/api/quickbooks/callback
 QUICKBOOKS_BASE_URL=production
 QUICKBOOKS_EXPOSE_API_ERRORS=false
+QUICKBOOKS_WEBHOOK_VERIFIER=…
 
 FRONTEND_ADMIN_URL=https://admin.yourdomain.com
 FRONTEND_TIMESHEET_URL=https://timesheet.yourdomain.com
@@ -258,11 +269,28 @@ MAIL_FROM_ADDRESS=no-reply@yourdomain.com
 MAIL_FROM_NAME="${APP_NAME}"
 ```
 
+### Cloud / VPS overrides (when you leave Shared)
+
+```env
+CACHE_STORE=redis
+QUEUE_CONNECTION=redis
+QUEUE_SHARED_HOSTING_DRAIN=false
+```
+
+Run a permanent worker (Supervisor or equivalent):
+
+```bash
+php artisan queue:work --sleep=3 --tries=3
+```
+
+Keep a minute cron for `php artisan schedule:run` (reconcile + prune). Details: [`docs/quickbooks-time-activity-sync.md`](docs/quickbooks-time-activity-sync.md).
+
 ### Intuit Developer Portal
 
 - Redirect URI: must match `QUICKBOOKS_REDIRECT_URI`
 - Production mode when connecting real QBO companies
 - Scopes: `com.intuit.quickbooks.accounting` (already configured)
+- Webhooks: `POST /api/quickbooks/webhook` + `QUICKBOOKS_WEBHOOK_VERIFIER` (see sync doc)
 
 ### Frontends
 
@@ -274,7 +302,9 @@ npm run build:admin
 npm run build:timesheet
 ```
 
-Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (CDN, nginx, etc.). Apps call only the Laravel API via `@ellr/api-client`.
+Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (Apache document roots or CDN). Each `dist/` includes an `.htaccess` SPA fallback for password-reset deep links. Apps call only the Laravel API via `@ellr/api-client`.
+
+API document root must be `backend/public` (never the repo root).
 
 ### Security
 
@@ -284,6 +314,7 @@ Serve `apps/admin/dist` and `apps/timesheet/dist` over HTTPS (CDN, nginx, etc.).
 - OAuth tokens encrypted in DB (`quickbooks_tokens`), never logged
 - CORS/Sanctum: front domains in `SANCTUM_STATEFUL_DOMAINS`; `config/cors.php` with `supports_credentials`
 - Session cookies: parent `SESSION_DOMAIN` (e.g. `.yourdomain.com`), `SESSION_ENCRYPT=true`, `SESSION_SECURE_COOKIE=true`
+- `TRUSTED_PROXIES=*`: required behind SiteGround / CDN TLS termination
 - QBO employee per user (`qbo_employee_ref`): unique per account, set from admin, validated by the API
 - QuickBooks OAuth: administrators connect in the admin app; timesheet users reuse the latest administrator token when they have no token of their own
 - `REQUIRE_EMAIL_VERIFICATION=true`: block sign-in and protected routes until the user confirms email

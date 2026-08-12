@@ -19,6 +19,9 @@ export {
 } from './masks/durationMask'
 export { Alert } from './components/Alert'
 export { AppShell } from './components/AppShell'
+export { AuthPageLayout } from './components/AuthPageLayout'
+export { EllrLogoGraphic } from './components/EllrLogoGraphic'
+export { EllrLogoMark } from './components/EllrLogoMark'
 export { PasswordPolicyRequirements } from './components/PasswordPolicyRequirements'
 export { ChangePasswordPanel } from './components/ChangePasswordPanel'
 export { ForgotPasswordForm } from './components/ForgotPasswordForm'
@@ -54,10 +57,15 @@ export {
   alertClasses,
   cardClass,
   inputClass,
+  nestedPanelClass,
   pageMainClass,
+  pageSubtitleClass,
   pageTitleClass,
   primaryButtonClass,
   secondaryButtonClass,
+  sectionHelpClass,
+  sectionTitleClass,
+  sectionTitleCompactClass,
 } from './styles/tokens'
 export { fieldLabelClass, checkboxClass, checkboxLabelClass } from './styles/formTokens'
 export {

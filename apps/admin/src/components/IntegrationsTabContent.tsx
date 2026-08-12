@@ -44,7 +44,7 @@ export function IntegrationsTabContent({
         onConnect={admin.connectQuickBooksFlow}
         onDisconnect={admin.disconnectQuickBooksFlow}
       />
-      <Suspense fallback={<LoadingScreen />}>
+      <Suspense fallback={<LoadingScreen variant="inline" />}>
         <CreateQboProjectPanel
           connected={admin.status?.connected === true}
           customers={projectCreate.customers}

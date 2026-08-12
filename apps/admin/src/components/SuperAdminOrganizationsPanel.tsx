@@ -7,6 +7,9 @@ import {
   ConfirmDialog,
   PasswordPolicyRequirements,
   TextField,
+  cardClass,
+  sectionHelpClass,
+  sectionTitleCompactClass,
   useLocale,
 } from '@ellr/ui'
 import type { useSuperAdminOrganizations } from '../hooks/useSuperAdminOrganizations'
@@ -27,16 +30,16 @@ export function SuperAdminOrganizationsPanel({ clients }: SuperAdminOrganization
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">{t('admin.clientsTitle')}</h2>
-        <p className="mt-1 text-sm text-slate-600">{t('admin.clientsHelp')}</p>
+      <section className={cardClass}>
+        <h2 className={sectionTitleCompactClass}>{t('admin.clientsTitle')}</h2>
+        <p className={sectionHelpClass}>{t('admin.clientsHelp')}</p>
 
         {clients.loading ? (
-          <p className="mt-4 text-sm text-slate-600">{t('admin.clientsLoading')}</p>
+          <p className="mt-4 text-sm text-brand-muted">{t('admin.clientsLoading')}</p>
         ) : clients.organizations.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">{t('admin.clientsEmpty')}</p>
+          <p className="mt-4 text-sm text-brand-muted">{t('admin.clientsEmpty')}</p>
         ) : (
-          <ul className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200">
+          <ul className="mt-4 divide-y divide-brand-border rounded-lg border border-brand-border">
             {clients.organizations.map((organization) => (
               <OrganizationRow
                 key={organization.id}
@@ -48,8 +51,8 @@ export function SuperAdminOrganizationsPanel({ clients }: SuperAdminOrganization
         )}
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-slate-900">{t('admin.createClientOrganization')}</h3>
+      <section className={cardClass}>
+        <h3 className="text-base font-semibold text-brand-primary">{t('admin.createClientOrganization')}</h3>
         <form
           className="mt-4 grid gap-4 md:grid-cols-2"
           onSubmit={(event) => {
@@ -143,8 +146,8 @@ function OrganizationRow({ organization, clients }: OrganizationRowProps) {
           />
         ) : (
           <>
-            <p className="font-medium text-slate-900">{organization.name}</p>
-            <p className="text-sm text-slate-600">
+            <p className="font-medium text-brand-primary">{organization.name}</p>
+            <p className="text-sm text-brand-muted">
               {t('admin.clientsUsersCount', { count: organization.users_count })}
               {' · '}
               {organization.qbo_connected ? t('admin.clientsQboConnected') : t('admin.clientsQboDisconnected')}

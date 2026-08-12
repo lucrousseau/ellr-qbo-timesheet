@@ -138,4 +138,24 @@ return [
 
     'failed_jobs_retention_hours' => (int) env('QUEUE_FAILED_JOBS_RETENTION_HOURS', 168),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Shared hosting queue drain (cron)
+    |--------------------------------------------------------------------------
+    |
+    | When true, `schedule:run` (every minute) drains the queue with
+    | `queue:work --stop-when-empty`. Use on SiteGround Shared where a
+    | permanent Supervisor worker is unavailable.
+    |
+    | Keep false on Cloud/VPS when a dedicated `queue:work` daemon runs
+    | (otherwise jobs would be processed twice).
+    |
+    */
+
+    'shared_hosting_drain' => (bool) env('QUEUE_SHARED_HOSTING_DRAIN', false),
+
+    'shared_hosting_drain_max_time' => (int) env('QUEUE_SHARED_HOSTING_DRAIN_MAX_TIME', 50),
+
+    'shared_hosting_drain_tries' => (int) env('QUEUE_SHARED_HOSTING_DRAIN_TRIES', 3),
+
 ];

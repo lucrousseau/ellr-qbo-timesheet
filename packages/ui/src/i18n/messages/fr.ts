@@ -36,6 +36,10 @@ const frApiErrors = {
 } satisfies Record<ApiErrorMessageKey, string>
 
 export const frMessages: Messages = {
+  brand: {
+    name: 'ellr',
+    tagline: 'Technologie + expertise comptable',
+  },
   common: {
     loading: 'Chargement...',
     apiUnavailableTitle: 'Reconnexion au serveur',

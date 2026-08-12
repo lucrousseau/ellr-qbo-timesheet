@@ -11,7 +11,7 @@ See also the [root README](../../README.md) and [root AGENTS.md](../../AGENTS.md
 | Rule | Detail |
 |------|--------|
 | **Import Headless only in `@ellr/ui`** | Apps use Ellr wrappers, never `@headlessui/react` directly |
-| **Style via tokens** | `styles/tokens.ts`, `styles/formTokens.ts`, `styles/selectTokens.ts`, `styles/dialogTokens.ts` |
+| **Style via tokens** | `styles/tokens.ts`, `styles/formTokens.ts`, `styles/selectTokens.ts`, `styles/dialogTokens.ts` (brand colors from `packages/vite-config` `app.css`) |
 | **Wrap, do not re-export Headless** | Export Ellr components only |
 | **Evolve incrementally** | See `.cursor/rules/ui-design-system.mdc` (mandatory checklist on every UI change) |
 
@@ -20,6 +20,7 @@ See also the [root README](../../README.md) and [root AGENTS.md](../../AGENTS.md
 | Component | Headless primitive | Use when |
 |-----------|-------------------|----------|
 | `Button` | `Button` | Primary, secondary, danger, link; `size="compact"` for header chrome |
+| `EllrLogoMark` | — | Brand pastille + optional wordmark/tagline in shell and auth |
 | `TextField` | `Field` + `Label` + `Input` | Text, email, password, datetime-local |
 | `MaskedInput` | IMask (`react-imask`) | Formatted numeric entry (duration, phone, etc.) |
 | `TextAreaField` | `Field` + `Label` + `Textarea` | Multi-line text, notes, descriptions |

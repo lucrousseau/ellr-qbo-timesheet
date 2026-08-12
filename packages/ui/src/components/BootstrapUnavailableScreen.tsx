@@ -3,7 +3,8 @@
  */
 
 import { Button } from './Button'
-import { pageMainClass } from '../styles/tokens'
+import { EllrLogoMark } from './EllrLogoMark'
+import { pageMainClass, pageSubtitleClass, sectionTitleClass } from '../styles/tokens'
 import { useLocale } from '../i18n/LocaleProvider'
 
 type BootstrapUnavailableScreenProps = {
@@ -22,8 +23,11 @@ export function BootstrapUnavailableScreen({ onRetry, retrying = false }: Bootst
   return (
     <main className={pageMainClass}>
       <div className="mx-auto w-full max-w-md space-y-4 text-center">
-        <h1 className="text-xl font-semibold text-slate-900">{t('common.apiUnavailableTitle')}</h1>
-        <p className="text-slate-600">{t('common.apiUnavailableBody')}</p>
+        <div className="flex justify-center">
+          <EllrLogoMark showWordmark={false} size="md" />
+        </div>
+        <h1 className={sectionTitleClass}>{t('common.apiUnavailableTitle')}</h1>
+        <p className={pageSubtitleClass}>{t('common.apiUnavailableBody')}</p>
         <Button type="button" onClick={onRetry} disabled={retrying}>
           {retrying ? t('common.apiUnavailableRetrying') : t('common.apiUnavailableRetry')}
         </Button>

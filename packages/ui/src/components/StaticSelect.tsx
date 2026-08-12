@@ -44,7 +44,7 @@ export function StaticSelect<T>({
         <Label className={fieldLabelClass}>{label}</Label>
         <div className="relative mt-1">
           <ListboxButton className={selectTriggerClass}>
-            <span className={value ? 'text-slate-900' : 'text-slate-500'}>
+            <span className={value ? 'text-brand-primary' : 'text-brand-muted-subtle'}>
               {value ? getOptionLabel(value) : (placeholder ?? '')}
             </span>
             <ChevronDownIcon />

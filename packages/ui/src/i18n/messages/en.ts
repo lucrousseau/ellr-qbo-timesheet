@@ -35,6 +35,10 @@ const enApiErrors = {
 } satisfies Record<ApiErrorMessageKey, string>
 
 export const enMessages = {
+  brand: {
+    name: 'ellr',
+    tagline: 'Technology + accounting expertise',
+  },
   common: {
     loading: 'Loading...',
     apiUnavailableTitle: 'Reconnecting to the server',

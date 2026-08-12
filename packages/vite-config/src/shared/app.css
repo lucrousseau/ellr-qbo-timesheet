@@ -4,10 +4,31 @@
 @source "../../../../apps/admin/src";
 @source "../../../../apps/timesheet/src";
 
+/*
+ * Ellr brand tokens (aligned with website-ellr/styles/globals.css light :root).
+ * Product apps use the light product theme, not the marketing dark hero.
+ */
 @theme {
-  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-geo: "Jost", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-bg: #f6f5f2;
+  --color-brand-surface: #ffffff;
+  --color-brand-surface-subtle: #efede7;
+  --color-brand-primary: #16191e;
+  --color-brand-muted: #585e6a;
+  --color-brand-muted-subtle: #8a8f9a;
+  --color-brand-accent: #0f4c5a;
+  --color-brand-accent-hover: #0a6072;
+  --color-brand-on-accent: #f4f6f5;
+  --color-brand-border: #e4e2dc;
+  --color-brand-ring: #0f4c5a;
+  --color-brand-ink-deep: #0e2a31;
+  --color-brand-teal-light: #6fb6c5;
+  --color-brand-danger: #dc2626;
+  --color-brand-danger-hover: #b91c1c;
 }
 
 body {
-  @apply m-0 min-h-svh bg-slate-50 text-slate-900 antialiased;
+  @apply m-0 min-h-svh bg-brand-bg font-sans text-brand-primary antialiased;
 }

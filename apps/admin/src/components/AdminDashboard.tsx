@@ -149,7 +149,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           role="tabpanel"
           aria-labelledby={`${TAB_ID_PREFIX}-tab-clients`}
         >
-          <Suspense fallback={<LoadingScreen />}>
+          <Suspense fallback={<LoadingScreen variant="inline" />}>
             <SuperAdminOrganizationsPanel clients={clientOrganizations} />
           </Suspense>
         </div>
@@ -159,7 +159,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           role="tabpanel"
           aria-labelledby={`${TAB_ID_PREFIX}-tab-approvals`}
         >
-          <Suspense fallback={<LoadingScreen />}>
+          <Suspense fallback={<LoadingScreen variant="inline" />}>
             <TimeEntryApprovalsPanel
               enabled={activeTabId === 'approvals'}
               onError={admin.showError}

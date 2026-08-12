@@ -2,7 +2,15 @@
  * @file Admin form to create QuickBooks projects under a parent client.
  */
 
-import { Button, cardClass, LazySearchCombobox, TextField, useLocale } from '@ellr/ui'
+import {
+  Button,
+  cardClass,
+  LazySearchCombobox,
+  sectionHelpClass,
+  sectionTitleClass,
+  TextField,
+  useLocale,
+} from '@ellr/ui'
 import type { QboCustomerOption } from '@ellr/api-client'
 
 type CreateQboProjectPanelProps = {
@@ -44,8 +52,8 @@ export function CreateQboProjectPanel({
   if (!connected) {
     return (
       <section className={cardClass}>
-        <h2 className="text-xl font-medium text-slate-900">{t('admin.createProjectTitle')}</h2>
-        <p className="mt-2 text-sm text-slate-600">{t('admin.createProjectConnectFirst')}</p>
+        <h2 className={sectionTitleClass}>{t('admin.createProjectTitle')}</h2>
+        <p className={sectionHelpClass}>{t('admin.createProjectConnectFirst')}</p>
       </section>
     )
   }
@@ -54,10 +62,10 @@ export function CreateQboProjectPanel({
 
   return (
     <section className={cardClass}>
-      <h2 className="text-xl font-medium text-slate-900">{t('admin.createProjectTitle')}</h2>
-      <p className="mt-2 text-sm text-slate-600">{t('admin.createProjectHelp')}</p>
+      <h2 className={sectionTitleClass}>{t('admin.createProjectTitle')}</h2>
+      <p className={sectionHelpClass}>{t('admin.createProjectHelp')}</p>
 
-      <form className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4" onSubmit={onSubmit}>
+      <form className="mt-6 space-y-4 rounded-[9px] border border-brand-border p-4" onSubmit={onSubmit}>
         <LazySearchCombobox
           label={t('admin.selectProjectClient')}
           placeholder={t('admin.chooseProjectClient')}

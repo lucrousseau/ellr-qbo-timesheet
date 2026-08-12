@@ -37,9 +37,9 @@ export function EmployeeTimeEntriesDialog({
       open={user !== null}
       title={t('admin.employeeTimeEntriesTitle', { name: user?.name ?? '' })}
       onClose={onClose}
-      panelClassName="w-full max-w-6xl rounded-xl border border-slate-200 bg-white p-6 shadow-xl"
+      panelClassName="w-full max-w-6xl rounded-xl border border-brand-border bg-white p-6 shadow-xl"
     >
-      <p className="text-sm text-slate-600">{t('admin.employeeTimeEntriesHelp')}</p>
+      <p className="text-sm text-brand-muted">{t('admin.employeeTimeEntriesHelp')}</p>
 
       <div className="mt-4">
         <TimeActivityEntriesPanel

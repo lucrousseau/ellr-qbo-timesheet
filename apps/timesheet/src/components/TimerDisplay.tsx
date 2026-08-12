@@ -33,10 +33,10 @@ export type TimerDisplayHandle = {
   commitPendingEdit: () => number | null
 }
 
-const timerTypographyClass = 'font-mono text-4xl font-semibold tracking-tight text-slate-900'
-const timerSecondsClass = 'text-xl font-semibold text-slate-600'
+const timerTypographyClass = 'font-mono text-4xl font-semibold tracking-tight text-brand-primary'
+const timerSecondsClass = 'text-xl font-semibold text-brand-muted'
 
-const timerInputClass = `rounded-lg border border-transparent bg-transparent px-2 py-1 text-center outline-none transition ${timerTypographyClass} focus:border-blue-500`
+const timerInputClass = `rounded-lg border border-transparent bg-transparent px-2 py-1 text-center outline-none transition ${timerTypographyClass} focus:border-brand-accent`
 
 /**
  * Large HH:MM:SS timer with click-to-edit input and a play/pause toggle button.
@@ -192,20 +192,20 @@ export const TimerDisplay = forwardRef<TimerDisplayHandle, TimerDisplayProps>(fu
         ) : (
           <button
             type="button"
-            className="rounded-lg border border-transparent px-2 py-1 text-left transition hover:border-slate-200 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-transparent px-2 py-1 text-left transition hover:border-brand-border focus:border-brand-accent focus:outline-none"
             aria-label={t('timesheet.editTimer')}
             onClick={startEditing}
           >
             <span className={timerTypographyClass}>
               {hours}
-              <span className="text-slate-400">:</span>
+              <span className="text-brand-muted-subtle">:</span>
               {minutes}
-              <span className={`text-slate-400 ${timerSecondsClass}`}>:</span>
+              <span className={`text-brand-muted-subtle ${timerSecondsClass}`}>:</span>
               <span className={timerSecondsClass}>{seconds}</span>
             </span>
           </button>
         )}
-        <p className="mt-1 text-xs font-medium uppercase tracking-widest text-slate-400">
+        <p className="mt-1 text-xs font-medium uppercase tracking-widest text-brand-muted-subtle">
           {isEditing ? t('timesheet.timerInputLabels') : t('timesheet.timerLabels')}
         </p>
       </div>

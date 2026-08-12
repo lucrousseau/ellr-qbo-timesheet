@@ -6,7 +6,7 @@ import type { TimeActivityRow, TimeActivityUpdatePayload } from '@ellr/api-clien
 import { Alert } from './Alert'
 import { Button } from './Button'
 import { LoadingScreen } from './LoadingScreen'
-import { cardClass } from '../styles/tokens'
+import { cardClass, sectionTitleCompactClass } from '../styles/tokens'
 import { useLocale } from '../i18n/LocaleProvider'
 import { TimeActivityEditableRow } from './TimeActivityEditableRow'
 import { formatEntryDateTime, formatEntryDuration } from './timeActivityDisplay'
@@ -88,7 +88,7 @@ export function TimeActivityEntriesPanel({
 
   return (
     <section className={embedded ? '' : cardClass}>
-      {title ? <h2 className="text-lg font-medium text-slate-900">{title}</h2> : null}
+      {title ? <h2 className={sectionTitleCompactClass}>{title}</h2> : null}
 
       {error ? (
         <div className="mt-4">
@@ -98,14 +98,14 @@ export function TimeActivityEntriesPanel({
 
       {loading ? (
         <div className="mt-4">
-          <LoadingScreen />
+          <LoadingScreen variant="inline" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-600">{t('timeActivity.empty')}</p>
+        <p className="mt-4 text-sm text-brand-muted">{t('timeActivity.empty')}</p>
       ) : (
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+          <table className="min-w-full divide-y divide-brand-border text-left text-sm">
+            <thead className="bg-brand-surface-subtle text-xs font-medium uppercase tracking-wide text-brand-muted-subtle">
               <tr>
                 <th className="px-3 py-2">{t('timeActivity.start')}</th>
                 <th className="px-3 py-2">{t('timeActivity.end')}</th>
@@ -120,7 +120,7 @@ export function TimeActivityEntriesPanel({
                 {reviewable ? <th className="px-3 py-2">{t('timeActivity.actions')}</th> : null}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-brand-border">
               {entries.map((entry) =>
                 editable && onSaveEntry ? (
                   <TimeActivityEditableRow
@@ -131,23 +131,23 @@ export function TimeActivityEntriesPanel({
                   />
                 ) : (
                   <tr key={entry.id}>
-                    <td className="px-3 py-3 text-slate-700">
+                    <td className="px-3 py-3 text-brand-primary">
                       {formatEntryDateTime(entry.startTime, locale, displayTimezone) || t('timeActivity.noValue')}
                     </td>
-                    <td className="px-3 py-3 text-slate-700">
+                    <td className="px-3 py-3 text-brand-primary">
                       {formatEntryDateTime(entry.endTime, locale, displayTimezone) || t('timeActivity.noValue')}
                     </td>
-                    <td className="px-3 py-3 text-slate-700">
+                    <td className="px-3 py-3 text-brand-primary">
                       {entry.customerName ?? t('timeActivity.noValue')}
                     </td>
-                    <td className="px-3 py-3 text-slate-700">
+                    <td className="px-3 py-3 text-brand-primary">
                       {entry.serviceName ?? t('timeActivity.noValue')}
                     </td>
-                    <td className="px-3 py-3 text-slate-700">
+                    <td className="px-3 py-3 text-brand-primary">
                       {entry.description?.trim() ? entry.description : t('timeActivity.noValue')}
                     </td>
-                    <td className="px-3 py-3 text-slate-700">{formatEntryDuration(entry.durationSeconds)}</td>
-                    <td className="px-3 py-3 text-slate-700">
+                    <td className="px-3 py-3 text-brand-primary">{formatEntryDuration(entry.durationSeconds)}</td>
+                    <td className="px-3 py-3 text-brand-primary">
                       {entry.billableLocked
                         ? t('timeActivity.billed')
                         : entry.isBillable
@@ -155,17 +155,17 @@ export function TimeActivityEntriesPanel({
                           : t('timeActivity.billableNo')}
                     </td>
                     {showEmployee ? (
-                      <td className="px-3 py-3 text-slate-700">
+                      <td className="px-3 py-3 text-brand-primary">
                         {entry.employeeName ?? t('timeActivity.noValue')}
                       </td>
                     ) : null}
                     {showApprovalStatus ? (
-                      <td className="px-3 py-3 text-slate-700">
+                      <td className="px-3 py-3 text-brand-primary">
                         {formatApprovalStatus(entry.approvalStatus, t)}
                       </td>
                     ) : null}
                     {reviewable && onApproveEntry && onRejectEntry ? (
-                      <td className="px-3 py-3 text-slate-700">
+                      <td className="px-3 py-3 text-brand-primary">
                         <TimeEntryApprovalActions
                           entryId={entry.id}
                           reviewing={reviewingId === entry.id}

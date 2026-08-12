@@ -61,7 +61,7 @@ export function TimeActivityEditableRow({ entry, saving, onSave }: TimeActivityE
 
   return (
     <tr className="align-top">
-      <td className="px-3 py-3 text-sm text-slate-700">
+      <td className="px-3 py-3 text-sm text-brand-primary">
         <TextField
           label={t('timeActivity.start')}
           type="datetime-local"
@@ -70,7 +70,7 @@ export function TimeActivityEditableRow({ entry, saving, onSave }: TimeActivityE
           onChange={(event) => setStartValue(event.target.value)}
         />
       </td>
-      <td className="px-3 py-3 text-sm text-slate-700">
+      <td className="px-3 py-3 text-sm text-brand-primary">
         <TextField
           label={t('timeActivity.end')}
           type="datetime-local"
@@ -79,9 +79,9 @@ export function TimeActivityEditableRow({ entry, saving, onSave }: TimeActivityE
           onChange={(event) => setEndValue(event.target.value)}
         />
       </td>
-      <td className="px-3 py-3 text-sm text-slate-700">{entry.customerName ?? t('timeActivity.noValue')}</td>
-      <td className="px-3 py-3 text-sm text-slate-700">{entry.serviceName ?? t('timeActivity.noValue')}</td>
-      <td className="px-3 py-3 text-sm text-slate-700">
+      <td className="px-3 py-3 text-sm text-brand-primary">{entry.customerName ?? t('timeActivity.noValue')}</td>
+      <td className="px-3 py-3 text-sm text-brand-primary">{entry.serviceName ?? t('timeActivity.noValue')}</td>
+      <td className="px-3 py-3 text-sm text-brand-primary">
         <TextAreaField
           label={t('timeActivity.description')}
           value={description}
@@ -90,8 +90,8 @@ export function TimeActivityEditableRow({ entry, saving, onSave }: TimeActivityE
           rows={2}
         />
       </td>
-      <td className="px-3 py-3 text-sm text-slate-700">{formatEntryDuration(entry.durationSeconds)}</td>
-      <td className="px-3 py-3 text-sm text-slate-700">
+      <td className="px-3 py-3 text-sm text-brand-primary">{formatEntryDuration(entry.durationSeconds)}</td>
+      <td className="px-3 py-3 text-sm text-brand-primary">
         <CheckboxField
           label={t('timeActivity.billable')}
           checked={isBillable}
@@ -99,10 +99,10 @@ export function TimeActivityEditableRow({ entry, saving, onSave }: TimeActivityE
           onChange={setIsBillable}
         />
         {entry.billableLocked ? (
-          <p className="mt-1 text-xs text-slate-500">{t('timeActivity.billedLocked')}</p>
+          <p className="mt-1 text-xs text-brand-muted-subtle">{t('timeActivity.billedLocked')}</p>
         ) : null}
       </td>
-      <td className="px-3 py-3 text-sm text-slate-700">
+      <td className="px-3 py-3 text-sm text-brand-primary">
         <Button type="button" size="compact" disabled={saving || !isDirty} onClick={() => void onSubmit()}>
           {saving ? t('timeActivity.saving') : t('timeActivity.save')}
         </Button>

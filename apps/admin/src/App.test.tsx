@@ -160,7 +160,7 @@ describe('Admin App', () => {
     render(<App />)
 
     const loading = screen.getByText('Loading...')
-    expect(loading).toHaveClass('text-slate-600')
+    expect(loading).toHaveClass('text-brand-muted')
     expect(screen.queryByRole('button', { name: /sign in/i })).not.toBeInTheDocument()
   })
 

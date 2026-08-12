@@ -34,11 +34,11 @@ export function TimeEntryApprovalList({
       {entries.map((entry) => (
         <li
           key={entry.id}
-          className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+          className="rounded-lg border border-brand-border bg-white p-4 shadow-sm"
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0 space-y-2 text-sm text-slate-700">
-              <p className="text-base font-medium text-slate-900">
+            <div className="min-w-0 space-y-2 text-sm text-brand-primary">
+              <p className="text-base font-medium text-brand-primary">
                 {entry.employeeName ?? t('timeActivity.noValue')}
               </p>
               <p>
@@ -58,7 +58,7 @@ export function TimeEntryApprovalList({
                 {entry.serviceName ?? t('timeActivity.noValue')}
               </p>
               {entry.description?.trim() ? <p>{entry.description}</p> : null}
-              <p className="text-slate-500">
+              <p className="text-brand-muted-subtle">
                 {entry.isBillable ? t('timeActivity.billableYes') : t('timeActivity.billableNo')}
               </p>
             </div>
