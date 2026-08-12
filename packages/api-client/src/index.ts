@@ -12,6 +12,7 @@ export {
   type UpdateSuperAdminOrganizationPayload,
 } from './superAdmin'
 export {
+  createQboProject,
   createTimesheetUser,
   deleteTimesheetUser,
   fetchAdminQboCustomers,
@@ -21,6 +22,7 @@ export {
   listAdminUserTimeActivities,
   syncTimesheetUserCustomers,
   updateAdminUserTimeActivity,
+  type CreateQboProjectPayload,
   type CreateTimesheetUserPayload,
   type QboCustomerOption,
   type QboEmployeeOption,

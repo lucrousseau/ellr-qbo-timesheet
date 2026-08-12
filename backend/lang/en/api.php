@@ -22,6 +22,7 @@ return [
     'qbo_employee_email_missing' => 'QuickBooks employee has no email address configured.',
     'qbo_employee_email_conflict' => 'QuickBooks employee email is already used by another account.',
     'admin_invalid_customer_assignment' => 'One or more selected clients are not available in QuickBooks.',
+    'admin_invalid_project_parent' => 'Selected client is not available in QuickBooks.',
     'time_activity_not_found' => 'Time activity not found',
     'time_entry_not_found' => 'Time entry not found',
     'time_entry_not_editable' => 'Only pending time entries can be edited.',

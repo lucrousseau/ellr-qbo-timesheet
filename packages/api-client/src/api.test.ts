@@ -4,6 +4,7 @@ import { ApiError, apiFetch, ensureCsrfCookie, resetCsrfStateForTests } from './
 /** Matches packages/password-policy/test-passwords.json alternate (tests only). */
 const VALID_TEST_PASSWORD_ALT = 'EllrNew!2026'
 import {
+  createQboProject,
   createTimesheetUser,
   deleteTimesheetUser,
   fetchAdminQboCustomers,
@@ -1597,6 +1598,36 @@ describe('admin api helpers', () => {
     await expect(fetchAdminQboCustomers({ refresh: true })).resolves.toEqual([
       { id: '11', display_name: 'Acme Corp' },
     ])
+  })
+
+  it('creates a quickbooks project through the admin api', async () => {
+    mockCsrfCookie()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => ({
+          data: { id: '55', display_name: 'Website redesign' },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      createQboProject({
+        customer_ref: '11',
+        display_name: 'Website redesign',
+      }),
+    ).resolves.toEqual({
+      id: '55',
+      display_name: 'Website redesign',
+    })
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'http://localhost:8000/api/admin/quickbooks/projects',
+      expect.objectContaining({ method: 'POST' }),
+    )
   })
 
   it('loads and syncs timesheet user customer assignments', async () => {
