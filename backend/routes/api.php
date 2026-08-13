@@ -51,10 +51,13 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/quickbooks/webhook', [QuickBooksWebhookController::class, 'store']);
 });
 
-// Sanctum session: logout, profile, and platform ops stay available without a tenant org
-// (super-admins are not tenant members).
+// Sanctum session: logout, profile, and platform ops stay available for org-less
+// super-admins (they are not tenant members).
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+});
+
+Route::middleware(['auth:sanctum', 'organization:allow_super_admin', 'throttle:60,1'])->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::patch('/user/locale', [UserLocaleController::class, 'update']);
     Route::patch('/user/preferences', [UserPreferencesController::class, 'update']);
