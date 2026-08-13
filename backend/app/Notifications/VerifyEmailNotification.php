@@ -20,19 +20,29 @@ class VerifyEmailNotification extends VerifyEmail
     /**
      * Builds the signed verification URL for the API route.
      *
+     * Uses {@see Config} `app.url` explicitly so Docker/Vite proxy hosts
+     * (e.g. `http://api:8000`) never leak into browser-facing mail links.
+     *
      * @param  object  $notifiable  User receiving the notification.
      * @return string
      */
     protected function verificationUrl($notifiable): string
     {
-        return URL::temporarySignedRoute(
-            'verification.verify',
-            Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
-            [
-                'id' => $notifiable->getKey(),
-                'hash' => sha1($notifiable->getEmailForVerification()),
-            ],
-        );
+        $root = rtrim((string) Config::get('app.url'), '/');
+        URL::forceRootUrl($root);
+
+        try {
+            return URL::temporarySignedRoute(
+                'verification.verify',
+                Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+                [
+                    'id' => $notifiable->getKey(),
+                    'hash' => sha1($notifiable->getEmailForVerification()),
+                ],
+            );
+        } finally {
+            URL::forceRootUrl(null);
+        }
     }
 
     /**

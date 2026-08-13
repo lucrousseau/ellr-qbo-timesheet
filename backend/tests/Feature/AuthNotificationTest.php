@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Notification;
 
@@ -11,6 +12,7 @@ covers(ResetPasswordNotification::class);
 
 it('builds a verification email with a signed api link', function () {
     config([
+        'app.url' => 'http://localhost:8000',
         'app.frontend_auth_url' => 'http://localhost:5174',
         'auth.verification.expire' => 45,
     ]);
@@ -21,9 +23,24 @@ it('builds a verification email with a signed api link', function () {
     parse_str((string) parse_url($message->actionUrl, PHP_URL_QUERY), $query);
 
     expect($message->subject)->toBe('Verify your email address')
-        ->and($message->actionUrl)->toContain('/api/email/verify/')
+        ->and($message->actionUrl)->toStartWith('http://localhost:8000/api/email/verify/')
         ->and((int) $query['expires'])->toBeGreaterThan(now()->addMinutes(44)->getTimestamp())
         ->and((int) $query['expires'])->toBeLessThan(now()->addMinutes(46)->getTimestamp());
+});
+
+it('ignores docker proxy request hosts when building verification links', function () {
+    config(['app.url' => 'http://localhost:8000']);
+
+    $request = Request::create('http://api:8000/api/register', 'POST');
+    app()->instance('request', $request);
+    url()->forceRootUrl(null);
+
+    $user = User::factory()->unverified()->create();
+    $message = (new VerifyEmailNotification)->toMail($user);
+
+    expect($message->actionUrl)
+        ->toStartWith('http://localhost:8000/api/email/verify/')
+        ->not->toContain('http://api:8000');
 });
 
 it('uses the default verification expiry when config is absent', function () {
