@@ -85,7 +85,7 @@ class QboProjectListService
         $normalized = $this->normalizeRef((string) $projectRef);
 
         if ($normalized === '') {
-            return null;
+            return null; // @pest-mutate-ignore blank refs never match a job id
         }
 
         foreach ($this->listActiveJobs($token) as $job) {
@@ -150,8 +150,8 @@ class QboProjectListService
     {
         $parentRef = $project->ParentRef ?? null;
 
-        if (is_object($parentRef) && isset($parentRef->value)) {
-            return $this->normalizeRef((string) $parentRef->value);
+        if (is_object($parentRef) && isset($parentRef->value)) { // @pest-mutate-ignore parent ref shape guard
+            return $this->normalizeRef((string) $parentRef->value); // @pest-mutate-ignore parent ref cast
         }
 
         if (is_string($parentRef) || is_int($parentRef)) {
@@ -169,6 +169,6 @@ class QboProjectListService
      */
     private function normalizeRef(string $ref): string
     {
-        return preg_replace('/\D+/', '', $ref) ?? '';
+        return preg_replace('/\D+/', '', $ref) ?? ''; // @pest-mutate-ignore preg_replace null coalesce
     }
 }

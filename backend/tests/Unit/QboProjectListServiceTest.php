@@ -190,6 +190,45 @@ it('finds a cached job by quickbooks identifier', function () {
         'id' => '22',
         'display_name' => 'Website redesign',
         'parent_ref' => '11',
-    ])->and($service->findJob($token, null))->toBeNull()
-        ->and($service->findJob($token, '999'))->toBeNull();
+    ])->and($service->findJob($token, 'job-22'))->toBe([
+        'id' => '22',
+        'display_name' => 'Website redesign',
+        'parent_ref' => '11',
+    ])->and($service->findJob($token, '999'))->toBeNull();
+});
+
+it('skips quickbooks when findJob receives a blank reference', function () {
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-blank-job']);
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->never();
+
+    $service = makeQboProjectListService($quickBooks);
+
+    expect($service->findJob($token, null))->toBeNull()
+        ->and($service->findJob($token, ''))->toBeNull()
+        ->and($service->findJob($token, 'abc'))->toBeNull();
+});
+
+it('casts numeric quickbooks job fields to strings', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 0]);
+
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-cast-job']);
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->andReturn([
+            (object) ['Id' => 22, 'DisplayName' => 12345, 'ParentRef' => (object) ['value' => 11]],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
+
+    $service = makeQboProjectListService($quickBooks);
+
+    expect($service->findJob($token, '22'))->toBe([
+        'id' => '22',
+        'display_name' => '12345',
+        'parent_ref' => '11',
+    ]);
 });
