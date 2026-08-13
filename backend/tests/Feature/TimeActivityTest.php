@@ -10,15 +10,12 @@ use App\Models\User;
 use App\Services\QboPickerValidationService;
 use App\Services\QuickBooksService;
 use App\Services\TimeActivitySyncService;
-use App\Support\TimeActivityTimeValidation;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
-use QuickBooksOnline\API\Data\IPPTimeActivity;
 use QuickBooksOnline\API\DataService\DataService;
 use Tests\Support\ActingUser;
-use Tests\Support\MockeryCapture;
 
 covers(TimeActivityController::class);
 
@@ -227,30 +224,6 @@ describe('authenticated time activities', function () {
             ->assertJsonValidationErrors(['start_time', 'end_time']);
     });
 
-    it('rejects end time before existing start time on update', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = (object) [
-            'Id' => '12',
-            'SyncToken' => '1',
-            'StartTime' => '2026-07-27T09:00:00',
-            'EndTime' => '2026-07-27T18:00:00',
-            'EmployeeRef' => (object) ['value' => '7'],
-        ];
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'end_time' => '2026-07-27T09:00:00',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['end_time']);
-    });
-
     it('validates end time order on create', function () {
         QuickBooksToken::factory()->forUser(ActingUser::current())->create();
 
@@ -268,7 +241,7 @@ describe('authenticated time activities', function () {
             'end_time' => '2026-07-27T17:00:00',
             'description' => 'Billable work',
         ])->assertCreated()
-            ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.status', 'draft')
             ->assertJsonPath('data.description', 'Billable work');
     });
 
@@ -279,7 +252,7 @@ describe('authenticated time activities', function () {
             'description' => 'Client work',
         ])
             ->assertCreated()
-            ->assertJsonPath('data.status', 'pending');
+            ->assertJsonPath('data.status', 'draft');
     });
 
     it('includes customer reference when provided on create', function () {
@@ -378,21 +351,6 @@ describe('authenticated time activities', function () {
             ->assertJsonPath('data.Id', '1');
     });
 
-    it('returns 404 when updating a missing time activity', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->with('TimeActivity', 'missing')->andReturn(null);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/missing', [
-            'description' => 'Updated',
-        ])->assertNotFound();
-    });
-
     it('returns 404 when deleting a missing time activity', function () {
         QuickBooksToken::factory()->forUser(ActingUser::current())->create();
         $dataService = Mockery::mock(DataService::class);
@@ -423,206 +381,10 @@ describe('authenticated time activities', function () {
             ->assertJsonPath('message', 'QuickBooks API error');
     });
 
-    it('updates a time activity in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = new IPPTimeActivity;
-        $existing->Id = '12';
-        $existing->SyncToken = '1';
-        $existing->StartTime = '2026-07-27T09:00:00';
-        $existing->EmployeeRef = (object) ['value' => '7'];
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '12')->andReturn($existing);
-        $dataService->shouldReceive('Update')->once()->andReturn((object) ['Id' => '12']);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
-
+    it('rejects updating synced time activities through ellr', function () {
         $this->patchJson('/api/time-activities/12', [
-            'description' => '',
-            'end_time' => '2026-07-27T18:00:00',
-        ])
-            ->assertOk()
-            ->assertJsonPath('data.Id', '12');
-    });
-
-    it('rejects invalid end time on update', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = (object) [
-            'Id' => '12',
-            'SyncToken' => '1',
-            'StartTime' => '2026-07-27T17:00:00',
-            'EmployeeRef' => (object) ['value' => '7'],
-        ];
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'end_time' => '2026-07-27T09:00:00',
-        ])
-            ->assertUnprocessable()
-            ->assertJson([
-                'message' => TimeActivityTimeValidation::endAfterStartMessage(),
-                'errors' => [
-                    'end_time' => [TimeActivityTimeValidation::endAfterStartMessage()],
-                ],
-            ]);
-    });
-
-    it('updates start time and description in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = new IPPTimeActivity;
-        $existing->Id = '12';
-        $existing->SyncToken = '1';
-        $existing->StartTime = '2026-07-27T09:00:00';
-        $existing->EmployeeRef = (object) ['value' => '7'];
-        $existing->EndTime = '2026-07-27T18:00:00';
-        $captured = null;
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '12')->andReturn($existing);
-        $dataService->shouldReceive('Update')
-            ->once()
-            ->with(Mockery::capture($captured))
-            ->andReturn((object) ['Id' => '12']);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'start_time' => '2026-07-27T10:00:00',
-            'description' => 'Updated scope',
-        ])->assertOk();
-
-        $payload = MockeryCapture::unwrap($captured);
-        expect($payload->StartTime)->toBe('2026-07-27T10:00:00')
-            ->and($payload->Description)->toBe('Updated scope');
-    });
-
-    it('updates billable status in quickbooks', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = new IPPTimeActivity;
-        $existing->Id = '12';
-        $existing->SyncToken = '1';
-        $existing->StartTime = '2026-07-27T09:00:00';
-        $existing->EndTime = '2026-07-27T18:00:00';
-        $existing->EmployeeRef = (object) ['value' => '7'];
-        $captured = null;
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->with('TimeActivity', '12')->andReturn($existing);
-        $dataService->shouldReceive('Update')
-            ->once()
-            ->with(Mockery::capture($captured))
-            ->andReturn((object) ['Id' => '12']);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'is_billable' => false,
-        ])->assertOk();
-
-        expect(MockeryCapture::unwrap($captured)->BillableStatus->value)->toBe('NotBillable');
-    });
-
-    it('returns quickbooks errors when updating a time activity fails', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = new IPPTimeActivity;
-        $existing->Id = '12';
-        $existing->SyncToken = '1';
-        $existing->StartTime = '2026-07-27T09:00:00';
-        $existing->EmployeeRef = (object) ['value' => '7'];
-        $existing->EndTime = '2026-07-27T18:00:00';
-        $error = Mockery::mock();
-        $error->shouldReceive('getResponseBody')->andReturn('update failed');
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
-        $dataService->shouldReceive('Update')->once()->andReturn(null);
-        $dataService->shouldReceive('getLastError')->andReturn(null, $error);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'description' => 'Updated',
-        ])->assertUnprocessable();
-    });
-
-    it('rejects invalid start time on update', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = (object) [
-            'Id' => '12',
-            'SyncToken' => '1',
-            'EndTime' => '2026-07-27T09:00:00',
-            'EmployeeRef' => (object) ['value' => '7'],
-        ];
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'start_time' => '2026-07-27T17:00:00',
-        ])->assertUnprocessable();
-    });
-
-    it('rejects partial time updates when existing end time is missing', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = (object) [
-            'Id' => '12',
-            'SyncToken' => '1',
-            'StartTime' => '2026-07-27T09:00:00',
-            'EmployeeRef' => (object) ['value' => '7'],
-        ];
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'start_time' => '2026-07-27T10:00:00',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('message', TimeActivityTimeValidation::incompleteTimeFieldsMessage());
-    });
-
-    it('rejects partial time updates when existing start time is missing', function () {
-        QuickBooksToken::factory()->forUser(ActingUser::current())->create();
-        $existing = (object) [
-            'Id' => '12',
-            'SyncToken' => '1',
-            'EndTime' => '2026-07-27T17:00:00',
-            'EmployeeRef' => (object) ['value' => '7'],
-        ];
-        $dataService = Mockery::mock(DataService::class);
-        $dataService->shouldReceive('FindById')->once()->andReturn($existing);
-        $dataService->shouldReceive('getLastError')->andReturn(null);
-
-        $this->partialMock(QuickBooksService::class, function ($mock) use ($dataService) {
-            $mock->shouldReceive('dataService')->once()->andReturn($dataService);
-        });
-
-        $this->patchJson('/api/time-activities/12', [
-            'end_time' => '2026-07-27T16:00:00',
-        ])
-            ->assertUnprocessable()
-            ->assertJsonPath('message', TimeActivityTimeValidation::incompleteTimeFieldsMessage());
+            'description' => 'Should not update',
+        ])->assertMethodNotAllowed();
     });
 
     it('deletes a time activity in quickbooks', function () {

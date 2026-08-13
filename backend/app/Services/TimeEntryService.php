@@ -29,7 +29,7 @@ class TimeEntryService
     ) {}
 
     /**
-     * Creates a pending time entry for the authenticated employee.
+     * Creates a draft time entry for the authenticated employee.
      *
      * @param  User  $user  Employee logging time.
      * @param  array<string, mixed>  $validated  Validated request payload.
@@ -47,14 +47,14 @@ class TimeEntryService
         $entry = new TimeEntry($this->attributesFromValidated($user, $validated));
         $entry->user_id = $user->id; // @pest-mutate-ignore owned entry assignment
         $entry->organization_id = $user->organization_id; // @pest-mutate-ignore owned entry assignment
-        $entry->status = TimeEntryStatus::Pending; // @pest-mutate-ignore owned entry assignment
+        $entry->status = TimeEntryStatus::Draft; // @pest-mutate-ignore owned entry assignment
         $entry->save();
 
         return $entry->refresh();
     }
 
     /**
-     * Updates a pending time entry owned by the employee.
+     * Updates a draft or rejected time entry owned by the employee.
      *
      * @param  User  $user  Entry owner.
      * @param  int  $id  Local time entry identifier.
@@ -66,15 +66,30 @@ class TimeEntryService
         $entry = $this->findOwnedEntry($user, $id);
         $this->assertEditable($entry); // @pest-mutate-ignore editable status guard
 
+        return $this->applyValidatedUpdate($entry, $user, $validated);
+    }
+
+    /**
+     * Applies validated field updates and optional picker validation to an entry.
+     *
+     * @param  TimeEntry  $entry  Entry being mutated.
+     * @param  User  $tokenOwner  User whose organization token is used for picker checks.
+     * @param  array<string, mixed>  $validated  Validated update payload.
+     * @return TimeEntry
+     */
+    public function applyValidatedUpdate(TimeEntry $entry, User $tokenOwner, array $validated): TimeEntry
+    {
         $entry->fill($this->updateAttributesFromValidated($validated));
+        $entry->loadMissing('user');
+        $employee = $entry->user ?? $tokenOwner;
 
         if ($this->containsPickerFields($validated) && $this->hasPickerValues([ // @pest-mutate-ignore update picker guard
             'customer_ref' => $entry->customer_ref, // @pest-mutate-ignore update picker field mapping
             'project_ref' => $entry->project_ref, // @pest-mutate-ignore update picker field mapping
             'item_ref' => $entry->item_ref, // @pest-mutate-ignore update picker field mapping
         ])) {
-            $token = $this->tokenResolver->resolve($user); // @pest-mutate-ignore organization token resolution
-            $this->pickerValidation->assertValidTimeEntrySelections($user, $token, [ // @pest-mutate-ignore update picker validation
+            $token = $this->tokenResolver->resolve($tokenOwner); // @pest-mutate-ignore organization token resolution
+            $this->pickerValidation->assertValidTimeEntrySelections($employee, $token, [ // @pest-mutate-ignore update picker validation
                 'customer_ref' => $entry->customer_ref, // @pest-mutate-ignore update picker field mapping
                 'project_ref' => $entry->project_ref, // @pest-mutate-ignore update picker field mapping
                 'item_ref' => $entry->item_ref, // @pest-mutate-ignore update picker field mapping
@@ -87,7 +102,7 @@ class TimeEntryService
     }
 
     /**
-     * Deletes a pending or rejected time entry owned by the employee.
+     * Deletes a draft or rejected time entry owned by the employee.
      *
      * @param  User  $user  Entry owner.
      * @param  int  $id  Local time entry identifier.
@@ -97,7 +112,7 @@ class TimeEntryService
     {
         $entry = $this->findOwnedEntry($user, $id);
 
-        if (! in_array($entry->status, [TimeEntryStatus::Pending, TimeEntryStatus::Rejected], true)) { // @pest-mutate-ignore deletable status guard
+        if (! in_array($entry->status, [TimeEntryStatus::Draft, TimeEntryStatus::Rejected], true)) { // @pest-mutate-ignore deletable status guard
             abort(response()->json([
                 'error' => 'time_entry_not_deletable', // @pest-mutate-ignore deletable status error payload
                 'message' => __('api.time_entry_not_deletable'), // @pest-mutate-ignore deletable status error payload

@@ -9,6 +9,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ListTimeEntryRequest;
 use App\Http\Requests\RejectTimeEntryRequest;
+use App\Http\Requests\UpdateTimeEntryRequest;
 use App\Services\TimeEntryApprovalService;
 use App\Services\TimeEntryPresentationService;
 use Illuminate\Http\JsonResponse;
@@ -43,6 +44,26 @@ class TimeEntryApprovalController extends Controller
             $request->listStartPosition(),
             $request->listMaxResults(),
         ));
+    }
+
+    /**
+     * Updates a pending entry before approve or reject.
+     *
+     * @param  UpdateTimeEntryRequest  $request  Validated update payload.
+     * @param  int  $timeEntry  Local time entry identifier.
+     * @return JsonResponse
+     */
+    public function update(UpdateTimeEntryRequest $request, int $timeEntry): JsonResponse
+    {
+        $entry = $this->approvals->updateForReviewer(
+            $request->user(),
+            $timeEntry,
+            $request->validated(),
+        );
+
+        return response()->json([
+            'data' => $this->presentation->resource($entry, $request->user()),
+        ]);
     }
 
     /**

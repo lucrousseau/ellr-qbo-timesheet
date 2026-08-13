@@ -9,7 +9,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ListTimeActivityRequest;
 use App\Http\Requests\StoreTimeActivityRequest;
-use App\Http\Requests\UpdateTimeActivityRequest;
 use App\Services\QuickBooksTokenResolverService;
 use App\Services\TimeActivityListService;
 use App\Services\TimeActivityService;
@@ -18,7 +17,7 @@ use App\Services\TimeEntryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/** Lists and mutates QuickBooks time activities and local pending entries. */
+/** Lists QuickBooks time activities and creates local draft entries. */
 class TimeActivityController extends Controller
 {
     /**
@@ -57,7 +56,7 @@ class TimeActivityController extends Controller
     }
 
     /**
-     * Creates a pending local time entry for supervisor approval.
+     * Creates a draft local time entry for later submission.
      *
      * @param  StoreTimeActivityRequest  $request  Validated create request.
      * @return JsonResponse
@@ -86,23 +85,6 @@ class TimeActivityController extends Controller
         return response()->json([
             'data' => $this->timeActivities->findForUser($user, $token, $id),
         ]);
-    }
-
-    /**
-     * Updates an existing time activity.
-     *
-     * @param  UpdateTimeActivityRequest  $request  Validated update request.
-     * @param  string  $id  QuickBooks time activity identifier.
-     * @return JsonResponse
-     */
-    public function update(UpdateTimeActivityRequest $request, string $id): JsonResponse
-    {
-        $user = $request->user();
-        $token = $this->tokenResolver->resolve($user);
-
-        $result = $this->timeActivities->updateForUser($user, $token, $id, $request->validated());
-
-        return response()->json(['data' => $result]);
     }
 
     /**

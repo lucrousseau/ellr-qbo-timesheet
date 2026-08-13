@@ -4,7 +4,6 @@
 
 import { apiFetch } from './api'
 import type { TimeEntry } from './timeEntries'
-import type { TimeActivityUpdatePayload } from './timeActivityFormat'
 
 /**
  * Request body to create a time activity in QuickBooks.
@@ -77,24 +76,6 @@ export async function listTimeActivities(
   const path = query ? `/time-activities?${query}` : '/time-activities'
 
   return apiFetch<TimeActivityListResponse>(path)
-}
-
-/**
- * Updates an existing time activity for the signed-in user's QBO employee.
- * @param id QuickBooks time activity identifier.
- * @param payload Fields to update.
- * @returns Updated QuickBooks activity data.
- */
-export async function updateTimeActivity(
-  id: string,
-  payload: TimeActivityUpdatePayload,
-): Promise<TimeActivity> {
-  const response = await apiFetch<{ data: TimeActivity }>(`/time-activities/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  })
-
-  return response.data
 }
 
 /**

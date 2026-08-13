@@ -8,21 +8,22 @@ import {
   LoadingScreen,
   TabNav,
   tabPanelId,
-  TimeActivityEntriesPanel,
   UserPreferencesPanel,
   useLocale,
   useSessionStorageState,
 } from '@ellr/ui'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { isTimesheetTab, timesheetActiveTabStorageKey, type TimesheetTab } from '../timesheetTabStorage'
 import type { useTimesheetAuth } from '../hooks/useTimesheetAuth'
 import type { useTimeTracker } from '../hooks/useTimeTracker'
 import { useRecentTimeActivities } from '../hooks/useRecentTimeActivities'
+import { useDraftTimeEntryActions } from '../hooks/useDraftTimeEntryActions'
 import { EmailVerificationBanner } from './EmailVerificationBanner'
 import { AssignedClientsWarning } from './AssignedClientsWarning'
 import { CustomerLoadError } from './CustomerLoadError'
 import { QboEmployeeWarning } from './QboEmployeeWarning'
 import { TimeTrackerPanel } from './TimeTrackerPanel'
+import { RecentDraftEntriesSection } from './RecentDraftEntriesSection'
 import { TimesheetTimeEntryApprovalsPanel } from './TimesheetTimeEntryApprovalsPanel'
 
 const TAB_ID_PREFIX = 'timesheet'
@@ -65,9 +66,15 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
   const canUseTimerTab =
     Boolean(user.qbo_employee_ref) && !auth.showEmailVerification(user)
   const showTimeTracking = canUseTimerTab && (tracker.loading || tracker.canTrackTime)
+  const [entriesRefreshBump, setEntriesRefreshBump] = useState(0)
   const recentEntries = useRecentTimeActivities({
     enabled: showTimeTracking && !tracker.loading && tracker.canTrackTime,
-    refreshToken: tracker.entriesRefreshToken,
+    refreshToken: tracker.entriesRefreshToken + entriesRefreshBump,
+  })
+  const draftActions = useDraftTimeEntryActions({
+    onChanged: () => setEntriesRefreshBump((value) => value + 1),
+    onSuccess: (message) => auth.setPreferenceNotice(message, 'success'),
+    onError: (message) => auth.setPreferenceNotice(message, 'error'),
   })
 
   const onLogout = async () => {
@@ -167,16 +174,23 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 onLogTime={tracker.onLogTime}
                 onDiscard={tracker.onDiscard}
               />
-              <TimeActivityEntriesPanel
-                title={t('timesheet.recentEntriesTitle')}
+              <RecentDraftEntriesSection
                 entries={recentEntries.entries}
                 loading={recentEntries.loading}
                 error={recentEntries.error}
                 hasMore={recentEntries.hasMore}
                 loadingMore={recentEntries.loadingMore}
                 onLoadMore={recentEntries.loadMore}
-                showApprovalStatus
                 displayTimezone={displayTimezone}
+                actionEntryId={draftActions.actionEntryId}
+                editingEntry={draftActions.editingEntry}
+                submittingAll={draftActions.submittingAll}
+                onEditDraft={draftActions.setEditingEntry}
+                onSubmitDraft={draftActions.submitEntry}
+                onDeleteDraft={draftActions.deleteEntry}
+                onSubmitAllDrafts={draftActions.submitAllDrafts}
+                onCloseEditor={() => draftActions.setEditingEntry(null)}
+                onSaveDraft={draftActions.saveEntry}
               />
             </>
           )}

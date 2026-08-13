@@ -1,5 +1,5 @@
 /**
- * @file Dialog showing editable time entries for a provisioned employee.
+ * @file Dialog showing read-only QuickBooks-synced time entries for an employee.
  */
 
 import { AppDialog, TimeActivityEntriesPanel, useLocale } from '@ellr/ui'
@@ -9,28 +9,23 @@ import { useAdminUserTimeActivities } from '../hooks/useAdminUserTimeActivities'
 type EmployeeTimeEntriesDialogProps = {
   user: User | null
   onClose: () => void
-  onSuccess: (message: string) => void
-  onError: (message: string) => void
 }
 
 /**
- * Administrator dialog to review and edit an employee's recent time entries.
- * @param props Target user, close handler, and flash message callbacks.
+ * Administrator dialog to view an employee's QuickBooks-synced time entries.
+ * @param props Target user and close handler.
  * @returns Employee time entries dialog or null when closed.
  */
 export function EmployeeTimeEntriesDialog({
   user,
   onClose,
-  onSuccess,
-  onError,
 }: EmployeeTimeEntriesDialogProps) {
   const { t } = useLocale()
   const activities = useAdminUserTimeActivities({
     userId: user?.id ?? null,
     enabled: user !== null,
-    onSuccess,
-    onError,
   })
+  const showEmptyHint = !activities.loading && !activities.error && activities.entries.length === 0
 
   return (
     <AppDialog
@@ -42,19 +37,20 @@ export function EmployeeTimeEntriesDialog({
       <p className="text-sm text-brand-muted">{t('admin.employeeTimeEntriesHelp')}</p>
 
       <div className="mt-4">
-        <TimeActivityEntriesPanel
-          embedded
-          title=""
-          entries={activities.entries}
-          loading={activities.loading}
-          error={activities.error}
-          hasMore={activities.hasMore}
-          loadingMore={activities.loadingMore}
-          onLoadMore={activities.loadMore}
-          editable
-          savingId={activities.savingId}
-          onSaveEntry={activities.saveEntry}
-        />
+        {showEmptyHint ? (
+          <p className="text-sm text-brand-muted">{t('admin.employeeTimeEntriesEmptyHint')}</p>
+        ) : (
+          <TimeActivityEntriesPanel
+            embedded
+            title=""
+            entries={activities.entries}
+            loading={activities.loading}
+            error={activities.error}
+            hasMore={activities.hasMore}
+            loadingMore={activities.loadingMore}
+            onLoadMore={activities.loadMore}
+          />
+        )}
       </div>
     </AppDialog>
   )

@@ -13,6 +13,16 @@ Feature: Time entry approval
     Then the response status should be 200
     And the JSON field "data.0.status" should be "pending"
 
+  Scenario: Administrator updates a pending time entry before approval
+    Given the timesheet user has a pending time entry
+    When I request "PATCH" "/api/admin/time-entry-approvals/{pending_time_entry_id}" with JSON:
+      """
+      {"description":"Corrected by admin"}
+      """
+    Then the response status should be 200
+    And the JSON field "data.status" should be "pending"
+    And the JSON field "data.description" should be "Corrected by admin"
+
   Scenario: Administrator rejects a pending time entry
     Given the timesheet user has a pending time entry
     When I request "POST" "/api/admin/time-entry-approvals/{pending_time_entry_id}/reject" with JSON:

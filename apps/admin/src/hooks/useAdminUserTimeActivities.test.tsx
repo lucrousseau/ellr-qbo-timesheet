@@ -1,12 +1,9 @@
 /**
- * @file Tests for administrator time activity list and edit hook.
+ * @file Tests for administrator time activity list hook.
  */
 
 import { act, renderHook, waitFor } from '@testing-library/react'
-import {
-  listAdminUserTimeActivities,
-  updateAdminUserTimeActivity,
-} from '@ellr/api-client'
+import { listAdminUserTimeActivities } from '@ellr/api-client'
 import { LocaleProvider } from '@ellr/ui'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAdminUserTimeActivities } from './useAdminUserTimeActivities'
@@ -17,7 +14,6 @@ vi.mock('@ellr/api-client', async () => {
   return {
     ...actual,
     listAdminUserTimeActivities: vi.fn(),
-    updateAdminUserTimeActivity: vi.fn(),
   }
 })
 
@@ -31,24 +27,23 @@ const activity = {
   BillableStatus: 'Billable',
 }
 
+/**
+ * Renders the admin time activities hook with a locale provider.
+ * @param userId Target timesheet user id.
+ * @param enabled Whether the hook should load.
+ * @returns Hook render result.
+ */
 function renderActivitiesHook(userId: number | null = 4, enabled = true) {
-  const onSuccess = vi.fn()
-  const onError = vi.fn()
-
-  const view = renderHook(
+  return renderHook(
     () =>
       useAdminUserTimeActivities({
         userId,
         enabled,
-        onSuccess,
-        onError,
       }),
     {
       wrapper: ({ children }) => <LocaleProvider>{children}</LocaleProvider>,
     },
   )
-
-  return { ...view, onSuccess, onError }
 }
 
 describe('useAdminUserTimeActivities', () => {
@@ -56,10 +51,6 @@ describe('useAdminUserTimeActivities', () => {
     vi.mocked(listAdminUserTimeActivities).mockResolvedValue({
       data: [activity],
       meta: { count: 1, max_results: 10, start_position: 1, truncated: true },
-    })
-    vi.mocked(updateAdminUserTimeActivity).mockResolvedValue({
-      ...activity,
-      BillableStatus: 'NotBillable',
     })
   })
 
@@ -129,22 +120,6 @@ describe('useAdminUserTimeActivities', () => {
       max_results: 10,
       start_position: 2,
     })
-  })
-
-  it('saves an entry and notifies success', async () => {
-    const { result, onSuccess } = renderActivitiesHook()
-
-    await waitFor(() => {
-      expect(result.current.entries).toHaveLength(1)
-    })
-
-    await act(async () => {
-      await result.current.saveEntry('12', { is_billable: false })
-    })
-
-    expect(updateAdminUserTimeActivity).toHaveBeenCalledWith(4, '12', { is_billable: false })
-    expect(result.current.entries[0]?.isBillable).toBe(false)
-    expect(onSuccess).toHaveBeenCalledWith('Time entry updated.')
   })
 
   it('maps load failures to an error message', async () => {

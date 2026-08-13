@@ -289,7 +289,7 @@ describe('Timesheet App', () => {
       end_time: '2026-07-27T17:00:00Z',
       duration_seconds: 28_800,
       is_billable: false,
-      status: 'pending',
+      status: 'draft',
     })
 
     render(<App />)
@@ -302,7 +302,7 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(logTimeTracker).toHaveBeenCalled()
-      const success = screen.getByText('Time saved to QuickBooks Online.')
+      const success = screen.getByText(/Time saved as a draft/i)
       expectMessageClasses(success, 'success')
     })
   })
@@ -450,7 +450,7 @@ describe('Timesheet App', () => {
                 end_time: '2026-07-27T17:00:00Z',
                 duration_seconds: 28_800,
                 is_billable: false,
-                status: 'pending',
+                status: 'draft',
               }),
             100,
           ),
@@ -470,7 +470,7 @@ describe('Timesheet App', () => {
     expect(savingButton).toHaveClass('disabled:opacity-50')
 
     await waitFor(() => {
-      expect(screen.getByText('Time saved to QuickBooks Online.')).toBeInTheDocument()
+      expect(screen.getByText(/Time saved as a draft/i)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /log time/i })).toBeDisabled()
     })
   })
@@ -486,7 +486,7 @@ describe('Timesheet App', () => {
       end_time: '2026-07-27T17:00:00Z',
       duration_seconds: 28_800,
       is_billable: false,
-      status: 'pending',
+      status: 'draft',
     })
 
     render(<App />)

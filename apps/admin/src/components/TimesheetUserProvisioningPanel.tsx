@@ -191,8 +191,6 @@ export function TimesheetUserProvisioningPanel({
       <EmployeeTimeEntriesDialog
         user={userToViewEntries}
         onClose={closeEntriesDialog}
-        onSuccess={onSuccess}
-        onError={onError}
       />
 
       <AssignSupervisorDialog

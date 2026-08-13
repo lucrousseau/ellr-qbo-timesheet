@@ -2,9 +2,12 @@
  * @file Card list for reviewing and approving pending time entries.
  */
 
-import type { TimeActivityRow } from '@ellr/api-client'
+import type { TimeActivityRow, TimeEntryUpdatePayload } from '@ellr/api-client'
+import { useState } from 'react'
+import { Button } from './Button'
 import { formatEntryDateTime, formatEntryDuration } from './timeActivityDisplay'
 import { TimeEntryApprovalActions } from './TimeEntryApprovalActions'
+import { TimeEntryApprovalEditor } from './TimeEntryApprovalEditor'
 import { useLocale } from '../i18n/LocaleProvider'
 
 type TimeEntryApprovalListProps = {
@@ -13,6 +16,7 @@ type TimeEntryApprovalListProps = {
   displayTimezone?: string | null
   onApprove: (id: string) => Promise<void>
   onReject: (id: string, reason?: string | null) => Promise<void>
+  onUpdateEntry?: (id: string, payload: TimeEntryUpdatePayload) => Promise<void>
 }
 
 /**
@@ -26,8 +30,10 @@ export function TimeEntryApprovalList({
   displayTimezone = null,
   onApprove,
   onReject,
+  onUpdateEntry,
 }: TimeEntryApprovalListProps) {
   const { t, locale } = useLocale()
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   return (
     <ul className="space-y-4">
@@ -61,6 +67,27 @@ export function TimeEntryApprovalList({
               <p className="text-brand-muted-subtle">
                 {entry.isBillable ? t('timeActivity.billableYes') : t('timeActivity.billableNo')}
               </p>
+              {onUpdateEntry && editingId !== entry.id ? (
+                <Button
+                  type="button"
+                  variant="link"
+                  disabled={reviewingId === entry.id}
+                  onClick={() => setEditingId(entry.id)}
+                >
+                  {t('admin.editPendingEntry')}
+                </Button>
+              ) : null}
+              {onUpdateEntry && editingId === entry.id ? (
+                <TimeEntryApprovalEditor
+                  entry={entry}
+                  saving={reviewingId === entry.id}
+                  onCancel={() => setEditingId(null)}
+                  onSave={async (id, payload) => {
+                    await onUpdateEntry(id, payload)
+                    setEditingId(null)
+                  }}
+                />
+              ) : null}
             </div>
 
             <TimeEntryApprovalActions

@@ -8,7 +8,9 @@ import {
   parseTimeEntryRow,
   rejectTimeEntry,
   resolveTimeEntryId,
+  updatePendingTimeEntryApproval,
   type TimeActivityRow,
+  type TimeEntryUpdatePayload,
 } from '@ellr/api-client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getApiErrorMessage } from '../i18n/apiErrorMessages'
@@ -21,6 +23,7 @@ type ApprovalMessages = {
   approvalSuccess: string
   approvalSuccessQueued: string
   rejectionSuccess: string
+  pendingEntryUpdated: string
 }
 
 type UseTimeEntryApprovalsOptions = {
@@ -49,6 +52,7 @@ export function useTimeEntryApprovals({
     approvalSuccess: messages?.approvalSuccess ?? t('admin.approvalSuccess'),
     approvalSuccessQueued: messages?.approvalSuccessQueued ?? t('admin.approvalSuccessQueued'),
     rejectionSuccess: messages?.rejectionSuccess ?? t('admin.rejectionSuccess'),
+    pendingEntryUpdated: messages?.pendingEntryUpdated ?? t('admin.pendingEntryUpdated'),
   }
   const [entries, setEntries] = useState<TimeActivityRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -150,6 +154,24 @@ export function useTimeEntryApprovals({
     [admin, locale, onError, onSuccess, refresh, resolvedMessages.approvalFailed, resolvedMessages.rejectionSuccess],
   )
 
+  const updateEntry = useCallback(
+    async (id: string, payload: TimeEntryUpdatePayload) => {
+      setReviewingId(id)
+
+      try {
+        await updatePendingTimeEntryApproval(resolveTimeEntryId(id), payload, { admin })
+        onSuccess(resolvedMessages.pendingEntryUpdated)
+        refresh()
+      } catch (caught) {
+        onError(getApiErrorMessage(caught, resolvedMessages.approvalFailed, locale))
+        throw caught
+      } finally {
+        setReviewingId(null)
+      }
+    },
+    [admin, locale, onError, onSuccess, refresh, resolvedMessages.approvalFailed, resolvedMessages.pendingEntryUpdated],
+  )
+
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore || loading) {
       return
@@ -168,5 +190,6 @@ export function useTimeEntryApprovals({
     loadMore,
     approveEntry,
     rejectEntry,
+    updateEntry,
   }
 }

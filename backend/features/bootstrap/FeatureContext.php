@@ -256,7 +256,7 @@ class FeatureContext implements Context
         }
 
         $user = User::query()->findOrFail($this->timesheetUserId);
-        $entry = TimeEntry::factory()->forUser($user)->create();
+        $entry = TimeEntry::factory()->forUser($user)->pending()->create();
         $this->pendingTimeEntryId = $entry->id;
     }
 
@@ -271,7 +271,7 @@ class FeatureContext implements Context
         }
 
         $user = User::query()->findOrFail($this->foreignTimesheetUserId);
-        $entry = TimeEntry::factory()->forUser($user)->create();
+        $entry = TimeEntry::factory()->forUser($user)->pending()->create();
         $this->foreignPendingTimeEntryId = $entry->id;
     }
 

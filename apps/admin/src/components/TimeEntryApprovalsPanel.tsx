@@ -40,6 +40,7 @@ export function TimeEntryApprovalsPanel({ enabled, onSuccess, onError }: TimeEnt
               reviewingId={approvals.reviewingId}
               onApprove={approvals.approveEntry}
               onReject={approvals.rejectEntry}
+              onUpdateEntry={approvals.updateEntry}
             />
 
             {approvals.hasMore ? (

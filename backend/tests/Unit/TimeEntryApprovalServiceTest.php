@@ -27,7 +27,7 @@ it('lists only pending entries for administrators', function () {
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
     ]);
-    TimeEntry::factory()->forUser($employee)->create(['description' => 'Needs review']);
+    TimeEntry::factory()->forUser($employee)->pending()->create(['description' => 'Needs review']);
     TimeEntry::factory()->forUser($employee)->approved()->create();
 
     $response = app(TimeEntryApprovalService::class)->listPendingForReviewer($admin, 1, 10);
@@ -45,8 +45,8 @@ it('limits pending entries to direct reports for supervisors', function () {
         'supervisor_id' => $supervisor->id,
     ]);
     $otherEmployee = User::factory()->create(['organization_id' => $admin->organization_id]);
-    TimeEntry::factory()->forUser($directReport)->create(['description' => 'Direct report']);
-    TimeEntry::factory()->forUser($otherEmployee)->create(['description' => 'Other employee']);
+    TimeEntry::factory()->forUser($directReport)->pending()->create(['description' => 'Direct report']);
+    TimeEntry::factory()->forUser($otherEmployee)->pending()->create(['description' => 'Other employee']);
 
     $response = app(TimeEntryApprovalService::class)->listPendingForReviewer($supervisor, 1, 10);
 
@@ -62,7 +62,7 @@ it('marks pending approval lists as truncated when more rows exist', function ()
     ]);
 
     foreach (range(1, 3) as $index) {
-        TimeEntry::factory()->forUser($employee)->create([
+        TimeEntry::factory()->forUser($employee)->pending()->create([
             'start_time' => now()->subHours($index),
             'end_time' => now()->subHours($index - 1),
         ]);
@@ -81,7 +81,7 @@ it('rejects a pending entry without syncing to quickbooks', function () {
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
     ]);
-    $entry = TimeEntry::factory()->forUser($employee)->create();
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
 
     $rejected = app(TimeEntryApprovalService::class)->reject($admin, $entry->id, 'Wrong client');
 
@@ -97,7 +97,7 @@ it('approves a pending entry and stores the quickbooks identifier', function () 
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
     ]);
-    $entry = TimeEntry::factory()->forUser($employee)->create();
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
 
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => '88']);
@@ -131,7 +131,7 @@ it('dispatches resolved quickbooks labels in the approval sync payload', functio
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
     ]);
-    $entry = TimeEntry::factory()->forUser($employee)->create([
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create([
         'customer_ref' => '11',
         'project_ref' => '22',
         'item_ref' => '33',
@@ -158,7 +158,7 @@ it('validates picker references before approving entries with quickbooks fields'
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
     ]);
-    $entry = TimeEntry::factory()->forUser($employee)->create([
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create([
         'customer_ref' => '11',
     ]);
 
@@ -192,7 +192,7 @@ it('keeps approval when quickbooks synchronization fails', function () {
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
     ]);
-    $entry = TimeEntry::factory()->forUser($employee)->create();
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
 
     $this->mock(QuickBooksService::class, function ($mock) {
         $mock->shouldReceive('dataService')->andThrow(new RuntimeException('QBO unavailable'));
@@ -217,7 +217,7 @@ it('queues quickbooks synchronization after approval', function () {
         'organization_id' => $admin->organization_id,
         'qbo_employee_ref' => '7',
     ]);
-    $entry = TimeEntry::factory()->forUser($employee)->create();
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
 
     $approved = app(TimeEntryApprovalService::class)->approve($admin, $entry->id);
 
@@ -232,4 +232,23 @@ it('queues quickbooks synchronization after approval', function () {
             && $token !== null
             && $job->tokenId === $token->id;
     });
+});
+
+it('updates a pending entry for a reviewer', function () {
+    $admin = User::factory()->admin()->create();
+    QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create([
+        'description' => 'Before',
+    ]);
+
+    $updated = app(TimeEntryApprovalService::class)->updateForReviewer($admin, $entry->id, [
+        'description' => 'After reviewer edit',
+    ]);
+
+    expect($updated->description)->toBe('After reviewer edit')
+        ->and($updated->status)->toBe(TimeEntryStatus::Pending);
 });

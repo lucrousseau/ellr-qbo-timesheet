@@ -22,6 +22,10 @@ function formatApprovalStatus(
   status: TimeActivityRow['approvalStatus'],
   t: (key: string) => string,
 ): string {
+  if (status === 'draft') {
+    return t('timeActivity.statusDraft')
+  }
+
   if (status === 'pending') {
     return t('timeActivity.statusPending')
   }
@@ -35,6 +39,15 @@ function formatApprovalStatus(
   }
 
   return t('timeActivity.noValue')
+}
+
+/**
+ * Returns whether an entry can be edited or submitted by the employee.
+ * @param status Approval status from the API row.
+ * @returns True for draft and rejected statuses.
+ */
+function isDraftActionable(status: TimeActivityRow['approvalStatus']): boolean {
+  return status === 'draft' || status === 'rejected'
 }
 
 /** Props for {@link TimeActivityEntriesPanel}. */
@@ -57,6 +70,11 @@ export type TimeActivityEntriesPanelProps = {
   reviewingId?: string | null
   onApproveEntry?: (id: string) => Promise<void>
   onRejectEntry?: (id: string, reason?: string | null) => Promise<void>
+  draftActions?: boolean
+  actionEntryId?: string | null
+  onEditDraft?: (entry: TimeActivityRow) => void
+  onSubmitDraft?: (id: string) => Promise<void>
+  onDeleteDraft?: (id: string) => Promise<void>
 }
 
 /**
@@ -83,8 +101,14 @@ export function TimeActivityEntriesPanel({
   reviewingId = null,
   onApproveEntry,
   onRejectEntry,
+  draftActions = false,
+  actionEntryId = null,
+  onEditDraft,
+  onSubmitDraft,
+  onDeleteDraft,
 }: TimeActivityEntriesPanelProps) {
   const { t, locale } = useLocale()
+  const showActions = editable || reviewable || draftActions
 
   return (
     <section className={embedded ? '' : cardClass}>
@@ -116,8 +140,7 @@ export function TimeActivityEntriesPanel({
                 <th className="px-3 py-2">{t('timeActivity.billable')}</th>
                 {showEmployee ? <th className="px-3 py-2">{t('timeActivity.employee')}</th> : null}
                 {showApprovalStatus ? <th className="px-3 py-2">{t('timeActivity.status')}</th> : null}
-                {editable ? <th className="px-3 py-2">{t('timeActivity.actions')}</th> : null}
-                {reviewable ? <th className="px-3 py-2">{t('timeActivity.actions')}</th> : null}
+                {showActions ? <th className="px-3 py-2">{t('timeActivity.actions')}</th> : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-brand-border">
@@ -173,6 +196,44 @@ export function TimeActivityEntriesPanel({
                           onReject={onRejectEntry}
                         />
                       </td>
+                    ) : null}
+                    {draftActions && isDraftActionable(entry.approvalStatus) ? (
+                      <td className="px-3 py-3 text-brand-primary">
+                        <div className="flex flex-col items-start gap-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="compact"
+                            disabled={actionEntryId === entry.id}
+                            onClick={() => onEditDraft?.(entry)}
+                          >
+                            {t('timesheet.editDraftEntry')}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="compact"
+                            disabled={actionEntryId === entry.id}
+                            onClick={() => void onSubmitDraft?.(entry.id)}
+                          >
+                            {actionEntryId === entry.id
+                              ? t('timesheet.submittingForApproval')
+                              : t('timesheet.submitForApproval')}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            size="compact"
+                            disabled={actionEntryId === entry.id}
+                            onClick={() => void onDeleteDraft?.(entry.id)}
+                          >
+                            {actionEntryId === entry.id
+                              ? t('timesheet.deletingDraftEntry')
+                              : t('timesheet.deleteDraftEntry')}
+                          </Button>
+                        </div>
+                      </td>
+                    ) : draftActions ? (
+                      <td className="px-3 py-3 text-brand-muted">{t('timeActivity.noValue')}</td>
                     ) : null}
                   </tr>
                 ),

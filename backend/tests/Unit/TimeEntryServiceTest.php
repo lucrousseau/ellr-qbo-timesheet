@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TimeEntryStatus;
 use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
@@ -50,7 +51,7 @@ it('persists all optional create fields from validated input', function () {
         ->and($entry->is_billable)->toBeTrue();
 });
 
-it('updates a pending entry owned by the employee', function () {
+it('updates a draft entry owned by the employee', function () {
     $employee = User::factory()->create(['qbo_employee_ref' => '7']);
     $entry = TimeEntry::factory()->forUser($employee)->create();
 
@@ -72,16 +73,43 @@ it('rejects updates to approved entries', function () {
     ]);
 })->throws(HttpResponseException::class);
 
-it('deletes pending and rejected entries', function () {
+it('deletes draft and rejected entries', function () {
     $employee = User::factory()->create(['qbo_employee_ref' => '7']);
-    $pending = TimeEntry::factory()->forUser($employee)->create();
+    $draft = TimeEntry::factory()->forUser($employee)->create();
     $rejected = TimeEntry::factory()->forUser($employee)->rejected()->create();
 
     $service = app(TimeEntryService::class);
-    $service->deleteForUser($employee, $pending->id);
+    $service->deleteForUser($employee, $draft->id);
     $service->deleteForUser($employee, $rejected->id);
 
-    expect(TimeEntry::query()->whereKey([$pending->id, $rejected->id])->exists())->toBeFalse();
+    expect(TimeEntry::query()->whereKey([$draft->id, $rejected->id])->exists())->toBeFalse();
+});
+
+it('rejects deleting pending entries', function () {
+    $employee = User::factory()->create(['qbo_employee_ref' => '7']);
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
+
+    app(TimeEntryService::class)->deleteForUser($employee, $entry->id);
+})->throws(HttpResponseException::class);
+
+it('rejects updates to pending entries by the employee', function () {
+    $employee = User::factory()->create(['qbo_employee_ref' => '7']);
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
+
+    app(TimeEntryService::class)->updateForUser($employee, $entry->id, [
+        'description' => 'Too late',
+    ]);
+})->throws(HttpResponseException::class);
+
+it('creates entries as draft', function () {
+    $employee = User::factory()->create(['qbo_employee_ref' => '7']);
+
+    $entry = app(TimeEntryService::class)->createForUser($employee, [
+        'start_time' => '2026-07-27T09:00:00',
+        'end_time' => '2026-07-27T17:00:00',
+    ]);
+
+    expect($entry->status)->toBe(TimeEntryStatus::Draft);
 });
 
 it('rejects deleting approved entries', function () {

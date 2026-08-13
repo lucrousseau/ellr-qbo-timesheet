@@ -59,7 +59,7 @@ class TimeEntryController extends Controller
     }
 
     /**
-     * Creates a pending time entry for supervisor approval.
+     * Creates a draft time entry for the employee.
      *
      * @param  StoreTimeEntryRequest  $request  Validated create request.
      * @return JsonResponse
@@ -74,7 +74,7 @@ class TimeEntryController extends Controller
     }
 
     /**
-     * Updates a pending time entry owned by the authenticated employee.
+     * Updates a draft or rejected time entry owned by the authenticated employee.
      *
      * @param  UpdateTimeEntryRequest  $request  Validated update request.
      * @param  int  $timeEntry  Local time entry identifier.
@@ -94,7 +94,7 @@ class TimeEntryController extends Controller
     }
 
     /**
-     * Deletes a pending or rejected time entry owned by the authenticated employee.
+     * Deletes a draft or rejected time entry owned by the authenticated employee.
      *
      * @param  Request  $request  Incoming HTTP request.
      * @param  int  $timeEntry  Local time entry identifier.

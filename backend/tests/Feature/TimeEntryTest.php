@@ -3,9 +3,11 @@
 use App\Http\Controllers\Api\AdminUserSupervisorController;
 use App\Http\Controllers\Api\TimeEntryApprovalController;
 use App\Http\Controllers\Api\TimeEntryController;
+use App\Http\Controllers\Api\TimeEntrySubmitController;
 use App\Http\Requests\ListTimeEntryRequest;
 use App\Http\Requests\RejectTimeEntryRequest;
 use App\Http\Requests\StoreTimeEntryRequest;
+use App\Http\Requests\SubmitTimeEntriesRequest;
 use App\Http\Requests\UpdateTimeEntryRequest;
 use App\Models\Organization;
 use App\Models\QuickBooksToken;
@@ -16,21 +18,25 @@ use App\Services\TimeEntryApprovalService;
 use App\Services\TimeEntryAuthorizationService;
 use App\Services\TimeEntryListService;
 use App\Services\TimeEntryService;
+use App\Services\TimeEntrySubmitService;
 use App\Services\UserSupervisorService;
 use App\Support\TimeEntryApiResponse;
 use QuickBooksOnline\API\DataService\DataService;
 
 covers(TimeEntryController::class);
+covers(TimeEntrySubmitController::class);
 covers(TimeEntryApprovalController::class);
 covers(AdminUserSupervisorController::class);
 covers(TimeEntryListService::class);
 covers(TimeEntryService::class);
+covers(TimeEntrySubmitService::class);
 covers(TimeEntryApprovalService::class);
 covers(TimeEntryAuthorizationService::class);
 covers(UserSupervisorService::class);
 covers(TimeEntryApiResponse::class);
 covers(StoreTimeEntryRequest::class);
 covers(UpdateTimeEntryRequest::class);
+covers(SubmitTimeEntriesRequest::class);
 covers(ListTimeEntryRequest::class);
 covers(RejectTimeEntryRequest::class);
 
@@ -44,14 +50,14 @@ describe('employee time entries', function () {
         actingAsWithQboEmployee();
     });
 
-    it('creates a pending time entry', function () {
+    it('creates a draft time entry', function () {
         $this->postJson('/api/time-entries', [
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
             'description' => 'Draft work',
         ], frontendHeaders())
             ->assertCreated()
-            ->assertJsonPath('data.status', 'pending')
+            ->assertJsonPath('data.status', 'draft')
             ->assertJsonPath('data.description', 'Draft work');
     });
 
@@ -64,7 +70,7 @@ describe('employee time entries', function () {
         $this->getJson('/api/time-entries', frontendHeaders())
             ->assertOk()
             ->assertJsonPath('data.0.description', 'Listed entry')
-            ->assertJsonPath('data.0.status', 'pending')
+            ->assertJsonPath('data.0.status', 'draft')
             ->assertJsonPath('data.0.list_id', fn (string $value) => str_starts_with($value, 'local:'));
     });
 
@@ -75,7 +81,7 @@ describe('employee time entries', function () {
         $this->actingAs($employee);
 
         seedListedTimeActivities($token, '7', 1, 42);
-        $localEntry = TimeEntry::factory()->forUser($employee)->create([
+        $localEntry = TimeEntry::factory()->forUser($employee)->pending()->create([
             'description' => 'Pending local only',
             'start_time' => '2020-01-01 09:00:00',
             'end_time' => '2020-01-01 10:00:00',
@@ -111,7 +117,7 @@ describe('employee time entries', function () {
             ->assertJsonPath('data.0.list_id', 'local:'.$localEntry->id);
     });
 
-    it('updates a pending time entry', function () {
+    it('updates a draft time entry', function () {
         $user = auth()->user();
         $entry = TimeEntry::factory()->forUser($user)->create();
 
@@ -133,7 +139,7 @@ describe('employee time entries', function () {
             ->assertJsonPath('error', 'time_entry_not_editable');
     });
 
-    it('deletes a pending time entry', function () {
+    it('deletes a draft time entry', function () {
         $user = auth()->user();
         $entry = TimeEntry::factory()->forUser($user)->create();
 
@@ -141,6 +147,27 @@ describe('employee time entries', function () {
             ->assertNoContent();
 
         expect(TimeEntry::query()->whereKey($entry->id)->exists())->toBeFalse();
+    });
+
+    it('submits a draft time entry for approval', function () {
+        $user = auth()->user();
+        $entry = TimeEntry::factory()->forUser($user)->create();
+
+        $this->postJson("/api/time-entries/{$entry->id}/submit", [], frontendHeaders())
+            ->assertOk()
+            ->assertJsonPath('data.status', 'pending');
+    });
+
+    it('submits all draft entries in bulk', function () {
+        $user = auth()->user();
+        TimeEntry::factory()->forUser($user)->create();
+        TimeEntry::factory()->forUser($user)->create();
+
+        $this->postJson('/api/time-entries/submit', [], frontendHeaders())
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.status', 'pending')
+            ->assertJsonPath('data.1.status', 'pending');
     });
 });
 
@@ -153,7 +180,7 @@ describe('time entry approvals', function () {
         $admin = actingAsAdmin();
         QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
         $employee = timesheetUserFor($admin, ['supervisor_id' => null]);
-        $entry = TimeEntry::factory()->forUser($employee)->create([
+        $entry = TimeEntry::factory()->forUser($employee)->pending()->create([
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
             'description' => 'Ready for approval',
@@ -182,7 +209,7 @@ describe('time entry approvals', function () {
         QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
         $supervisor = timesheetUserFor($admin, ['qbo_employee_ref' => '9']);
         $employee = timesheetUserFor($admin, ['supervisor_id' => $supervisor->id]);
-        $entry = TimeEntry::factory()->forUser($employee)->create();
+        $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
 
         $dataService = Mockery::mock(DataService::class);
         $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => '77']);
@@ -207,7 +234,7 @@ describe('time entry approvals', function () {
         QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
         $employee = timesheetUserFor($admin);
         $otherEmployee = timesheetUserFor($admin, ['qbo_employee_ref' => '9']);
-        $entry = TimeEntry::factory()->forUser($employee)->create();
+        $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
 
         $this->actingAs($otherEmployee)
             ->postJson("/api/time-entry-approvals/{$entry->id}/approve", [], frontendHeaders())
@@ -218,7 +245,7 @@ describe('time entry approvals', function () {
     it('rejects a pending entry without syncing to quickbooks', function () {
         $admin = actingAsAdmin();
         $employee = timesheetUserFor($admin);
-        $entry = TimeEntry::factory()->forUser($employee)->create();
+        $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
 
         $this->actingAs($admin)
             ->postJson("/api/admin/time-entry-approvals/{$entry->id}/reject", [
@@ -233,13 +260,43 @@ describe('time entry approvals', function () {
     it('lists pending entries for administrators', function () {
         $admin = actingAsAdmin();
         $employee = timesheetUserFor($admin);
-        TimeEntry::factory()->forUser($employee)->create(['description' => 'Needs review']);
+        TimeEntry::factory()->forUser($employee)->pending()->create(['description' => 'Needs review']);
         TimeEntry::factory()->forUser($employee)->approved()->create();
 
         $this->getJson('/api/admin/time-entry-approvals', frontendHeaders())
             ->assertOk()
             ->assertJsonPath('data.0.description', 'Needs review')
             ->assertJsonCount(1, 'data');
+    });
+
+    it('lets an administrator update a pending entry before approval', function () {
+        $admin = actingAsAdmin();
+        QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+        $employee = timesheetUserFor($admin);
+        $entry = TimeEntry::factory()->forUser($employee)->pending()->create([
+            'description' => 'Wrong client',
+        ]);
+
+        $this->patchJson("/api/admin/time-entry-approvals/{$entry->id}", [
+            'description' => 'Corrected notes',
+            'is_billable' => true,
+        ], frontendHeaders())
+            ->assertOk()
+            ->assertJsonPath('data.description', 'Corrected notes')
+            ->assertJsonPath('data.is_billable', true)
+            ->assertJsonPath('data.status', 'pending');
+    });
+
+    it('excludes draft entries from pending approval lists', function () {
+        $admin = actingAsAdmin();
+        $employee = timesheetUserFor($admin);
+        TimeEntry::factory()->forUser($employee)->create(['description' => 'Still drafting']);
+        TimeEntry::factory()->forUser($employee)->pending()->create(['description' => 'Submitted']);
+
+        $this->getJson('/api/admin/time-entry-approvals', frontendHeaders())
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.description', 'Submitted');
     });
 });
 
@@ -267,7 +324,7 @@ describe('time entry approval security', function () {
             'organization_id' => $foreignOrganization->id,
             'qbo_employee_ref' => '88',
         ]);
-        $entry = TimeEntry::factory()->forUser($foreignEmployee)->create();
+        $entry = TimeEntry::factory()->forUser($foreignEmployee)->pending()->create();
 
         $this->postJson("/api/admin/time-entry-approvals/{$entry->id}/approve", [], frontendHeaders())
             ->assertNotFound();

@@ -42,6 +42,7 @@ describe('TimeEntryApprovalsPanel', () => {
       loadMore: vi.fn(),
       approveEntry: vi.fn(),
       rejectEntry: vi.fn(),
+      updateEntry: vi.fn(),
     })
 
     render(
@@ -65,6 +66,7 @@ describe('TimeEntryApprovalsPanel', () => {
       loadMore: vi.fn(),
       approveEntry: vi.fn(),
       rejectEntry: vi.fn(),
+      updateEntry: vi.fn(),
     })
 
     render(

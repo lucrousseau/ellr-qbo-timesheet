@@ -55,6 +55,7 @@ export function TimesheetTimeEntryApprovalsPanel({
               reviewingId={approvals.reviewingId}
               onApprove={approvals.approveEntry}
               onReject={approvals.rejectEntry}
+              onUpdateEntry={approvals.updateEntry}
             />
 
             {approvals.hasMore ? (

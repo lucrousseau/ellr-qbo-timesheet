@@ -89,7 +89,7 @@ it('maps a local time entry resource for api responses', function () {
     $payload = TimeEntryApiResponse::resource($entry);
 
     expect($payload['list_id'])->toBe('local:'.$entry->id)
-        ->and($payload['status'])->toBe('pending')
+        ->and($payload['status'])->toBe('draft')
         ->and($payload['employee_name'])->toBe('Jane Doe')
         ->and($payload['duration_seconds'])->toBeGreaterThan(0);
 });

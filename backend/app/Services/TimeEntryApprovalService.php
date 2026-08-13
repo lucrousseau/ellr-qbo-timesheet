@@ -23,6 +23,7 @@ class TimeEntryApprovalService
      * Injects authorization, QuickBooks writes, and token resolution.
      *
      * @param  TimeEntryAuthorizationService  $authorization  Review permission checks.
+     * @param  TimeEntryService  $timeEntries  Local time entry writer.
      * @param  QboPickerValidationService  $pickerValidation  QuickBooks picker reference validator.
      * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves organization QBO token.
      * @param  QboPickerDisplayNameService  $displayNames  Cached QuickBooks label resolver.
@@ -30,6 +31,7 @@ class TimeEntryApprovalService
      */
     public function __construct(
         private readonly TimeEntryAuthorizationService $authorization,
+        private readonly TimeEntryService $timeEntries,
         private readonly QboPickerValidationService $pickerValidation,
         private readonly QuickBooksTokenResolverService $tokenResolver,
         private readonly QboPickerDisplayNameService $displayNames,
@@ -72,6 +74,24 @@ class TimeEntryApprovalService
                 'truncated' => $offset + $count < $total, // @pest-mutate-ignore pagination metadata
             ],
         ];
+    }
+
+    /**
+     * Updates a pending entry while it awaits approval.
+     *
+     * @param  User  $actor  Supervisor or administrator.
+     * @param  int  $id  Local time entry identifier.
+     * @param  array<string, mixed>  $validated  Validated update payload.
+     * @return TimeEntry
+     */
+    public function updateForReviewer(User $actor, int $id, array $validated): TimeEntry
+    {
+        $entry = $this->findPendingEntry($id);
+        $this->authorization->assertCanReview($actor, $entry);
+
+        return $this->timeEntries
+            ->applyValidatedUpdate($entry, $actor, $validated)
+            ->load(['user', 'reviewedBy']);
     }
 
     /**

@@ -34,8 +34,8 @@ import {
   fetchQuickBooksStatus,
   parseQuickBooksOAuthCallback,
 } from './quickbooks'
-import { createTimeActivity, discardTimeTracker, fetchTimeTracker, listTimeActivities, logTimeTracker, updateTimeActivity, updateTimeTracker } from './timesheet'
-import { listAdminUserTimeActivities, updateAdminUserTimeActivity } from './admin'
+import { createTimeActivity, discardTimeTracker, fetchTimeTracker, listTimeActivities, logTimeTracker, updateTimeTracker } from './timesheet'
+import { listAdminUserTimeActivities } from './admin'
 import {
   createSuperAdminOrganization,
   deleteSuperAdminOrganization,
@@ -1333,33 +1333,6 @@ describe('timesheet api', () => {
     )
   })
 
-  it('updates a time activity through the api', async () => {
-    mockCsrfCookie()
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: { Id: '12', BillableStatus: 'Billable' } }),
-      })
-    vi.stubGlobal('fetch', fetchMock)
-
-    await expect(
-      updateTimeActivity('12', {
-        description: 'Updated',
-        is_billable: true,
-      }),
-    ).resolves.toEqual({ Id: '12', BillableStatus: 'Billable' })
-
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      'http://localhost:8000/api/time-activities/12',
-      expect.objectContaining({
-        method: 'PATCH',
-        body: JSON.stringify({ description: 'Updated', is_billable: true }),
-      }),
-    )
-  })
-
   it('lists administrator time activities for a provisioned user', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -1377,28 +1350,6 @@ describe('timesheet api', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:8000/api/admin/users/4/time-activities?max_results=10',
       expect.objectContaining({ method: 'GET' }),
-    )
-  })
-
-  it('updates administrator time activities for a provisioned user', async () => {
-    mockCsrfCookie()
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: { Id: '9' } }),
-      })
-    vi.stubGlobal('fetch', fetchMock)
-
-    await expect(updateAdminUserTimeActivity(4, '9', { is_billable: false })).resolves.toEqual({ Id: '9' })
-
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      'http://localhost:8000/api/admin/users/4/time-activities/9',
-      expect.objectContaining({
-        method: 'PATCH',
-        body: JSON.stringify({ is_billable: false }),
-      }),
     )
   })
 

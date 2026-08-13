@@ -4,8 +4,7 @@
 
 import { apiFetch } from './api'
 import type { User } from './auth'
-import type { ListTimeActivitiesParams, TimeActivity, TimeActivityListResponse } from './timesheet'
-import type { TimeActivityUpdatePayload } from './timeActivityFormat'
+import type { ListTimeActivitiesParams, TimeActivityListResponse } from './timesheet'
 
 /**
  * QuickBooks customer option for administrator and timesheet pickers.
@@ -183,27 +182,4 @@ export async function listAdminUserTimeActivities(
     : `/admin/users/${userId}/time-activities`
 
   return apiFetch(path)
-}
-
-/**
- * Updates a time activity for a provisioned timesheet user (administrator scope).
- * @param userId Application user id.
- * @param activityId QuickBooks time activity identifier.
- * @param payload Fields to update.
- * @returns Updated QuickBooks activity data.
- */
-export async function updateAdminUserTimeActivity(
-  userId: number,
-  activityId: string,
-  payload: TimeActivityUpdatePayload,
-): Promise<TimeActivity> {
-  const response = await apiFetch<{ data: TimeActivity }>(
-    `/admin/users/${userId}/time-activities/${activityId}`,
-    {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    },
-  )
-
-  return response.data
 }

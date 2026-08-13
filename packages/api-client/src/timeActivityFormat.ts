@@ -19,20 +19,26 @@ export type TimeActivityRow = {
   description: string | null
   isBillable: boolean
   billableLocked: boolean
-  approvalStatus?: 'pending' | 'approved' | 'rejected' | null
+  approvalStatus?: 'draft' | 'pending' | 'approved' | 'rejected' | null
   employeeName?: string | null
   rejectionReason?: string | null
   qboId?: string | null
+  customerRef?: string | null
+  projectRef?: string | null
+  itemRef?: string | null
 }
 
 /**
- * Partial update payload for an existing time activity.
+ * Partial update payload for an existing time activity or local time entry.
  */
 export type TimeActivityUpdatePayload = {
   start_time?: string
   end_time?: string
   description?: string | null
   is_billable?: boolean
+  customer_ref?: string | null
+  project_ref?: string | null
+  item_ref?: string | null
 }
 
 /**

@@ -43,7 +43,7 @@ class TimeEntryFactory extends Factory
     {
         return $this->afterMaking(function (TimeEntry $entry): void {
             $entry->forceFill([
-                'status' => $entry->status ?? TimeEntryStatus::Pending,
+                'status' => $entry->status ?? TimeEntryStatus::Draft,
             ]);
         });
     }
@@ -62,6 +62,21 @@ class TimeEntryFactory extends Factory
                 'organization_id' => $user->organization_id,
             ]);
         });
+    }
+
+    /**
+     * Marks the entry as submitted and awaiting supervisor approval.
+     *
+     * @return static
+     */
+    public function pending(): static
+    {
+        return $this->state(fn (): array => [])
+            ->afterCreating(function (TimeEntry $entry): void {
+                $entry->forceFill([
+                    'status' => TimeEntryStatus::Pending,
+                ])->save();
+            });
     }
 
     /**

@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\SuperAdminOrganizationController;
 use App\Http\Controllers\Api\TimeActivityController;
 use App\Http\Controllers\Api\TimeEntryApprovalController;
 use App\Http\Controllers\Api\TimeEntryController;
+use App\Http\Controllers\Api\TimeEntrySubmitController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Http\Controllers\Api\UserEmailController;
 use App\Http\Controllers\Api\UserLocaleController;
@@ -86,9 +87,9 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::get('/admin/users/{user}/customers', [AdminUserCustomerController::class, 'show']);
             Route::put('/admin/users/{user}/customers', [AdminUserCustomerController::class, 'update']);
             Route::get('/admin/users/{user}/time-activities', [AdminUserTimeActivityController::class, 'index']);
-            Route::patch('/admin/users/{user}/time-activities/{id}', [AdminUserTimeActivityController::class, 'update']);
             Route::patch('/admin/users/{user}/supervisor', [AdminUserSupervisorController::class, 'update']);
             Route::get('/admin/time-entry-approvals', [TimeEntryApprovalController::class, 'index']);
+            Route::patch('/admin/time-entry-approvals/{timeEntry}', [TimeEntryApprovalController::class, 'update']);
             Route::post('/admin/time-entry-approvals/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
             Route::post('/admin/time-entry-approvals/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
             Route::get('/admin/quickbooks/customers', [AdminQuickBooksPickerController::class, 'customers']);
@@ -104,11 +105,14 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             });
         });
 
-        Route::apiResource('time-activities', TimeActivityController::class);
+        Route::apiResource('time-activities', TimeActivityController::class)->except(['update']);
+        Route::post('/time-entries/submit', [TimeEntrySubmitController::class, 'submitMany']);
+        Route::post('/time-entries/{timeEntry}/submit', [TimeEntrySubmitController::class, 'submitOne']);
         Route::apiResource('time-entries', TimeEntryController::class)->only(['index', 'store', 'update', 'destroy']);
 
         Route::prefix('time-entry-approvals')->group(function () {
             Route::get('/', [TimeEntryApprovalController::class, 'index']);
+            Route::patch('/{timeEntry}', [TimeEntryApprovalController::class, 'update']);
             Route::post('/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
             Route::post('/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
         });

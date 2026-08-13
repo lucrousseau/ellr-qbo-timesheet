@@ -5,7 +5,7 @@
 import { apiFetch } from './api'
 
 /** Approval lifecycle status for a local time entry. */
-export type TimeEntryStatus = 'pending' | 'approved' | 'rejected'
+export type TimeEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected'
 
 /**
  * Local time entry returned by the API before or after supervisor review.
@@ -39,9 +39,9 @@ export type TimeEntry = {
  * Request body to create a local time entry.
  */
 export type TimeEntryPayload = {
-  customer_ref?: string
-  project_ref?: string
-  item_ref?: string
+  customer_ref?: string | null
+  project_ref?: string | null
+  item_ref?: string | null
   start_time: string
   end_time: string
   description?: string | null
@@ -104,7 +104,7 @@ export async function listTimeEntries(
 }
 
 /**
- * Creates a pending local time entry for supervisor approval.
+ * Creates a draft local time entry.
  * @param payload Time range and optional description.
  * @returns Created local time entry.
  */
@@ -118,7 +118,7 @@ export async function createTimeEntry(payload: TimeEntryPayload): Promise<TimeEn
 }
 
 /**
- * Updates a pending local time entry owned by the signed-in employee.
+ * Updates a draft or rejected local time entry owned by the signed-in employee.
  * @param id Local time entry identifier.
  * @param payload Fields to update.
  * @returns Updated local time entry.
@@ -136,11 +136,59 @@ export async function updateTimeEntry(
 }
 
 /**
- * Deletes a pending or rejected local time entry.
+ * Deletes a draft or rejected local time entry.
  * @param id Local time entry identifier.
  */
 export async function deleteTimeEntry(id: number): Promise<void> {
   await apiFetch(`/time-entries/${id}`, { method: 'DELETE' })
+}
+
+/**
+ * Submits one draft or rejected time entry for supervisor approval.
+ * @param id Local time entry identifier.
+ * @returns Pending time entry.
+ */
+export async function submitTimeEntry(id: number): Promise<TimeEntry> {
+  const response = await apiFetch<{ data: TimeEntry }>(`/time-entries/${id}/submit`, {
+    method: 'POST',
+  })
+
+  return response.data
+}
+
+/**
+ * Submits owned draft or rejected time entries for approval.
+ * @param ids Optional entry ids; omit to submit all submittable owned entries.
+ * @returns Submitted pending entries.
+ */
+export async function submitTimeEntries(ids?: number[]): Promise<TimeEntry[]> {
+  const response = await apiFetch<{ data: TimeEntry[] }>('/time-entries/submit', {
+    method: 'POST',
+    body: JSON.stringify(ids === undefined ? {} : { ids }),
+  })
+
+  return response.data
+}
+
+/**
+ * Updates a pending time entry while it awaits approval.
+ * @param id Local time entry identifier.
+ * @param payload Fields to update.
+ * @param options Optional fetch options for admin vs supervisor routes.
+ * @returns Updated pending time entry.
+ */
+export async function updatePendingTimeEntryApproval(
+  id: number,
+  payload: TimeEntryUpdatePayload,
+  options: { admin?: boolean } = {},
+): Promise<TimeEntry> {
+  const basePath = options.admin ? '/admin/time-entry-approvals' : '/time-entry-approvals'
+  const response = await apiFetch<{ data: TimeEntry }>(`${basePath}/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+
+  return response.data
 }
 
 /**

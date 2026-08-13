@@ -11,6 +11,7 @@ namespace App\Enums;
  */
 enum TimeEntryStatus: string
 {
+    case Draft = 'draft';
     case Pending = 'pending';
     case Approved = 'approved';
     case Rejected = 'rejected';
@@ -22,7 +23,17 @@ enum TimeEntryStatus: string
      */
     public function isEditable(): bool
     {
-        return $this === self::Pending;
+        return $this === self::Draft || $this === self::Rejected;
+    }
+
+    /**
+     * Returns whether the employee may submit the entry for approval.
+     *
+     * @return bool
+     */
+    public function isSubmittable(): bool
+    {
+        return $this === self::Draft || $this === self::Rejected;
     }
 
     /**

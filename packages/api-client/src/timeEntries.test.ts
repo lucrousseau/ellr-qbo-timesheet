@@ -12,7 +12,10 @@ import {
   listTimeEntries,
   rejectTimeEntry,
   resolveTimeEntryId,
+  submitTimeEntries,
+  submitTimeEntry,
   updateAdminUserSupervisor,
+  updatePendingTimeEntryApproval,
   updateTimeEntry,
   type TimeEntry,
 } from './timeEntries'
@@ -29,7 +32,7 @@ const sampleEntry: TimeEntry = {
   end_time: '2026-07-30T18:00:00Z',
   duration_seconds: 3600,
   is_billable: false,
-  status: 'pending',
+  status: 'draft',
 }
 
 describe('time entry api', () => {
@@ -48,7 +51,7 @@ describe('time entry api', () => {
     expect(apiFetch).toHaveBeenCalledWith('/time-entries?start_position=1&max_results=10')
   })
 
-  it('creates a pending time entry', async () => {
+  it('creates a draft time entry', async () => {
     vi.mocked(apiFetch).mockResolvedValue({ data: sampleEntry })
 
     await expect(
@@ -67,7 +70,7 @@ describe('time entry api', () => {
     })
   })
 
-  it('updates a pending time entry', async () => {
+  it('updates a draft time entry', async () => {
     vi.mocked(apiFetch).mockResolvedValue({ data: { ...sampleEntry, description: 'Updated' } })
 
     await expect(updateTimeEntry(12, { description: 'Updated' })).resolves.toMatchObject({
@@ -77,6 +80,38 @@ describe('time entry api', () => {
     expect(apiFetch).toHaveBeenCalledWith('/time-entries/12', {
       method: 'PATCH',
       body: JSON.stringify({ description: 'Updated' }),
+    })
+  })
+
+  it('submits a draft time entry', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ data: { ...sampleEntry, status: 'pending' } })
+
+    await expect(submitTimeEntry(12)).resolves.toMatchObject({ status: 'pending' })
+    expect(apiFetch).toHaveBeenCalledWith('/time-entries/12/submit', { method: 'POST' })
+  })
+
+  it('submits all draft time entries', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ data: [{ ...sampleEntry, status: 'pending' }] })
+
+    await expect(submitTimeEntries()).resolves.toHaveLength(1)
+    expect(apiFetch).toHaveBeenCalledWith('/time-entries/submit', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    })
+  })
+
+  it('updates a pending approval entry through the admin route', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({
+      data: { ...sampleEntry, status: 'pending', description: 'Fixed' },
+    })
+
+    await expect(
+      updatePendingTimeEntryApproval(12, { description: 'Fixed' }, { admin: true }),
+    ).resolves.toMatchObject({ description: 'Fixed' })
+
+    expect(apiFetch).toHaveBeenCalledWith('/admin/time-entry-approvals/12', {
+      method: 'PATCH',
+      body: JSON.stringify({ description: 'Fixed' }),
     })
   })
 

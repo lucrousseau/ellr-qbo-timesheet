@@ -33,5 +33,8 @@ export function parseTimeEntryRow(entry: TimeEntry): TimeActivityRow {
     employeeName: entry.employee_name ?? null,
     rejectionReason: entry.rejection_reason ?? null,
     qboId: entry.qbo_id ?? null,
+    customerRef: entry.customer_ref ?? null,
+    projectRef: entry.project_ref ?? null,
+    itemRef: entry.item_ref ?? null,
   }
 }

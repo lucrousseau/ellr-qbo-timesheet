@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Validates payloads for updating pending local time entries.
+ * Validates payloads for updating draft, rejected, or pending local time entries.
  */
 
 namespace App\Http\Requests;
@@ -10,7 +10,7 @@ use App\Http\Concerns\AllowsAuthenticatedApiUser;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Form request rules for PATCH /api/time-entries payloads.
+ * Form request rules for PATCH time entry and pending approval payloads.
  */
 class UpdateTimeEntryRequest extends FormRequest
 {

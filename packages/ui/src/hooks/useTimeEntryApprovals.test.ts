@@ -21,6 +21,7 @@ vi.mock('@ellr/api-client', async () => {
     listPendingTimeEntryApprovals: vi.fn(),
     approveTimeEntry: vi.fn(),
     rejectTimeEntry: vi.fn(),
+    updatePendingTimeEntryApproval: vi.fn(),
   }
 })
 

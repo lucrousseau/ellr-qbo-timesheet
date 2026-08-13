@@ -8,14 +8,18 @@ Supervisor approval is required before employee time entries are synchronized to
 flowchart LR
   subgraph writePath [Write path]
     Timer[Timer log / manual create]
-    Local[(time_entries)]
-    Timer --> Local
+    Draft[(time_entries draft)]
+    Timer --> Draft
+  end
+
+  subgraph submit [Employee submit]
+    Draft -->|Submit for approval| Pending[(status: pending)]
   end
 
   subgraph approval [Approval]
     Supervisor[Supervisor or admin]
     Review{Approve?}
-    Local --> Supervisor
+    Pending --> Supervisor
     Supervisor --> Review
     Review -->|Reject| Rejected[(status: rejected)]
     Review -->|Approve| QBO[QBO TimeActivity Add]
@@ -28,18 +32,21 @@ flowchart LR
 
 | Layer | Responsibility |
 |-------|----------------|
-| `time_entries` | **Write model**: all new entries start here as `pending` |
+| `time_entries` | **Write model**: new entries start as `draft`; submit moves them to `pending` |
 | `time_activity_snapshots` | **Read model**: QBO-synced activities (unchanged Phase 2 design) |
 | `users.supervisor_id` | Routes pending entries to the employee's supervisor |
 | `TimeEntryApprovalService` | Approve pushes to QBO; reject keeps the row local only |
 
 ## Status lifecycle
 
-| Status | Editable by employee | Synced to QBO |
-|--------|---------------------|---------------|
-| `pending` | Yes | No |
-| `approved` | No | Yes (`qbo_id` set) |
-| `rejected` | No (deletable) | Never |
+| Status | Employee | Admin / supervisor | In Time approvals | Synced to QBO |
+|--------|----------|--------------------|-------------------|---------------|
+| `draft` | Edit + delete + submit | No (private until submit) | No | No |
+| `pending` | Read-only | Edit + approve/reject | Yes | No |
+| `approved` | Read-only | Read-only (edit in QuickBooks only) | No | Yes (`qbo_id` set) |
+| `rejected` | Edit + delete + resubmit | No list (not pending) | No | Never |
+
+**Log Time** creates `draft`. Employees typically submit drafts at the end of the work week. Existing `pending` rows remain pending (already submitted).
 
 ## API routes
 
@@ -48,25 +55,29 @@ flowchart LR
 | Method | Route | Action |
 |--------|-------|--------|
 | `GET` | `/api/time-entries` | List own entries (all statuses) |
-| `POST` | `/api/time-entries` | Create pending entry |
-| `PATCH` | `/api/time-entries/{id}` | Update pending entry |
-| `DELETE` | `/api/time-entries/{id}` | Delete pending/rejected entry |
+| `POST` | `/api/time-entries` | Create draft entry |
+| `PATCH` | `/api/time-entries/{id}` | Update draft or rejected entry |
+| `DELETE` | `/api/time-entries/{id}` | Delete draft or rejected entry |
+| `POST` | `/api/time-entries/{id}/submit` | Submit one draft/rejected entry |
+| `POST` | `/api/time-entries/submit` | Submit all (or selected) draft/rejected entries |
 
-`POST /api/time-activities` and `POST /api/time-tracker/log` also create **pending** local entries (backward-compatible paths).
+`POST /api/time-activities` and `POST /api/time-tracker/log` also create **draft** local entries (backward-compatible paths).
 
 ### Reviewer (supervisor of employee, or org admin)
 
 | Method | Route | Action |
 |--------|-------|--------|
 | `GET` | `/api/time-entry-approvals` | List pending entries for direct reports |
+| `PATCH` | `/api/time-entry-approvals/{id}` | Update a pending entry before review |
 | `POST` | `/api/time-entry-approvals/{id}/approve` | Approve and sync to QBO |
-| `POST` | `/api/time-entry-approvals/{id}/reject` | Reject (stays local) |
+| `POST` | `/api/time-entry-approvals/{id}/reject` | Reject (stays local only) |
 
 ### Administrator (`middleware: admin`)
 
 | Method | Route | Action |
 |--------|-------|--------|
 | `GET` | `/api/admin/time-entry-approvals` | List all pending entries in org |
+| `PATCH` | `/api/admin/time-entry-approvals/{id}` | Update a pending entry before review |
 | `POST` | `/api/admin/time-entry-approvals/{id}/approve` | Approve and sync |
 | `POST` | `/api/admin/time-entry-approvals/{id}/reject` | Reject |
 | `PATCH` | `/api/admin/users/{user}/supervisor` | Assign supervisor |
@@ -77,13 +88,15 @@ flowchart LR
 - Supervisors review entries where `employee.supervisor_id = reviewer.id`.
 - Org administrators (`is_admin`) can review any pending entry in their organization.
 - Rejected entries are never sent to QBO.
+- Employee edits stop once an entry is `pending`; only reviewers may edit pending rows.
 
 ## UI surfaces
 
 | App | Screen | Behavior |
 |-----|--------|----------|
-| Timesheet | Recent entries | Shows approval status (`pending`, `approved`, `rejected`) |
-| Admin | Time approvals tab | List, approve, reject pending entries |
+| Timesheet | Recent entries | Draft/rejected: edit, submit, delete; bulk submit all drafts |
+| Timesheet / Admin | Time approvals | List pending; edit then approve or reject |
+| Admin | Employee Time entries dialog | QBO-synced snapshots only (read-only); edit approved time in QuickBooks |
 
 ## Supervisor assignment
 
@@ -107,8 +120,9 @@ They are excluded when a local `time_entries` row already references the same `q
 |-------|----------|
 | Model | `backend/app/Models/TimeEntry.php` |
 | Enum | `backend/app/Enums/TimeEntryStatus.php` |
-| Services | `TimeEntryService`, `TimeEntryApprovalService`, `TimeEntryAuthorizationService` |
-| Controllers | `TimeEntryController`, `TimeEntryApprovalController`, `AdminUserSupervisorController` |
+| Services | `TimeEntryService`, `TimeEntrySubmitService`, `TimeEntryApprovalService`, `TimeEntryAuthorizationService` |
+| Controllers | `TimeEntryController`, `TimeEntrySubmitController`, `TimeEntryApprovalController` |
 | API client | `packages/api-client/src/timeEntries.ts` |
 | Admin UI | `apps/admin/src/components/TimeEntryApprovalsPanel.tsx` |
+| Timesheet UI | `apps/timesheet/src/components/TimesheetDashboard.tsx` |
 | Phase 2 sync | `docs/quickbooks-time-activity-sync.md` |

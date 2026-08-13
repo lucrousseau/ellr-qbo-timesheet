@@ -32,6 +32,7 @@ export const API_ERROR_MESSAGE_KEYS = [
   'time_entry_self_review_forbidden',
   'time_entry_not_editable',
   'time_entry_not_deletable',
+  'time_entry_not_submittable',
   'supervisor_self_assignment',
 ] as const
 

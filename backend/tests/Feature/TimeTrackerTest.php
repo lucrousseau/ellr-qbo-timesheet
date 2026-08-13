@@ -223,7 +223,7 @@ it('logs elapsed time as a pending local entry and clears the session', function
 
     $this->postJson('/api/time-tracker/log', [], frontendHeaders())
         ->assertOk()
-        ->assertJsonPath('data.status', 'pending')
+        ->assertJsonPath('data.status', 'draft')
         ->assertJsonPath('data.description', 'Support call');
 
     expect(ActiveTimeSession::query()->where('user_id', $user->id)->exists())->toBeFalse();
