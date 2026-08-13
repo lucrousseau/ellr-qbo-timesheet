@@ -80,4 +80,5 @@ Measured Stryker scores: admin ~85 %, timesheet ~91 %, api-client ~93 %.
 - Project profitability roadmap (phased plan; strategy context for agents): `docs/project-profitability-roadmap.md`
 - QuickBooks time activity sync (webhooks, reconcile, local dev): `docs/quickbooks-time-activity-sync.md`
 - SiteGround Shared deploy (temporary; dual-mode with Cloud/VPS): `docs/siteground-shared-hosting.md`
+- **Production SSH is available** for debug/validation: see `.cursor/rules/siteground-ssh.mdc` (`ssh -i ~/.ssh/ellr_timesheet_sg_deploy -p 18765 …`)
 - Per-area details: `backend/AGENTS.md`, `packages/api-client/AGENTS.md`, `packages/ui/AGENTS.md`, `apps/*/AGENTS.md`

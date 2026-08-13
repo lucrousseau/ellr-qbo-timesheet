@@ -1,0 +1,47 @@
+---
+description: SiteGround Shared SSH access for ellr-qbo-timesheet production debugging
+alwaysApply: true
+---
+
+# SiteGround production SSH (Timesheet)
+
+Agents **may and should** use SSH to inspect or debug the live SiteGround Shared deployment. Do not assume FTP. Do not paste `.env` secrets or private keys into chat.
+
+## Connect (Luc’s Mac)
+
+```bash
+ssh -i ~/.ssh/ellr_timesheet_sg_deploy -p 18765 u3261-ghor3kynhvht@giowm1268.siteground.biz
+```
+
+| Item | Value |
+|------|--------|
+| SSH host | `giowm1268.siteground.biz` |
+| Port | `18765` |
+| User | `u3261-ghor3kynhvht` |
+| Deploy key | `~/.ssh/ellr_timesheet_sg_deploy` |
+| Site HTTP IP | `35.208.143.49` |
+
+## Paths
+
+| Role | Path |
+|------|------|
+| API app root | `/home/customer/www/api.timesheet.ellr.ca` |
+| API web root | `.../api.timesheet.ellr.ca/public_html` |
+| Admin SPA | `/home/customer/www/admin.timesheet.ellr.ca/public_html` |
+| Timesheet SPA | `/home/customer/www/timesheet.ellr.ca/public_html` |
+
+Hosts: `api.timesheet.ellr.ca`, `admin.timesheet.ellr.ca`, `timesheet.ellr.ca`.
+
+## PHP / Composer on Shared
+
+Default `php` / `composer` may be 8.2. Always prefer:
+
+```bash
+PHP=/usr/local/php83/bin/php-cli
+"$PHP" -d memory_limit=512M /usr/local/bin/composer.phar …
+"$PHP" artisan …
+```
+
+## Deploy
+
+GitHub Actions: `.github/workflows/deploy-siteground.yml` (build off-server, rsync over SSH). Full runbook: `docs/siteground-shared-hosting.md`. DNS zone is at Rebel (see project memory / that doc); wildcard may still send unset subdomains to Vercel.
