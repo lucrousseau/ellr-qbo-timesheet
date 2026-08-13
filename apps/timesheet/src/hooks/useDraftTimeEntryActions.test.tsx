@@ -114,7 +114,7 @@ describe('useDraftTimeEntryActions', () => {
     )
 
     await act(async () => {
-      await result.current.submitSelectedDrafts([12, 13])
+      await result.current.submitSelectedDrafts(['local:12', 'local:13'])
     })
 
     expect(submitTimeEntries).toHaveBeenCalledWith([12, 13])

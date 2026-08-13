@@ -9,7 +9,7 @@ import {
   useLocale,
   useTimeEntryEditForm,
 } from '@ellr/ui'
-import type { TimeActivityRow, TimeEntryUpdatePayload } from '@ellr/api-client'
+import type { TimeActivityRow, TimeEntryUpdatePayload } from '../hooks/useDraftTimeEntryEditForm'
 
 type DraftTimeEntryEditDialogProps = {
   entry: TimeActivityRow | null

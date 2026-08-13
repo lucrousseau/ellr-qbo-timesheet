@@ -70,7 +70,7 @@ describe('RecentDraftEntriesSection', () => {
     expect(screen.getByRole('button', { name: /submit 2 selected/i })).toBeEnabled()
 
     await user.click(screen.getByRole('button', { name: /submit 2 selected/i }))
-    expect(onSubmitSelectedDrafts).toHaveBeenCalledWith([1, 2])
+    expect(onSubmitSelectedDrafts).toHaveBeenCalledWith(['local:1', 'local:2'])
 
     await user.click(screen.getAllByRole('button', { name: 'Edit details' })[0]!)
     expect(onEditDraft).toHaveBeenCalledWith(expect.objectContaining({ id: 'local:1' }))

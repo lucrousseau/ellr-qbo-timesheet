@@ -3,7 +3,6 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { resolveTimeEntryId } from '@ellr/api-client'
 import {
   Button,
   DEFAULT_TIME_ENTRY_STATUS_FILTER,
@@ -30,7 +29,7 @@ type RecentDraftEntriesSectionProps = {
   submittingSelected: boolean
   onEditDraft: (entry: TimeActivityRow) => void
   onDeleteDraft: (id: string) => Promise<void>
-  onSubmitSelectedDrafts: (ids: number[]) => void | Promise<void>
+  onSubmitSelectedDrafts: (ids: string[]) => void | Promise<void>
   onCloseEditor: () => void
   onSaveDraft: (id: string, payload: TimeEntryUpdatePayload) => Promise<void>
 }
@@ -92,9 +91,7 @@ export function RecentDraftEntriesSection({
           variant="secondary"
           size="compact"
           disabled={selectedCount === 0 || submittingSelected}
-          onClick={() =>
-            void onSubmitSelectedDrafts(selectedIds.map((id) => resolveTimeEntryId(id)))
-          }
+          onClick={() => void onSubmitSelectedDrafts(selectedIds)}
         >
           {submittingSelected
             ? t('timesheet.submittingSelectedDrafts')

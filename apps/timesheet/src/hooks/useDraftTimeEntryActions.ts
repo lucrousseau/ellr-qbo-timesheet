@@ -54,13 +54,13 @@ export function useDraftTimeEntryActions({
   )
 
   const { run: submitSelectedDrafts, pending: submittingSelected } = useGuardedAction(
-    async (ids: number[]) => {
+    async (ids: string[]) => {
       if (ids.length === 0) {
         return
       }
 
       try {
-        await submitTimeEntries(ids)
+        await submitTimeEntries(ids.map((id) => resolveTimeEntryId(id)))
         onSuccess(t('timesheet.submitSelectedSuccess'))
         onChanged()
       } catch (caught) {
