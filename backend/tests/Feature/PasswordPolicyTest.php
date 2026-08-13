@@ -11,7 +11,8 @@ covers(PasswordResetController::class);
 
 it('rejects registration with a weak password', function () {
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -38,7 +39,8 @@ it('registers with a password that satisfies the shared policy', function () {
     $password = PasswordPolicy::validTestPassword();
 
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'policy@example.com',
         'password' => $password,
         'password_confirmation' => $password,

@@ -78,6 +78,8 @@ it('rejects login when quickbooks identity sync hits an email conflict', functio
 
     $qboEmployee = Mockery::mock(QboEmployeeService::class);
     $qboEmployee->shouldReceive('findEmployee')->once()->with($token, '7')->andReturn([
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
@@ -108,6 +110,8 @@ it('rejects login when the quickbooks employee email is missing', function () {
 
     $qboEmployee = Mockery::mock(QboEmployeeService::class);
     $qboEmployee->shouldReceive('findEmployee')->once()->with($token, '7')->andReturn([
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => null,
     ]);
@@ -134,6 +138,8 @@ it('allows login when quickbooks identity sync succeeds', function () {
 
     $qboEmployee = Mockery::mock(QboEmployeeService::class);
     $qboEmployee->shouldReceive('findEmployee')->once()->with($token, '7')->andReturn([
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
@@ -206,6 +212,8 @@ it('casts numeric quickbooks employee refs before lookup', function () {
 
     $qboEmployee = Mockery::mock(QboEmployeeService::class);
     $qboEmployee->shouldReceive('findEmployee')->once()->with($token, '7')->andReturn([
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);

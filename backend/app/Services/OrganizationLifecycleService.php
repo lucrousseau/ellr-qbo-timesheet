@@ -44,13 +44,14 @@ class OrganizationLifecycleService
     /**
      * Creates a tenant organization and its founding administrator account.
      *
-     * @param  array{name: string, email: string, password: string, organization_name: string}  $validated  Provisioning payload.
+     * @param  array{first_name: string, last_name: string, email: string, password: string, organization_name: string}  $validated  Provisioning payload.
      * @return Organization
      */
     public function createOrganization(array $validated): Organization
     {
         $administrator = $this->registration->registerAdministrator([
-            'name' => $validated['name'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
             'organization_name' => $validated['organization_name'],

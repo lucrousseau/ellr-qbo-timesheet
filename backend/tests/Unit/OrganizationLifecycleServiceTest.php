@@ -36,7 +36,8 @@ it('lists organizations ordered by name', function () {
 it('creates an organization with a verified founding administrator', function () {
     $organization = app(OrganizationLifecycleService::class)->createOrganization([
         'organization_name' => 'Beta Corp',
-        'name' => 'Beta Admin',
+        'first_name' => 'Beta',
+        'last_name' => 'Admin',
         'email' => 'admin@beta.test',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),

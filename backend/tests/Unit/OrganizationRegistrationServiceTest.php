@@ -11,7 +11,8 @@ uses(RefreshDatabase::class);
 
 it('creates an organization and founding administrator on registration', function () {
     $user = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Jane Founder',
+        'first_name' => 'Jane',
+        'last_name' => 'Founder',
         'organization_name' => 'Jane Consulting',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
@@ -26,7 +27,8 @@ it('creates an organization and founding administrator on registration', functio
 
 it('derives an organization name from the administrator name when omitted', function () {
     $user = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Jane Founder',
+        'first_name' => 'Jane',
+        'last_name' => 'Founder',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
     ]);
@@ -36,7 +38,8 @@ it('derives an organization name from the administrator name when omitted', func
 
 it('treats whitespace-only organization names as omitted', function () {
     $user = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Jane Founder',
+        'first_name' => 'Jane',
+        'last_name' => 'Founder',
         'organization_name' => '   ',
         'email' => 'whitespace@example.com',
         'password' => validTestPassword(),
@@ -47,7 +50,8 @@ it('treats whitespace-only organization names as omitted', function () {
 
 it('trims organization names before persisting them', function () {
     $user = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Jane Founder',
+        'first_name' => 'Jane',
+        'last_name' => 'Founder',
         'organization_name' => '  Acme Inc  ',
         'email' => 'trim@example.com',
         'password' => validTestPassword(),
@@ -58,7 +62,8 @@ it('trims organization names before persisting them', function () {
 
 it('casts non-string organization names before persisting them', function () {
     $user = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Jane Founder',
+        'first_name' => 'Jane',
+        'last_name' => 'Founder',
         'organization_name' => 12_345,
         'email' => 'numeric-org@example.com',
         'password' => validTestPassword(),
@@ -75,7 +80,8 @@ it('retries slug generation when a generated slug already exists', function () {
     });
 
     $user = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Acme Admin',
+        'first_name' => 'Acme',
+        'last_name' => 'Admin',
         'organization_name' => 'Acme Inc',
         'email' => 'slug-retry@example.com',
         'password' => validTestPassword(),
@@ -88,7 +94,8 @@ it('retries slug generation when a generated slug already exists', function () {
 
 it('uses a fallback slug when the organization name cannot be slugified', function () {
     $user = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => '!!!',
+        'first_name' => '!!!',
+        'last_name' => '',
         'email' => 'slug@example.com',
         'password' => validTestPassword(),
     ]);
@@ -98,13 +105,15 @@ it('uses a fallback slug when the organization name cannot be slugified', functi
 
 it('generates unique organization slugs for registrations with the same display name', function () {
     $first = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Acme Admin',
+        'first_name' => 'Acme',
+        'last_name' => 'Admin',
         'organization_name' => 'Acme Inc',
         'email' => 'first@example.com',
         'password' => validTestPassword(),
     ]);
     $second = app(OrganizationRegistrationService::class)->registerAdministrator([
-        'name' => 'Acme Admin Two',
+        'first_name' => 'Acme',
+        'last_name' => 'Admin Two',
         'organization_name' => 'Acme Inc',
         'email' => 'second@example.com',
         'password' => validTestPassword(),

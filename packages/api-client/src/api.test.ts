@@ -692,6 +692,8 @@ describe('auth helpers', () => {
         json: async () => ({
           user: {
             id: 1,
+            first_name: 'Jane',
+            last_name: '',
             name: 'Jane',
             email: 'jane@example.com',
             locale: 'fr',
@@ -702,6 +704,8 @@ describe('auth helpers', () => {
 
     await expect(updateUserLocale('fr')).resolves.toEqual({
       id: 1,
+      first_name: 'Jane',
+      last_name: '',
       name: 'Jane',
       email: 'jane@example.com',
       locale: 'fr',
@@ -755,12 +759,14 @@ describe('auth helpers', () => {
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ user: { id: 1, name: 'Jane', email: 'jane@example.com' } }),
+        json: async () => ({ user: { id: 1, first_name: 'Jane', last_name: '', name: 'Jane', email: 'jane@example.com' } }),
       })
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(login('jane@example.com', 'password')).resolves.toEqual({
       id: 1,
+      first_name: 'Jane',
+      last_name: '',
       name: 'Jane',
       email: 'jane@example.com',
     })
@@ -788,6 +794,8 @@ describe('auth helpers', () => {
         json: async () => ({
           user: {
             id: 1,
+            first_name: 'Jane',
+            last_name: '',
             name: 'Jane',
             email: 'jane@example.com',
             organization: {
@@ -803,7 +811,8 @@ describe('auth helpers', () => {
 
     await expect(
       register({
-        name: 'Jane',
+        first_name: 'Jane',
+        last_name: 'Doe',
         email: 'jane@example.com',
         password: 'password',
         password_confirmation: 'password',
@@ -811,6 +820,8 @@ describe('auth helpers', () => {
       }),
     ).resolves.toEqual({
       id: 1,
+      first_name: 'Jane',
+      last_name: '',
       name: 'Jane',
       email: 'jane@example.com',
       organization: {
@@ -826,7 +837,8 @@ describe('auth helpers', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
-          name: 'Jane',
+          first_name: 'Jane',
+          last_name: 'Doe',
           email: 'jane@example.com',
           password: 'password',
           password_confirmation: 'password',
@@ -901,6 +913,8 @@ describe('auth helpers', () => {
         json: async () => ({
           user: {
             id: 1,
+            first_name: 'Jane',
+            last_name: '',
             name: 'Jane',
             email: 'jane@example.com',
             qbo_employee_ref: '7',
@@ -911,6 +925,8 @@ describe('auth helpers', () => {
 
     await expect(updateQboEmployee('7')).resolves.toEqual({
       id: 1,
+      first_name: 'Jane',
+      last_name: '',
       name: 'Jane',
       email: 'jane@example.com',
       qbo_employee_ref: '7',
@@ -1706,7 +1722,8 @@ describe('admin api helpers', () => {
     await expect(
       createSuperAdminOrganization({
         organization_name: 'Gamma LLC',
-        name: 'Gamma Admin',
+        first_name: 'Gamma',
+        last_name: 'Admin',
         email: 'gamma@client.test',
         password: VALID_TEST_PASSWORD_ALT,
         password_confirmation: VALID_TEST_PASSWORD_ALT,

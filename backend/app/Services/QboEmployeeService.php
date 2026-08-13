@@ -10,6 +10,7 @@ use App\Enums\ApiErrorCode;
 use App\Exceptions\QuickBooksException;
 use App\Models\QuickBooksToken;
 use App\Models\User;
+use App\Support\PersonName;
 use App\Support\QboEmployeeEmail;
 use Illuminate\Validation\ValidationException;
 
@@ -52,7 +53,8 @@ class QboEmployeeService
         ];
 
         if (! $target->isAdmin()) {
-            $attributes['name'] = $identity['display_name'];
+            $attributes['first_name'] = $identity['first_name'];
+            $attributes['last_name'] = $identity['last_name'];
             $attributes['email'] = $identity['email'];
         }
 
@@ -67,7 +69,7 @@ class QboEmployeeService
      * @param  QuickBooksToken  $token  OAuth token for the connected company.
      * @param  string  $employeeRef  QuickBooks employee identifier.
      * @param  User|null  $exceptUser  User to ignore when checking email uniqueness.
-     * @return array{display_name: string, email: string}
+     * @return array{first_name: string, last_name: string, display_name: string, email: string}
      */
     public function resolveEmployeeIdentity(QuickBooksToken $token, string $employeeRef, ?User $exceptUser = null): array
     {
@@ -92,6 +94,8 @@ class QboEmployeeService
         }
 
         return [
+            'first_name' => $employee['first_name'],
+            'last_name' => $employee['last_name'],
             'display_name' => $employee['display_name'],
             'email' => $employee['email'],
         ];
@@ -115,7 +119,7 @@ class QboEmployeeService
      * Applies a resolved QuickBooks employee identity to a timesheet user.
      *
      * @param  User  $user  Timesheet user linked to a QBO employee.
-     * @param  array{display_name: string, email: string}  $identity  Resolved employee identity.
+     * @param  array{first_name: string, last_name: string, display_name: string, email: string}  $identity  Resolved employee identity.
      * @return User
      */
     public function syncTimesheetUserFromIdentity(User $user, array $identity): User
@@ -131,7 +135,8 @@ class QboEmployeeService
         }
 
         $user->update([
-            'name' => $identity['display_name'],
+            'first_name' => $identity['first_name'],
+            'last_name' => $identity['last_name'],
             'email' => $identity['email'],
         ]);
 
@@ -155,7 +160,7 @@ class QboEmployeeService
      *
      * @param  QuickBooksToken  $token  OAuth token for the connected company.
      * @param  string  $employeeRef  QuickBooks employee identifier.
-     * @return array{display_name: string, email: string|null}|null
+     * @return array{first_name: string, last_name: string, display_name: string, email: string|null}|null
      */
     public function findEmployee(QuickBooksToken $token, string $employeeRef): ?array
     {
@@ -173,8 +178,12 @@ class QboEmployeeService
             return null;
         }
 
+        $names = PersonName::fromQuickBooksEmployee($employee);
+
         return [
-            'display_name' => (string) ($employee->DisplayName ?? ''),
+            'first_name' => $names['first_name'],
+            'last_name' => $names['last_name'],
+            'display_name' => $names['display_name'],
             'email' => QboEmployeeEmail::fromEmployee($employee),
         ];
     }
@@ -183,12 +192,13 @@ class QboEmployeeService
      * Returns whether a timesheet user already matches the resolved QuickBooks identity.
      *
      * @param  User  $user  Timesheet user linked to a QBO employee.
-     * @param  array{display_name: string, email: string}  $identity  Resolved employee identity.
+     * @param  array{first_name: string, last_name: string, display_name: string, email: string}  $identity  Resolved employee identity.
      * @return bool
      */
     private function timesheetIdentityMatches(User $user, array $identity): bool
     {
-        return $user->name === $identity['display_name']
+        return $user->first_name === $identity['first_name']
+            && $user->last_name === $identity['last_name']
             && $user->email === $identity['email'];
     }
 

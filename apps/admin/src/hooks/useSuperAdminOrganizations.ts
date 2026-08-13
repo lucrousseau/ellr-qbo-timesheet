@@ -43,7 +43,8 @@ export function useSuperAdminOrganizations({
   const [organizations, setOrganizations] = useState<SuperAdminOrganization[]>([])
   const [loading, setLoading] = useState(false)
   const [organizationName, setOrganizationName] = useState('')
-  const [adminName, setAdminName] = useState('')
+  const [adminFirstName, setAdminFirstName] = useState('')
+  const [adminLastName, setAdminLastName] = useState('')
   const [adminEmail, setAdminEmail] = useState('')
   const [adminPassword, setAdminPassword] = useState('')
   const [adminPasswordConfirmation, setAdminPasswordConfirmation] = useState('')
@@ -89,7 +90,8 @@ export function useSuperAdminOrganizations({
     try {
       const created = await createSuperAdminOrganization({
         organization_name: organizationName,
-        name: adminName,
+        first_name: adminFirstName.trim(),
+        last_name: adminLastName.trim(),
         email: adminEmail,
         password: adminPassword,
         password_confirmation: adminPasswordConfirmation,
@@ -97,7 +99,8 @@ export function useSuperAdminOrganizations({
 
       setOrganizations((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)))
       setOrganizationName('')
-      setAdminName('')
+      setAdminFirstName('')
+      setAdminLastName('')
       setAdminEmail('')
       setAdminPassword('')
       setAdminPasswordConfirmation('')
@@ -172,8 +175,10 @@ export function useSuperAdminOrganizations({
     loading,
     organizationName,
     setOrganizationName,
-    adminName,
-    setAdminName,
+    adminFirstName,
+    setAdminFirstName,
+    adminLastName,
+    setAdminLastName,
     adminEmail,
     setAdminEmail,
     adminPassword,

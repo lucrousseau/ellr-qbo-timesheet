@@ -70,7 +70,8 @@ it('rejects weak administrator passwords when creating client organizations', fu
     $this->actingAs($superAdmin)
         ->postJson('/api/super-admin/organizations', [
             'organization_name' => 'Weak Password LLC',
-            'name' => 'Weak Admin',
+            'first_name' => 'Weak',
+            'last_name' => 'Admin',
             'email' => 'weak@client.test',
             'password' => 'password',
             'password_confirmation' => 'password',
@@ -87,7 +88,8 @@ it('creates client organizations for platform super administrators', function ()
     $this->actingAs($superAdmin)
         ->postJson('/api/super-admin/organizations', [
             'organization_name' => 'Gamma LLC',
-            'name' => 'Gamma Admin',
+            'first_name' => 'Gamma',
+            'last_name' => 'Admin',
             'email' => 'gamma@client.test',
             'password' => validTestPassword(),
             'password_confirmation' => validTestPassword(),

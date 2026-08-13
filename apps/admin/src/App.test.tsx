@@ -1489,7 +1489,8 @@ describe('Admin App', () => {
     })
 
     await user.type(screen.getByLabelText(/organization name/i), 'Acme Corp')
-    await user.type(screen.getByLabelText(/administrator name/i), 'Acme Admin')
+    await user.type(screen.getByLabelText(/administrator first name/i), 'Acme')
+    await user.type(screen.getByLabelText(/administrator last name/i), 'Admin')
     await user.type(screen.getByLabelText(/administrator email/i), 'admin@acme.test')
     await user.type(screen.getByLabelText(/^administrator password$/i), 'short')
     await user.type(screen.getByLabelText(/^confirm password$/i), 'short')
@@ -1513,7 +1514,8 @@ describe('Admin App', () => {
     await openClientsTab(user)
 
     await user.type(screen.getByLabelText(/organization name/i), 'Gamma LLC')
-    await user.type(screen.getByLabelText(/administrator name/i), 'Gamma Admin')
+    await user.type(screen.getByLabelText(/administrator first name/i), 'Gamma')
+    await user.type(screen.getByLabelText(/administrator last name/i), 'Admin')
     await user.type(screen.getByLabelText(/administrator email/i), 'gamma@client.test')
     await user.type(screen.getByLabelText(/^administrator password$/i), VALID_TEST_PASSWORD_ALT)
     await user.type(screen.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
@@ -1522,7 +1524,8 @@ describe('Admin App', () => {
     await waitFor(() => {
       expect(createSuperAdminOrganization).toHaveBeenCalledWith({
         organization_name: 'Gamma LLC',
-        name: 'Gamma Admin',
+        first_name: 'Gamma',
+        last_name: 'Admin',
         email: 'gamma@client.test',
         password: VALID_TEST_PASSWORD_ALT,
         password_confirmation: VALID_TEST_PASSWORD_ALT,

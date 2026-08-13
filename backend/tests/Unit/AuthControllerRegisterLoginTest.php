@@ -23,7 +23,8 @@ it('regenerates the session after registration when a session is present', funct
     $session->shouldReceive('regenerate')->once();
 
     $request = RegisterRequest::create('/api/register', 'POST', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => PasswordPolicy::validTestPassword(),
         'password_confirmation' => PasswordPolicy::validTestPassword(),

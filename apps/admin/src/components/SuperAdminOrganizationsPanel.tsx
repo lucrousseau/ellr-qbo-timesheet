@@ -60,26 +60,38 @@ export function SuperAdminOrganizationsPanel({ clients }: SuperAdminOrganization
             void clients.onCreate()
           }}
         >
+          <div className="md:col-span-2">
+            <TextField
+              label={t('admin.clientOrganizationName')}
+              value={clients.organizationName}
+              onChange={(event) => clients.setOrganizationName(event.target.value)}
+              required
+            />
+          </div>
           <TextField
-            label={t('admin.clientOrganizationName')}
-            value={clients.organizationName}
-            onChange={(event) => clients.setOrganizationName(event.target.value)}
+            label={t('admin.clientAdminFirstName')}
+            autoComplete="given-name"
+            value={clients.adminFirstName}
+            onChange={(event) => clients.setAdminFirstName(event.target.value)}
             required
           />
           <TextField
-            label={t('admin.clientAdminName')}
-            value={clients.adminName}
-            onChange={(event) => clients.setAdminName(event.target.value)}
+            label={t('admin.clientAdminLastName')}
+            autoComplete="family-name"
+            value={clients.adminLastName}
+            onChange={(event) => clients.setAdminLastName(event.target.value)}
             required
           />
-          <TextField
-            label={t('admin.clientAdminEmail')}
-            type="email"
-            autoComplete="email"
-            value={clients.adminEmail}
-            onChange={(event) => clients.setAdminEmail(event.target.value)}
-            required
-          />
+          <div className="md:col-span-2">
+            <TextField
+              label={t('admin.clientAdminEmail')}
+              type="email"
+              autoComplete="email"
+              value={clients.adminEmail}
+              onChange={(event) => clients.setAdminEmail(event.target.value)}
+              required
+            />
+          </div>
           <div className="md:col-span-2">
             <PasswordPolicyRequirements />
           </div>

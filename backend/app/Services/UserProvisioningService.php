@@ -49,7 +49,8 @@ class UserProvisioningService
 
             $user = User::query()->create([
                 'organization_id' => $admin->organization_id,
-                'name' => $identity['display_name'],
+                'first_name' => $identity['first_name'],
+                'last_name' => $identity['last_name'],
                 'email' => $identity['email'],
                 'password' => Str::password(32),
                 'locale' => $admin->preferredLocale(),
@@ -76,7 +77,8 @@ class UserProvisioningService
             ->where('is_admin', false)
             ->whereNotNull('qbo_employee_ref')
             ->withCount('directReports') // @pest-mutate-ignore provisioning list eager counts
-            ->orderBy('name')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
             ->get();
     }
 

@@ -12,10 +12,12 @@ use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
 use App\Services\PasswordResetLinkService;
 use App\Services\UserLevelResolverService;
+use App\Support\PersonName;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,7 +26,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['organization_id', 'name', 'email', 'password', 'locale', 'timezone', 'qbo_employee_ref', 'qbo_all_customers_access', 'supervisor_id'])]
+#[Fillable(['organization_id', 'first_name', 'last_name', 'name', 'email', 'password', 'locale', 'timezone', 'qbo_employee_ref', 'qbo_all_customers_access', 'supervisor_id'])]
 #[Hidden(['password', 'remember_token', 'is_admin', 'is_super_admin'])]
 /**
  * Eloquent user with Sanctum auth and optional QBO employee fields.
@@ -33,6 +35,13 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use BelongsToOrganization, HasApiTokens, HasFactory, Notifiable;
+
+    /**
+     * Computed attributes included in array/JSON serialization.
+     *
+     * @var list<string>
+     */
+    protected $appends = ['name'];
 
     /**
      * Bootstraps model lifecycle hooks.
@@ -72,6 +81,31 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_super_admin' => 'boolean',
             'qbo_all_customers_access' => 'boolean',
         ];
+    }
+
+    /**
+     * Full display name derived from first and last name columns.
+     *
+     * Setting `name` splits the value into first_name and last_name for legacy callers.
+     *
+     * @return Attribute<string, string>
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => PersonName::join(
+                (string) ($this->attributes['first_name'] ?? ''),
+                (string) ($this->attributes['last_name'] ?? ''),
+            ),
+            set: function (string $value): array {
+                [$firstName, $lastName] = PersonName::split($value);
+
+                return [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                ];
+            },
+        );
     }
 
     /**

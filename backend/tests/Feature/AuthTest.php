@@ -9,7 +9,8 @@ covers(AuthController::class);
 
 it('registers a new user', function () {
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
@@ -31,7 +32,8 @@ it('sends a verification email when registration requires verification', functio
     config(['app.require_email_verification' => true]);
 
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
@@ -71,7 +73,8 @@ it('regenerates the session id after registration', function () {
     $sessionBefore = session()->getId();
 
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
@@ -158,7 +161,8 @@ it('rate limits login attempts', function () {
 it('rate limits registration attempts', function () {
     for ($i = 0; $i < 10; $i++) {
         $this->postJson('/api/register', [
-            'name' => 'Jane Doe',
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
             'email' => "user{$i}@example.com",
             'password' => validTestPassword(),
             'password_confirmation' => 'mismatch',
@@ -166,7 +170,8 @@ it('rate limits registration attempts', function () {
     }
 
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'blocked@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
@@ -177,7 +182,8 @@ it('rejects registration when disabled', function () {
     config(['app.allow_registration' => false]);
 
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
@@ -193,28 +199,30 @@ it('validates registration payload', function () {
     User::factory()->create(['email' => 'taken@example.com']);
 
     $this->postJson('/api/register', [
-        'name' => '',
+        'first_name' => '',
+        'last_name' => '',
         'email' => 'taken@example.com',
         'password' => 'short',
         'password_confirmation' => 'mismatch',
     ], frontendHeaders())
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name', 'email', 'password']);
+        ->assertJsonValidationErrors(['first_name', 'last_name', 'email', 'password']);
 });
 
-it('requires name on registration', function () {
+it('requires first and last name on registration', function () {
     $this->postJson('/api/register', [
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name']);
+        ->assertJsonValidationErrors(['first_name', 'last_name']);
 });
 
 it('requires email on registration', function () {
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
@@ -224,7 +232,8 @@ it('requires email on registration', function () {
 
 it('requires password on registration', function () {
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
     ], frontendHeaders())
         ->assertUnprocessable()
@@ -233,7 +242,8 @@ it('requires password on registration', function () {
 
 it('rejects invalid email format on registration', function () {
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'not-an-email',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
@@ -246,7 +256,8 @@ it('rejects duplicate email on registration', function () {
     User::factory()->create(['email' => 'taken@example.com']);
 
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'taken@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
@@ -257,7 +268,8 @@ it('rejects duplicate email on registration', function () {
 
 it('rejects unconfirmed password on registration', function () {
     $this->postJson('/api/register', [
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => 'different',
@@ -268,13 +280,14 @@ it('rejects unconfirmed password on registration', function () {
 
 it('rejects overly long names on registration', function () {
     $this->postJson('/api/register', [
-        'name' => str_repeat('a', 256),
+        'first_name' => str_repeat('a', 256),
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
         'password' => validTestPassword(),
         'password_confirmation' => validTestPassword(),
     ], frontendHeaders())
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name']);
+        ->assertJsonValidationErrors(['first_name']);
 });
 
 it('requires a string password on login', function () {

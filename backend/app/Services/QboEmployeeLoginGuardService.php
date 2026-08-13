@@ -55,6 +55,8 @@ class QboEmployeeLoginGuardService
 
         try {
             $this->qboEmployee->syncTimesheetUserFromIdentity($user, [
+                'first_name' => $employee['first_name'],
+                'last_name' => $employee['last_name'],
                 'display_name' => $employee['display_name'],
                 'email' => $employee['email'],
             ]);

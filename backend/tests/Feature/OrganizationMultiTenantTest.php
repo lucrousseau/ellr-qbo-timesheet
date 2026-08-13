@@ -16,7 +16,8 @@ it('registers a founding administrator with a new organization', function () {
     config(['app.allow_registration' => true]);
 
     $this->postJson('/api/register', [
-        'name' => 'Acme Admin',
+        'first_name' => 'Acme',
+        'last_name' => 'Admin',
         'organization_name' => 'Acme Inc',
         'email' => 'admin@acme.test',
         'password' => validTestPassword(),

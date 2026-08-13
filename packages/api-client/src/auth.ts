@@ -22,6 +22,9 @@ export type Organization = {
  */
 export type User = {
   id: number
+  first_name?: string
+  last_name?: string
+  /** Full display name (`first_name` + `last_name`). */
   name: string
   email: string
   email_verified_at?: string | null
@@ -58,7 +61,8 @@ export async function login(email: string, password: string): Promise<User> {
  * Payload for public self-service registration.
  */
 export type RegisterPayload = {
-  name: string
+  first_name: string
+  last_name: string
   email: string
   password: string
   password_confirmation: string

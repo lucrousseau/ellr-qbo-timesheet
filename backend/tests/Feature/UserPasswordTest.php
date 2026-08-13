@@ -83,7 +83,8 @@ it('throws when a persisted user is missing a user level relation', function () 
 
 it('preserves core user attributes in api payloads', function () {
     $user = User::factory()->create([
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
     ]);
 

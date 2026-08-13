@@ -51,7 +51,8 @@ it('updates a user mapping when the employee exists in quickbooks', function () 
     $target->shouldReceive('isAdmin')->andReturn(false);
     $target->shouldReceive('update')->once()->with([
         'qbo_employee_ref' => '42',
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
     ]);
     $target->shouldReceive('fresh')->once()->andReturnSelf();
@@ -87,7 +88,8 @@ it('casts numeric employee refs before quickbooks lookup', function () {
     $target->shouldReceive('isAdmin')->andReturn(false);
     $target->shouldReceive('update')->once()->with([
         'qbo_employee_ref' => '42',
-        'name' => 'Jane Doe',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'email' => 'jane@example.com',
     ]);
     $target->shouldReceive('fresh')->once()->andReturnSelf();
@@ -226,6 +228,8 @@ it('skips sync when quickbooks identity is already applied', function () {
     );
 
     $synced = $service->syncTimesheetUserFromIdentity($user, [
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
@@ -255,6 +259,8 @@ it('allows employee identity resolution for the excluded user email', function (
     $service = makeQboEmployeeService($quickBooks, $tokenResolver);
 
     expect($service->resolveEmployeeIdentity($token, '42', $target))->toBe([
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
@@ -273,6 +279,8 @@ it('throws when syncing identity onto an email already used by another user', fu
     );
 
     expect(fn () => $service->syncTimesheetUserFromIdentity($user, [
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]))->toThrow(ValidationException::class);
@@ -318,6 +326,8 @@ it('syncs when only the email address changes', function () {
     );
 
     $synced = $service->syncTimesheetUserFromIdentity($user, [
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'jane@example.com',
     ]);
@@ -342,6 +352,8 @@ it('returns an empty display name when quickbooks omits DisplayName', function (
     $service = makeQboEmployeeService($quickBooks, Mockery::mock(QuickBooksTokenResolverService::class));
 
     expect($service->findEmployee($token, '42'))->toBe([
+        'first_name' => '',
+        'last_name' => '',
         'display_name' => '',
         'email' => 'jane@example.com',
     ]);
@@ -385,6 +397,8 @@ it('throws a translated validation error when sync hits an email conflict', func
 
     try {
         $service->syncTimesheetUserFromIdentity($user, [
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
             'display_name' => 'Jane Doe',
             'email' => 'jane@example.com',
         ]);
@@ -490,6 +504,8 @@ it('updates changed quickbooks identity fields during sync', function () {
     );
 
     $synced = $service->syncTimesheetUserFromIdentity($user, [
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
         'display_name' => 'Jane Doe',
         'email' => 'old@example.com',
     ]);

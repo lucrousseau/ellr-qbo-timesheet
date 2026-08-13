@@ -9,6 +9,7 @@ namespace App\Services;
 use App\Models\Organization;
 use App\Models\User;
 use App\Support\OrganizationSlug;
+use App\Support\PersonName;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -19,16 +20,17 @@ class OrganizationRegistrationService
     /**
      * Creates an organization and administrator account from a registration payload.
      *
-     * @param  array{name: string, email: string, password: string, organization_name?: string|null}  $validated  Validated registration payload.
+     * @param  array{first_name: string, last_name: string, email: string, password: string, organization_name?: string|null}  $validated  Validated registration payload.
      * @return User
      */
     public function registerAdministrator(array $validated): User
     {
         return DB::transaction(function () use ($validated): User {
+            $fullName = PersonName::join($validated['first_name'], $validated['last_name']);
             $organizationName = trim((string) ($validated['organization_name'] ?? ''));
             $organizationName = $organizationName !== ''
                 ? $organizationName
-                : $validated['name'].' organization';
+                : $fullName.' organization';
 
             $organization = Organization::query()->create([
                 'name' => $organizationName,
@@ -37,7 +39,8 @@ class OrganizationRegistrationService
 
             $user = User::query()->create([
                 'organization_id' => $organization->id,
-                'name' => $validated['name'],
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
                 'email' => $validated['email'],
                 'password' => $validated['password'],
             ]);
