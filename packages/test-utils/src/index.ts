@@ -49,7 +49,7 @@ export async function fillLoginForm(
   credentials: { email?: string; password?: string } = {},
 ) {
   await user.type(screen.getByLabelText(/email/i), credentials.email ?? 'test@example.com')
-  await user.type(screen.getByLabelText(/password/i), credentials.password ?? VALID_TEST_PASSWORD)
+  await user.type(screen.getByLabelText(/^password$/i), credentials.password ?? VALID_TEST_PASSWORD)
   await user.click(screen.getByRole('button', { name: /sign in/i }))
 }
 
