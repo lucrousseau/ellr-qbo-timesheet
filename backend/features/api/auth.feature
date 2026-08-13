@@ -61,6 +61,22 @@ Feature: Authentication
       """
     Then the response status should be 200
 
+  Scenario: Authenticated user can change email
+    Given I use the stateful SPA client
+    And a verified user exists with email "jane@example.com" and password "EllrT3st!2026"
+    When I fetch the sanctum csrf cookie
+    And I request "POST" "/api/login" with JSON:
+      """
+      {"email":"jane@example.com","password":"EllrT3st!2026"}
+      """
+    Then the response status should be 200
+    When I request "PATCH" "/api/user/email" with JSON:
+      """
+      {"current_password":"EllrT3st!2026","email":"jane.new@example.com"}
+      """
+    Then the response status should be 200
+    And the JSON field "user.email" should be "jane.new@example.com"
+
   Scenario: Stateful login requires a csrf token
     Given I use the stateful SPA client
     And a verified user exists with email "jane@example.com" and password "EllrT3st!2026"

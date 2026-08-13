@@ -39,6 +39,7 @@ return [
     'password_reset_success' => 'Mot de passe réinitialisé avec succès.',
     'password_reset_failed' => 'Impossible de réinitialiser le mot de passe. Demandez un nouveau lien et réessayez.',
     'password_changed' => 'Mot de passe mis à jour avec succès.',
+    'email_changed' => 'Adresse courriel mise à jour. Vérifiez votre boîte de réception pour confirmer la nouvelle adresse.',
     'email_already_verified' => 'Le courriel est déjà vérifié.',
     'verification_link_sent' => 'Lien de vérification envoyé.',
     'time' => [

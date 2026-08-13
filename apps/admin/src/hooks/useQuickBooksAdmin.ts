@@ -180,6 +180,7 @@ export function useQuickBooksAdmin() {
 
   return {
     user,
+    setUser,
     authLoading,
     apiUnavailable,
     bootstrap,

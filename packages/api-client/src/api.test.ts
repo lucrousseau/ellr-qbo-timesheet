@@ -15,6 +15,7 @@ import {
 } from './admin'
 import { DEFAULT_TIME_TRACKER_MAX_ACCUMULATED_SECONDS, fetchAppConfig } from './appConfig'
 import {
+  changeEmail,
   changePassword,
   fetchCurrentUser,
   login,
@@ -746,6 +747,43 @@ describe('auth helpers', () => {
           current_password: 'OldPassword!1',
           password: 'NewPassword!2',
           password_confirmation: 'NewPassword!2',
+        }),
+      }),
+    )
+  })
+
+  it('changes the signed-in user email', async () => {
+    mockCsrfCookie()
+    const updatedUser = {
+      id: 1,
+      first_name: 'Jane',
+      last_name: '',
+      name: 'Jane',
+      email: 'jane.new@example.com',
+    }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          message: 'Email address updated successfully.',
+          user: updatedUser,
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(changeEmail('OldPassword!1', 'jane.new@example.com')).resolves.toEqual(updatedUser)
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/user/email',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({
+          current_password: 'OldPassword!1',
+          email: 'jane.new@example.com',
         }),
       }),
     )
@@ -1694,6 +1732,11 @@ describe('admin api helpers', () => {
       qbo_connected: false,
       users_count: 1,
       created_at: '2026-07-30T12:00:00Z',
+      administrator: {
+        first_name: 'Gamma',
+        last_name: 'Admin',
+        email: 'gamma@client.test',
+      },
     }
     const csrfResponse = { ok: true, status: 204, json: async () => ({}) }
     const fetchMock = vi

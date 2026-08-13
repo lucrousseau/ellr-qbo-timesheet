@@ -9,9 +9,11 @@ namespace App\Models;
 use App\Services\OrganizationRealmDataPurgeService;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['name', 'slug', 'realm_id', 'company_timezone'])]
 /**
@@ -44,6 +46,21 @@ class Organization extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Earliest administrator account for this tenant (founding admin when present).
+     *
+     * @return HasOne<User, $this>
+     */
+    public function administrator(): HasOne
+    {
+        return $this->hasOne(User::class)->ofMany(
+            ['id' => 'min'],
+            function (Builder $query): void {
+                $query->where('is_admin', true);
+            },
+        );
     }
 
     /**

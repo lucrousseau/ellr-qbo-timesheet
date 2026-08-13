@@ -6,11 +6,21 @@ import { apiFetch } from './api'
 import type { Organization } from './auth'
 
 /**
+ * Founding administrator summary exposed on super-admin organization rows.
+ */
+export type SuperAdminOrganizationAdministrator = {
+  first_name: string
+  last_name: string
+  email: string
+}
+
+/**
  * Tenant organization row for platform operator dashboards.
  */
 export type SuperAdminOrganization = Organization & {
   users_count: number
   created_at: string | null
+  administrator: SuperAdminOrganizationAdministrator | null
 }
 
 /**

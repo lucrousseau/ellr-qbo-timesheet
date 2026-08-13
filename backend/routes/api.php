@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\TimeActivityController;
 use App\Http\Controllers\Api\TimeEntryApprovalController;
 use App\Http\Controllers\Api\TimeEntryController;
 use App\Http\Controllers\Api\TimeTrackerController;
+use App\Http\Controllers\Api\UserEmailController;
 use App\Http\Controllers\Api\UserLocaleController;
 use App\Http\Controllers\Api\UserPasswordController;
 use App\Http\Controllers\Api\UserPreferencesController;
@@ -63,6 +64,7 @@ Route::middleware(['auth:sanctum', 'organization:allow_super_admin', 'throttle:6
     Route::patch('/user/preferences', [UserPreferencesController::class, 'update']);
     Route::patch('/user/timezone', [UserTimezoneController::class, 'update']);
     Route::patch('/user/password', [UserPasswordController::class, 'update']);
+    Route::patch('/user/email', [UserEmailController::class, 'update']);
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
         ->middleware('throttle:6,1');
 

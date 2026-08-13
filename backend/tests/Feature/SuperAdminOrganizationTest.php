@@ -31,13 +31,27 @@ it('purges realm snapshots when the last organization token disconnects', functi
 
 it('lists organizations for platform super administrators', function () {
     $superAdmin = User::factory()->superAdmin()->create();
-    Organization::factory()->create(['name' => 'Client A']);
+    $clientA = Organization::factory()->create(['name' => 'Client A']);
     Organization::factory()->create(['name' => 'Client B']);
+    User::factory()->admin()->create([
+        'organization_id' => $clientA->id,
+        'first_name' => 'Alice',
+        'last_name' => 'Client',
+        'email' => 'alice@client-a.test',
+    ]);
 
-    $this->actingAs($superAdmin)
+    $response = $this->actingAs($superAdmin)
         ->getJson('/api/super-admin/organizations', frontendHeaders())
         ->assertOk()
         ->assertJsonCount(2, 'data');
+
+    $rows = collect($response->json('data'))->keyBy('name');
+
+    expect($rows['Client A']['administrator'])->toMatchArray([
+        'first_name' => 'Alice',
+        'last_name' => 'Client',
+        'email' => 'alice@client-a.test',
+    ])->and($rows['Client B']['administrator'])->toBeNull();
 });
 
 it('describes quickbooks connection state in organization listings', function () {
@@ -96,7 +110,10 @@ it('creates client organizations for platform super administrators', function ()
         ], frontendHeaders())
         ->assertCreated()
         ->assertJsonPath('data.name', 'Gamma LLC')
-        ->assertJsonPath('data.users_count', 1);
+        ->assertJsonPath('data.users_count', 1)
+        ->assertJsonPath('data.administrator.email', 'gamma@client.test')
+        ->assertJsonPath('data.administrator.first_name', 'Gamma')
+        ->assertJsonPath('data.administrator.last_name', 'Admin');
 
     expect(User::query()->where('email', 'gamma@client.test')->exists())->toBeTrue();
 

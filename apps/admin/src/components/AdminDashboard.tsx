@@ -134,6 +134,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
 
       {activeTabId === 'preferences' ? (
         <AccountPanel
+          currentEmail={admin.user?.email ?? ''}
           preferenceLocale={admin.preferenceLocale}
           preferenceTimezone={admin.preferenceTimezone}
           companyTimezone={admin.user?.organization?.company_timezone}
@@ -141,6 +142,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
           onLocaleChange={admin.setPreferenceLocale}
           onTimezoneChange={admin.setPreferenceTimezone}
           onSavePreferences={admin.savePreferences}
+          onUserUpdated={admin.setUser}
           tabIdPrefix={TAB_ID_PREFIX}
         />
       ) : activeTabId === 'clients' ? (

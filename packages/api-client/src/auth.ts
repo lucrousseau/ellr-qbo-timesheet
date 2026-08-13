@@ -191,6 +191,24 @@ export async function changePassword(
 }
 
 /**
+ * Changes the signed-in user email after validating the current password.
+ * @param currentPassword Existing account password.
+ * @param email New email address.
+ * @returns Updated user.
+ */
+export async function changeEmail(currentPassword: string, email: string): Promise<User> {
+  const response = await apiFetch<{ user: User }>('/user/email', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      email,
+    }),
+  })
+
+  return response.user
+}
+
+/**
  * Links a QuickBooks employee to another user account (administrator only).
  * @param userId Target application user ID.
  * @param qboEmployeeRef QuickBooks employee ID.

@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changePassword, connectQuickBooks, createQboProject, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserPreferences } from '@ellr/api-client'
+import { ApiError, changeEmail, changePassword, connectQuickBooks, createQboProject, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserPreferences } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
@@ -26,6 +26,7 @@ vi.mock('@ellr/api-client', async () =>
     disconnectQuickBooks: vi.fn(),
     updateUserPreferences: vi.fn(),
     changePassword: vi.fn(),
+    changeEmail: vi.fn(),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
   }),
@@ -67,6 +68,11 @@ describe('Admin App', () => {
     qbo_connected: false,
     users_count: 1,
     created_at: '2026-07-30T12:00:00Z',
+    administrator: {
+      first_name: 'Gamma',
+      last_name: 'Admin',
+      email: 'gamma@client.test',
+    },
   }
 
   async function openClientsTab(user: ReturnType<typeof userEvent.setup>) {
@@ -138,6 +144,7 @@ describe('Admin App', () => {
     vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
     vi.mocked(updateUserPreferences).mockReset()
     vi.mocked(changePassword).mockReset()
+    vi.mocked(changeEmail).mockReset()
     vi.mocked(requestPasswordReset).mockReset()
     vi.mocked(resetPassword).mockReset()
     vi.mocked(logout).mockResolvedValue(undefined)
@@ -1435,10 +1442,14 @@ describe('Admin App', () => {
       expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/^current password$/i), VALID_TEST_PASSWORD)
-    await user.type(screen.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
-    await user.type(screen.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
-    await user.click(screen.getByRole('button', { name: /update password/i }))
+    const passwordSection = screen.getByRole('heading', { name: /change password/i }).closest('section')
+    expect(passwordSection).not.toBeNull()
+    const passwordForm = within(passwordSection as HTMLElement)
+
+    await user.type(passwordForm.getByLabelText(/^current password$/i), VALID_TEST_PASSWORD)
+    await user.type(passwordForm.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.type(passwordForm.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.click(passwordForm.getByRole('button', { name: /update password/i }))
 
     await waitFor(() => {
       expect(changePassword).toHaveBeenCalledWith(
@@ -1447,6 +1458,39 @@ describe('Admin App', () => {
         VALID_TEST_PASSWORD_ALT,
       )
       expect(screen.getByText(/password updated/i)).toBeInTheDocument()
+    })
+  })
+
+  it('changes email from the preferences tab', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: false })
+    vi.mocked(changeEmail).mockResolvedValue({
+      ...adminUser,
+      email: 'new-admin@example.com',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /change email/i })).toBeInTheDocument()
+    })
+
+    expect(screen.getByText(/current email: test@example.com/i)).toBeInTheDocument()
+
+    const emailHeading = screen.getByRole('heading', { name: /change email/i })
+    const emailSection = emailHeading.closest('section')
+    expect(emailSection).not.toBeNull()
+    const emailForm = within(emailSection as HTMLElement)
+
+    await user.type(emailForm.getByLabelText(/^new email$/i), 'new-admin@example.com')
+    await user.type(emailForm.getByLabelText(/^current password$/i), VALID_TEST_PASSWORD)
+    await user.click(emailForm.getByRole('button', { name: /update email/i }))
+
+    await waitFor(() => {
+      expect(changeEmail).toHaveBeenCalledWith(VALID_TEST_PASSWORD, 'new-admin@example.com')
+      expect(screen.getByText(/check your inbox to verify the new address/i)).toBeInTheDocument()
+      expect(screen.getByText(/current email: new-admin@example.com/i)).toBeInTheDocument()
     })
   })
 
@@ -1564,6 +1608,8 @@ describe('Admin App', () => {
 
     await openClientsTab(user)
 
+    expect(screen.getByText('Gamma Admin · gamma@client.test')).toBeInTheDocument()
+
     await user.click(screen.getByRole('button', { name: /^rename$/i }))
 
     const nameField = screen.getByDisplayValue('Gamma LLC')
@@ -1640,10 +1686,14 @@ describe('Admin App', () => {
       expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/^current password$/i), VALID_TEST_PASSWORD)
-    await user.type(screen.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
-    await user.type(screen.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
-    await user.click(screen.getByRole('button', { name: /update password/i }))
+    const passwordSection = screen.getByRole('heading', { name: /change password/i }).closest('section')
+    expect(passwordSection).not.toBeNull()
+    const passwordForm = within(passwordSection as HTMLElement)
+
+    await user.type(passwordForm.getByLabelText(/^current password$/i), VALID_TEST_PASSWORD)
+    await user.type(passwordForm.getByLabelText(/^new password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.type(passwordForm.getByLabelText(/^confirm password$/i), VALID_TEST_PASSWORD_ALT)
+    await user.click(passwordForm.getByRole('button', { name: /update password/i }))
 
     await waitFor(() => {
       expect(changePassword).toHaveBeenCalled()

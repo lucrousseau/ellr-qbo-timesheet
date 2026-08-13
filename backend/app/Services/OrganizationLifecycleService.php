@@ -37,6 +37,7 @@ class OrganizationLifecycleService
     {
         return Organization::query()
             ->withCount('users')
+            ->with('administrator')
             ->orderBy('name')
             ->get();
     }

@@ -158,6 +158,15 @@ function OrganizationRow({ organization, clients }: OrganizationRowProps) {
         ) : (
           <>
             <p className="font-medium text-brand-primary">{organization.name}</p>
+            {organization.administrator ? (
+              <p className="text-sm text-brand-muted">
+                {[organization.administrator.first_name, organization.administrator.last_name]
+                  .filter((part) => part.trim() !== '')
+                  .join(' ')}
+                {' · '}
+                {organization.administrator.email}
+              </p>
+            ) : null}
             <p className="text-sm text-brand-muted">
               {t('admin.clientsUsersCount', { count: organization.users_count })}
               {' · '}

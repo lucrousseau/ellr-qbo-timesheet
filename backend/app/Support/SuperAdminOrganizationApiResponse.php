@@ -23,15 +23,24 @@ class SuperAdminOrganizationApiResponse
      *     slug: string,
      *     qbo_connected: bool,
      *     users_count: int,
-     *     created_at: string|null
+     *     created_at: string|null,
+     *     administrator: array{first_name: string, last_name: string, email: string}|null
      * }
      */
     public static function resource(Organization $organization): array
     {
+        $organization->loadMissing('administrator');
+        $administrator = $organization->administrator;
+
         return [
             ...OrganizationApiResponse::resource($organization),
             'users_count' => (int) ($organization->users_count ?? $organization->users()->count()),
             'created_at' => $organization->created_at?->toIso8601String(),
+            'administrator' => $administrator === null ? null : [
+                'first_name' => (string) $administrator->first_name,
+                'last_name' => (string) $administrator->last_name,
+                'email' => (string) $administrator->email,
+            ],
         ];
     }
 }

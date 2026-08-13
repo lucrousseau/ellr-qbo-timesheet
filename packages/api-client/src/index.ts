@@ -9,6 +9,7 @@ export {
   updateSuperAdminOrganization,
   type CreateSuperAdminOrganizationPayload,
   type SuperAdminOrganization,
+  type SuperAdminOrganizationAdministrator,
   type UpdateSuperAdminOrganizationPayload,
 } from './superAdmin'
 export {
@@ -53,6 +54,7 @@ export {
   type UserLevel,
 } from './userLevel'
 export {
+  changeEmail,
   changePassword,
   fetchCurrentUser,
   login,

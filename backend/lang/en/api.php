@@ -39,6 +39,7 @@ return [
     'password_reset_success' => 'Password reset successfully.',
     'password_reset_failed' => 'Unable to reset the password. Request a new reset link and try again.',
     'password_changed' => 'Password updated successfully.',
+    'email_changed' => 'Email address updated. Check your inbox to verify the new address.',
     'email_already_verified' => 'Email already verified.',
     'verification_link_sent' => 'Verification link sent.',
     'time' => [

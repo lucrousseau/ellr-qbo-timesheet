@@ -57,7 +57,7 @@ class SuperAdminOrganizationController extends Controller
 
         return response()->json([
             'data' => SuperAdminOrganizationApiResponse::resource(
-                $organization->loadCount('users'),
+                $organization->loadCount('users')->load('administrator'),
             ),
         ], 201);
     }
@@ -75,7 +75,7 @@ class SuperAdminOrganizationController extends Controller
 
         return response()->json([
             'data' => SuperAdminOrganizationApiResponse::resource(
-                $organization->loadCount('users'),
+                $organization->loadCount('users')->load('administrator'),
             ),
         ]);
     }
