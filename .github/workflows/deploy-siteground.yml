@@ -111,7 +111,7 @@ jobs:
           remote_user: ${{ secrets.SG_SSH_USER }}
           remote_key: ${{ secrets.SG_SSH_PRIVATE_KEY }}
 
-      - name: Composer install and Laravel caches
+      - name: Composer install, Laravel caches, and SuperCacher purge
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SG_SSH_HOST }}
@@ -134,3 +134,9 @@ jobs:
             "$PHP" artisan config:cache
             "$PHP" artisan route:cache
             "$PHP" artisan view:cache
+            # Purge SiteGround Dynamic Cache (SuperCacher) for all Ellr hosts.
+            for host in timesheet.ellr.ca admin.timesheet.ellr.ca api.timesheet.ellr.ca; do
+              body="$(curl -sS -X PURGE "http://127.0.0.1/*" -H "Host: ${host}")"
+              echo "${body}" | grep -q "Successful purge"
+              echo "Purged Dynamic Cache for ${host}"
+            done

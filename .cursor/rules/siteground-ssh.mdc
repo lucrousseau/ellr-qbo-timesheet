@@ -44,4 +44,4 @@ PHP=/usr/local/php83/bin/php-cli
 
 ## Deploy
 
-GitHub Actions: `.github/workflows/deploy-siteground.yml` (build off-server, rsync over SSH). Full runbook: `docs/siteground-shared-hosting.md`. DNS zone is at Rebel (see project memory / that doc); wildcard may still send unset subdomains to Vercel.
+GitHub Actions: `.github/workflows/deploy-siteground.yml` (build off-server, rsync over SSH, Laravel migrate/cache, then SuperCacher Dynamic Cache `PURGE` for the three Ellr hosts). Full runbook: `docs/siteground-shared-hosting.md`. DNS zone is at Rebel (see project memory / that doc); wildcard may still send unset subdomains to Vercel.

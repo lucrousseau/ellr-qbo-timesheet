@@ -185,7 +185,7 @@ Push to `main` also triggers deploy. Use `workflow_dispatch` for the first contr
 1. `npm ci` + build admin and timesheet with production `VITE_API_URL`
 2. `rsync` backend → `SG_PATH_API` (excludes `.env`, `vendor/`, `storage/`, tests)
 3. `rsync` SPA `dist/` → admin and timesheet roots
-4. SSH: `composer install --no-dev`, `migrate --force`, config/route/view cache
+4. SSH: `composer install --no-dev`, `migrate --force`, config/route/view cache, then purge SiteGround Dynamic Cache (SuperCacher) for `timesheet.ellr.ca`, `admin.timesheet.ellr.ca`, and `api.timesheet.ellr.ca` via local NGINX `PURGE`
 
 ## Manual deploy steps (fallback)
 
@@ -207,6 +207,9 @@ Push to `main` also triggers deploy. Use `workflow_dispatch` for the first contr
    php artisan config:cache
    php artisan route:cache
    php artisan view:cache
+   for host in timesheet.ellr.ca admin.timesheet.ellr.ca api.timesheet.ellr.ca; do
+     curl -sS -X PURGE "http://127.0.0.1/*" -H "Host: ${host}"
+   done
    ```
 
 5. Ensure `storage/` and `bootstrap/cache` are writable.
