@@ -1216,10 +1216,10 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('table')).toBeInTheDocument()
-      expect(screen.getByLabelText(/select draft entry/i)).toBeInTheDocument()
+      expect(screen.getByLabelText(/select row/i)).toBeInTheDocument()
     })
 
-    await user.click(screen.getByLabelText(/select draft entry/i))
+    await user.click(screen.getByLabelText(/select row/i))
     await user.click(screen.getByRole('button', { name: /submit 1 selected/i }))
 
     await waitFor(() => {
