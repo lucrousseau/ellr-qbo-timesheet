@@ -12,6 +12,7 @@ import {
   listTimeEntries,
   rejectTimeEntry,
   resolveTimeEntryId,
+  returnTimeEntryToDraft,
   submitTimeEntries,
   submitTimeEntry,
   updateAdminUserSupervisor,
@@ -168,6 +169,18 @@ describe('time entry api', () => {
     expect(apiFetch).toHaveBeenCalledWith('/admin/time-entry-approvals/12/reject', {
       method: 'POST',
       body: JSON.stringify({ reason: 'Incomplete notes' }),
+    })
+  })
+
+  it('returns a pending entry to draft through the admin route', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({ data: { ...sampleEntry, status: 'draft' } })
+
+    await expect(returnTimeEntryToDraft(12, { admin: true })).resolves.toMatchObject({
+      status: 'draft',
+    })
+
+    expect(apiFetch).toHaveBeenCalledWith('/admin/time-entry-approvals/12/return-to-draft', {
+      method: 'POST',
     })
   })
 

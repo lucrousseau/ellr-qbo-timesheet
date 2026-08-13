@@ -70,6 +70,7 @@ export type TimeActivityEntriesPanelProps = {
   reviewingId?: string | null
   onApproveEntry?: (id: string) => Promise<void>
   onRejectEntry?: (id: string, reason?: string | null) => Promise<void>
+  onReturnEntryToDraft?: (id: string) => Promise<void>
   draftActions?: boolean
   actionEntryId?: string | null
   onEditDraft?: (entry: TimeActivityRow) => void
@@ -101,6 +102,7 @@ export function TimeActivityEntriesPanel({
   reviewingId = null,
   onApproveEntry,
   onRejectEntry,
+  onReturnEntryToDraft,
   draftActions = false,
   actionEntryId = null,
   onEditDraft,
@@ -187,13 +189,14 @@ export function TimeActivityEntriesPanel({
                         {formatApprovalStatus(entry.approvalStatus, t)}
                       </td>
                     ) : null}
-                    {reviewable && onApproveEntry && onRejectEntry ? (
+                    {reviewable && onApproveEntry && onRejectEntry && onReturnEntryToDraft ? (
                       <td className="px-3 py-3 text-brand-primary">
                         <TimeEntryApprovalActions
                           entryId={entry.id}
                           reviewing={reviewingId === entry.id}
                           onApprove={onApproveEntry}
                           onReject={onRejectEntry}
+                          onReturnToDraft={onReturnEntryToDraft}
                         />
                       </td>
                     ) : null}

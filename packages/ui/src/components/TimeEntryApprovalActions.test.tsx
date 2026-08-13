@@ -1,5 +1,5 @@
 /**
- * @file Tests for approve and reject action controls.
+ * @file Tests for approve, reject, and return-to-draft action controls.
  */
 
 import { render, screen } from '@testing-library/react'
@@ -20,12 +20,33 @@ describe('TimeEntryApprovalActions', () => {
           reviewing={false}
           onApprove={onApprove}
           onReject={vi.fn()}
+          onReturnToDraft={vi.fn()}
         />
       </LocaleProvider>,
     )
 
     await user.click(screen.getByRole('button', { name: 'Approve' }))
     expect(onApprove).toHaveBeenCalledWith('local:12')
+  })
+
+  it('returns an entry to draft from the default action row', async () => {
+    const user = userEvent.setup()
+    const onReturnToDraft = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <LocaleProvider>
+        <TimeEntryApprovalActions
+          entryId="local:12"
+          reviewing={false}
+          onApprove={vi.fn()}
+          onReject={vi.fn()}
+          onReturnToDraft={onReturnToDraft}
+        />
+      </LocaleProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Return to draft' }))
+    expect(onReturnToDraft).toHaveBeenCalledWith('local:12')
   })
 
   it('submits a rejection reason from the inline form', async () => {
@@ -39,6 +60,7 @@ describe('TimeEntryApprovalActions', () => {
           reviewing={false}
           onApprove={vi.fn()}
           onReject={onReject}
+          onReturnToDraft={vi.fn()}
         />
       </LocaleProvider>,
     )
@@ -60,6 +82,7 @@ describe('TimeEntryApprovalActions', () => {
           reviewing={false}
           onApprove={vi.fn()}
           onReject={vi.fn()}
+          onReturnToDraft={vi.fn()}
         />
       </LocaleProvider>,
     )
@@ -81,6 +104,7 @@ describe('TimeEntryApprovalActions', () => {
           reviewing={false}
           onApprove={vi.fn()}
           onReject={onReject}
+          onReturnToDraft={vi.fn()}
         />
       </LocaleProvider>,
     )

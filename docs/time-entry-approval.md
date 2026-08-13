@@ -18,10 +18,11 @@ flowchart LR
 
   subgraph approval [Approval]
     Supervisor[Supervisor or admin]
-    Review{Approve?}
+    Review{Review}
     Pending --> Supervisor
     Supervisor --> Review
     Review -->|Reject| Rejected[(status: rejected)]
+    Review -->|Return to draft| Draft
     Review -->|Approve| QBO[QBO TimeActivity Add]
   end
 
@@ -35,14 +36,14 @@ flowchart LR
 | `time_entries` | **Write model**: new entries start as `draft`; submit moves them to `pending` |
 | `time_activity_snapshots` | **Read model**: QBO-synced activities (unchanged Phase 2 design) |
 | `users.supervisor_id` | Routes pending entries to the employee's supervisor |
-| `TimeEntryApprovalService` | Approve pushes to QBO; reject keeps the row local only |
+| `TimeEntryApprovalService` | Approve pushes to QBO; reject keeps the row local; return-to-draft soft-unsubmits |
 
 ## Status lifecycle
 
 | Status | Employee | Admin / supervisor | In Time approvals | Synced to QBO |
 |--------|----------|--------------------|-------------------|---------------|
-| `draft` | Edit + delete + submit | No (private until submit) | No | No |
-| `pending` | Read-only | Edit + approve/reject | Yes | No |
+| `draft` | Edit + delete + submit | Return pending to draft (soft unsubmit) | No | No |
+| `pending` | Read-only | Edit + approve / reject / return to draft | Yes | No |
 | `approved` | Read-only | Read-only (edit in QuickBooks only) | No | Yes (`qbo_id` set) |
 | `rejected` | Edit + delete + resubmit | No list (not pending) | No | Never |
 
@@ -71,6 +72,7 @@ flowchart LR
 | `PATCH` | `/api/time-entry-approvals/{id}` | Update a pending entry before review |
 | `POST` | `/api/time-entry-approvals/{id}/approve` | Approve and sync to QBO |
 | `POST` | `/api/time-entry-approvals/{id}/reject` | Reject (stays local only) |
+| `POST` | `/api/time-entry-approvals/{id}/return-to-draft` | Soft unsubmit back to draft |
 
 ### Administrator (`middleware: admin`)
 
@@ -80,6 +82,7 @@ flowchart LR
 | `PATCH` | `/api/admin/time-entry-approvals/{id}` | Update a pending entry before review |
 | `POST` | `/api/admin/time-entry-approvals/{id}/approve` | Approve and sync |
 | `POST` | `/api/admin/time-entry-approvals/{id}/reject` | Reject |
+| `POST` | `/api/admin/time-entry-approvals/{id}/return-to-draft` | Soft unsubmit back to draft |
 | `PATCH` | `/api/admin/users/{user}/supervisor` | Assign supervisor |
 
 ## Authorization rules
@@ -95,7 +98,7 @@ flowchart LR
 | App | Screen | Behavior |
 |-----|--------|----------|
 | Timesheet | Recent entries | Draft/rejected: edit, submit, delete; bulk submit all drafts |
-| Timesheet / Admin | Time approvals | List pending; edit then approve or reject |
+| Timesheet / Admin | Time approvals | List pending; edit then approve, reject, or return to draft |
 | Admin | Employee Time entries dialog | QBO-synced snapshots only (read-only); edit approved time in QuickBooks |
 
 ## Supervisor assignment

@@ -166,6 +166,30 @@ class TimeEntryApprovalService
     }
 
     /**
+     * Returns a pending entry to draft so the employee can edit and resubmit it.
+     *
+     * @param  User  $actor  Supervisor or administrator.
+     * @param  int  $id  Local time entry identifier.
+     * @return TimeEntry
+     */
+    public function returnToDraft(User $actor, int $id): TimeEntry
+    {
+        return DB::transaction(function () use ($actor, $id): TimeEntry { // @pest-mutate-ignore return-to-draft transaction boundary
+            $entry = $this->findPendingEntry($id, lock: true); // @pest-mutate-ignore pessimistic lock for return-to-draft workflow
+            $this->authorization->assertCanReview($actor, $entry); // @pest-mutate-ignore return-to-draft authorization guard
+
+            $entry->forceFill([
+                'status' => TimeEntryStatus::Draft,
+                'reviewed_by_id' => null, // @pest-mutate-ignore clear review metadata on soft unsubmit
+                'reviewed_at' => null, // @pest-mutate-ignore clear review metadata on soft unsubmit
+                'rejection_reason' => null, // @pest-mutate-ignore clear review metadata on soft unsubmit
+            ])->save();
+
+            return $entry->refresh()->load(['user', 'reviewedBy']); // @pest-mutate-ignore return-to-draft response eager loading
+        });
+    }
+
+    /**
      * Loads a pending entry by identifier.
      *
      * @param  int  $id  Local time entry identifier.

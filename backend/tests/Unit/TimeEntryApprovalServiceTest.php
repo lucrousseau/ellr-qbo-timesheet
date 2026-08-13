@@ -90,6 +90,27 @@ it('rejects a pending entry without syncing to quickbooks', function () {
         ->and($rejected->reviewed_by_id)->toBe($admin->id);
 });
 
+it('returns a pending entry to draft and clears review metadata', function () {
+    $admin = User::factory()->admin()->create();
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $entry = TimeEntry::factory()->forUser($employee)->pending()->create([
+        'reviewed_by_id' => $admin->id,
+        'reviewed_at' => now(),
+        'rejection_reason' => 'stale',
+    ]);
+
+    $draft = app(TimeEntryApprovalService::class)->returnToDraft($admin, $entry->id);
+
+    expect($draft->status)->toBe(TimeEntryStatus::Draft)
+        ->and($draft->reviewed_by_id)->toBeNull()
+        ->and($draft->reviewed_at)->toBeNull()
+        ->and($draft->rejection_reason)->toBeNull()
+        ->and($draft->qbo_id)->toBeNull();
+});
+
 it('approves a pending entry and stores the quickbooks identifier', function () {
     $admin = User::factory()->admin()->create();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);

@@ -42,6 +42,7 @@ describe('TimeEntryApprovalsPanel', () => {
       loadMore: vi.fn(),
       approveEntry: vi.fn(),
       rejectEntry: vi.fn(),
+      returnEntryToDraft: vi.fn(),
       updateEntry: vi.fn(),
     })
 
@@ -53,6 +54,7 @@ describe('TimeEntryApprovalsPanel', () => {
 
     expect(screen.getByText('Jane Doe')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Return to draft' })).toBeInTheDocument()
   })
 
   it('shows an empty state when there are no pending entries', () => {
@@ -66,6 +68,7 @@ describe('TimeEntryApprovalsPanel', () => {
       loadMore: vi.fn(),
       approveEntry: vi.fn(),
       rejectEntry: vi.fn(),
+      returnEntryToDraft: vi.fn(),
       updateEntry: vi.fn(),
     })
 

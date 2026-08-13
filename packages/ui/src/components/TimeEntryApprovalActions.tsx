@@ -1,5 +1,5 @@
 /**
- * @file Approve and reject actions for pending time entries.
+ * @file Approve, reject, and return-to-draft actions for pending time entries.
  */
 
 import { useState } from 'react'
@@ -12,10 +12,11 @@ type TimeEntryApprovalActionsProps = {
   reviewing: boolean
   onApprove: (id: string) => Promise<void>
   onReject: (id: string, reason?: string | null) => Promise<void>
+  onReturnToDraft: (id: string) => Promise<void>
 }
 
 /**
- * Inline approve and reject controls for a pending time entry row.
+ * Inline review controls for a pending time entry row.
  * @param props Entry id, pending state, and review handlers.
  * @returns Action buttons for supervisor review.
  */
@@ -24,6 +25,7 @@ export function TimeEntryApprovalActions({
   reviewing,
   onApprove,
   onReject,
+  onReturnToDraft,
 }: TimeEntryApprovalActionsProps) {
   const { t } = useLocale()
   const [showRejectForm, setShowRejectForm] = useState(false)
@@ -85,6 +87,15 @@ export function TimeEntryApprovalActions({
         onClick={() => setShowRejectForm(true)}
       >
         {t('admin.rejectEntry')}
+      </Button>
+      <Button
+        type="button"
+        variant="link"
+        size="compact"
+        disabled={reviewing}
+        onClick={() => void onReturnToDraft(entryId)}
+      >
+        {reviewing ? t('admin.returningToDraftEntry') : t('admin.returnToDraftEntry')}
       </Button>
     </div>
   )

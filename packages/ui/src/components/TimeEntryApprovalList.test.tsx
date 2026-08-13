@@ -9,10 +9,11 @@ import { LocaleProvider } from '../i18n/LocaleProvider'
 import { TimeEntryApprovalList } from './TimeEntryApprovalList'
 
 describe('TimeEntryApprovalList', () => {
-  it('renders approve and reject actions for each pending entry', async () => {
+  it('renders approve, reject, and return-to-draft actions for each pending entry', async () => {
     const user = userEvent.setup()
     const onApprove = vi.fn().mockResolvedValue(undefined)
     const onReject = vi.fn().mockResolvedValue(undefined)
+    const onReturnToDraft = vi.fn().mockResolvedValue(undefined)
 
     render(
       <LocaleProvider>
@@ -35,6 +36,7 @@ describe('TimeEntryApprovalList', () => {
           reviewingId={null}
           onApprove={onApprove}
           onReject={onReject}
+          onReturnToDraft={onReturnToDraft}
         />
       </LocaleProvider>,
     )
@@ -42,6 +44,7 @@ describe('TimeEntryApprovalList', () => {
     expect(screen.getByText('Bob LeMoche')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Return to draft' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Approve' }))
     expect(onApprove).toHaveBeenCalledWith('local:12')
@@ -74,6 +77,7 @@ describe('TimeEntryApprovalList', () => {
           reviewingId={null}
           onApprove={vi.fn()}
           onReject={vi.fn()}
+          onReturnToDraft={vi.fn()}
           onUpdateEntry={onUpdateEntry}
         />
       </LocaleProvider>,

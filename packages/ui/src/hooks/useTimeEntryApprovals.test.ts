@@ -7,6 +7,7 @@ import {
   approveTimeEntry,
   listPendingTimeEntryApprovals,
   rejectTimeEntry,
+  returnTimeEntryToDraft,
   type TimeEntry,
 } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -21,6 +22,7 @@ vi.mock('@ellr/api-client', async () => {
     listPendingTimeEntryApprovals: vi.fn(),
     approveTimeEntry: vi.fn(),
     rejectTimeEntry: vi.fn(),
+    returnTimeEntryToDraft: vi.fn(),
     updatePendingTimeEntryApproval: vi.fn(),
   }
 })
@@ -63,12 +65,14 @@ describe('useTimeEntryApprovals', () => {
     vi.mocked(listPendingTimeEntryApprovals).mockReset()
     vi.mocked(approveTimeEntry).mockReset()
     vi.mocked(rejectTimeEntry).mockReset()
+    vi.mocked(returnTimeEntryToDraft).mockReset()
     vi.mocked(listPendingTimeEntryApprovals).mockResolvedValue({
       data: [pendingEntry],
       meta: { count: 1, max_results: 10, start_position: 1, truncated: false },
     })
     vi.mocked(approveTimeEntry).mockResolvedValue({ ...pendingEntry, status: 'approved' })
     vi.mocked(rejectTimeEntry).mockResolvedValue({ ...pendingEntry, status: 'rejected' })
+    vi.mocked(returnTimeEntryToDraft).mockResolvedValue({ ...pendingEntry, status: 'draft' })
   })
 
   it('loads pending entries when enabled', async () => {
@@ -130,6 +134,21 @@ describe('useTimeEntryApprovals', () => {
 
     expect(rejectTimeEntry).toHaveBeenCalledWith(12, 'Missing details', { admin: false })
     expect(onSuccess).toHaveBeenCalled()
+  })
+
+  it('returns an entry to draft through the admin route', async () => {
+    const { result, onSuccess } = renderApprovalsHook()
+
+    await waitFor(() => {
+      expect(result.current.entries).toHaveLength(1)
+    })
+
+    await act(async () => {
+      await result.current.returnEntryToDraft('local:12')
+    })
+
+    expect(returnTimeEntryToDraft).toHaveBeenCalledWith(12, { admin: true })
+    expect(onSuccess).toHaveBeenCalledWith('Time entry returned to draft.')
   })
 
   it('reports api errors when loading fails', async () => {

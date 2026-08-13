@@ -258,6 +258,24 @@ export async function rejectTimeEntry(
 }
 
 /**
+ * Returns a pending time entry to draft so the employee can edit it again.
+ * @param id Local time entry identifier.
+ * @param options Optional fetch options for admin vs supervisor routes.
+ * @returns Draft time entry.
+ */
+export async function returnTimeEntryToDraft(
+  id: number,
+  options: { admin?: boolean } = {},
+): Promise<TimeEntry> {
+  const basePath = options.admin ? '/admin/time-entry-approvals' : '/time-entry-approvals'
+  const response = await apiFetch<{ data: TimeEntry }>(`${basePath}/${id}/return-to-draft`, {
+    method: 'POST',
+  })
+
+  return response.data
+}
+
+/**
  * Resolves the numeric local time entry id from a list row identifier.
  * @param listId Unified list id such as `local:12` or a bare numeric string.
  * @returns Local time entry primary key.

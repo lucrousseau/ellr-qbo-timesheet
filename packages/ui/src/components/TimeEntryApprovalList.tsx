@@ -16,11 +16,12 @@ type TimeEntryApprovalListProps = {
   displayTimezone?: string | null
   onApprove: (id: string) => Promise<void>
   onReject: (id: string, reason?: string | null) => Promise<void>
+  onReturnToDraft: (id: string) => Promise<void>
   onUpdateEntry?: (id: string, payload: TimeEntryUpdatePayload) => Promise<void>
 }
 
 /**
- * Renders pending time entries as review cards with visible approve and reject actions.
+ * Renders pending time entries as review cards with visible approve, reject, and return-to-draft actions.
  * @param props Pending entries and review handlers.
  * @returns Approval card list.
  */
@@ -30,6 +31,7 @@ export function TimeEntryApprovalList({
   displayTimezone = null,
   onApprove,
   onReject,
+  onReturnToDraft,
   onUpdateEntry,
 }: TimeEntryApprovalListProps) {
   const { t, locale } = useLocale()
@@ -95,6 +97,7 @@ export function TimeEntryApprovalList({
               reviewing={reviewingId === entry.id}
               onApprove={onApprove}
               onReject={onReject}
+              onReturnToDraft={onReturnToDraft}
             />
           </div>
         </li>

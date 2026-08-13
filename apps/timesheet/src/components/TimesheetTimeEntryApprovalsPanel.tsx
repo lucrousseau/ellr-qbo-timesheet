@@ -31,6 +31,7 @@ export function TimesheetTimeEntryApprovalsPanel({
       approvalSuccess: t('timesheet.approvalSuccess'),
       approvalSuccessQueued: t('timesheet.approvalSuccessQueued'),
       rejectionSuccess: t('timesheet.rejectionSuccess'),
+      returnToDraftSuccess: t('timesheet.returnToDraftSuccess'),
     },
     onSuccess,
     onError,
@@ -55,6 +56,7 @@ export function TimesheetTimeEntryApprovalsPanel({
               reviewingId={approvals.reviewingId}
               onApprove={approvals.approveEntry}
               onReject={approvals.rejectEntry}
+              onReturnToDraft={approvals.returnEntryToDraft}
               onUpdateEntry={approvals.updateEntry}
             />
 
