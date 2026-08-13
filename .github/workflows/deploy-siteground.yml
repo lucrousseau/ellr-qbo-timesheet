@@ -24,10 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -51,7 +51,7 @@ jobs:
       # SiteGround keeps the web root as public_html/. Laravel code lives beside it;
       # public/ is synced separately into public_html/ (do not --delete public_html).
       - name: Deploy API app (beside public_html) via rsync
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@v9
         with:
           switches: >-
             -avzr --delete
@@ -79,7 +79,7 @@ jobs:
           remote_key: ${{ secrets.SG_SSH_PRIVATE_KEY }}
 
       - name: Deploy API public/ into public_html via rsync
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@v9
         with:
           switches: -avzr --delete
           path: backend/public/
@@ -90,7 +90,7 @@ jobs:
           remote_key: ${{ secrets.SG_SSH_PRIVATE_KEY }}
 
       - name: Deploy admin SPA via rsync
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@v9
         with:
           switches: -avzr --delete
           path: apps/admin/dist/
@@ -101,7 +101,7 @@ jobs:
           remote_key: ${{ secrets.SG_SSH_PRIVATE_KEY }}
 
       - name: Deploy timesheet SPA via rsync
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@v9
         with:
           switches: -avzr --delete
           path: apps/timesheet/dist/
@@ -112,7 +112,7 @@ jobs:
           remote_key: ${{ secrets.SG_SSH_PRIVATE_KEY }}
 
       - name: Composer install, Laravel caches, and SuperCacher purge
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SG_SSH_HOST }}
           port: ${{ secrets.SG_SSH_PORT }}
