@@ -6,6 +6,9 @@ set -e
 
 ROOT_DIR="$(CDPATH= cd "$(dirname "$0")/.." && pwd)"
 
+# Vitest configs import TypeScript from @ellr/vite-config; load via tsx.
+export NODE_OPTIONS="--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}"
+
 npm run test:coverage --workspaces --parallel &
 FRONT_PID=$!
 

@@ -8,10 +8,8 @@ namespace App\Services;
 
 use App\Enums\TimeEntryStatus;
 use App\Jobs\SyncApprovedTimeEntryToQuickBooksJob;
-use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
-use App\Support\TimeEntryQboPayload;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -25,14 +23,14 @@ class TimeEntryApprovalService
      * @param  TimeEntryAuthorizationService  $authorization  Review permission checks.
      * @param  QboPickerValidationService  $pickerValidation  QuickBooks picker reference validator.
      * @param  QuickBooksTokenResolverService  $tokenResolver  Resolves organization QBO token.
-     * @param  QboPickerDisplayNameService  $displayNames  Cached QuickBooks label resolver.
+     * @param  OrganizationTimezoneService  $timezones  Company timezone resolver for sync group keys.
      * @param  TimeEntryPresentationService  $presentation  Read-time label resolution for API rows.
      */
     public function __construct(
         private readonly TimeEntryAuthorizationService $authorization,
         private readonly QboPickerValidationService $pickerValidation,
         private readonly QuickBooksTokenResolverService $tokenResolver,
-        private readonly QboPickerDisplayNameService $displayNames,
+        private readonly OrganizationTimezoneService $timezones,
         private readonly TimeEntryPresentationService $presentation,
     ) {}
 
@@ -79,11 +77,12 @@ class TimeEntryApprovalService
      *
      * @param  User  $actor  Supervisor or administrator.
      * @param  int  $id  Local time entry identifier.
+     * @param  bool  $groupForQbo  When true, coalesce matching approved siblings into one QBO activity.
      * @return TimeEntry
      */
-    public function approve(User $actor, int $id): TimeEntry
+    public function approve(User $actor, int $id, bool $groupForQbo = false): TimeEntry
     {
-        [$entry, $employee, $token] = DB::transaction(function () use ($actor, $id): array { // @pest-mutate-ignore approval transaction boundary
+        [$entry, $employee, $token] = DB::transaction(function () use ($actor, $id, $groupForQbo): array { // @pest-mutate-ignore approval transaction boundary
             $entry = $this->findPendingEntry($id, lock: true); // @pest-mutate-ignore pessimistic lock for approval workflow
             $this->authorization->assertCanReview($actor, $entry); // @pest-mutate-ignore approval authorization guard
 
@@ -96,6 +95,7 @@ class TimeEntryApprovalService
 
             $entry->forceFill([
                 'status' => TimeEntryStatus::Approved,
+                'group_for_qbo' => $groupForQbo,
                 'reviewed_by_id' => $actor->id, // @pest-mutate-ignore approval audit fields
                 'reviewed_at' => now(), // @pest-mutate-ignore approval audit fields
                 'rejection_reason' => null, // @pest-mutate-ignore approval audit fields
@@ -108,16 +108,23 @@ class TimeEntryApprovalService
             ];
         });
 
-        $payload = $this->toQboPayload($entry, $token, $employee);
+        $groupKey = SyncApprovedTimeEntryToQuickBooksJob::groupKeyFor($entry, $this->timezones);
+        $delaySeconds = 0;
+
+        if ($groupForQbo) {
+            $delaySeconds = max(0, (int) config('quickbooks.time_entry_sync_group_delay_seconds', 15)); // @pest-mutate-ignore coalesce near-simultaneous approvals
+        } else {
+            $groupKey .= '|solo:'.$entry->id;
+        }
 
         SyncApprovedTimeEntryToQuickBooksJob::dispatch(
             $entry->id, // @pest-mutate-ignore approval async dispatch
             $employee->id, // @pest-mutate-ignore approval async dispatch
             $token->id, // @pest-mutate-ignore approval async dispatch
-            $payload, // @pest-mutate-ignore approval async dispatch
-        );
+            $groupKey, // @pest-mutate-ignore approval async dispatch
+        )->delay(now()->addSeconds($delaySeconds)); // @pest-mutate-ignore coalesce near-simultaneous approvals
 
-        return $entry->refresh()->load(['user', 'reviewedBy']); // @pest-mutate-ignore approval response eager loading
+        return $entry->refresh()->load(['user', 'reviewedBy', 'syncGroup']); // @pest-mutate-ignore approval response eager loading
     }
 
     /**
@@ -166,22 +173,6 @@ class TimeEntryApprovalService
         return $query->firstOr(function (): never {
             abort(response()->json(['message' => __('api.time_entry_not_found')], 404)); // @pest-mutate-ignore pending entry not found
         });
-    }
-
-    /**
-     * Maps a local entry to the QuickBooks create payload shape.
-     *
-     * @param  TimeEntry  $entry  Approved local entry.
-     * @param  QuickBooksToken  $token  Connected QuickBooks token.
-     * @param  User  $employee  Entry owner.
-     * @return array<string, mixed>
-     */
-    private function toQboPayload(TimeEntry $entry, QuickBooksToken $token, User $employee): array
-    {
-        return TimeEntryQboPayload::fromEntry(
-            $entry,
-            $this->displayNames->entryDisplayNames($token, $employee, $entry),
-        );
     }
 
     /**

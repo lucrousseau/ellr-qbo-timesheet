@@ -20,8 +20,8 @@
   "scripts": {
     "lint": "oxlint src",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "NODE_OPTIONS=\"--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}\" vitest run",
+    "test:coverage": "NODE_OPTIONS=\"--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}\" vitest run --coverage"
   },
   "devDependencies": {
     "@ellr/test-utils": "*",

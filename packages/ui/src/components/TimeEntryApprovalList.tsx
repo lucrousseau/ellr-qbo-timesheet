@@ -4,14 +4,17 @@
 
 import type { TimeActivityRow } from '@ellr/api-client'
 import { formatEntryDateTime, formatEntryDuration } from './timeActivityDisplay'
-import { TimeEntryApprovalActions } from './TimeEntryApprovalActions'
+import {
+  TimeEntryApprovalActions,
+  type ApproveTimeEntryOptions,
+} from './TimeEntryApprovalActions'
 import { useLocale } from '../i18n/LocaleProvider'
 
 type TimeEntryApprovalListProps = {
   entries: TimeActivityRow[]
   reviewingId: string | null
   displayTimezone?: string | null
-  onApprove: (id: string) => Promise<void>
+  onApprove: (id: string, options?: ApproveTimeEntryOptions) => Promise<void>
   onReject: (id: string, reason?: string | null) => Promise<void>
 }
 

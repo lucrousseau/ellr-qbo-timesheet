@@ -11,6 +11,7 @@
     "eslint-plugin-jsdoc": "^50.8.0",
     "husky": "^9.1.7",
     "jscpd": "^5.0.14",
+    "tsx": "^4.23.12",
     "typescript": "~6.0.2"
   },
   "engines": {
@@ -54,8 +55,8 @@
     "lint:frontend": "node_modules/.bin/oxlint apps/admin/src apps/timesheet/src packages/api-client/src packages/password-policy/src packages/ui/src packages/test-utils/src packages/vite-config/src",
     "lint:phpcs": "scripts/phpcs --standard=backend/phpcs.xml",
     "typecheck": "npm run typecheck --workspaces --parallel",
-    "test": "npm run test --workspaces",
-    "test:coverage:workspaces": "npm run test:coverage --workspaces --parallel",
+    "test": "NODE_OPTIONS=\"--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}\" npm run test --workspaces",
+    "test:coverage:workspaces": "NODE_OPTIONS=\"--import tsx${NODE_OPTIONS:+ $NODE_OPTIONS}\" npm run test:coverage --workspaces --parallel",
     "test:coverage": "npm run test:coverage:workspaces && cd backend && composer test:coverage",
     "test:behat": "cd backend && composer test:behat",
     "test:mutation:backend": "cd backend && composer test:mutation",

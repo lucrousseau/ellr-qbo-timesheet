@@ -31,8 +31,34 @@ export type TimeEntry = {
   reviewed_by_name?: string | null
   reviewed_at?: string | null
   rejection_reason?: string | null
+  group_for_qbo?: boolean
   qbo_id?: string | null
+  sync_group_id?: number | null
+  sync_group_public_id?: string | null
+  sync_group_member_count?: number | null
   created_at?: string | null
+}
+
+/**
+ * QuickBooks sync group detail returned for accountant drill-down.
+ */
+export type TimeEntrySyncGroup = {
+  id: number
+  public_id: string
+  user_id: number
+  employee_name?: string | null
+  txn_date: string | null
+  customer_ref?: string | null
+  project_ref?: string | null
+  item_ref?: string | null
+  is_billable: boolean
+  member_count: number
+  total_duration_seconds: number
+  qbo_id?: string | null
+  qbo_description?: string | null
+  synced_at?: string | null
+  detail_url: string
+  entries: TimeEntry[]
 }
 
 /**
@@ -173,16 +199,17 @@ export async function listPendingTimeEntryApprovals(
 /**
  * Approves a pending time entry and synchronizes it to QuickBooks.
  * @param id Local time entry identifier.
- * @param options Optional fetch options for admin vs supervisor routes.
+ * @param options Admin route toggle and optional QuickBooks grouping choice.
  * @returns Approved and synced time entry.
  */
 export async function approveTimeEntry(
   id: number,
-  options: { admin?: boolean } = {},
+  options: { admin?: boolean; groupForQbo?: boolean } = {},
 ): Promise<TimeEntry> {
   const basePath = options.admin ? '/admin/time-entry-approvals' : '/time-entry-approvals'
   const response = await apiFetch<{ data: TimeEntry }>(`${basePath}/${id}/approve`, {
     method: 'POST',
+    body: JSON.stringify({ group_for_qbo: Boolean(options.groupForQbo) }),
   })
 
   return response.data
@@ -205,6 +232,19 @@ export async function rejectTimeEntry(
     method: 'POST',
     body: JSON.stringify({ reason: reason ?? null }),
   })
+
+  return response.data
+}
+
+/**
+ * Loads a QuickBooks sync group and its local member entries.
+ * @param publicId Sync group UUID from the QuickBooks note deep link.
+ * @returns Sync group detail payload.
+ */
+export async function fetchTimeEntrySyncGroup(publicId: string): Promise<TimeEntrySyncGroup> {
+  const response = await apiFetch<{ data: TimeEntrySyncGroup }>(
+    `/time-entry-sync-groups/${encodeURIComponent(publicId)}`,
+  )
 
   return response.data
 }

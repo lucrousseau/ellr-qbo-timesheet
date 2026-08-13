@@ -84,7 +84,7 @@ describe('useTimeEntryApprovals', () => {
     expect(result.current.entries[0]?.id).toBe('local:12')
   })
 
-  it('shows a queued sync message when approval returns without a quickbooks id', async () => {
+  it('shows a queued grouping message when grouping is requested without a quickbooks id', async () => {
     vi.mocked(approveTimeEntry).mockResolvedValue({ ...pendingEntry, status: 'approved', qbo_id: null })
 
     const { result, onSuccess } = renderApprovalsHook()
@@ -94,10 +94,12 @@ describe('useTimeEntryApprovals', () => {
     })
 
     await act(async () => {
-      await result.current.approveEntry('local:12')
+      await result.current.approveEntry('local:12', { groupForQbo: true })
     })
 
-    expect(onSuccess).toHaveBeenCalledWith('Time entry approved. QuickBooks sync is in progress.')
+    expect(onSuccess).toHaveBeenCalledWith(
+      'Time entry approved. Matching opted-in entries will group into one QuickBooks activity shortly.',
+    )
   })
 
   it('approves an entry and refreshes the list', async () => {
@@ -111,9 +113,23 @@ describe('useTimeEntryApprovals', () => {
       await result.current.approveEntry('local:12')
     })
 
-    expect(approveTimeEntry).toHaveBeenCalledWith(12, { admin: true })
-    expect(onSuccess).toHaveBeenCalled()
+    expect(approveTimeEntry).toHaveBeenCalledWith(12, { admin: true, groupForQbo: undefined })
+    expect(onSuccess).toHaveBeenCalledWith('Time entry approved and sent to QuickBooks.')
     expect(listPendingTimeEntryApprovals).toHaveBeenCalledTimes(2)
+  })
+
+  it('passes the grouping choice to the approve api', async () => {
+    const { result } = renderApprovalsHook()
+
+    await waitFor(() => {
+      expect(result.current.entries).toHaveLength(1)
+    })
+
+    await act(async () => {
+      await result.current.approveEntry('local:12', { groupForQbo: true })
+    })
+
+    expect(approveTimeEntry).toHaveBeenCalledWith(12, { admin: true, groupForQbo: true })
   })
 
   it('rejects an entry through the supervisor route', async () => {

@@ -5,6 +5,7 @@ use App\Jobs\SyncApprovedTimeEntryToQuickBooksJob;
 use App\Models\QuickBooksToken;
 use App\Models\TimeEntry;
 use App\Models\User;
+use App\Services\OrganizationTimezoneService;
 use App\Services\QboPickerValidationService;
 use App\Services\QuickBooksService;
 use App\Services\TimeEntryApprovalService;
@@ -117,7 +118,7 @@ it('approves a pending entry and stores the quickbooks identifier', function () 
         ->and($approved->qbo_id)->toBe('88');
 });
 
-it('dispatches resolved quickbooks labels in the approval sync payload', function () {
+it('queues a grouped sync job keyed by employee day and service', function () {
     Queue::fake();
     mockQboEntryDisplayNames([
         'customer_name' => 'Acme Corp',
@@ -141,13 +142,48 @@ it('dispatches resolved quickbooks labels in the approval sync payload', functio
         $mock->shouldReceive('assertValidTimeEntry')->once();
     });
 
-    app(TimeEntryApprovalService::class)->approve($admin, $entry->id);
+    app(TimeEntryApprovalService::class)->approve($admin, $entry->id, groupForQbo: true);
+
+    expect($entry->refresh()->group_for_qbo)->toBeTrue();
 
     Queue::assertPushed(
         SyncApprovedTimeEntryToQuickBooksJob::class,
-        fn (SyncApprovedTimeEntryToQuickBooksJob $job): bool => $job->payload['customer_name'] === 'Acme Corp'
-            && $job->payload['project_name'] === 'Website redesign'
-            && $job->payload['item_name'] === 'Consulting',
+        function (SyncApprovedTimeEntryToQuickBooksJob $job) use ($entry, $employee): bool {
+            $expectedKey = SyncApprovedTimeEntryToQuickBooksJob::groupKeyFor(
+                $entry->fresh(['organization']),
+                app(OrganizationTimezoneService::class),
+            );
+
+            return $job->timeEntryId === $entry->id
+                && $job->employeeId === $employee->id
+                && $job->groupKey === $expectedKey
+                && str_contains($job->groupKey, '|33|')
+                && ! str_contains($job->groupKey, '|solo:');
+        },
+    );
+});
+
+it('queues a solo sync job when grouping is not selected', function () {
+    Queue::fake();
+
+    $admin = User::factory()->admin()->create();
+    QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $entry = TimeEntry::factory()->forUser($employee)->create();
+
+    app(TimeEntryApprovalService::class)->approve($admin, $entry->id);
+
+    expect($entry->refresh()->group_for_qbo)->toBeFalse();
+
+    Queue::assertPushed(
+        SyncApprovedTimeEntryToQuickBooksJob::class,
+        function (SyncApprovedTimeEntryToQuickBooksJob $job) use ($entry): bool {
+            return $job->timeEntryId === $entry->id
+                && str_ends_with($job->groupKey, '|solo:'.$entry->id);
+        },
     );
 });
 

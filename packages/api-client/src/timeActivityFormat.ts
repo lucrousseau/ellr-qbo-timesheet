@@ -23,6 +23,8 @@ export type TimeActivityRow = {
   employeeName?: string | null
   rejectionReason?: string | null
   qboId?: string | null
+  syncGroupPublicId?: string | null
+  syncGroupMemberCount?: number | null
 }
 
 /**

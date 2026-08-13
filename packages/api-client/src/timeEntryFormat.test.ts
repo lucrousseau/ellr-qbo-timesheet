@@ -24,6 +24,8 @@ describe('parseTimeEntryRow', () => {
       is_billable: true,
       status: 'pending',
       qbo_id: null,
+      sync_group_public_id: '11111111-1111-4111-8111-111111111111',
+      sync_group_member_count: 3,
       list_id: 'local:12',
     })
 
@@ -34,6 +36,8 @@ describe('parseTimeEntryRow', () => {
       serviceName: 'Consulting',
       approvalStatus: 'pending',
       employeeName: 'Jane Doe',
+      syncGroupPublicId: '11111111-1111-4111-8111-111111111111',
+      syncGroupMemberCount: 3,
     })
   })
 

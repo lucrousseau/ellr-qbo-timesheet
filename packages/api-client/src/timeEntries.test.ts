@@ -8,6 +8,7 @@ import {
   approveTimeEntry,
   createTimeEntry,
   deleteTimeEntry,
+  fetchTimeEntrySyncGroup,
   listPendingTimeEntryApprovals,
   listTimeEntries,
   rejectTimeEntry,
@@ -120,7 +121,40 @@ describe('time entry api', () => {
     await expect(approveTimeEntry(12)).resolves.toMatchObject({ status: 'approved' })
     expect(apiFetch).toHaveBeenCalledWith('/time-entry-approvals/12/approve', {
       method: 'POST',
+      body: JSON.stringify({ group_for_qbo: false }),
     })
+  })
+
+  it('approves with quickbooks grouping when requested', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({
+      data: { ...sampleEntry, status: 'approved', group_for_qbo: true },
+    })
+
+    await expect(approveTimeEntry(12, { admin: true, groupForQbo: true })).resolves.toMatchObject({
+      group_for_qbo: true,
+    })
+    expect(apiFetch).toHaveBeenCalledWith('/admin/time-entry-approvals/12/approve', {
+      method: 'POST',
+      body: JSON.stringify({ group_for_qbo: true }),
+    })
+  })
+
+  it('fetches a sync group by public id', async () => {
+    const group = {
+      id: 1,
+      public_id: '11111111-1111-4111-8111-111111111111',
+      user_id: 3,
+      txn_date: '2026-08-12',
+      is_billable: true,
+      member_count: 1,
+      total_duration_seconds: 3600,
+      detail_url: 'http://admin.test/?sync_group=11111111-1111-4111-8111-111111111111',
+      entries: [sampleEntry],
+    }
+    vi.mocked(apiFetch).mockResolvedValue({ data: group })
+
+    await expect(fetchTimeEntrySyncGroup(group.public_id)).resolves.toEqual(group)
+    expect(apiFetch).toHaveBeenCalledWith(`/time-entry-sync-groups/${group.public_id}`)
   })
 
   it('rejects a pending entry through the admin route', async () => {

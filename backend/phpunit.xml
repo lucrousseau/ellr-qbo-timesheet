@@ -22,6 +22,7 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="APP_KEY" value="base64:2fl+KtvkdphvQySfW6TG/Zrm5yRfxHGC2yvbXGvGq4U="/>
         <env name="ALLOW_REGISTRATION" value="true"/>
         <env name="REQUIRE_EMAIL_VERIFICATION" value="false"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

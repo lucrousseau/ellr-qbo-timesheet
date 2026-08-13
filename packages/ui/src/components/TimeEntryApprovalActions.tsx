@@ -4,13 +4,20 @@
 
 import { useState } from 'react'
 import { Button } from './Button'
+import { CheckboxField } from './CheckboxField'
 import { TextAreaField } from './TextAreaField'
 import { useLocale } from '../i18n/LocaleProvider'
+
+/** Options chosen by the reviewer when approving a pending time entry. */
+export type ApproveTimeEntryOptions = {
+  /** When true, matching opted-in siblings coalesce into one QuickBooks activity. */
+  groupForQbo?: boolean
+}
 
 type TimeEntryApprovalActionsProps = {
   entryId: string
   reviewing: boolean
-  onApprove: (id: string) => Promise<void>
+  onApprove: (id: string, options?: ApproveTimeEntryOptions) => Promise<void>
   onReject: (id: string, reason?: string | null) => Promise<void>
 }
 
@@ -28,6 +35,7 @@ export function TimeEntryApprovalActions({
   const { t } = useLocale()
   const [showRejectForm, setShowRejectForm] = useState(false)
   const [reason, setReason] = useState('')
+  const [groupForQbo, setGroupForQbo] = useState(false)
 
   if (showRejectForm) {
     return (
@@ -67,25 +75,34 @@ export function TimeEntryApprovalActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      <Button
-        type="button"
-        variant="primary"
-        size="compact"
+    <div className="min-w-64 space-y-3">
+      <CheckboxField
+        label={t('admin.groupForQboLabel')}
+        checked={groupForQbo}
         disabled={reviewing}
-        onClick={() => void onApprove(entryId)}
-      >
-        {reviewing ? t('admin.approvingEntry') : t('admin.approveEntry')}
-      </Button>
-      <Button
-        type="button"
-        variant="secondary"
-        size="compact"
-        disabled={reviewing}
-        onClick={() => setShowRejectForm(true)}
-      >
-        {t('admin.rejectEntry')}
-      </Button>
+        onChange={setGroupForQbo}
+      />
+      <p className="text-xs text-brand-muted-subtle">{t('admin.groupForQboHelp')}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="primary"
+          size="compact"
+          disabled={reviewing}
+          onClick={() => void onApprove(entryId, { groupForQbo })}
+        >
+          {reviewing ? t('admin.approvingEntry') : t('admin.approveEntry')}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="compact"
+          disabled={reviewing}
+          onClick={() => setShowRejectForm(true)}
+        >
+          {t('admin.rejectEntry')}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -53,6 +53,7 @@ class TimeEntry extends Model
             'start_time' => 'datetime',
             'end_time' => 'datetime',
             'is_billable' => 'boolean',
+            'group_for_qbo' => 'boolean',
             'status' => TimeEntryStatus::class,
             'reviewed_at' => 'datetime',
         ];
@@ -86,6 +87,16 @@ class TimeEntry extends Model
     public function reviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by_id');
+    }
+
+    /**
+     * Relationship to the QuickBooks sync group that aggregated this entry.
+     *
+     * @return BelongsTo<TimeEntrySyncGroup, $this>
+     */
+    public function syncGroup(): BelongsTo
+    {
+        return $this->belongsTo(TimeEntrySyncGroup::class, 'sync_group_id');
     }
 
     /**

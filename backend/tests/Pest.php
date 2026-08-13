@@ -27,12 +27,22 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)
+    ->beforeEach(function () {
+        config([
+            'quickbooks.time_entry_sync_group_delay_seconds' => 0,
+            'quickbooks.time_entry_sync_group_unique_for' => 60,
+        ]);
+    })
     ->in('Unit');
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
         $this->startSession();
+        config([
+            'quickbooks.time_entry_sync_group_delay_seconds' => 0,
+            'quickbooks.time_entry_sync_group_unique_for' => 60,
+        ]);
     })
     ->in('Feature');
 

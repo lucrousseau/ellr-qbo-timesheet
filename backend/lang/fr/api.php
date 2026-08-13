@@ -29,6 +29,8 @@ return [
     'time_entry_not_deletable' => 'Seules les entrées en attente ou refusées peuvent être supprimées.',
     'time_entry_review_forbidden' => 'Vous n\'êtes pas autorisé à réviser cette entrée de temps.',
     'time_entry_self_review_forbidden' => 'Vous ne pouvez pas réviser vos propres entrées de temps.',
+    'time_entry_sync_group_not_found' => 'Groupe de synchronisation introuvable',
+    'time_entry_sync_group_forbidden' => 'Vous n\'êtes pas autorisé à consulter ce groupe de synchronisation.',
     'supervisor_self_assignment' => 'Un employé ne peut pas être son propre supérieur.',
     'time_tracker_empty' => 'Aucune session de minuterie active à enregistrer.',
     'time_tracker_no_elapsed_time' => 'La minuterie n\'a pas de temps écoulé à enregistrer.',

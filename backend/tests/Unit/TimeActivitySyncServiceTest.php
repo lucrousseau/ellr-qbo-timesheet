@@ -31,13 +31,19 @@ function makeTimeActivitySyncService(?DataService $dataService = null): TimeActi
         $quickBooks->shouldReceive('dataService')->andReturn($dataService);
     }
 
+    $timezones = Mockery::mock(OrganizationTimezoneService::class);
+    $timezones->shouldReceive('syncIfMissing')->byDefault();
+    $timezones->shouldReceive('forRealm')->byDefault()->andReturn('UTC');
+    $timezones->shouldReceive('forOrganization')->byDefault()->andReturn('UTC');
+    $timezones->shouldReceive('fallbackTimezone')->byDefault()->andReturn('UTC');
+
     $enricher = new TimeActivityDisplayEnricherService(
         new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
         new TimeActivityReferenceNameLookup(new QuickBooksApiErrorFormatterService),
     );
     $mapper = new TimeActivitySnapshotMapper(
         new QboCustomerResolver(new QuickBooksApiErrorFormatterService),
-        app(OrganizationTimezoneService::class),
+        $timezones,
     );
     $snapshots = new TimeActivitySnapshotService($mapper, $enricher);
 
@@ -45,7 +51,7 @@ function makeTimeActivitySyncService(?DataService $dataService = null): TimeActi
         $quickBooks,
         new QuickBooksApiErrorFormatterService,
         $snapshots,
-        app(OrganizationTimezoneService::class),
+        $timezones,
     );
 }
 

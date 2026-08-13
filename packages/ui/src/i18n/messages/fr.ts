@@ -32,6 +32,8 @@ const frApiErrors = {
   time_entry_self_review_forbidden: 'Vous ne pouvez pas réviser vos propres entrées de temps.',
   time_entry_not_editable: 'Seules les entrées en attente peuvent être modifiées.',
   time_entry_not_deletable: 'Seules les entrées en attente ou refusées peuvent être supprimées.',
+  time_entry_sync_group_not_found: 'Groupe de synchronisation introuvable.',
+  time_entry_sync_group_forbidden: 'Vous n\'êtes pas autorisé à consulter ce groupe de synchronisation.',
   supervisor_self_assignment: 'Un employé ne peut pas être son propre supérieur.',
 } satisfies Record<ApiErrorMessageKey, string>
 
@@ -191,14 +193,18 @@ export const frMessages: Messages = {
     employeeTimeEntriesHelp: 'Modifiez les entrées de temps QuickBooks récentes pour cet employé.',
     timeApprovalsTitle: 'Approbations d\'entrées de temps en attente',
     timeApprovalsHelp:
-      'Révisez les entrées de temps des employés avant leur synchronisation vers QuickBooks. Les entrées refusées restent uniquement dans Ellr.',
+      'Révisez les entrées de temps des employés avant la synchronisation QuickBooks. Vous pouvez regrouper les entrées correspondantes en une seule activité QuickBooks. Les entrées refusées restent uniquement dans Ellr.',
     approveEntry: 'Approuver',
     approvingEntry: 'Approbation...',
     rejectEntry: 'Refuser',
     rejectingEntry: 'Refus...',
     rejectionReasonLabel: 'Motif du refus (optionnel)',
+    groupForQboLabel: 'Grouper les entrées correspondantes dans QuickBooks',
+    groupForQboHelp:
+      'Si activé, les autres entrées approuvées pour le même employé, jour, client/projet, service et statut facturable partagent une seule activité QuickBooks.',
     approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
-    approvalSuccessQueued: 'Entrée de temps approuvée. Synchronisation QuickBooks en cours.',
+    approvalSuccessQueued:
+      'Entrée de temps approuvée. Les entrées correspondantes sélectionnées seront regroupées dans une activité QuickBooks sous peu.',
     rejectionSuccess: 'Entrée de temps refusée.',
     approvalFailed: 'Impossible de réviser l\'entrée de temps.',
     noPendingApprovals: 'Aucune entrée de temps en attente à réviser.',
@@ -343,9 +349,18 @@ export const frMessages: Messages = {
       'Révisez et approuvez les entrées de temps de vos employés directs avant leur synchronisation vers QuickBooks.',
     noPendingApprovals: 'Aucune entrée de temps en attente ne requiert votre révision.',
     approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
-    approvalSuccessQueued: 'Entrée de temps approuvée. Synchronisation QuickBooks en cours.',
+    approvalSuccessQueued:
+      'Entrée de temps approuvée. Les entrées correspondantes sélectionnées seront regroupées dans une activité QuickBooks sous peu.',
     rejectionSuccess: 'Entrée de temps refusée.',
     approvalFailed: 'Impossible de réviser l\'entrée de temps.',
+    syncGroupTitle: 'Temps QuickBooks regroupé',
+    syncGroupHelp:
+      'Ces entrées locales ont été combinées en une seule TimeActivity QuickBooks. Utilisez cette vue pour le détail d\'audit.',
+    syncGroupQboId: 'Activité QuickBooks',
+    syncGroupMembers: 'Entrées regroupées',
+    syncGroupView: 'Voir le groupe',
+    syncGroupGrouped: 'Regroupé ({{count}})',
+    syncGroupLoadFailed: 'Impossible de charger le détail du temps regroupé.',
   },
   auth: {
     forgotPassword: 'Mot de passe oublié ?',

@@ -29,6 +29,8 @@ return [
     'time_entry_not_deletable' => 'Only pending or rejected time entries can be deleted.',
     'time_entry_review_forbidden' => 'You are not allowed to review this time entry.',
     'time_entry_self_review_forbidden' => 'You cannot review your own time entries.',
+    'time_entry_sync_group_not_found' => 'Time entry sync group not found',
+    'time_entry_sync_group_forbidden' => 'You are not allowed to view this time entry sync group.',
     'supervisor_self_assignment' => 'An employee cannot be their own supervisor.',
     'time_tracker_empty' => 'No active timer session to log.',
     'time_tracker_no_elapsed_time' => 'Timer has no elapsed time to log.',

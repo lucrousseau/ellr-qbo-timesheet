@@ -130,6 +130,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Approved time entry sync grouping
+    |--------------------------------------------------------------------------
+    |
+    | Near-simultaneous approvals for the same employee, day, customer/project,
+    | service, and billable flag coalesce into one QuickBooks TimeActivity.
+    | Delay lets multiple approvals share a unique queued job.
+    |
+    */
+
+    'time_entry_sync_group_delay_seconds' => (int) env('QUICKBOOKS_TIME_ENTRY_SYNC_GROUP_DELAY_SECONDS', 15),
+
+    'time_entry_sync_group_unique_for' => (int) env('QUICKBOOKS_TIME_ENTRY_SYNC_GROUP_UNIQUE_FOR', 120),
+
+    /*
+    |--------------------------------------------------------------------------
     | Snapshot retention and bulk purge chunk size
     |--------------------------------------------------------------------------
     |

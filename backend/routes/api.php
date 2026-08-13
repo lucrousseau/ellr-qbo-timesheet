@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\SuperAdminOrganizationController;
 use App\Http\Controllers\Api\TimeActivityController;
 use App\Http\Controllers\Api\TimeEntryApprovalController;
 use App\Http\Controllers\Api\TimeEntryController;
+use App\Http\Controllers\Api\TimeEntrySyncGroupController;
 use App\Http\Controllers\Api\TimeTrackerController;
 use App\Http\Controllers\Api\UserLocaleController;
 use App\Http\Controllers\Api\UserPasswordController;
@@ -110,6 +111,9 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::post('/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
             Route::post('/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
         });
+
+        Route::get('/time-entry-sync-groups/{publicId}', [TimeEntrySyncGroupController::class, 'show'])
+            ->whereUuid('publicId');
 
         Route::get('/quickbooks/customers', [QuickBooksPickerController::class, 'customers']);
         Route::get('/quickbooks/projects', [QuickBooksPickerController::class, 'projects']);
