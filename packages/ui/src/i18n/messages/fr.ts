@@ -338,6 +338,14 @@ export const frMessages: Messages = {
     deleteDraftSuccess: 'Brouillon d\'entrée de temps supprimé.',
     editDraftTitle: 'Modifier l\'entrée de temps',
     draftSaved: 'Brouillon d\'entrée de temps mis à jour.',
+    timeApprovalsTitle: 'Entrées de temps d\'équipe en attente',
+    timeApprovalsHelp:
+      'Révisez et approuvez les entrées de temps de vos employés directs avant leur synchronisation vers QuickBooks.',
+    noPendingApprovals: 'Aucune entrée de temps en attente ne requiert votre révision.',
+    approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
+    approvalSuccessQueued: 'Entrée de temps approuvée. Synchronisation QuickBooks en cours.',
+    rejectionSuccess: 'Entrée de temps refusée.',
+    approvalFailed: 'Impossible de réviser l\'entrée de temps.',
   },
   timeActivity: {
     start: 'Début',
@@ -371,14 +379,6 @@ export const frMessages: Messages = {
     pendingApprovalNotice:
       'Soumise pour approbation par le supérieur. Elle sera synchronisée vers QuickBooks une fois approuvée.',
     draftNotice: 'Brouillon : modifiable jusqu\'à soumission pour approbation.',
-    timeApprovalsTitle: 'Entrées de temps d\'équipe en attente',
-    timeApprovalsHelp:
-      'Révisez et approuvez les entrées de temps de vos employés directs avant leur synchronisation vers QuickBooks.',
-    noPendingApprovals: 'Aucune entrée de temps en attente ne requiert votre révision.',
-    approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
-    approvalSuccessQueued: 'Entrée de temps approuvée. Synchronisation QuickBooks en cours.',
-    rejectionSuccess: 'Entrée de temps refusée.',
-    approvalFailed: 'Impossible de réviser l\'entrée de temps.',
   },
   auth: {
     forgotPassword: 'Mot de passe oublié ?',

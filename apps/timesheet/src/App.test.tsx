@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQboCustomers, fetchQboProjects, fetchQboServices, fetchTimeTracker, logTimeTracker, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, updateTimeTracker, updateUserPreferences } from '@ellr/api-client'
+import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQboCustomers, fetchQboProjects, fetchQboServices, fetchTimeTracker, listPendingTimeEntryApprovals, listTimeEntries, logTimeTracker, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, submitTimeEntry, updateTimeTracker, updateUserPreferences } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -51,6 +51,11 @@ vi.mock('@ellr/api-client', async () =>
       data: [],
       meta: { count: 0, max_results: 10, start_position: 1, truncated: false },
     }),
+    listPendingTimeEntryApprovals: vi.fn().mockResolvedValue({
+      data: [],
+      meta: { count: 0, max_results: 10, start_position: 1, truncated: false },
+    }),
+    submitTimeEntry: vi.fn(),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
     resendVerificationEmail: vi.fn(),
@@ -1170,6 +1175,89 @@ describe('Timesheet App', () => {
     await waitFor(() => {
       expect(fetchQboServices).toHaveBeenCalled()
       expect(screen.getByText('Consulting')).toBeInTheDocument()
+    })
+  })
+
+  it('submits a draft from recent entries', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
+    vi.mocked(listTimeEntries).mockResolvedValue({
+      data: [
+        {
+          id: 12,
+          list_id: 'local:12',
+          user_id: 1,
+          start_time: '2026-07-30T09:00:00Z',
+          end_time: '2026-07-30T10:00:00Z',
+          duration_seconds: 3600,
+          customer_name: 'Acme Corp',
+          item_name: 'Design',
+          description: 'Draft work',
+          is_billable: false,
+          status: 'draft',
+        },
+      ],
+      meta: { count: 1, max_results: 10, start_position: 1, truncated: false },
+    })
+    vi.mocked(submitTimeEntry).mockResolvedValue({
+      id: 12,
+      list_id: 'local:12',
+      user_id: 1,
+      start_time: '2026-07-30T09:00:00Z',
+      end_time: '2026-07-30T10:00:00Z',
+      duration_seconds: 3600,
+      is_billable: false,
+      status: 'pending',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /submit for approval/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /submit for approval/i }))
+
+    await waitFor(() => {
+      expect(submitTimeEntry).toHaveBeenCalledWith(12)
+      expect(screen.getByText(/submitted for approval/i)).toBeInTheDocument()
+    })
+  })
+
+  it('opens the approvals tab for reviewers', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue({
+      ...authenticatedUser,
+      can_review_time_entries: true,
+    })
+    vi.mocked(listPendingTimeEntryApprovals).mockResolvedValue({
+      data: [
+        {
+          id: 12,
+          list_id: 'local:12',
+          user_id: 2,
+          employee_name: 'Bob LeMoche',
+          start_time: '2026-07-30T17:00:00Z',
+          end_time: '2026-07-30T18:00:00Z',
+          duration_seconds: 3600,
+          is_billable: false,
+          status: 'pending',
+        },
+      ],
+      meta: { count: 1, max_results: 10, start_position: 1, truncated: false },
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /approvals/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('tab', { name: /approvals/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Bob LeMoche')).toBeInTheDocument()
+      expect(listPendingTimeEntryApprovals).toHaveBeenCalled()
     })
   })
 })

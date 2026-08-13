@@ -337,6 +337,13 @@ export const enMessages = {
     deleteDraftSuccess: 'Draft time entry deleted.',
     editDraftTitle: 'Edit time entry',
     draftSaved: 'Draft time entry updated.',
+    timeApprovalsTitle: 'Pending team time entries',
+    timeApprovalsHelp: 'Review and approve direct report time entries before they sync to QuickBooks.',
+    noPendingApprovals: 'No pending time entries require your review.',
+    approvalSuccess: 'Time entry approved and sent to QuickBooks.',
+    approvalSuccessQueued: 'Time entry approved. QuickBooks sync is in progress.',
+    rejectionSuccess: 'Time entry rejected.',
+    approvalFailed: 'Unable to review the time entry.',
   },
   timeActivity: {
     start: 'Start',
@@ -370,13 +377,6 @@ export const enMessages = {
     pendingApprovalNotice:
       'Submitted for supervisor approval. It will sync to QuickBooks once approved.',
     draftNotice: 'Draft: editable until you submit it for approval.',
-    timeApprovalsTitle: 'Pending team time entries',
-    timeApprovalsHelp: 'Review and approve direct report time entries before they sync to QuickBooks.',
-    noPendingApprovals: 'No pending time entries require your review.',
-    approvalSuccess: 'Time entry approved and sent to QuickBooks.',
-    approvalSuccessQueued: 'Time entry approved. QuickBooks sync is in progress.',
-    rejectionSuccess: 'Time entry rejected.',
-    approvalFailed: 'Unable to review the time entry.',
   },
   auth: {
     forgotPassword: 'Forgot password?',
