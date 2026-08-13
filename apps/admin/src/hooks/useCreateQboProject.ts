@@ -11,6 +11,8 @@ import {
 } from '@ellr/api-client'
 import { getApiErrorMessage, useGuardedAction, useLazyApiSelect, useLocale } from '@ellr/ui'
 
+export type { QboCustomerOption }
+
 type UseCreateQboProjectOptions = {
   status: QuickBooksStatus | null
   isAdministrator: boolean

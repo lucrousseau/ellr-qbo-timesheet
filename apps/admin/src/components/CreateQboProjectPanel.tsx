@@ -11,7 +11,7 @@ import {
   TextField,
   useLocale,
 } from '@ellr/ui'
-import type { QboCustomerOption } from '@ellr/api-client'
+import type { QboCustomerOption } from '../hooks/useCreateQboProject'
 
 type CreateQboProjectPanelProps = {
   connected: boolean

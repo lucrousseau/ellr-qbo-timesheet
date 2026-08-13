@@ -2,7 +2,6 @@
  * @file Account settings tab: language preferences, email, and password change.
  */
 
-import type { User } from '@ellr/api-client'
 import type { UserLocale } from '@ellr/ui'
 import {
   ChangeEmailPanel,
@@ -23,7 +22,7 @@ type AccountPanelProps = {
   onLocaleChange: (locale: UserLocale) => void
   onTimezoneChange: (timezone: string) => void
   onSavePreferences: (event: React.FormEvent) => void
-  onUserUpdated?: (user: User) => void
+  onUserUpdated?: Parameters<typeof useChangeEmail>[0]['onSuccess']
   tabIdPrefix?: string
 }
 
