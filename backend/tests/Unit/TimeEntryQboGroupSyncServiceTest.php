@@ -45,19 +45,28 @@ it('pushes sibling approved entries as one quickbooks time activity', function (
     $day = now()->startOfDay()->addHours(9);
     $entries = collect([
         TimeEntry::factory()->forUser($employee)->create([
+            'customer_ref' => '10',
+            'project_ref' => '20',
             'item_ref' => '33',
+            'is_billable' => true,
             'description' => 'Feature A',
             'start_time' => $day->copy(),
             'end_time' => $day->copy()->addHour(),
         ]),
         TimeEntry::factory()->forUser($employee)->create([
+            'customer_ref' => '10',
+            'project_ref' => '20',
             'item_ref' => '33',
+            'is_billable' => true,
             'description' => 'Feature B',
             'start_time' => $day->copy()->addHours(2),
             'end_time' => $day->copy()->addHours(3),
         ]),
         TimeEntry::factory()->forUser($employee)->create([
+            'customer_ref' => '10',
+            'project_ref' => '20',
             'item_ref' => '33',
+            'is_billable' => true,
             'description' => 'Feature C',
             'start_time' => $day->copy()->addHours(4),
             'end_time' => $day->copy()->addHours(5),
@@ -100,6 +109,11 @@ it('pushes sibling approved entries as one quickbooks time activity', function (
     expect($group->member_count)->toBe(3)
         ->and($group->total_duration_seconds)->toBe(10_800)
         ->and($group->qbo_id)->toBe('900')
+        ->and($group->customer_ref)->toBe('10')
+        ->and($group->project_ref)->toBe('20')
+        ->and($group->item_ref)->toBe('33')
+        ->and($group->is_billable)->toBeTrue()
+        ->and($group->synced_at)->not->toBeNull()
         ->and($group->qbo_description)->toContain('Ellr grouped time: 3 entries, 3h00.')
         ->and($group->qbo_description)->toContain('Details: http://admin.test/?sync_group='.$group->public_id)
         ->and($group->qbo_description)->toContain('Feature A')
@@ -108,6 +122,31 @@ it('pushes sibling approved entries as one quickbooks time activity', function (
 
     expect($entries[0]->sync_group_id)->toBe($entries[1]->sync_group_id)
         ->and($entries[1]->sync_group_id)->toBe($entries[2]->sync_group_id);
+});
+
+it('returns null when the trigger entry is already synced', function () {
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $entry = TimeEntry::factory()->forUser($employee)->approved('55')->create([
+        'reviewed_by_id' => $admin->id,
+        'reviewed_at' => now(),
+    ]);
+
+    $this->mock(QuickBooksService::class, function ($mock) {
+        $mock->shouldReceive('dataService')->never();
+    });
+
+    $group = app(TimeEntryQboGroupSyncService::class)->syncApprovedGroup(
+        $entry->fresh(['organization']),
+        $employee,
+        $token,
+    );
+
+    expect($group)->toBeNull();
 });
 
 it('does not group entries with a different service item', function () {

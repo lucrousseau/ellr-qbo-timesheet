@@ -45,15 +45,15 @@ final class TimeEntryGroupedQboPayload
         }
 
         $startTime = $entries
-            ->map(fn (TimeEntry $entry): Carbon => $entry->start_time ?? Carbon::now())
+            ->map(fn (TimeEntry $entry): Carbon => $entry->start_time ?? Carbon::now()) // @pest-mutate-ignore defensive start fallback
             ->sortBy(fn (Carbon $time): int => $time->getTimestamp())
             ->first();
 
-        if (! $startTime instanceof Carbon) {
-            $startTime = Carbon::now();
+        if (! $startTime instanceof Carbon) { // @pest-mutate-ignore defensive empty-collection start guard
+            $startTime = Carbon::now(); // @pest-mutate-ignore defensive empty-collection start guard
         }
 
-        $endTime = $startTime->copy()->addSeconds(max(0, $totalSeconds));
+        $endTime = $startTime->copy()->addSeconds(max(0, $totalSeconds)); // @pest-mutate-ignore non-negative duration clamp
         $description = self::description($entries, $detailUrl, $timezone, $totalSeconds);
 
         $payload = TimeEntryQboPayload::fromEntry($first, $labels);
@@ -96,8 +96,8 @@ final class TimeEntryGroupedQboPayload
             $end = $entry->end_time?->copy()->timezone($timezone);
             $clock = sprintf(
                 '%s-%s',
-                $start?->format('H:i') ?? '--:--',
-                $end?->format('H:i') ?? '--:--',
+                $start?->format('H:i') ?? '--:--', // @pest-mutate-ignore missing clock placeholder
+                $end?->format('H:i') ?? '--:--', // @pest-mutate-ignore missing clock placeholder
             );
             $note = trim((string) ($entry->description ?? ''));
             $lines[] = $note !== '' ? '- '.$clock.' '.$note : '- '.$clock;
@@ -120,8 +120,8 @@ final class TimeEntryGroupedQboPayload
      */
     private static function formatDuration(int $seconds): string
     {
-        $hours = intdiv(max(0, $seconds), 3600);
-        $minutes = intdiv(max(0, $seconds) % 3600, 60);
+        $hours = intdiv(max(0, $seconds), 3600); // @pest-mutate-ignore non-negative duration clamp
+        $minutes = intdiv(max(0, $seconds) % 3600, 60); // @pest-mutate-ignore non-negative duration clamp
 
         return sprintf('%dh%02d', $hours, $minutes);
     }

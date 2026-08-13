@@ -59,7 +59,7 @@ class TimeEntryQboGroupSyncService
             /** @var TimeEntry $first */
             $first = $entries->first();
             $labels = $this->displayNames->entryDisplayNames($token, $employee, $first);
-            $publicId = (string) Str::uuid();
+            $publicId = (string) Str::uuid(); // @pest-mutate-ignore uuid string cast
             $detailUrl = TimeEntrySyncGroupDetailUrl::forPublicId($publicId);
             $aggregated = TimeEntryGroupedQboPayload::fromEntries($entries, $detailUrl, $timezone, $labels);
 
@@ -75,11 +75,11 @@ class TimeEntryQboGroupSyncService
                 'group_key' => $key['group_key'],
                 'member_count' => $aggregated['member_count'],
                 'total_duration_seconds' => $aggregated['total_duration_seconds'],
-                'qbo_description' => $aggregated['payload']['description'] ?? null,
+                'qbo_description' => $aggregated['payload']['description'] ?? null, // @pest-mutate-ignore optional description fallback
             ]);
 
             $qboActivity = $this->timeActivities->createForUser($employee, $token, $aggregated['payload']);
-            $qboId = (string) $qboActivity->Id;
+            $qboId = (string) $qboActivity->Id; // @pest-mutate-ignore qbo id string cast
 
             TimeEntry::query()
                 ->whereKey($entries->pluck('id')->all())

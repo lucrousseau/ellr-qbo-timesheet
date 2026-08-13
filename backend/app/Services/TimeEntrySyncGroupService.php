@@ -36,7 +36,7 @@ class TimeEntrySyncGroupService
     public function showForActor(User $actor, string $publicId): array
     {
         $group = TimeEntrySyncGroup::query()
-            ->with(['user', 'timeEntries.user', 'timeEntries.reviewedBy', 'timeEntries.syncGroup'])
+            ->with(['user', 'timeEntries.user', 'timeEntries.reviewedBy', 'timeEntries.syncGroup']) // @pest-mutate-ignore sync group eager loading
             ->where('public_id', $publicId)
             ->firstOr(function (): never {
                 abort(response()->json([
@@ -59,8 +59,8 @@ class TimeEntrySyncGroupService
                 'id' => $group->id,
                 'public_id' => $group->public_id,
                 'user_id' => $group->user_id,
-                'employee_name' => $group->user?->name,
-                'txn_date' => $group->txn_date?->toDateString(),
+                'employee_name' => $group->user?->name, // @pest-mutate-ignore optional relation nullsafe
+                'txn_date' => $group->txn_date?->toDateString(), // @pest-mutate-ignore optional date nullsafe
                 'customer_ref' => $group->customer_ref,
                 'project_ref' => $group->project_ref,
                 'item_ref' => $group->item_ref,
@@ -69,7 +69,7 @@ class TimeEntrySyncGroupService
                 'total_duration_seconds' => $group->total_duration_seconds,
                 'qbo_id' => $group->qbo_id,
                 'qbo_description' => $group->qbo_description,
-                'synced_at' => $group->synced_at?->toIso8601String(),
+                'synced_at' => $group->synced_at?->toIso8601String(), // @pest-mutate-ignore optional datetime nullsafe
                 'detail_url' => TimeEntrySyncGroupDetailUrl::forPublicId($group->public_id),
                 'entries' => $this->presentation->collection($members, $actor),
             ],

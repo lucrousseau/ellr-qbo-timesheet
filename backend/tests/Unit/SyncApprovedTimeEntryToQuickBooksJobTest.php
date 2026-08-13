@@ -152,7 +152,28 @@ it('skips sync when prerequisites are missing or the entry is already linked', f
 it('exposes a stable unique id for group coalescing', function () {
     $job = new SyncApprovedTimeEntryToQuickBooksJob(1, 2, 3, 'org|user|date|c|p|i|1');
 
-    expect($job->uniqueId())->toBe('time-entry-sync-group:org|user|date|c|p|i|1');
+    expect($job->uniqueId())->toBe('time-entry-sync-group:org|user|date|c|p|i|1')
+        ->and($job->uniqueFor)->toBe(60);
+});
+
+it('loads the organization relation when building a group key', function () {
+    $employee = User::factory()->create(['qbo_employee_ref' => '7']);
+    $entry = TimeEntry::factory()->forUser($employee)->create([
+        'item_ref' => '33',
+        'start_time' => now()->startOfDay()->addHours(9),
+        'end_time' => now()->startOfDay()->addHours(10),
+    ]);
+    $entry = TimeEntry::query()->findOrFail($entry->id);
+
+    expect($entry->relationLoaded('organization'))->toBeFalse();
+
+    $groupKey = SyncApprovedTimeEntryToQuickBooksJob::groupKeyFor(
+        $entry,
+        app(OrganizationTimezoneService::class),
+    );
+
+    expect($groupKey)->toContain((string) $employee->organization_id)
+        ->and($entry->relationLoaded('organization'))->toBeTrue();
 });
 
 it('logs permanent queue failures without reverting approval', function () {

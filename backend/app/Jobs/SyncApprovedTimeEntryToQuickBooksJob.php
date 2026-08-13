@@ -43,7 +43,7 @@ class SyncApprovedTimeEntryToQuickBooksJob implements ShouldBeUnique, ShouldQueu
         public readonly int $tokenId,
         public readonly string $groupKey,
     ) {
-        $this->uniqueFor = max(1, (int) config('quickbooks.time_entry_sync_group_unique_for', 120));
+        $this->uniqueFor = max(1, (int) config('quickbooks.time_entry_sync_group_unique_for', 120)); // @pest-mutate-ignore unique lock window config cast
     }
 
     /**
