@@ -8,6 +8,7 @@ import {
   parseTimeEntryRow,
   rejectTimeEntry,
   resolveTimeEntryId,
+  returnTimeEntryToDraft,
   updatePendingTimeEntryApproval,
   type TimeActivityRow,
   type TimeEntryUpdatePayload,
@@ -23,6 +24,7 @@ type ApprovalMessages = {
   approvalSuccess: string
   approvalSuccessQueued: string
   rejectionSuccess: string
+  returnToDraftSuccess: string
   pendingEntryUpdated: string
 }
 
@@ -35,7 +37,7 @@ type UseTimeEntryApprovalsOptions = {
 }
 
 /**
- * Loads pending time entries and exposes approve/reject handlers.
+ * Loads pending time entries and exposes approve/reject/return-to-draft handlers.
  * @param options Enable flag, admin route toggle, message keys, and flash callbacks.
  * @returns Pending entries, loading state, and review handlers.
  */
@@ -52,6 +54,7 @@ export function useTimeEntryApprovals({
     approvalSuccess: messages?.approvalSuccess ?? t('admin.approvalSuccess'),
     approvalSuccessQueued: messages?.approvalSuccessQueued ?? t('admin.approvalSuccessQueued'),
     rejectionSuccess: messages?.rejectionSuccess ?? t('admin.rejectionSuccess'),
+    returnToDraftSuccess: messages?.returnToDraftSuccess ?? t('admin.returnToDraftSuccess'),
     pendingEntryUpdated: messages?.pendingEntryUpdated ?? t('admin.pendingEntryUpdated'),
   }
   const [entries, setEntries] = useState<TimeActivityRow[]>([])
@@ -154,6 +157,23 @@ export function useTimeEntryApprovals({
     [admin, locale, onError, onSuccess, refresh, resolvedMessages.approvalFailed, resolvedMessages.rejectionSuccess],
   )
 
+  const returnEntryToDraft = useCallback(
+    async (id: string) => {
+      setReviewingId(id)
+
+      try {
+        await returnTimeEntryToDraft(resolveTimeEntryId(id), { admin })
+        onSuccess(resolvedMessages.returnToDraftSuccess)
+        refresh()
+      } catch (caught) {
+        onError(getApiErrorMessage(caught, resolvedMessages.approvalFailed, locale))
+      } finally {
+        setReviewingId(null)
+      }
+    },
+    [admin, locale, onError, onSuccess, refresh, resolvedMessages.approvalFailed, resolvedMessages.returnToDraftSuccess],
+  )
+
   const updateEntry = useCallback(
     async (id: string, payload: TimeEntryUpdatePayload) => {
       setReviewingId(id)
@@ -190,6 +210,7 @@ export function useTimeEntryApprovals({
     loadMore,
     approveEntry,
     rejectEntry,
+    returnEntryToDraft,
     updateEntry,
   }
 }

@@ -101,4 +101,20 @@ class TimeEntryApprovalController extends Controller
             'data' => $this->presentation->resource($entry, $request->user()),
         ]);
     }
+
+    /**
+     * Returns a pending entry to draft for employee editing.
+     *
+     * @param  Request  $request  Incoming HTTP request.
+     * @param  int  $timeEntry  Local time entry identifier.
+     * @return JsonResponse
+     */
+    public function returnToDraft(Request $request, int $timeEntry): JsonResponse
+    {
+        $entry = $this->approvals->returnToDraft($request->user(), $timeEntry);
+
+        return response()->json([
+            'data' => $this->presentation->resource($entry, $request->user()),
+        ]);
+    }
 }

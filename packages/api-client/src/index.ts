@@ -104,6 +104,7 @@ export {
   listTimeEntries,
   rejectTimeEntry,
   resolveTimeEntryId,
+  returnTimeEntryToDraft,
   submitTimeEntries,
   submitTimeEntry,
   updateAdminUserSupervisor,

@@ -92,6 +92,7 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::patch('/admin/time-entry-approvals/{timeEntry}', [TimeEntryApprovalController::class, 'update']);
             Route::post('/admin/time-entry-approvals/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
             Route::post('/admin/time-entry-approvals/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
+            Route::post('/admin/time-entry-approvals/{timeEntry}/return-to-draft', [TimeEntryApprovalController::class, 'returnToDraft']);
             Route::get('/admin/quickbooks/customers', [AdminQuickBooksPickerController::class, 'customers']);
             Route::post('/admin/quickbooks/projects', [AdminQboProjectController::class, 'store']);
             Route::patch('/user/qbo-employee', [QboEmployeeController::class, 'update']);
@@ -115,6 +116,7 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
             Route::patch('/{timeEntry}', [TimeEntryApprovalController::class, 'update']);
             Route::post('/{timeEntry}/approve', [TimeEntryApprovalController::class, 'approve']);
             Route::post('/{timeEntry}/reject', [TimeEntryApprovalController::class, 'reject']);
+            Route::post('/{timeEntry}/return-to-draft', [TimeEntryApprovalController::class, 'returnToDraft']);
         });
 
         Route::get('/quickbooks/customers', [QuickBooksPickerController::class, 'customers']);

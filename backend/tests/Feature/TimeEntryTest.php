@@ -272,6 +272,26 @@ describe('time entry approvals', function () {
             ->assertJsonPath('data.qbo_id', null);
     });
 
+    it('returns a pending entry to draft without syncing to quickbooks', function () {
+        $admin = actingAsAdmin();
+        $employee = timesheetUserFor($admin);
+        $entry = TimeEntry::factory()->forUser($employee)->pending()->create();
+
+        $this->actingAs($admin)
+            ->postJson("/api/admin/time-entry-approvals/{$entry->id}/return-to-draft", [], frontendHeaders())
+            ->assertOk()
+            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.rejection_reason', null)
+            ->assertJsonPath('data.qbo_id', null);
+
+        $this->assertDatabaseHas('time_entries', [
+            'id' => $entry->id,
+            'status' => 'draft',
+            'reviewed_by_id' => null,
+            'rejection_reason' => null,
+        ]);
+    });
+
     it('lists pending entries for administrators', function () {
         $admin = actingAsAdmin();
         $employee = timesheetUserFor($admin);

@@ -33,6 +33,12 @@ Feature: Time entry approval
     And the JSON field "data.status" should be "rejected"
     And the JSON field "data.rejection_reason" should be "Wrong client"
 
+  Scenario: Administrator returns a pending time entry to draft
+    Given the timesheet user has a pending time entry
+    When I request "POST" "/api/admin/time-entry-approvals/{pending_time_entry_id}/return-to-draft"
+    Then the response status should be 200
+    And the JSON field "data.status" should be "draft"
+
   Scenario: Administrator cannot review another organization pending entry
     Given a timesheet user exists in another organization mapped to quickbooks employee "88"
     And the foreign timesheet user has a pending time entry
