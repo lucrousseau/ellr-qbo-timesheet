@@ -7,7 +7,7 @@ import { PasswordPolicyRequirements } from './PasswordPolicyRequirements'
 import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
 import { Button } from './Button'
-import { TextField } from './TextField'
+import { PasswordField } from './PasswordField'
 import { cardClass, sectionHelpClass, sectionTitleClass } from '../styles/tokens'
 
 type ChangePasswordPanelProps = {
@@ -61,25 +61,22 @@ export function ChangePasswordPanel({
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <PasswordPolicyRequirements />
-        <TextField
+        <PasswordField
           label={t('auth.currentPassword')}
-          type="password"
           required
           autoComplete="current-password"
           value={currentPassword}
           onChange={(event) => onCurrentPasswordChange(event.target.value)}
         />
-        <TextField
+        <PasswordField
           label={t('auth.newPassword')}
-          type="password"
           required
           autoComplete="new-password"
           value={password}
           onChange={(event) => onPasswordChange(event.target.value)}
         />
-        <TextField
+        <PasswordField
           label={t('auth.confirmPassword')}
-          type="password"
           required
           autoComplete="new-password"
           value={passwordConfirmation}

@@ -10,6 +10,7 @@ export { TextAreaField } from './components/TextAreaField'
 export { LazySearchCombobox } from './components/LazySearchCombobox'
 export { StaticSelect } from './components/StaticSelect'
 export { TextField } from './components/TextField'
+export { PasswordField } from './components/PasswordField'
 export { MaskedInput } from './components/MaskedInput'
 export {
   capDurationMaskValue,

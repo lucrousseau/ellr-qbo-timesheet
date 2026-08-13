@@ -53,6 +53,8 @@ export const enMessages = {
     signOutFailed: 'Sign-out failed.',
     email: 'Email',
     password: 'Password',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
     save: 'Save',
     saving: 'Saving...',
     cancel: 'Cancel',

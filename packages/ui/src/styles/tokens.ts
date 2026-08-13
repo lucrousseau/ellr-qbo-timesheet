@@ -2,8 +2,11 @@
  * @file Shared Tailwind class tokens for cards, inputs, and buttons.
  */
 
-export const inputClass =
-  'mt-1 w-full rounded-[9px] border border-brand-border bg-brand-surface px-3 py-2 text-sm text-brand-primary outline-none transition focus:border-brand-accent focus:ring-2 focus:ring-brand-ring/20'
+/** Shared input chrome without outer spacing (compose with margin utilities). */
+export const inputChromeClass =
+  'w-full rounded-[9px] border border-brand-border bg-brand-surface px-3 py-2 text-sm text-brand-primary outline-none transition focus:border-brand-accent focus:ring-2 focus:ring-brand-ring/20'
+
+export const inputClass = `mt-1 ${inputChromeClass}`
 
 export const pageMainClass = 'mx-auto max-w-3xl px-6 py-10'
 

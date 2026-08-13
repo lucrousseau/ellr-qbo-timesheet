@@ -8,6 +8,7 @@ import { cardClass, sectionTitleClass } from '../styles/tokens'
 import { Alert } from './Alert'
 import { AuthPageLayout } from './AuthPageLayout'
 import { Button } from './Button'
+import { PasswordField } from './PasswordField'
 import { TextField } from './TextField'
 
 type LoginFormProps = {
@@ -73,9 +74,8 @@ export function LoginForm({
             value={email}
             onChange={(event) => onEmailChange(event.target.value)}
           />
-          <TextField
+          <PasswordField
             label={t('common.password')}
-            type="password"
             required
             autoComplete="current-password"
             value={password}

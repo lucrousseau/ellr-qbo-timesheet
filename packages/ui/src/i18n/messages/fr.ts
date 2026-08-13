@@ -54,6 +54,8 @@ export const frMessages: Messages = {
     signOutFailed: 'Échec de la déconnexion.',
     email: 'Courriel',
     password: 'Mot de passe',
+    showPassword: 'Afficher le mot de passe',
+    hidePassword: 'Masquer le mot de passe',
     save: 'Enregistrer',
     saving: 'Enregistrement...',
     cancel: 'Annuler',

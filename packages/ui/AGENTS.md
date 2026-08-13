@@ -21,7 +21,8 @@ See also the [root README](../../README.md) and [root AGENTS.md](../../AGENTS.md
 |-----------|-------------------|----------|
 | `Button` | `Button` | Primary, secondary, danger, link; `size="compact"` for header chrome |
 | `EllrLogoMark` | — | Brand pastille + optional wordmark/tagline in shell and auth |
-| `TextField` | `Field` + `Label` + `Input` | Text, email, password, datetime-local |
+| `TextField` | `Field` + `Label` + `Input` | Text, email, datetime-local (not passwords) |
+| `PasswordField` | `Field` + `Label` + `Input` | Passwords with show/hide toggle |
 | `MaskedInput` | IMask (`react-imask`) | Formatted numeric entry (duration, phone, etc.) |
 | `TextAreaField` | `Field` + `Label` + `Textarea` | Multi-line text, notes, descriptions |
 | `StaticSelect` | `Listbox` | Short static lists (locale, enums) |

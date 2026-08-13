@@ -5,6 +5,7 @@
 import {
   Button,
   ConfirmDialog,
+  PasswordField,
   PasswordPolicyRequirements,
   TextField,
   cardClass,
@@ -95,17 +96,15 @@ export function SuperAdminOrganizationsPanel({ clients }: SuperAdminOrganization
           <div className="md:col-span-2">
             <PasswordPolicyRequirements />
           </div>
-          <TextField
+          <PasswordField
             label={t('admin.clientAdminPassword')}
-            type="password"
             autoComplete="new-password"
             value={clients.adminPassword}
             onChange={(event) => clients.setAdminPassword(event.target.value)}
             required
           />
-          <TextField
+          <PasswordField
             label={t('admin.clientAdminPasswordConfirmation')}
-            type="password"
             autoComplete="new-password"
             value={clients.adminPasswordConfirmation}
             onChange={(event) => clients.setAdminPasswordConfirmation(event.target.value)}

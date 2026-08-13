@@ -13,6 +13,7 @@ type TextFieldProps = {
 
 /**
  * Labeled text input wired for Headless UI field semantics.
+ * For passwords, use `PasswordField` instead.
  * @param props Label text and native input attributes.
  * @returns Accessible form field.
  */

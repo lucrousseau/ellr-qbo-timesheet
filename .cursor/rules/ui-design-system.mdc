@@ -26,7 +26,8 @@ Headless UI is the **primitive layer** for interactive controls. Apps consume **
 |----------------|-------------------|------|
 | `Button` | `Button` | Primary, secondary, danger, and link actions; `size="compact"` for header chrome |
 | `EllrLogoMark` | — | Brand pastille + optional wordmark/tagline (AppShell, auth, loading) |
-| `TextField` | `Field` + `Label` + `Input` | — |
+| `TextField` | `Field` + `Label` + `Input` | Text, email, datetime-local (not passwords) |
+| `PasswordField` | `Field` + `Label` + `Input` | Passwords with show/hide toggle |
 | `MaskedInput` | IMask (`react-imask`) | Duration, phone, and other masked numeric entry |
 | `TextAreaField` | `Field` + `Label` + `Textarea` | — |
 | `StaticSelect` | `Listbox` | — |
@@ -69,7 +70,7 @@ The design system is **never "done"**. Every UI change should leave the codebase
 
 ### When adding a new screen
 
-- Form fields → `TextField`, `TextAreaField`, `StaticSelect`, or `LazySearchCombobox`.
+- Form fields → `TextField`, `PasswordField`, `TextAreaField`, `StaticSelect`, or `LazySearchCombobox`.
 - Actions → `Button` (`primary` default, `secondary`, `danger`, `link` for text navigation; `size="compact"` in headers).
 - Destructive confirms → `ConfirmDialog` + `useGuardedAction`.
 - Copy → `useLocale` / message catalogs (`en.ts` + `fr.ts`).

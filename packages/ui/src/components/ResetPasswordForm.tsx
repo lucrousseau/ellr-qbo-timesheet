@@ -8,7 +8,7 @@ import { useLocale } from '../i18n/LocaleProvider'
 import { Alert } from './Alert'
 import { AuthPageLayout } from './AuthPageLayout'
 import { Button } from './Button'
-import { TextField } from './TextField'
+import { PasswordField } from './PasswordField'
 import { cardClass, sectionTitleClass } from '../styles/tokens'
 
 type ResetPasswordFormProps = {
@@ -76,17 +76,15 @@ export function ResetPasswordForm({
           <form className="mt-4 space-y-4" onSubmit={onSubmit}>
             <p className="text-sm text-brand-muted">{t('auth.resettingFor', { email })}</p>
             <PasswordPolicyRequirements />
-            <TextField
+            <PasswordField
               label={t('auth.newPassword')}
-              type="password"
               required
               autoComplete="new-password"
               value={password}
               onChange={(event) => onPasswordChange(event.target.value)}
             />
-            <TextField
+            <PasswordField
               label={t('auth.confirmPassword')}
-              type="password"
               required
               autoComplete="new-password"
               value={passwordConfirmation}
