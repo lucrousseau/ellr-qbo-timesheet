@@ -2,8 +2,8 @@
  * @file Recent time entries with draft submit and edit actions.
  */
 
-import type { TimeActivityRow, TimeEntryUpdatePayload } from '@ellr/api-client'
 import { Button, TimeActivityEntriesPanel, useLocale } from '@ellr/ui'
+import type { TimeActivityRow, TimeEntryUpdatePayload } from '../hooks/useDraftTimeEntryActions'
 import { DraftTimeEntryEditDialog } from './DraftTimeEntryEditDialog'
 
 type RecentDraftEntriesSectionProps = {

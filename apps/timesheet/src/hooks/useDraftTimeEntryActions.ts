@@ -14,6 +14,8 @@ import {
 import { getApiErrorMessage, useGuardedAction, useLocale } from '@ellr/ui'
 import { useCallback, useState } from 'react'
 
+export type { TimeActivityRow, TimeEntryUpdatePayload } from '@ellr/api-client'
+
 type UseDraftTimeEntryActionsOptions = {
   onChanged: () => void
   onSuccess: (message: string) => void
