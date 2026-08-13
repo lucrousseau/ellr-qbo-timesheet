@@ -22,6 +22,8 @@ type UseTimesheetProvisioningOptions = {
   status: QuickBooksStatus | null
   isAdministrator: boolean
   integrationsTabActive: boolean
+  /** Admin's own QBO employee mapping (excluded from the invite picker). */
+  adminQboEmployeeRef?: string | null
   onError: (message: string) => void
   onSuccess: (message: string) => void
 }
@@ -35,6 +37,7 @@ export function useTimesheetProvisioning({
   status,
   isAdministrator,
   integrationsTabActive,
+  adminQboEmployeeRef = null,
   onError,
   onSuccess,
 }: UseTimesheetProvisioningOptions) {
@@ -66,10 +69,15 @@ export function useTimesheetProvisioning({
     errorMessage: t('admin.loadProvisioningFailed'),
   })
 
-  const mappedEmployeeIds = useMemo(
-    () => new Set(users.map((user) => user.qbo_employee_ref).filter(Boolean)),
-    [users],
-  )
+  const mappedEmployeeIds = useMemo(() => {
+    const refs = users.map((user) => user.qbo_employee_ref).filter(Boolean) as string[]
+
+    if (adminQboEmployeeRef) {
+      refs.push(adminQboEmployeeRef)
+    }
+
+    return new Set(refs)
+  }, [adminQboEmployeeRef, users])
 
   const availableEmployees = useMemo(
     () => employees.filter((employee) => !mappedEmployeeIds.has(employee.id)),

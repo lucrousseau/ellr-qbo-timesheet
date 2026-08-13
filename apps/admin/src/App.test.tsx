@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildApiClientMock, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, changeEmail, changePassword, connectQuickBooks, createQboProject, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateSuperAdminOrganization, updateUserPreferences } from '@ellr/api-client'
+import { ApiError, changeEmail, changePassword, connectQuickBooks, createQboProject, createSuperAdminOrganization, createTimesheetUser, deleteSuperAdminOrganization, deleteTimesheetUser, disconnectQuickBooks, fetchAdminQboCustomers, fetchCurrentUser, fetchQboEmployees, fetchQuickBooksStatus, fetchSuperAdminOrganizations, fetchTimesheetUserCustomers, fetchTimesheetUsers, login, logout, requestPasswordReset, resetPassword, syncTimesheetUserCustomers, updateQboEmployee, updateSuperAdminOrganization, updateUserPreferences } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminActiveTabStorageKey, LEGACY_ADMIN_TAB_ID } from './adminTabStorage'
 import App from './App'
@@ -24,6 +24,7 @@ vi.mock('@ellr/api-client', async () =>
     deleteSuperAdminOrganization: vi.fn(),
     connectQuickBooks: vi.fn(),
     disconnectQuickBooks: vi.fn(),
+    updateQboEmployee: vi.fn(),
     updateUserPreferences: vi.fn(),
     changePassword: vi.fn(),
     changeEmail: vi.fn(),
@@ -101,6 +102,20 @@ describe('Admin App', () => {
     })
   }
 
+  async function openMyEmployeeDropdown(user: ReturnType<typeof userEvent.setup>) {
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /choose your employee/i })).toBeInTheDocument()
+    })
+
+    await user.click(screen.getByRole('button', { name: /choose your employee/i }))
+
+    await waitFor(() => {
+      expect(fetchQboEmployees).toHaveBeenCalledWith(
+        expect.objectContaining({ refresh: false }),
+      )
+    })
+  }
+
   async function confirmQuickBooksDisconnect(user: ReturnType<typeof userEvent.setup>) {
     await user.click(screen.getByRole('button', { name: /disconnect quickbooks/i }))
 
@@ -140,6 +155,7 @@ describe('Admin App', () => {
     vi.mocked(deleteSuperAdminOrganization).mockReset()
     vi.mocked(connectQuickBooks).mockReset()
     vi.mocked(disconnectQuickBooks).mockReset()
+    vi.mocked(updateQboEmployee).mockReset()
     vi.mocked(fetchQboEmployees).mockResolvedValue([])
     vi.mocked(fetchTimesheetUsers).mockResolvedValue([])
     vi.mocked(updateUserPreferences).mockReset()
@@ -919,6 +935,41 @@ describe('Admin App', () => {
         qbo_employee_ref: '7',
       })
       expect(screen.getByText(/timesheet access created/i)).toBeInTheDocument()
+    })
+  })
+
+  it('links the signed-in admin to a quickbooks employee', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchCurrentUser).mockResolvedValue(adminUser)
+    vi.mocked(fetchQuickBooksStatus).mockResolvedValue({ connected: true, realm_id: 'realm-42' })
+    vi.mocked(fetchQboEmployees).mockResolvedValue([
+      { id: '42', display_name: 'Test User', email: 'test@example.com' },
+    ])
+    vi.mocked(updateQboEmployee).mockResolvedValue({
+      ...adminUser,
+      qbo_employee_ref: '42',
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
+    })
+
+    await openIntegrationsTab(user)
+
+    await waitFor(() => {
+      expect(screen.getByText(/not linked yet/i)).toBeInTheDocument()
+    })
+
+    await openMyEmployeeDropdown(user)
+    await selectEmployeeOption(user, /test user/i)
+    await user.click(screen.getByRole('button', { name: /link employee/i }))
+
+    await waitFor(() => {
+      expect(updateQboEmployee).toHaveBeenCalledWith('42')
+      expect(screen.getByText(/your quickbooks employee is linked/i)).toBeInTheDocument()
+      expect(screen.getByText(/linked to test user/i)).toBeInTheDocument()
     })
   })
 

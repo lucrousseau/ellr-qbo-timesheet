@@ -12,6 +12,7 @@ import {
 import { AccountPanel } from './AccountPanel'
 import { IntegrationsTabContent } from './IntegrationsTabContent'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
+import { useAdminQboEmployeeMapping } from '../hooks/useAdminQboEmployeeMapping'
 import { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
 import { useCreateQboProject } from '../hooks/useCreateQboProject'
 import { useSuperAdminOrganizations } from '../hooks/useSuperAdminOrganizations'
@@ -94,6 +95,26 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
     status: admin.status,
     isAdministrator: isTenantAdministrator,
     integrationsTabActive: activeTabId === 'integrations',
+    adminQboEmployeeRef: admin.user?.qbo_employee_ref ?? null,
+    onError: admin.showError,
+    onSuccess: admin.showSuccess,
+  })
+
+  const occupiedEmployeeRefs = useMemo(() => {
+    const refs = provisioning.users
+      .map((user) => user.qbo_employee_ref)
+      .filter((ref): ref is string => Boolean(ref))
+
+    return new Set(refs)
+  }, [provisioning.users])
+
+  const adminMapping = useAdminQboEmployeeMapping({
+    status: admin.status,
+    isAdministrator: isTenantAdministrator,
+    integrationsTabActive: activeTabId === 'integrations',
+    user: admin.user,
+    setUser: admin.setUser,
+    occupiedEmployeeRefs,
     onError: admin.showError,
     onSuccess: admin.showSuccess,
   })
@@ -177,6 +198,7 @@ export function AdminDashboard({ admin }: AdminDashboardProps) {
         >
           <IntegrationsTabContent
             admin={admin}
+            adminMapping={adminMapping}
             projectCreate={projectCreate}
             provisioning={provisioning}
           />

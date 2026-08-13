@@ -4,10 +4,16 @@
 
 import { LoadingScreen } from '@ellr/ui'
 import { lazy, Suspense } from 'react'
+import type { useAdminQboEmployeeMapping } from '../hooks/useAdminQboEmployeeMapping'
 import type { useCreateQboProject } from '../hooks/useCreateQboProject'
 import type { useQuickBooksAdmin } from '../hooks/useQuickBooksAdmin'
 import type { useTimesheetProvisioning } from '../hooks/useTimesheetProvisioning'
 import { QuickBooksConnectionPanel } from './QuickBooksConnectionPanel'
+
+const AdminQboEmployeeMappingPanel = lazy(async () => {
+  const module = await import('./AdminQboEmployeeMappingPanel')
+  return { default: module.AdminQboEmployeeMappingPanel }
+})
 
 const CreateQboProjectPanel = lazy(async () => {
   const module = await import('./CreateQboProjectPanel')
@@ -21,17 +27,19 @@ const TimesheetUserProvisioningPanel = lazy(async () => {
 
 type IntegrationsTabContentProps = {
   admin: ReturnType<typeof useQuickBooksAdmin>
+  adminMapping: ReturnType<typeof useAdminQboEmployeeMapping>
   projectCreate: ReturnType<typeof useCreateQboProject>
   provisioning: ReturnType<typeof useTimesheetProvisioning>
 }
 
 /**
  * QuickBooks integrations panels shown on the admin Integrations tab.
- * @param props Admin, project create, and provisioning hook state.
- * @returns Connection, project create, and timesheet access panels.
+ * @param props Admin, self-mapping, project create, and provisioning hook state.
+ * @returns Connection, self-mapping, project create, and timesheet access panels.
  */
 export function IntegrationsTabContent({
   admin,
+  adminMapping,
   projectCreate,
   provisioning,
 }: IntegrationsTabContentProps) {
@@ -45,6 +53,20 @@ export function IntegrationsTabContent({
         onDisconnect={admin.disconnectQuickBooksFlow}
       />
       <Suspense fallback={<LoadingScreen variant="inline" />}>
+        <AdminQboEmployeeMappingPanel
+          connected={admin.status?.connected === true}
+          employees={adminMapping.employees}
+          loadingEmployees={adminMapping.loadingEmployees}
+          employeesLoaded={adminMapping.employeesLoaded}
+          selectedEmployee={adminMapping.selectedEmployee}
+          currentRef={adminMapping.currentRef}
+          mappedEmployeeLabel={adminMapping.mappedEmployeeLabel}
+          saving={adminMapping.saving}
+          onEmployeeChange={adminMapping.onEmployeeChange}
+          onEmployeeDropdownOpen={adminMapping.onEmployeeDropdownOpen}
+          onEmployeeDropdownClose={adminMapping.onEmployeeDropdownClose}
+          onSubmit={adminMapping.onSaveMapping}
+        />
         <CreateQboProjectPanel
           connected={admin.status?.connected === true}
           customers={projectCreate.customers}
