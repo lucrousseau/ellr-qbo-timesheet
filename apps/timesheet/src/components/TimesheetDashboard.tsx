@@ -77,7 +77,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
   return (
     <AppShell
       title={t('timesheet.appTitle')}
-      userEmail={user.email}
+      user={user}
       onLogout={onLogout}
       loggingOut={auth.loggingOut}
     >

@@ -18,6 +18,7 @@ describe('translate', () => {
     expect(translate('en', 'common.signedInAs', { email: 'user@example.com' })).toBe(
       'Signed in as user@example.com',
     )
+    expect(translate('fr', 'common.helloUser', { name: 'Luc' })).toBe('Bonjour Luc')
   })
 
   it('returns the key when a path is missing', () => {

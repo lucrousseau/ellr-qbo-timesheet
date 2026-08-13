@@ -40,7 +40,7 @@ function AdminApp() {
     <AppShell
       title={t('admin.appTitle')}
       subtitle={t('common.administration')}
-      userEmail={admin.user!.email}
+      user={admin.user}
       onLogout={admin.onLogout}
       loggingOut={admin.loggingOut}
     >

@@ -35,16 +35,30 @@ describe('Admin App', () => {
   const originalLocation = window.location
   const adminUser = {
     id: 1,
+    first_name: 'Test',
     name: 'Test User',
     email: 'test@example.com',
     is_admin: true,
+    organization: {
+      id: 1,
+      name: 'Acme Corp',
+      slug: 'acme-corp',
+      qbo_connected: true,
+    },
   }
   const superAdminUser = {
     id: 3,
+    first_name: 'Luc',
     name: 'Platform Operator',
     email: 'luc@ellr.ca',
     is_admin: false,
     is_super_admin: true,
+    organization: {
+      id: 2,
+      name: 'Ellr',
+      slug: 'ellr',
+      qbo_connected: false,
+    },
   }
   const sampleClientOrganization = {
     id: 5,
@@ -255,6 +269,8 @@ describe('Admin App', () => {
     render(<App />)
 
     await waitFor(() => {
+      expect(screen.getByText('Hello, Test')).toBeInTheDocument()
+      expect(screen.getByText('Acme Corp · test@example.com')).toBeInTheDocument()
       expect(screen.getByRole('tab', { name: /integrations/i })).toBeInTheDocument()
     })
 

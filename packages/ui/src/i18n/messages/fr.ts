@@ -60,6 +60,7 @@ export const frMessages: Messages = {
     saving: 'Enregistrement...',
     cancel: 'Annuler',
     administration: 'Administration',
+    helloUser: 'Bonjour {{name}}',
     signedInAs: 'Connecté en tant que {{email}}',
     contactSupport: 'Contacter le support ({{email}})',
   },

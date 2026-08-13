@@ -192,6 +192,28 @@ describe('auth and layout screens', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument()
   })
 
+  it('greets the signed-in user with name and company', () => {
+    renderWithLocale(
+      <AppShell
+        title="Admin"
+        subtitle="Administration"
+        user={{
+          first_name: 'Luc',
+          name: 'Luc Rousseau',
+          email: 'luc@ellr.ca',
+          organization: { name: 'Ellr' },
+        }}
+        onLogout={vi.fn()}
+      >
+        <p>Dashboard content</p>
+      </AppShell>,
+    )
+
+    expect(screen.getByText('Administration')).toBeInTheDocument()
+    expect(screen.getByText('Hello, Luc')).toBeInTheDocument()
+    expect(screen.getByText('Ellr · luc@ellr.ca')).toBeInTheDocument()
+  })
+
   it('renders the preferences panel and submits locale changes', async () => {
     const user = userEvent.setup()
     const onSave = vi.fn((event) => event.preventDefault())

@@ -244,7 +244,8 @@ describe('Timesheet App', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /timesheet/i })).toBeInTheDocument()
-      expect(screen.getByText('Signed in as test@example.com')).toBeInTheDocument()
+      expect(screen.getByText(/^Hello,/)).toBeInTheDocument()
+      expect(screen.getByText(/test@example.com/)).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /log time/i })).toBeInTheDocument()
       expect(document.querySelector('.bg-red-50')).not.toBeInTheDocument()
     })

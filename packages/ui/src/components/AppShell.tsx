@@ -2,6 +2,7 @@
  * @file Shared application shell with brand mark, header, and layout chrome.
  */
 
+import type { User } from '@ellr/api-client'
 import type { ReactNode } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
 import { pageMainClass, pageSubtitleClass, pageTitleClass } from '../styles/tokens'
@@ -9,9 +10,19 @@ import { Button } from './Button'
 import { EllrLogoMark } from './EllrLogoMark'
 import { SupportContactLink } from './SupportContactLink'
 
+type AppShellUser = Pick<User, 'name' | 'email'> & {
+  first_name?: string | null
+  organization?: { name: string } | null
+}
+
 type AppShellProps = {
   title: string
   subtitle?: string
+  /** Signed-in user used for greeting, company, and email identity. */
+  user?: AppShellUser | null
+  /**
+   * @deprecated Prefer `user`. Kept for callers that only know the email.
+   */
   userEmail?: string | null
   onLogout?: () => void
   loggingOut?: boolean
@@ -19,16 +30,45 @@ type AppShellProps = {
 }
 
 /**
+ * Resolves a short greeting name from the signed-in user.
+ * @param user Session user with optional first name.
+ * @returns First name when present, otherwise the first token of the full name.
+ */
+function resolveGreetingName(user: AppShellUser): string {
+  const firstName = user.first_name?.trim()
+  if (firstName) {
+    return firstName
+  }
+
+  const fromFullName = user.name.trim().split(/\s+/)[0]
+  return fromFullName || user.name
+}
+
+/**
  * Authenticated page shell with brand mark, header, and optional sign-out.
  * @param props.title Main application title.
- * @param props.subtitle Optional subtitle below the title.
- * @param props.userEmail Email shown with sign-out when provided.
+ * @param props.subtitle Optional product context below the title (e.g. Administration).
+ * @param props.user Signed-in user for greeting and company identity.
+ * @param props.userEmail Legacy email-only identity when `user` is omitted.
  * @param props.onLogout Sign-out callback.
  * @param props.children Main page content.
  * @returns Centered layout with header.
  */
-export function AppShell({ title, subtitle, userEmail, onLogout, loggingOut = false, children }: AppShellProps) {
+export function AppShell({
+  title,
+  subtitle,
+  user,
+  userEmail,
+  onLogout,
+  loggingOut = false,
+  children,
+}: AppShellProps) {
   const { t } = useLocale()
+  const email = user?.email ?? userEmail ?? null
+  const organizationName = user?.organization?.name ?? null
+  const greetingName = user ? resolveGreetingName(user) : null
+  const hasSession = Boolean(user || email)
+  const identityDetail = [organizationName, email].filter(Boolean).join(' · ')
 
   return (
     <main className={pageMainClass}>
@@ -36,14 +76,21 @@ export function AppShell({ title, subtitle, userEmail, onLogout, loggingOut = fa
         <div>
           <EllrLogoMark />
           <h1 className={`mt-6 ${pageTitleClass}`}>{title}</h1>
-          {subtitle && <p className={pageSubtitleClass}>{subtitle}</p>}
-          {userEmail && !subtitle && (
-            <p className={pageSubtitleClass}>{t('common.signedInAs', { email: userEmail })}</p>
-          )}
+          {subtitle ? <p className={pageSubtitleClass}>{subtitle}</p> : null}
+          {greetingName ? (
+            <p className={pageSubtitleClass}>{t('common.helloUser', { name: greetingName })}</p>
+          ) : null}
+          {identityDetail ? (
+            <p className={greetingName ? 'mt-1 text-brand-muted' : pageSubtitleClass}>
+              {greetingName || organizationName
+                ? identityDetail
+                : t('common.signedInAs', { email: email! })}
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           <SupportContactLink />
-          {userEmail && onLogout ? (
+          {hasSession && onLogout ? (
             <Button
               type="button"
               variant="secondary"

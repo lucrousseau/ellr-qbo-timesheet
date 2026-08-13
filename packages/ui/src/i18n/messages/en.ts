@@ -59,6 +59,7 @@ export const enMessages = {
     saving: 'Saving...',
     cancel: 'Cancel',
     administration: 'Administration',
+    helloUser: 'Hello, {{name}}',
     signedInAs: 'Signed in as {{email}}',
     contactSupport: 'Contact support ({{email}})',
   },
