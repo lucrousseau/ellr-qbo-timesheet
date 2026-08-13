@@ -44,6 +44,6 @@ describe('TimeEntryApprovalList', () => {
     expect(screen.getByRole('button', { name: 'Reject' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Approve' }))
-    expect(onApprove).toHaveBeenCalledWith('local:12')
+    expect(onApprove).toHaveBeenCalledWith('local:12', { groupForQbo: false })
   })
 })
