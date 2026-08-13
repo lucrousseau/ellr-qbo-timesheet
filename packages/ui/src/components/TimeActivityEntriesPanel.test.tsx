@@ -123,7 +123,6 @@ describe('TimeActivityEntriesPanel', () => {
   it('renders approval statuses and draft actions', async () => {
     const user = userEvent.setup()
     const onEditDraft = vi.fn()
-    const onSubmitDraft = vi.fn().mockResolvedValue(undefined)
     const onDeleteDraft = vi.fn().mockResolvedValue(undefined)
 
     render(
@@ -189,7 +188,6 @@ describe('TimeActivityEntriesPanel', () => {
           showApprovalStatus
           draftActions
           onEditDraft={onEditDraft}
-          onSubmitDraft={onSubmitDraft}
           onDeleteDraft={onDeleteDraft}
         />
       </LocaleProvider>,
@@ -202,11 +200,8 @@ describe('TimeActivityEntriesPanel', () => {
     expect(screen.getByText('Approved')).toBeInTheDocument()
     expect(screen.getByText('Rejected')).toBeInTheDocument()
 
-    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0]!)
+    await user.click(screen.getAllByRole('button', { name: 'Edit details' })[0]!)
     expect(onEditDraft).toHaveBeenCalledWith(expect.objectContaining({ id: 'local:1' }))
-
-    await user.click(screen.getAllByRole('button', { name: 'Submit for approval' })[0]!)
-    expect(onSubmitDraft).toHaveBeenCalledWith('local:1')
 
     await user.click(screen.getAllByRole('button', { name: 'Delete' })[0]!)
     expect(onDeleteDraft).toHaveBeenCalledWith('local:1')

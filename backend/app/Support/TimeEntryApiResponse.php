@@ -83,10 +83,14 @@ class TimeEntryApiResponse
      *
      * @param  TimeActivitySnapshot  $snapshot  Synced QuickBooks snapshot row.
      * @param  string|null  $companyTimezone  Pre-resolved company timezone for the realm.
+     * @param  array{customer_name?: string|null, project_name?: string|null, item_name?: string|null}|null  $labels  Resolved picker labels that fill missing snapshot names.
      * @return array<string, mixed>
      */
-    public static function fromSnapshot(TimeActivitySnapshot $snapshot, ?string $companyTimezone = null): array
-    {
+    public static function fromSnapshot(
+        TimeActivitySnapshot $snapshot,
+        ?string $companyTimezone = null,
+        ?array $labels = null,
+    ): array {
         $companyTimezone ??= app(OrganizationTimezoneService::class)->forRealm($snapshot->realm_id);
         $durationSeconds = TimeActivityDuration::qboDurationSeconds(
             $snapshot->start_time,
@@ -100,11 +104,11 @@ class TimeEntryApiResponse
             'user_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'employee_name' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'customer_ref' => $snapshot->customer_ref, // @pest-mutate-ignore legacy snapshot resource mapping
-            'customer_name' => self::customerLabel($snapshot),
+            'customer_name' => self::firstNonEmpty($snapshot->customer_name, $labels['customer_name'] ?? null),
             'project_ref' => $snapshot->project_ref, // @pest-mutate-ignore legacy snapshot resource mapping
-            'project_name' => $snapshot->project_name, // @pest-mutate-ignore legacy snapshot resource mapping
+            'project_name' => self::firstNonEmpty($snapshot->project_name, $labels['project_name'] ?? null),
             'item_ref' => $snapshot->item_ref, // @pest-mutate-ignore legacy snapshot resource mapping
-            'item_name' => $snapshot->item_name, // @pest-mutate-ignore legacy snapshot resource mapping
+            'item_name' => self::firstNonEmpty($snapshot->item_name, $labels['item_name'] ?? null),
             'start_time' => $snapshot->start_time?->toIso8601String(), // @pest-mutate-ignore legacy snapshot resource mapping
             'end_time' => $snapshot->end_time?->toIso8601String(), // @pest-mutate-ignore legacy snapshot resource mapping
             'duration_seconds' => $durationSeconds, // @pest-mutate-ignore computed duration field
@@ -121,20 +125,22 @@ class TimeEntryApiResponse
     }
 
     /**
-     * Builds the client or project label shown in unified time entry lists.
+     * Returns the first non-empty display label.
      *
-     * @param  TimeActivitySnapshot  $snapshot  Synced QuickBooks snapshot row.
+     * @param  string|null  $preferred  Stored snapshot name when present.
+     * @param  string|null  $fallback  Read-time picker label.
      * @return string|null
      */
-    private static function customerLabel(TimeActivitySnapshot $snapshot): ?string
+    private static function firstNonEmpty(?string $preferred, ?string $fallback): ?string
     {
-        $customer = $snapshot->customer_name;
-        $project = $snapshot->project_name;
-
-        if ($customer !== null && $project !== null && $customer !== $project) { // @pest-mutate-ignore snapshot customer label composition
-            return $customer.':'.$project;
+        if ($preferred !== null && $preferred !== '') { // @pest-mutate-ignore snapshot label preference
+            return $preferred;
         }
 
-        return $customer ?? $project; // @pest-mutate-ignore snapshot customer label fallback
+        if ($fallback !== null && $fallback !== '') { // @pest-mutate-ignore snapshot label fallback
+            return $fallback;
+        }
+
+        return null;
     }
 }

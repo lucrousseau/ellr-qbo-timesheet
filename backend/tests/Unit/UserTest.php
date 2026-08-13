@@ -9,6 +9,7 @@ use App\Services\QboEmployeeListService;
 use App\Services\QboEmployeeService;
 use App\Services\QboPickerDisplayNameService;
 use App\Services\QboProjectListService;
+use App\Services\QboRefDisplayNameService;
 use App\Services\QboServiceListService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -103,12 +104,16 @@ it('returns assigned quickbooks customers as sorted picker rows', function () {
             ['id' => '12', 'display_name' => 'Beta LLC'],
         ]);
 
+    $projects = Mockery::mock(QboProjectListService::class);
+    $services = Mockery::mock(QboServiceListService::class);
+
     $service = new QboPickerDisplayNameService(
         Mockery::mock(QboEmployeeListService::class),
         $customers,
-        Mockery::mock(QboProjectListService::class),
-        Mockery::mock(QboServiceListService::class),
+        $projects,
+        $services,
         Mockery::mock(QboEmployeeService::class),
+        new QboRefDisplayNameService($customers, $projects, $services),
     );
 
     expect($service->assignedCustomerRows($token, $user, $user->qboCustomers))->toBe([

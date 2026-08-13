@@ -7,6 +7,7 @@
 namespace App\Services;
 
 use App\Models\QuickBooksToken;
+use App\Models\TimeActivitySnapshot;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Support\TimeEntryApiResponse;
@@ -42,6 +43,46 @@ class TimeEntryPresentationService
         $entry->loadMissing(['user', 'reviewedBy']); // @pest-mutate-ignore API resource relation preload
 
         return TimeEntryApiResponse::resource($entry, $this->resolveLabels($entry, $viewer, $token));
+    }
+
+    /**
+     * Maps a QuickBooks snapshot to an API payload with resolved picker labels.
+     *
+     * @param  TimeActivitySnapshot  $snapshot  Synced QuickBooks snapshot row.
+     * @param  QuickBooksToken|null  $token  Organization QuickBooks token when available.
+     * @param  string|null  $companyTimezone  Pre-resolved company timezone for the realm.
+     * @return array<string, mixed>
+     */
+    public function fromSnapshot(
+        TimeActivitySnapshot $snapshot,
+        ?QuickBooksToken $token = null,
+        ?string $companyTimezone = null,
+    ): array {
+        $labels = null;
+
+        if ($token !== null && $this->snapshotNeedsDisplayNames($snapshot)) {
+            $labels = $this->displayNames->snapshotDisplayNames(
+                $token,
+                $snapshot->customer_ref,
+                $snapshot->project_ref,
+                $snapshot->item_ref,
+            );
+        }
+
+        return TimeEntryApiResponse::fromSnapshot($snapshot, $companyTimezone, $labels);
+    }
+
+    /**
+     * Returns whether a snapshot is missing any display names for stored refs.
+     *
+     * @param  TimeActivitySnapshot  $snapshot  Synced QuickBooks snapshot row.
+     * @return bool
+     */
+    private function snapshotNeedsDisplayNames(TimeActivitySnapshot $snapshot): bool
+    {
+        return ($snapshot->customer_ref !== null && ($snapshot->customer_name === null || $snapshot->customer_name === ''))
+            || ($snapshot->project_ref !== null && ($snapshot->project_name === null || $snapshot->project_name === ''))
+            || ($snapshot->item_ref !== null && ($snapshot->item_name === null || $snapshot->item_name === ''));
     }
 
     /**

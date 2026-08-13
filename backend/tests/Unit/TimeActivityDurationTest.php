@@ -153,9 +153,51 @@ it('builds customer labels from snapshot customer and project names', function (
         'project_name' => 'Acme Corp',
     ]));
 
-    expect($withBoth['customer_name'])->toBe('Acme Corp:Website')
+    expect($withBoth['customer_name'])->toBe('Acme Corp')
+        ->and($withBoth['project_name'])->toBe('Website')
         ->and($customerOnly['customer_name'])->toBe('Acme Corp')
-        ->and($sameName['customer_name'])->toBe('Acme Corp');
+        ->and($customerOnly['project_name'])->toBeNull()
+        ->and($sameName['customer_name'])->toBe('Acme Corp')
+        ->and($sameName['project_name'])->toBe('Acme Corp');
+});
+
+it('fills missing snapshot display names from resolved picker labels', function () {
+    $snapshot = TimeActivitySnapshot::factory()->make([
+        'customer_ref' => '11',
+        'customer_name' => null,
+        'project_ref' => '22',
+        'project_name' => null,
+        'item_ref' => '33',
+        'item_name' => null,
+    ]);
+
+    $payload = TimeEntryApiResponse::fromSnapshot($snapshot, null, [
+        'customer_name' => 'Acme Corp',
+        'project_name' => 'Website',
+        'item_name' => 'Design',
+    ]);
+
+    expect($payload['customer_name'])->toBe('Acme Corp')
+        ->and($payload['project_name'])->toBe('Website')
+        ->and($payload['item_name'])->toBe('Design');
+});
+
+it('prefers stored snapshot names over picker label fallbacks', function () {
+    $snapshot = TimeActivitySnapshot::factory()->make([
+        'customer_name' => 'Stored Customer',
+        'project_name' => null,
+        'item_name' => 'Stored Service',
+    ]);
+
+    $payload = TimeEntryApiResponse::fromSnapshot($snapshot, null, [
+        'customer_name' => 'Picker Customer',
+        'project_name' => 'Picker Project',
+        'item_name' => 'Picker Service',
+    ]);
+
+    expect($payload['customer_name'])->toBe('Stored Customer')
+        ->and($payload['project_name'])->toBe('Picker Project')
+        ->and($payload['item_name'])->toBe('Stored Service');
 });
 
 it('marks billable quickbooks snapshots in unified list payloads', function () {

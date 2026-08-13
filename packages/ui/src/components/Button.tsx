@@ -6,6 +6,8 @@ import { Button as HeadlessButton } from '@headlessui/react'
 import type { ButtonHTMLAttributes } from 'react'
 import { dangerButtonClass } from '../styles/dialogTokens'
 import {
+  iconButtonClass,
+  iconDangerButtonClass,
   linkButtonClass,
   primaryButtonClass,
   primaryButtonCompactClass,
@@ -14,7 +16,7 @@ import {
 } from '../styles/tokens'
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'link'
-type ButtonSize = 'default' | 'compact'
+type ButtonSize = 'default' | 'compact' | 'icon'
 
 type ButtonProps = {
   variant?: ButtonVariant
@@ -24,10 +26,14 @@ type ButtonProps = {
 /**
  * Resolves Tailwind classes for a button variant and optional compact size.
  * @param variant Visual style (primary, secondary, danger, or text link).
- * @param size Padding density; compact restores header-scale chrome.
+ * @param size Padding density; compact restores header-scale chrome; icon is square.
  * @returns Combined class string for the Headless button.
  */
 function buttonClassFor(variant: ButtonVariant, size: ButtonSize): string {
+  if (size === 'icon') {
+    return variant === 'danger' ? iconDangerButtonClass : iconButtonClass
+  }
+
   if (variant === 'link') {
     return linkButtonClass
   }

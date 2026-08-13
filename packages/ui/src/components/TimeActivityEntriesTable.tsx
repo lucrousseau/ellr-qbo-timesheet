@@ -4,11 +4,10 @@
 
 import type { TimeActivityRow, TimeActivityUpdatePayload } from '@ellr/api-client'
 import { useLocale } from '../i18n/LocaleProvider'
-import { formatApprovalStatus } from './timeActivityApprovalStatus'
-import { TimeActivityDraftActions } from './TimeActivityDraftActions'
+import { CheckboxField } from './CheckboxField'
+import { isDraftActionable } from './timeActivityApprovalStatus'
 import { TimeActivityEditableRow } from './TimeActivityEditableRow'
-import { formatEntryDateTime, formatEntryDuration } from './timeActivityDisplay'
-import { TimeEntryApprovalActions } from './TimeEntryApprovalActions'
+import { TimeActivityReadOnlyRow } from './TimeActivityReadOnlyRow'
 
 /** Props for {@link TimeActivityEntriesTable}. */
 export type TimeActivityEntriesTableProps = {
@@ -24,11 +23,16 @@ export type TimeActivityEntriesTableProps = {
   onApproveEntry?: (id: string) => Promise<void>
   onRejectEntry?: (id: string, reason?: string | null) => Promise<void>
   onReturnEntryToDraft?: (id: string) => Promise<void>
+  onEditEntry?: (entry: TimeActivityRow) => void
   draftActions: boolean
   actionEntryId: string | null
   onEditDraft?: (entry: TimeActivityRow) => void
-  onSubmitDraft?: (id: string) => Promise<void>
   onDeleteDraft?: (id: string) => Promise<void>
+  selectable?: boolean
+  isRowSelectable?: (entry: TimeActivityRow) => boolean
+  selectedIds?: readonly string[]
+  onToggleSelected?: (id: string, selected: boolean) => void
+  onToggleSelectAll?: (selected: boolean) => void
 }
 
 /**
@@ -49,20 +53,44 @@ export function TimeActivityEntriesTable({
   onApproveEntry,
   onRejectEntry,
   onReturnEntryToDraft,
+  onEditEntry,
   draftActions,
   actionEntryId,
   onEditDraft,
-  onSubmitDraft,
   onDeleteDraft,
+  selectable = false,
+  isRowSelectable,
+  selectedIds = [],
+  onToggleSelected,
+  onToggleSelectAll,
 }: TimeActivityEntriesTableProps) {
   const { t, locale } = useLocale()
   const showActions = editable || reviewable || draftActions
+  const rowIsSelectable =
+    isRowSelectable ?? ((entry: TimeActivityRow) => isDraftActionable(entry.approvalStatus))
+  const selectableIds = selectable
+    ? entries.filter((entry) => rowIsSelectable(entry)).map((entry) => entry.id)
+    : []
+  const selectedSet = new Set(selectedIds)
+  const allSelectableSelected =
+    selectableIds.length > 0 && selectableIds.every((id) => selectedSet.has(id))
 
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="min-w-full divide-y divide-brand-border text-left text-sm">
         <thead className="bg-brand-surface-subtle text-xs font-medium uppercase tracking-wide text-brand-muted-subtle">
           <tr>
+            {selectable ? (
+              <th className="w-10 px-2 py-2">
+                <CheckboxField
+                  label={t('timeActivity.selectAllRows')}
+                  labelVisuallyHidden
+                  checked={allSelectableSelected}
+                  disabled={selectableIds.length === 0}
+                  onChange={(checked) => onToggleSelectAll?.(checked)}
+                />
+              </th>
+            ) : null}
             <th className="px-3 py-2">{t('timeActivity.start')}</th>
             <th className="px-3 py-2">{t('timeActivity.end')}</th>
             <th className="px-3 py-2">{t('timeActivity.client')}</th>
@@ -85,65 +113,29 @@ export function TimeActivityEntriesTable({
                 onSave={onSaveEntry}
               />
             ) : (
-              <tr key={entry.id}>
-                <td className="whitespace-nowrap px-3 py-3 text-brand-primary">
-                  {formatEntryDateTime(entry.startTime, locale, displayTimezone) || t('timeActivity.noValue')}
-                </td>
-                <td className="whitespace-nowrap px-3 py-3 text-brand-primary">
-                  {formatEntryDateTime(entry.endTime, locale, displayTimezone) || t('timeActivity.noValue')}
-                </td>
-                <td className="px-3 py-3 text-brand-primary">
-                  {entry.customerName ?? t('timeActivity.noValue')}
-                </td>
-                <td className="px-3 py-3 text-brand-primary">
-                  {entry.serviceName ?? t('timeActivity.noValue')}
-                </td>
-                <td className="max-w-56 px-3 py-3 text-brand-primary">
-                  {entry.description?.trim() ? entry.description : t('timeActivity.noValue')}
-                </td>
-                <td className="whitespace-nowrap px-3 py-3 text-brand-primary">
-                  {formatEntryDuration(entry.durationSeconds)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-3 text-brand-primary">
-                  {entry.billableLocked
-                    ? t('timeActivity.billed')
-                    : entry.isBillable
-                      ? t('timeActivity.billableYes')
-                      : t('timeActivity.billableNo')}
-                </td>
-                {showEmployee ? (
-                  <td className="px-3 py-3 text-brand-primary">
-                    {entry.employeeName ?? t('timeActivity.noValue')}
-                  </td>
-                ) : null}
-                {showApprovalStatus ? (
-                  <td className="whitespace-nowrap px-3 py-3 text-brand-primary">
-                    {formatApprovalStatus(entry.approvalStatus, t)}
-                  </td>
-                ) : null}
-                {reviewable && onApproveEntry && onRejectEntry && onReturnEntryToDraft ? (
-                  <td className="px-3 py-3 text-brand-primary">
-                    <TimeEntryApprovalActions
-                      entryId={entry.id}
-                      reviewing={reviewingId === entry.id}
-                      onApprove={onApproveEntry}
-                      onReject={onRejectEntry}
-                      onReturnToDraft={onReturnEntryToDraft}
-                    />
-                  </td>
-                ) : null}
-                {draftActions ? (
-                  <td className="px-3 py-3 text-brand-primary">
-                    <TimeActivityDraftActions
-                      entry={entry}
-                      busy={actionEntryId === entry.id}
-                      onEditDraft={onEditDraft}
-                      onSubmitDraft={onSubmitDraft}
-                      onDeleteDraft={onDeleteDraft}
-                    />
-                  </td>
-                ) : null}
-              </tr>
+              <TimeActivityReadOnlyRow
+                key={entry.id}
+                entry={entry}
+                selectable={selectable}
+                selected={selectedSet.has(entry.id)}
+                onToggleSelected={onToggleSelected}
+                showEmployee={showEmployee}
+                showApprovalStatus={showApprovalStatus}
+                displayTimezone={displayTimezone}
+                reviewable={reviewable}
+                reviewingId={reviewingId}
+                onApproveEntry={onApproveEntry}
+                onRejectEntry={onRejectEntry}
+                onReturnEntryToDraft={onReturnEntryToDraft}
+                onEditEntry={onEditEntry}
+                draftActions={draftActions}
+                actionEntryId={actionEntryId}
+                onEditDraft={onEditDraft}
+                onDeleteDraft={onDeleteDraft}
+                isRowSelectable={rowIsSelectable}
+                locale={locale}
+                t={t}
+              />
             ),
           )}
         </tbody>

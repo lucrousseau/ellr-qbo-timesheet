@@ -10,6 +10,9 @@ export const inputClass = `mt-1 ${inputChromeClass}`
 
 export const pageMainClass = 'mx-auto max-w-3xl px-6 py-10'
 
+/** Wider authenticated shell for dense tables (timesheet recent entries). */
+export const pageMainWideClass = 'mx-auto max-w-6xl px-6 py-10'
+
 export const pageTitleClass = 'text-3xl font-semibold tracking-tight text-brand-primary'
 
 export const pageSubtitleClass = 'mt-2 text-brand-muted'
@@ -50,6 +53,18 @@ export const secondaryButtonClass =
  */
 export const secondaryButtonCompactClass =
   'rounded-[9px] border border-brand-border bg-brand-surface px-3 py-2 text-sm font-medium text-brand-primary transition hover:border-brand-accent/35 disabled:opacity-50'
+
+/**
+ * Icon-only button chrome for dense table and toolbar actions.
+ */
+export const iconButtonClass =
+  'inline-flex size-8 items-center justify-center rounded-md text-brand-muted transition hover:bg-brand-surface-subtle hover:text-brand-primary disabled:opacity-50 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-brand-ring'
+
+/**
+ * Destructive icon-only button chrome for dense row actions.
+ */
+export const iconDangerButtonClass =
+  'inline-flex size-8 items-center justify-center rounded-md text-brand-muted transition hover:bg-red-50 hover:text-brand-danger disabled:opacity-50 data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-brand-ring'
 
 /**
  * Text link styled as a button for secondary navigation (e.g. back to sign-in).

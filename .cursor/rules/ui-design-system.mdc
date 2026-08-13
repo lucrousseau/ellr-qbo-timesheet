@@ -24,7 +24,7 @@ Headless UI is the **primitive layer** for interactive controls. Apps consume **
 
 | Ellr component | Headless primitive | Hook |
 |----------------|-------------------|------|
-| `Button` | `Button` | Primary, secondary, danger, and link actions; `size="compact"` for header chrome |
+| `Button` | `Button` | Primary, secondary, danger, and link actions; `size="compact"` for header chrome; `size="icon"` for dense icon actions |
 | `EllrLogoMark` | — | Brand pastille + optional wordmark/tagline (AppShell, auth, loading) |
 | `TextField` | `Field` + `Label` + `Input` | Text, email, datetime-local (not passwords) |
 | `PasswordField` | `Field` + `Label` + `Input` | Passwords with show/hide toggle |

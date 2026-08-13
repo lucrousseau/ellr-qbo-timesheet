@@ -10,6 +10,8 @@ type CheckboxFieldProps = {
   checked: boolean
   disabled?: boolean
   onChange: (checked: boolean) => void
+  /** When true, keeps the label for assistive tech only. */
+  labelVisuallyHidden?: boolean
 }
 
 /**
@@ -17,9 +19,15 @@ type CheckboxFieldProps = {
  * @param props Label text, checked state, and change handler.
  * @returns Accessible checkbox field.
  */
-export function CheckboxField({ label, checked, disabled = false, onChange }: CheckboxFieldProps) {
+export function CheckboxField({
+  label,
+  checked,
+  disabled = false,
+  onChange,
+  labelVisuallyHidden = false,
+}: CheckboxFieldProps) {
   return (
-    <Field className="flex items-center gap-3">
+    <Field className={labelVisuallyHidden ? 'inline-flex items-center' : 'flex items-center gap-3'}>
       <Checkbox
         checked={checked}
         disabled={disabled}
@@ -30,7 +38,7 @@ export function CheckboxField({ label, checked, disabled = false, onChange }: Ch
           <path d="M3 7.5 5.5 10 11 4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Checkbox>
-      <Label className={checkboxLabelClass}>{label}</Label>
+      <Label className={labelVisuallyHidden ? 'sr-only' : checkboxLabelClass}>{label}</Label>
     </Field>
   )
 }

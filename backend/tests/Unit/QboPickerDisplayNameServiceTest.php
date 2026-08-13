@@ -10,12 +10,13 @@ use App\Services\QboEmployeeListService;
 use App\Services\QboEmployeeService;
 use App\Services\QboPickerDisplayNameService;
 use App\Services\QboProjectListService;
+use App\Services\QboRefDisplayNameService;
 use App\Services\QboServiceListService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-covers(QboPickerDisplayNameService::class);
+covers(QboPickerDisplayNameService::class, QboRefDisplayNameService::class);
 
 /**
  * Builds the display name service with mocked list collaborators.
@@ -33,12 +34,17 @@ function makeQboPickerDisplayNameService(
     ?QboServiceListService $services = null,
     ?QboEmployeeService $employeeLookup = null,
 ): QboPickerDisplayNameService {
+    $customers ??= Mockery::mock(QboCustomerListService::class);
+    $projects ??= Mockery::mock(QboProjectListService::class);
+    $services ??= Mockery::mock(QboServiceListService::class);
+
     return new QboPickerDisplayNameService(
         $employees ?? Mockery::mock(QboEmployeeListService::class),
-        $customers ?? Mockery::mock(QboCustomerListService::class),
-        $projects ?? Mockery::mock(QboProjectListService::class),
-        $services ?? Mockery::mock(QboServiceListService::class),
+        $customers,
+        $projects,
+        $services,
         $employeeLookup ?? Mockery::mock(QboEmployeeService::class),
+        new QboRefDisplayNameService($customers, $projects, $services),
     );
 }
 
@@ -187,6 +193,83 @@ it('resolves local time entry labels from cached picker lists', function () {
         'customer_name' => 'Acme Corp',
         'project_name' => 'Website redesign',
         'item_name' => 'Consulting',
+    ]);
+});
+
+it('resolves snapshot labels from the full customer list', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')
+        ->once()
+        ->with($token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+    $customers->shouldNotReceive('listForUser');
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldReceive('listForCustomer')
+        ->once()
+        ->with($token, '11')
+        ->andReturn([
+            ['id' => '22', 'display_name' => 'Website redesign'],
+        ]);
+    $projects->shouldNotReceive('findJob');
+
+    $services = Mockery::mock(QboServiceListService::class);
+    $services->shouldReceive('listActive')
+        ->once()
+        ->with($token)
+        ->andReturn([
+            ['id' => '33', 'display_name' => 'Design'],
+        ]);
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects, $services);
+
+    expect($service->snapshotDisplayNames($token, '11', '22', '33'))->toBe([
+        'customer_name' => 'Acme Corp',
+        'project_name' => 'Website redesign',
+        'item_name' => 'Design',
+    ]);
+});
+
+it('resolves snapshot customer refs that point at quickbooks jobs', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')
+        ->twice()
+        ->with($token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldReceive('listForCustomer')->never();
+    $projects->shouldReceive('findJob')
+        ->once()
+        ->with($token, '22')
+        ->andReturn([
+            'id' => '22',
+            'display_name' => 'Website redesign',
+            'parent_ref' => '11',
+        ]);
+
+    $services = Mockery::mock(QboServiceListService::class);
+    $services->shouldReceive('listActive')
+        ->once()
+        ->with($token)
+        ->andReturn([
+            ['id' => '33', 'display_name' => 'Design'],
+        ]);
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects, $services);
+
+    expect($service->snapshotDisplayNames($token, '22', null, '33'))->toBe([
+        'customer_name' => 'Acme Corp',
+        'project_name' => 'Website redesign',
+        'item_name' => 'Design',
     ]);
 });
 

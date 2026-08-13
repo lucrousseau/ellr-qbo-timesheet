@@ -40,7 +40,16 @@ export { LoginForm } from './components/LoginForm'
 export { ResetPasswordForm } from './components/ResetPasswordForm'
 export { TabNav, tabButtonId, tabPanelId, type TabNavItem } from './components/TabNav'
 export { TimeActivityEntriesPanel, type TimeActivityEntriesPanelProps } from './components/TimeActivityEntriesPanel'
-export { TimeEntryApprovalList } from './components/TimeEntryApprovalList'
+export { TimeEntryApprovalsPanel } from './components/TimeEntryApprovalsPanel'
+export { TimeEntryEditFields } from './components/TimeEntryEditFields'
+export { TimeEntryStatusFilter } from './components/TimeEntryStatusFilter'
+export { isDraftActionable } from './components/timeActivityApprovalStatus'
+export {
+  DEFAULT_TIME_ENTRY_STATUS_FILTER,
+  TIME_ENTRY_STATUS_FILTERS,
+  filterTimeEntriesByStatus,
+  type TimeEntryStatusFilter as TimeEntryStatusFilterValue,
+} from './utils/filterTimeEntriesByStatus'
 export { UserPreferencesPanel } from './components/UserPreferencesPanel'
 export { LocaleProvider, useLocale } from './i18n/LocaleProvider'
 export {
@@ -58,6 +67,11 @@ export { useSyncUserLocale } from './hooks/useSyncUserLocale'
 export { useUserLocalePreferences } from './hooks/useUserLocalePreferences'
 export { useUserPreferences } from './hooks/useUserPreferences'
 export { useTimeEntryApprovals } from './hooks/useTimeEntryApprovals'
+export {
+  optionFromRef,
+  splitCustomerProjectLabel,
+  useTimeEntryEditForm,
+} from './hooks/useTimeEntryEditForm'
 export type { UserLocale } from '@ellr/api-client'
 export { usePasswordResetInviteGate } from './hooks/usePasswordResetInviteGate'
 export { usePasswordRecovery, type AuthClient, type AuthScreen } from './hooks/usePasswordRecovery'
@@ -69,6 +83,7 @@ export {
   inputClass,
   nestedPanelClass,
   pageMainClass,
+  pageMainWideClass,
   pageSubtitleClass,
   pageTitleClass,
   primaryButtonClass,

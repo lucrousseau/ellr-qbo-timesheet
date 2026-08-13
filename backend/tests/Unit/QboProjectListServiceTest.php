@@ -168,3 +168,28 @@ it('aborts when quickbooks project list query fails', function () {
     expect(fn () => $service->listForCustomer($token, '11'))
         ->toThrow(HttpResponseException::class);
 });
+
+it('finds a cached job by quickbooks identifier', function () {
+    config(['quickbooks.list_cache_ttl_minutes' => 15]);
+
+    $token = QuickBooksToken::factory()->make(['realm_id' => 'realm-find-job']);
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Query')
+        ->once()
+        ->andReturn([
+            (object) ['Id' => '22', 'DisplayName' => 'Website redesign', 'ParentRef' => (object) ['value' => '11']],
+        ]);
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $quickBooks = Mockery::mock(QuickBooksService::class);
+    $quickBooks->shouldReceive('dataService')->once()->with($token)->andReturn($dataService);
+
+    $service = makeQboProjectListService($quickBooks);
+
+    expect($service->findJob($token, '22'))->toBe([
+        'id' => '22',
+        'display_name' => 'Website redesign',
+        'parent_ref' => '11',
+    ])->and($service->findJob($token, null))->toBeNull()
+        ->and($service->findJob($token, '999'))->toBeNull();
+});

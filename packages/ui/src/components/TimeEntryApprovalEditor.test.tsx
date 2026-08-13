@@ -1,12 +1,24 @@
 /**
- * @file Tests for pending time entry approval inline editor.
+ * @file Tests for pending time entry approval editor with QBO pickers.
  */
 
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fetchQboCustomers, fetchQboProjects, fetchQboServices } from '@ellr/api-client'
 import { LocaleProvider } from '../i18n/LocaleProvider'
 import { TimeEntryApprovalEditor } from './TimeEntryApprovalEditor'
+
+vi.mock('@ellr/api-client', async () => {
+  const actual = await vi.importActual<typeof import('@ellr/api-client')>('@ellr/api-client')
+
+  return {
+    ...actual,
+    fetchQboCustomers: vi.fn(),
+    fetchQboProjects: vi.fn(),
+    fetchQboServices: vi.fn(),
+  }
+})
 
 const entry = {
   id: 'local:12',
@@ -15,7 +27,7 @@ const entry = {
   endTime: '2026-07-30T18:00:00Z',
   durationSeconds: 3600,
   customerRef: '11',
-  customerName: 'Acme',
+  customerName: 'Acme / Website',
   projectRef: '22',
   itemRef: '33',
   serviceName: 'Design',
@@ -27,7 +39,35 @@ const entry = {
 }
 
 describe('TimeEntryApprovalEditor', () => {
-  it('saves trimmed refs and clears empty optional fields', async () => {
+  beforeEach(() => {
+    vi.mocked(fetchQboCustomers).mockReset()
+    vi.mocked(fetchQboProjects).mockReset()
+    vi.mocked(fetchQboServices).mockReset()
+    vi.mocked(fetchQboCustomers).mockResolvedValue([{ id: '11', display_name: 'Acme' }])
+    vi.mocked(fetchQboProjects).mockResolvedValue([{ id: '22', display_name: 'Website' }])
+    vi.mocked(fetchQboServices).mockResolvedValue([{ id: '33', display_name: 'Design' }])
+  })
+
+  it('shows client, project, and service labels instead of raw refs', () => {
+    render(
+      <LocaleProvider>
+        <TimeEntryApprovalEditor
+          entry={entry}
+          saving={false}
+          onSave={vi.fn()}
+          onCancel={vi.fn()}
+        />
+      </LocaleProvider>,
+    )
+
+    expect(screen.getByRole('button', { name: /Acme/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Website/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Design/ })).toBeInTheDocument()
+    expect(screen.queryByDisplayValue('11')).not.toBeInTheDocument()
+    expect(screen.queryByDisplayValue('33')).not.toBeInTheDocument()
+  })
+
+  it('saves picker refs and clears empty optional fields', async () => {
     const user = userEvent.setup()
     const onSave = vi.fn().mockResolvedValue(undefined)
     const onCancel = vi.fn()
@@ -38,10 +78,6 @@ describe('TimeEntryApprovalEditor', () => {
       </LocaleProvider>,
     )
 
-    await user.clear(screen.getByLabelText('Client'))
-    await user.type(screen.getByLabelText('Client'), ' 44 ')
-    await user.clear(screen.getByLabelText('Project'))
-    await user.clear(screen.getByLabelText('Service'))
     await user.clear(screen.getByLabelText('Description'))
     await user.click(screen.getByLabelText('Billable'))
     await user.click(screen.getByRole('button', { name: 'Save changes' }))
@@ -50,9 +86,9 @@ describe('TimeEntryApprovalEditor', () => {
       expect(onSave).toHaveBeenCalledWith(
         'local:12',
         expect.objectContaining({
-          customer_ref: '44',
-          project_ref: null,
-          item_ref: null,
+          customer_ref: '11',
+          project_ref: '22',
+          item_ref: '33',
           description: null,
           is_billable: true,
         }),

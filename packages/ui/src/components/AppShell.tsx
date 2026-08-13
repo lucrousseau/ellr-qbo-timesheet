@@ -5,7 +5,7 @@
 import type { User } from '@ellr/api-client'
 import type { ReactNode } from 'react'
 import { useLocale } from '../i18n/LocaleProvider'
-import { pageMainClass, pageSubtitleClass, pageTitleClass } from '../styles/tokens'
+import { pageMainClass, pageMainWideClass, pageSubtitleClass, pageTitleClass } from '../styles/tokens'
 import { Button } from './Button'
 import { EllrLogoMark } from './EllrLogoMark'
 import { SupportContactLink } from './SupportContactLink'
@@ -26,6 +26,8 @@ type AppShellProps = {
   userEmail?: string | null
   onLogout?: () => void
   loggingOut?: boolean
+  /** Wider main column for dense table layouts. */
+  wide?: boolean
   children: ReactNode
 }
 
@@ -51,6 +53,8 @@ function resolveGreetingName(user: AppShellUser): string {
  * @param props.user Signed-in user for greeting and company identity.
  * @param props.userEmail Legacy email-only identity when `user` is omitted.
  * @param props.onLogout Sign-out callback.
+ * @param props.loggingOut Whether sign-out is in progress.
+ * @param props.wide Wider main column for dense tables.
  * @param props.children Main page content.
  * @returns Centered layout with header.
  */
@@ -61,6 +65,7 @@ export function AppShell({
   userEmail,
   onLogout,
   loggingOut = false,
+  wide = false,
   children,
 }: AppShellProps) {
   const { t } = useLocale()
@@ -71,7 +76,7 @@ export function AppShell({
   const identityDetail = [organizationName, email].filter(Boolean).join(' · ')
 
   return (
-    <main className={pageMainClass}>
+    <main className={wide ? pageMainWideClass : pageMainClass}>
       <header className="mb-8 flex items-start justify-between gap-4">
         <div>
           <EllrLogoMark />

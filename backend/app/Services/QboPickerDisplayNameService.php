@@ -25,6 +25,7 @@ class QboPickerDisplayNameService
      * @param  QboProjectListService  $projects  Cached project list service.
      * @param  QboServiceListService  $services  Cached service item list service.
      * @param  QboEmployeeService  $employeeLookup  Single-employee QuickBooks lookup fallback.
+     * @param  QboRefDisplayNameService  $refLabels  Shared customer/project/service label resolver.
      */
     public function __construct(
         private readonly QboEmployeeListService $employees,
@@ -32,6 +33,7 @@ class QboPickerDisplayNameService
         private readonly QboProjectListService $projects,
         private readonly QboServiceListService $services,
         private readonly QboEmployeeService $employeeLookup,
+        private readonly QboRefDisplayNameService $refLabels,
     ) {}
 
     /**
@@ -142,26 +144,30 @@ class QboPickerDisplayNameService
      */
     public function entryDisplayNames(QuickBooksToken $token, User $user, TimeEntry $entry): array
     {
-        $customerRef = QboRefNormalizer::normalize($entry->customer_ref);
-        $projectRef = QboRefNormalizer::normalize($entry->project_ref);
-        $itemRef = QboRefNormalizer::normalize($entry->item_ref);
+        return $this->refLabels->resolve(
+            $token,
+            $entry->customer_ref,
+            $entry->project_ref,
+            $entry->item_ref,
+            $user,
+        );
+    }
 
-        $customerOptions = $customerRef !== null
-            ? $this->customers->listForUser($user, $token)
-            : [];
-
-        $projectOptions = $projectRef !== null && $customerRef !== null
-            ? $this->projects->listForCustomer($token, $customerRef)
-            : [];
-
-        $serviceOptions = $itemRef !== null
-            ? $this->services->listActive($token)
-            : [];
-
-        return [
-            'customer_name' => QboRefNormalizer::displayNameForRef($customerOptions, $customerRef),
-            'project_name' => QboRefNormalizer::displayNameForRef($projectOptions, $projectRef),
-            'item_name' => QboRefNormalizer::displayNameForRef($serviceOptions, $itemRef),
-        ];
+    /**
+     * Resolves display labels for legacy QuickBooks snapshot refs.
+     *
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  string|null  $customerRef  QuickBooks customer identifier.
+     * @param  string|null  $projectRef  QuickBooks project identifier.
+     * @param  string|null  $itemRef  QuickBooks service item identifier.
+     * @return array{customer_name: string|null, project_name: string|null, item_name: string|null}
+     */
+    public function snapshotDisplayNames(
+        QuickBooksToken $token,
+        ?string $customerRef,
+        ?string $projectRef,
+        ?string $itemRef,
+    ): array {
+        return $this->refLabels->forSnapshot($token, $customerRef, $projectRef, $itemRef);
     }
 }

@@ -114,10 +114,10 @@ describe('useDraftTimeEntryActions', () => {
     )
 
     await act(async () => {
-      await result.current.submitAllDrafts()
+      await result.current.submitSelectedDrafts([12, 13])
     })
 
-    expect(submitTimeEntries).toHaveBeenCalled()
+    expect(submitTimeEntries).toHaveBeenCalledWith([12, 13])
     expect(onSuccess).toHaveBeenCalled()
     expect(onChanged).toHaveBeenCalled()
   })

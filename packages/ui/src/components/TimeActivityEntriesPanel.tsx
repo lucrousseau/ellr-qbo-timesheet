@@ -34,11 +34,20 @@ export type TimeActivityEntriesPanelProps = {
   onApproveEntry?: (id: string) => Promise<void>
   onRejectEntry?: (id: string, reason?: string | null) => Promise<void>
   onReturnEntryToDraft?: (id: string) => Promise<void>
+  /** Opens the pending-entry editor from the review actions column. */
+  onEditEntry?: (entry: TimeActivityRow) => void
   draftActions?: boolean
   actionEntryId?: string | null
   onEditDraft?: (entry: TimeActivityRow) => void
-  onSubmitDraft?: (id: string) => Promise<void>
   onDeleteDraft?: (id: string) => Promise<void>
+  /** Overrides the default empty-state copy when there are no rows to show. */
+  emptyMessage?: string
+  selectable?: boolean
+  /** Defaults to draft/rejected rows when omitted. */
+  isRowSelectable?: (entry: TimeActivityRow) => boolean
+  selectedIds?: readonly string[]
+  onToggleSelected?: (id: string, selected: boolean) => void
+  onToggleSelectAll?: (selected: boolean) => void
 }
 
 /**
@@ -67,14 +76,20 @@ export function TimeActivityEntriesPanel({
   onApproveEntry,
   onRejectEntry,
   onReturnEntryToDraft,
+  onEditEntry,
   draftActions = false,
   actionEntryId = null,
   onEditDraft,
-  onSubmitDraft,
   onDeleteDraft,
+  emptyMessage,
+  selectable = false,
+  isRowSelectable,
+  selectedIds = [],
+  onToggleSelected,
+  onToggleSelectAll,
 }: TimeActivityEntriesPanelProps) {
   const { t } = useLocale()
-  const useCards = layout === 'cards' && !editable && !reviewable
+  const useCards = layout === 'cards' && !editable && !reviewable && !selectable
 
   return (
     <section className={embedded ? '' : cardClass}>
@@ -91,7 +106,7 @@ export function TimeActivityEntriesPanel({
           <LoadingScreen variant="inline" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="mt-4 text-sm text-brand-muted">{t('timeActivity.empty')}</p>
+        <p className="mt-4 text-sm text-brand-muted">{emptyMessage ?? t('timeActivity.empty')}</p>
       ) : useCards ? (
         <TimeActivityEntriesCards
           entries={entries}
@@ -100,7 +115,6 @@ export function TimeActivityEntriesPanel({
           draftActions={draftActions}
           actionEntryId={actionEntryId}
           onEditDraft={onEditDraft}
-          onSubmitDraft={onSubmitDraft}
           onDeleteDraft={onDeleteDraft}
         />
       ) : (
@@ -117,11 +131,16 @@ export function TimeActivityEntriesPanel({
           onApproveEntry={onApproveEntry}
           onRejectEntry={onRejectEntry}
           onReturnEntryToDraft={onReturnEntryToDraft}
+          onEditEntry={onEditEntry}
           draftActions={draftActions}
           actionEntryId={actionEntryId}
           onEditDraft={onEditDraft}
-          onSubmitDraft={onSubmitDraft}
           onDeleteDraft={onDeleteDraft}
+          selectable={selectable}
+          isRowSelectable={isRowSelectable}
+          selectedIds={selectedIds}
+          onToggleSelected={onToggleSelected}
+          onToggleSelectAll={onToggleSelectAll}
         />
       )}
 

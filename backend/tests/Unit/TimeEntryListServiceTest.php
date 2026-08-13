@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\QuickBooksToken;
+use App\Models\TimeActivitySnapshot;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Services\TimeEntryListService;
@@ -55,6 +56,46 @@ it('merges legacy quickbooks snapshots with local entries', function () {
     $listIds = collect($result['data'])->pluck('list_id')->all();
     expect($listIds)->toContain('qbo:42')
         ->and(collect($listIds)->first(fn (string $id): bool => str_starts_with($id, 'local:')))->not->toBeNull();
+});
+
+it('resolves display names for legacy snapshots that only store refs', function () {
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-labels']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+
+    TimeActivitySnapshot::factory()
+        ->forRealm($token->realm_id)
+        ->forEmployee('7')
+        ->create([
+            'qbo_id' => '88',
+            'customer_ref' => '11',
+            'customer_name' => null,
+            'project_ref' => '22',
+            'project_name' => null,
+            'item_ref' => '33',
+            'item_name' => null,
+            'start_time' => now()->subHour(),
+            'end_time' => now(),
+            'txn_date' => now()->toDateString(),
+        ]);
+
+    mockQboEntryDisplayNames([
+        'customer_name' => "Bill's Windsurf Shop",
+        'project_name' => 'Test ABC',
+        'item_name' => 'Design',
+    ]);
+
+    $result = app(TimeEntryListService::class)->listForUser($employee, $token, 1, 25);
+
+    expect($result['data'])->toHaveCount(1)
+        ->and($result['data'][0]['list_id'])->toBe('qbo:88')
+        ->and($result['data'][0]['customer_name'])->toBe("Bill's Windsurf Shop")
+        ->and($result['data'][0]['project_name'])->toBe('Test ABC')
+        ->and($result['data'][0]['item_name'])->toBe('Design')
+        ->and($result['data'][0]['status'])->toBe('approved');
 });
 
 it('excludes quickbooks snapshots already linked to approved local entries', function () {

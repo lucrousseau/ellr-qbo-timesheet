@@ -43,6 +43,7 @@ function AdminApp() {
       user={admin.user}
       onLogout={admin.onLogout}
       loggingOut={admin.loggingOut}
+      wide
     >
       <AdminDashboard admin={admin} />
     </AppShell>

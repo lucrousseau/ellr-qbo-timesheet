@@ -87,6 +87,7 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
       user={user}
       onLogout={onLogout}
       loggingOut={auth.loggingOut}
+      wide
     >
       {auth.bootstrapError && (
         <div className="mb-4">
@@ -184,11 +185,10 @@ export function TimesheetDashboard({ auth, tracker }: TimesheetDashboardProps) {
                 displayTimezone={displayTimezone}
                 actionEntryId={draftActions.actionEntryId}
                 editingEntry={draftActions.editingEntry}
-                submittingAll={draftActions.submittingAll}
+                submittingSelected={draftActions.submittingSelected}
                 onEditDraft={draftActions.setEditingEntry}
-                onSubmitDraft={draftActions.submitEntry}
                 onDeleteDraft={draftActions.deleteEntry}
-                onSubmitAllDrafts={draftActions.submitAllDrafts}
+                onSubmitSelectedDrafts={draftActions.submitSelectedDrafts}
                 onCloseEditor={() => draftActions.setEditingEntry(null)}
                 onSaveDraft={draftActions.saveEntry}
               />

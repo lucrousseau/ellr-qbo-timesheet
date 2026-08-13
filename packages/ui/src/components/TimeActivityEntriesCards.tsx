@@ -16,7 +16,6 @@ export type TimeActivityEntriesCardsProps = {
   draftActions: boolean
   actionEntryId: string | null
   onEditDraft?: (entry: TimeActivityRow) => void
-  onSubmitDraft?: (id: string) => Promise<void>
   onDeleteDraft?: (id: string) => Promise<void>
 }
 
@@ -32,7 +31,6 @@ export function TimeActivityEntriesCards({
   draftActions,
   actionEntryId,
   onEditDraft,
-  onSubmitDraft,
   onDeleteDraft,
 }: TimeActivityEntriesCardsProps) {
   const { t, locale } = useLocale()
@@ -99,7 +97,6 @@ export function TimeActivityEntriesCards({
               entry={entry}
               busy={actionEntryId === entry.id}
               onEditDraft={onEditDraft}
-              onSubmitDraft={onSubmitDraft}
               onDeleteDraft={onDeleteDraft}
             />
           ) : null}

@@ -53,17 +53,21 @@ export function useDraftTimeEntryActions({
     [locale, onChanged, onError, onSuccess, t],
   )
 
-  const { run: submitAllDrafts, pending: submittingAll } = useGuardedAction(async () => {
-    try {
-      const submitted = await submitTimeEntries()
-      onSuccess(
-        submitted.length > 0 ? t('timesheet.submitAllSuccess') : t('timesheet.submitAllSuccess'),
-      )
-      onChanged()
-    } catch (caught) {
-      onError(getApiErrorMessage(caught, t('timesheet.submitFailed'), locale))
-    }
-  })
+  const { run: submitSelectedDrafts, pending: submittingSelected } = useGuardedAction(
+    async (ids: number[]) => {
+      if (ids.length === 0) {
+        return
+      }
+
+      try {
+        await submitTimeEntries(ids)
+        onSuccess(t('timesheet.submitSelectedSuccess'))
+        onChanged()
+      } catch (caught) {
+        onError(getApiErrorMessage(caught, t('timesheet.submitFailed'), locale))
+      }
+    },
+  )
 
   const deleteEntry = useCallback(
     async (id: string) => {
@@ -106,8 +110,8 @@ export function useDraftTimeEntryActions({
     editingEntry,
     setEditingEntry,
     submitEntry,
-    submitAllDrafts,
-    submittingAll,
+    submitSelectedDrafts,
+    submittingSelected,
     deleteEntry,
     saveEntry,
   }

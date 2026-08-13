@@ -19,7 +19,7 @@ See also the [root README](../../README.md) and [root AGENTS.md](../../AGENTS.md
 
 | Component | Headless primitive | Use when |
 |-----------|-------------------|----------|
-| `Button` | `Button` | Primary, secondary, danger, link; `size="compact"` for header chrome |
+| `Button` | `Button` | Primary, secondary, danger, link; `size="compact"` for header chrome; `size="icon"` for dense icon actions |
 | `EllrLogoMark` | — | Brand pastille + optional wordmark/tagline in shell and auth |
 | `TextField` | `Field` + `Label` + `Input` | Text, email, datetime-local (not passwords) |
 | `PasswordField` | `Field` + `Label` + `Input` | Passwords with show/hide toggle |

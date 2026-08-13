@@ -1,11 +1,14 @@
 /**
- * @file Approve, reject, and return-to-draft actions for pending time entries.
+ * @file Approve, reject, and return-to-draft icon actions for pending time entries.
  */
 
 import { useState } from 'react'
 import { Button } from './Button'
 import { TextAreaField } from './TextAreaField'
 import { useLocale } from '../i18n/LocaleProvider'
+import { ArrowUturnLeftIcon } from './icons/ArrowUturnLeftIcon'
+import { CheckIcon } from './icons/CheckIcon'
+import { XMarkIcon } from './icons/XMarkIcon'
 
 type TimeEntryApprovalActionsProps = {
   entryId: string
@@ -16,9 +19,9 @@ type TimeEntryApprovalActionsProps = {
 }
 
 /**
- * Inline review controls for a pending time entry row.
+ * Compact review controls for a pending time entry row.
  * @param props Entry id, pending state, and review handlers.
- * @returns Action buttons for supervisor review.
+ * @returns Icon actions for supervisor review, or the reject reason form.
  */
 export function TimeEntryApprovalActions({
   entryId,
@@ -69,33 +72,35 @@ export function TimeEntryApprovalActions({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex items-center gap-0.5">
       <Button
         type="button"
-        variant="primary"
-        size="compact"
+        size="icon"
         disabled={reviewing}
+        aria-label={reviewing ? t('admin.approvingEntry') : t('admin.approveEntry')}
         onClick={() => void onApprove(entryId)}
       >
-        {reviewing ? t('admin.approvingEntry') : t('admin.approveEntry')}
+        <CheckIcon />
       </Button>
       <Button
         type="button"
         variant="secondary"
-        size="compact"
+        size="icon"
         disabled={reviewing}
+        aria-label={t('admin.rejectEntry')}
         onClick={() => setShowRejectForm(true)}
       >
-        {t('admin.rejectEntry')}
+        <XMarkIcon />
       </Button>
       <Button
         type="button"
-        variant="link"
-        size="compact"
+        variant="secondary"
+        size="icon"
         disabled={reviewing}
+        aria-label={reviewing ? t('admin.returningToDraftEntry') : t('admin.returnToDraftEntry')}
         onClick={() => void onReturnToDraft(entryId)}
       >
-        {reviewing ? t('admin.returningToDraftEntry') : t('admin.returnToDraftEntry')}
+        <ArrowUturnLeftIcon />
       </Button>
     </div>
   )

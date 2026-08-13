@@ -10,7 +10,6 @@ use App\Models\QuickBooksToken;
 use App\Models\TimeActivitySnapshot;
 use App\Models\TimeEntry;
 use App\Models\User;
-use App\Support\TimeEntryApiResponse;
 use App\Support\TimeEntryMergedListQuery;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +26,7 @@ class TimeEntryListService
      * @param  TimeActivitySnapshotService  $snapshots  Local snapshot persistence.
      * @param  TimeActivityReconcileCoordinatorService  $reconcileCoordinator  Reconcile dispatch and inline refresh.
      * @param  OrganizationTimezoneService  $organizationTimezone  Tenant company timezone resolver.
-     * @param  TimeEntryPresentationService  $presentation  Read-time label resolution for local rows.
+     * @param  TimeEntryPresentationService  $presentation  Read-time label resolution for local and snapshot rows.
      */
     public function __construct(
         private readonly QboEmployeeAuthorizationService $employeeAuthorization,
@@ -180,7 +179,7 @@ class TimeEntryListService
             $snapshot = $snapshots->get($listId);
 
             if ($snapshot !== null) {
-                $payloads[] = TimeEntryApiResponse::fromSnapshot($snapshot, $companyTimezone);
+                $payloads[] = $this->presentation->fromSnapshot($snapshot, $token, $companyTimezone);
             }
         }
 

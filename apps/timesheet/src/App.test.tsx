@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { authenticatedUser, buildApiClientMock, expectMessageClasses, fillLoginForm } from '@ellr/test-utils'
 import { VALID_TEST_PASSWORD, VALID_TEST_PASSWORD_ALT } from '@ellr/test-utils'
-import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQboCustomers, fetchQboProjects, fetchQboServices, fetchTimeTracker, listPendingTimeEntryApprovals, listTimeEntries, logTimeTracker, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, submitTimeEntry, updateTimeTracker, updateUserPreferences } from '@ellr/api-client'
+import { ApiError, discardTimeTracker, fetchAppConfig, fetchCurrentUser, fetchQboCustomers, fetchQboProjects, fetchQboServices, fetchTimeTracker, listPendingTimeEntryApprovals, listTimeEntries, logTimeTracker, login, logout, requestPasswordReset, resendVerificationEmail, resetPassword, submitTimeEntries, updateTimeTracker, updateUserPreferences } from '@ellr/api-client'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
@@ -55,7 +55,7 @@ vi.mock('@ellr/api-client', async () =>
       data: [],
       meta: { count: 0, max_results: 10, start_position: 1, truncated: false },
     }),
-    submitTimeEntry: vi.fn(),
+    submitTimeEntries: vi.fn(),
     requestPasswordReset: vi.fn(),
     resetPassword: vi.fn(),
     resendVerificationEmail: vi.fn(),
@@ -1178,7 +1178,7 @@ describe('Timesheet App', () => {
     })
   })
 
-  it('submits a draft from recent entries', async () => {
+  it('submits selected drafts from recent entries', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchCurrentUser).mockResolvedValue(authenticatedUser)
     vi.mocked(listTimeEntries).mockResolvedValue({
@@ -1199,27 +1199,31 @@ describe('Timesheet App', () => {
       ],
       meta: { count: 1, max_results: 10, start_position: 1, truncated: false },
     })
-    vi.mocked(submitTimeEntry).mockResolvedValue({
-      id: 12,
-      list_id: 'local:12',
-      user_id: 1,
-      start_time: '2026-07-30T09:00:00Z',
-      end_time: '2026-07-30T10:00:00Z',
-      duration_seconds: 3600,
-      is_billable: false,
-      status: 'pending',
-    })
+    vi.mocked(submitTimeEntries).mockResolvedValue([
+      {
+        id: 12,
+        list_id: 'local:12',
+        user_id: 1,
+        start_time: '2026-07-30T09:00:00Z',
+        end_time: '2026-07-30T10:00:00Z',
+        duration_seconds: 3600,
+        is_billable: false,
+        status: 'pending',
+      },
+    ])
 
     render(<App />)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /submit for approval/i })).toBeInTheDocument()
+      expect(screen.getByRole('table')).toBeInTheDocument()
+      expect(screen.getByLabelText(/select draft entry/i)).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: /submit for approval/i }))
+    await user.click(screen.getByLabelText(/select draft entry/i))
+    await user.click(screen.getByRole('button', { name: /submit 1 selected/i }))
 
     await waitFor(() => {
-      expect(submitTimeEntry).toHaveBeenCalledWith(12)
+      expect(submitTimeEntries).toHaveBeenCalledWith([12])
       expect(screen.getByText(/submitted for approval/i)).toBeInTheDocument()
     })
   })

@@ -18,4 +18,18 @@ describe('CheckboxField', () => {
 
     expect(onChange).toHaveBeenCalledWith(true)
   })
+
+  it('keeps a visually hidden label for compact table checkboxes', () => {
+    render(
+      <CheckboxField
+        label="Select draft entry"
+        labelVisuallyHidden
+        checked={false}
+        onChange={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('checkbox', { name: 'Select draft entry' })).toBeInTheDocument()
+    expect(screen.getByText('Select draft entry')).toHaveClass('sr-only')
+  })
 })

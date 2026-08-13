@@ -44,23 +44,57 @@ class QboProjectListService
             return [];
         }
 
-        $allJobs = $this->listCache->remember(
-            QboListCacheService::RESOURCE_PROJECTS,
-            $token->realm_id,
-            $refresh,
-            fn (): array => $this->queryAllActiveJobs($token),
-        );
-
         return array_values(array_map(
             fn (array $project): array => [
                 'id' => $project['id'],
                 'display_name' => $project['display_name'],
             ],
             array_filter(
-                $allJobs,
+                $this->listActiveJobs($token, $refresh),
                 fn (array $project): bool => $project['parent_ref'] === $parentRef,
             ),
         ));
+    }
+
+    /**
+     * Returns all active job customers for the realm, using cache when allowed.
+     *
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  bool  $refresh  When true, bypasses and replaces the cached project list.
+     * @return array<int, array{id: string, display_name: string, parent_ref: string}>
+     */
+    public function listActiveJobs(QuickBooksToken $token, bool $refresh = false): array
+    {
+        return $this->listCache->remember(
+            QboListCacheService::RESOURCE_PROJECTS,
+            $token->realm_id,
+            $refresh,
+            fn (): array => $this->queryAllActiveJobs($token),
+        );
+    }
+
+    /**
+     * Finds one cached job by QuickBooks identifier.
+     *
+     * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.
+     * @param  string|null  $projectRef  QuickBooks job identifier.
+     * @return array{id: string, display_name: string, parent_ref: string}|null
+     */
+    public function findJob(QuickBooksToken $token, ?string $projectRef): ?array
+    {
+        $normalized = $this->normalizeRef((string) $projectRef);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        foreach ($this->listActiveJobs($token) as $job) {
+            if ($this->normalizeRef($job['id']) === $normalized) {
+                return $job;
+            }
+        }
+
+        return null;
     }
 
     /**

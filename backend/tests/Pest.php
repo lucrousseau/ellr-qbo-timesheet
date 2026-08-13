@@ -205,11 +205,13 @@ function mockQboEntryDisplayNames(array $labels = [
 ]): void
 {
     test()->mock(QboPickerDisplayNameService::class, function ($mock) use ($labels) {
-        $mock->shouldReceive('entryDisplayNames')->andReturn([
+        $resolved = [
             'customer_name' => $labels['customer_name'] ?? null,
             'project_name' => $labels['project_name'] ?? null,
             'item_name' => $labels['item_name'] ?? null,
-        ]);
+        ];
+        $mock->shouldReceive('entryDisplayNames')->andReturn($resolved);
+        $mock->shouldReceive('snapshotDisplayNames')->andReturn($resolved);
         $mock->shouldReceive('employeeDisplayName')->andReturn('Jane Doe');
         $mock->shouldReceive('assignedCustomerRows')->zeroOrMoreTimes()->andReturn([]);
         $mock->shouldReceive('sessionDisplayNames')->zeroOrMoreTimes()->andReturn([

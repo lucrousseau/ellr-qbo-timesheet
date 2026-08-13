@@ -1,8 +1,19 @@
 /**
- * @file Recent time entries with draft submit and edit actions.
+ * @file Recent time entries with status filter, row selection, and draft actions.
  */
 
-import { Button, TimeActivityEntriesPanel, useLocale } from '@ellr/ui'
+import { useEffect, useMemo, useState } from 'react'
+import { resolveTimeEntryId } from '@ellr/api-client'
+import {
+  Button,
+  DEFAULT_TIME_ENTRY_STATUS_FILTER,
+  filterTimeEntriesByStatus,
+  isDraftActionable,
+  TimeActivityEntriesPanel,
+  TimeEntryStatusFilter,
+  useLocale,
+  type TimeEntryStatusFilterValue,
+} from '@ellr/ui'
 import type { TimeActivityRow, TimeEntryUpdatePayload } from '../hooks/useDraftTimeEntryActions'
 import { DraftTimeEntryEditDialog } from './DraftTimeEntryEditDialog'
 
@@ -16,17 +27,16 @@ type RecentDraftEntriesSectionProps = {
   displayTimezone: string
   actionEntryId: string | null
   editingEntry: TimeActivityRow | null
-  submittingAll: boolean
+  submittingSelected: boolean
   onEditDraft: (entry: TimeActivityRow) => void
-  onSubmitDraft: (id: string) => Promise<void>
   onDeleteDraft: (id: string) => Promise<void>
-  onSubmitAllDrafts: () => void | Promise<void>
+  onSubmitSelectedDrafts: (ids: number[]) => void | Promise<void>
   onCloseEditor: () => void
   onSaveDraft: (id: string, payload: TimeEntryUpdatePayload) => Promise<void>
 }
 
 /**
- * Recent entries list with bulk submit and draft edit dialog.
+ * Recent entries table with status filter, multi-select submit, and draft edit dialog.
  * @param props Entries state and draft action handlers.
  * @returns Recent entries section.
  */
@@ -40,48 +50,83 @@ export function RecentDraftEntriesSection({
   displayTimezone,
   actionEntryId,
   editingEntry,
-  submittingAll,
+  submittingSelected,
   onEditDraft,
-  onSubmitDraft,
   onDeleteDraft,
-  onSubmitAllDrafts,
+  onSubmitSelectedDrafts,
   onCloseEditor,
   onSaveDraft,
 }: RecentDraftEntriesSectionProps) {
   const { t } = useLocale()
-  const hasSubmittableDrafts = entries.some(
-    (entry) => entry.approvalStatus === 'draft' || entry.approvalStatus === 'rejected',
+  const [statusFilter, setStatusFilter] = useState<TimeEntryStatusFilterValue>(
+    DEFAULT_TIME_ENTRY_STATUS_FILTER,
   )
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const filteredEntries = filterTimeEntriesByStatus(entries, statusFilter)
+  const selectableIds = useMemo(
+    () =>
+      filteredEntries
+        .filter((entry) => isDraftActionable(entry.approvalStatus))
+        .map((entry) => entry.id),
+    [filteredEntries],
+  )
+  const selectableIdsKey = selectableIds.join(',')
+
+  useEffect(() => {
+    const allowed = new Set(selectableIdsKey === '' ? [] : selectableIdsKey.split(','))
+    setSelectedIds((current) => {
+      const next = current.filter((id) => allowed.has(id))
+      return next.length === current.length ? current : next
+    })
+  }, [selectableIdsKey])
+
+  const selectedCount = selectedIds.length
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-brand-muted">{t('timesheet.draftEntriesHelp')}</p>
-      {hasSubmittableDrafts ? (
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <TimeEntryStatusFilter value={statusFilter} onChange={setStatusFilter} />
         <Button
           type="button"
           variant="secondary"
-          disabled={submittingAll}
-          onClick={() => void onSubmitAllDrafts()}
+          size="compact"
+          disabled={selectedCount === 0 || submittingSelected}
+          onClick={() =>
+            void onSubmitSelectedDrafts(selectedIds.map((id) => resolveTimeEntryId(id)))
+          }
         >
-          {submittingAll ? t('timesheet.submittingAllDrafts') : t('timesheet.submitAllDrafts')}
+          {submittingSelected
+            ? t('timesheet.submittingSelectedDrafts')
+            : t('timesheet.submitSelectedDrafts', { count: String(selectedCount) })}
         </Button>
-      ) : null}
+      </div>
       <TimeActivityEntriesPanel
         title={t('timesheet.recentEntriesTitle')}
-        entries={entries}
+        entries={filteredEntries}
         loading={loading}
         error={error}
         hasMore={hasMore}
         loadingMore={loadingMore}
         onLoadMore={onLoadMore}
-        layout="cards"
+        layout="table"
         showApprovalStatus
         displayTimezone={displayTimezone}
         draftActions
         actionEntryId={actionEntryId}
         onEditDraft={onEditDraft}
-        onSubmitDraft={onSubmitDraft}
         onDeleteDraft={onDeleteDraft}
+        emptyMessage={entries.length > 0 ? t('timeActivity.filterEmpty') : undefined}
+        selectable
+        selectedIds={selectedIds}
+        onToggleSelected={(id, selected) => {
+          setSelectedIds((current) =>
+            selected ? [...current, id] : current.filter((value) => value !== id),
+          )
+        }}
+        onToggleSelectAll={(selected) => {
+          setSelectedIds(selected ? selectableIds : [])
+        }}
       />
       <DraftTimeEntryEditDialog
         entry={editingEntry}
