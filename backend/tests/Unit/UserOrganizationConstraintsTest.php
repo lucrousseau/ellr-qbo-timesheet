@@ -2,23 +2,26 @@
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 covers(User::class);
 
 uses(RefreshDatabase::class);
 
-it('requires organization_id on persisted users', function () {
-    expect(Schema::getColumnType('users', 'organization_id'))->toBe('integer');
-
+it('requires organization_id on persisted tenant users', function () {
     expect(fn () => User::query()->create([
         'name' => 'Orphan User',
         'email' => 'orphan@example.com',
         'password' => validTestPassword(),
-    ]))->toThrow(QueryException::class);
+    ]))->toThrow(InvalidArgumentException::class);
+});
+
+it('allows platform super administrators without an organization', function () {
+    $user = User::factory()->superAdmin()->create();
+
+    expect($user->organization_id)->toBeNull()
+        ->and($user->isSuperAdmin())->toBeTrue();
 });
 
 it('casts is_admin database values to booleans', function () {

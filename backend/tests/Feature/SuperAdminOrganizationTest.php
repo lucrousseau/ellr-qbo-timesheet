@@ -37,7 +37,7 @@ it('lists organizations for platform super administrators', function () {
     $this->actingAs($superAdmin)
         ->getJson('/api/super-admin/organizations', frontendHeaders())
         ->assertOk()
-        ->assertJsonCount(3, 'data');
+        ->assertJsonCount(2, 'data');
 });
 
 it('describes quickbooks connection state in organization listings', function () {
@@ -126,13 +126,25 @@ it('deletes client organizations for platform super administrators', function ()
     expect(Organization::query()->whereKey($organization->id)->exists())->toBeFalse();
 });
 
-it('rejects deleting the super administrators own organization via api', function () {
+it('rejects deleting a legacy home organization still attached to the actor', function () {
+    $superAdmin = User::factory()->superAdmin()->create();
+    $home = Organization::factory()->create();
+    $superAdmin->forceFill(['organization_id' => $home->id])->save();
+
+    $this->actingAs($superAdmin)
+        ->deleteJson("/api/super-admin/organizations/{$home->id}", [], frontendHeaders())
+        ->assertStatus(409)
+        ->assertJsonPath('error', 'cannot_delete_own_organization');
+});
+
+it('exposes a null organization on the authenticated platform operator payload', function () {
     $superAdmin = User::factory()->superAdmin()->create();
 
     $this->actingAs($superAdmin)
-        ->deleteJson("/api/super-admin/organizations/{$superAdmin->organization_id}", [], frontendHeaders())
-        ->assertStatus(409)
-        ->assertJsonPath('error', 'cannot_delete_own_organization');
+        ->getJson('/api/user', frontendHeaders())
+        ->assertOk()
+        ->assertJsonPath('user.is_super_admin', true)
+        ->assertJsonPath('user.organization', null);
 });
 
 it('exposes is_super_admin on the authenticated user payload', function () {

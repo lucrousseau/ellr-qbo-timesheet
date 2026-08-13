@@ -161,11 +161,24 @@ it('allows deleting an organization when another platform super administrator re
 });
 
 it('rejects deleting the super administrators own organization', function () {
-    $actor = User::factory()->superAdmin()->create();
-    $organization = $actor->organization;
+    $organization = Organization::factory()->create();
+    $actor = User::factory()->superAdmin()->create(['organization_id' => $organization->id]);
 
     expect(fn () => app(OrganizationLifecycleService::class)->deleteOrganization($actor, $organization))
         ->toThrow(OrganizationLifecycleException::class, 'You cannot delete the organization that owns your account.');
+});
+
+it('allows deleting any tenant when the platform operator has no organization', function () {
+    $actor = User::factory()->superAdmin()->create();
+    $organization = Organization::factory()->create();
+    User::factory()->admin()->create(['organization_id' => $organization->id]);
+
+    $this->mock(QuickBooksService::class);
+
+    app(OrganizationLifecycleService::class)->deleteOrganization($actor, $organization);
+
+    expect($actor->fresh()->organization_id)->toBeNull()
+        ->and(Organization::query()->whereKey($organization->id)->exists())->toBeFalse();
 });
 
 it('rejects deleting the last super administrator organization', function () {

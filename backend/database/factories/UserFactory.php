@@ -80,7 +80,7 @@ class UserFactory extends Factory
      */
     private function assignOrganizationIfMissing(User $user): void
     {
-        if ($user->organization_id !== null) {
+        if ($user->organization_id !== null || $user->isSuperAdmin()) {
             return;
         }
 
@@ -119,6 +119,7 @@ class UserFactory extends Factory
     public function superAdmin(): static
     {
         return $this->state(fn (array $attributes) => [
+            'organization_id' => null,
             'is_admin' => false,
             'is_super_admin' => true,
         ]);

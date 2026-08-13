@@ -28,7 +28,7 @@ it('seeds tenant admin and platform operator with stable credentials', function 
         ->and($platformOperator->is_super_admin)->toBeTrue()
         ->and(Hash::check('EllrDev!2026', $tenantAdmin->password))->toBeTrue()
         ->and(Hash::check('EllrDev!2026', $platformOperator->password))->toBeTrue()
-        ->and($platformOperator->organization_id)->toBe($tenantAdmin->organization_id)
+        ->and($platformOperator->organization_id)->toBeNull()
         ->and($tenantAdmin->organization)->not->toBeNull()
         ->and($tenantAdmin->organization->slug)->toBe('ellr-dev');
 });

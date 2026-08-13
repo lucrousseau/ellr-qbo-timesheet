@@ -48,7 +48,7 @@ class AuthSessionService
     }
 
     /**
-     * Logs out and returns a JSON response when the account has no tenant organization.
+     * Logs out and returns a JSON response when a non-platform account has no tenant organization.
      *
      * @param  User  $user  Authenticated user.
      * @param  Request  $request  Incoming HTTP request.
@@ -56,7 +56,7 @@ class AuthSessionService
      */
     public function rejectLoginWithoutOrganization(User $user, Request $request): ?JsonResponse
     {
-        if ($user->organization_id !== null) {
+        if ($user->organization_id !== null || $user->isSuperAdmin()) {
             return null;
         }
 

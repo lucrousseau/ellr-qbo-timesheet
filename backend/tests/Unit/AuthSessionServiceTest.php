@@ -108,6 +108,7 @@ it('invalidates database sessions and api tokens for a user', function () {
 it('rejects login when the account has no organization', function () {
     $user = User::factory()->make([
         'organization_id' => null,
+        'is_super_admin' => false,
         'email_verified_at' => now(),
     ]);
     $user->id = 1;
@@ -124,6 +125,18 @@ it('rejects login when the account has no organization', function () {
             'message' => 'Organization membership is required.',
             'error' => 'organization_required',
         ]);
+});
+
+it('allows login for platform super administrators without an organization', function () {
+    $user = User::factory()->make([
+        'organization_id' => null,
+        'is_super_admin' => true,
+        'email_verified_at' => now(),
+    ]);
+
+    $request = Request::create('/api/login', 'POST');
+
+    expect(app(AuthSessionService::class)->rejectLoginWithoutOrganization($user, $request))->toBeNull();
 });
 
 it('allows login when the account belongs to an organization', function () {
@@ -143,6 +156,7 @@ it('rejects login for missing organization before other guards run', function ()
 
     $user = User::factory()->make([
         'organization_id' => null,
+        'is_super_admin' => false,
         'email_verified_at' => now(),
     ]);
     $user->id = 1;

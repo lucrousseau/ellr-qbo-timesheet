@@ -48,6 +48,14 @@ class User extends Authenticatable implements MustVerifyEmail
 
             $user->user_level_id = app(UserLevelResolverService::class)->defaultId();
         });
+
+        static::saving(function (self $user): void {
+            if ($user->organization_id !== null || $user->isSuperAdmin()) {
+                return;
+            }
+
+            throw new \InvalidArgumentException('Tenant users require an organization_id.');
+        });
     }
 
     /**

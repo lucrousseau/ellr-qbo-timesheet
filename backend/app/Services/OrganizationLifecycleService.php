@@ -116,7 +116,7 @@ class OrganizationLifecycleService
      */
     private function guardDeletable(User $actor, Organization $organization): void
     {
-        if ($actor->organization_id === $organization->id) {
+        if ($actor->organization_id !== null && $actor->organization_id === $organization->id) {
             throw new OrganizationLifecycleException(
                 'You cannot delete the organization that owns your account.',
                 'cannot_delete_own_organization',
@@ -134,7 +134,10 @@ class OrganizationLifecycleService
 
         $remainingSuperAdmins = User::query()
             ->where('is_super_admin', true)
-            ->where('organization_id', '!=', $organization->id)
+            ->where(function ($query) use ($organization): void {
+                $query->whereNull('organization_id')
+                    ->orWhere('organization_id', '!=', $organization->id);
+            })
             ->count();
 
         if ($remainingSuperAdmins === 0) {

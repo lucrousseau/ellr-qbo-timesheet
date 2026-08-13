@@ -29,7 +29,7 @@ class DevDatabaseSeeder extends Seeder
 
         $organization = $this->seedOrganization();
         $this->seedTenantAdmin($organization);
-        $this->seedPlatformOperator($organization);
+        $this->seedPlatformOperator();
     }
 
     /**
@@ -73,29 +73,26 @@ class DevDatabaseSeeder extends Seeder
     }
 
     /**
-     * Creates or updates the Ellr platform operator account (client org management).
+     * Creates or updates the Ellr platform operator account (tenant CRUD only; no org membership).
      *
-     * @param  Organization  $organization  Development tenant organization.
      * @return void
      */
-    private function seedPlatformOperator(Organization $organization): void
+    private function seedPlatformOperator(): void
     {
         if (! config('dev-seed.platform_enabled', true)) {
             return;
         }
 
-        $user = User::query()->updateOrCreate(
-            ['email' => (string) config('dev-seed.platform_email')],
-            [
-                'organization_id' => $organization->id,
-                'name' => (string) config('dev-seed.platform_name'),
-                'password' => (string) config('dev-seed.platform_password'),
-                'email_verified_at' => now(),
-                'user_level_id' => $this->defaultUserLevelId(),
-            ],
-        );
+        $user = User::query()->firstOrNew([
+            'email' => (string) config('dev-seed.platform_email'),
+        ]);
 
         $user->forceFill([
+            'organization_id' => null,
+            'name' => (string) config('dev-seed.platform_name'),
+            'password' => (string) config('dev-seed.platform_password'),
+            'email_verified_at' => now(),
+            'user_level_id' => $this->defaultUserLevelId(),
             'is_admin' => false,
             'is_super_admin' => true,
         ])->save();

@@ -51,13 +51,10 @@ Route::middleware('throttle:30,1')->group(function () {
     Route::post('/quickbooks/webhook', [QuickBooksWebhookController::class, 'store']);
 });
 
-// Sanctum session: logout stays available even when tenant membership is missing.
+// Sanctum session: logout, profile, and platform ops stay available without a tenant org
+// (super-admins are not tenant members).
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-});
-
-// Sanctum session required for profile, QBO link, and time activities.
-Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::patch('/user/locale', [UserLocaleController::class, 'update']);
     Route::patch('/user/preferences', [UserPreferencesController::class, 'update']);
@@ -66,14 +63,17 @@ Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(func
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
         ->middleware('throttle:6,1');
 
-    Route::middleware('verified.email')->group(function () {
-        Route::middleware('super_admin')->prefix('super-admin')->group(function () {
-            Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
-            Route::post('/organizations', [SuperAdminOrganizationController::class, 'store']);
-            Route::patch('/organizations/{organization}', [SuperAdminOrganizationController::class, 'update']);
-            Route::delete('/organizations/{organization}', [SuperAdminOrganizationController::class, 'destroy']);
-        });
+    Route::middleware(['verified.email', 'super_admin'])->prefix('super-admin')->group(function () {
+        Route::get('/organizations', [SuperAdminOrganizationController::class, 'index']);
+        Route::post('/organizations', [SuperAdminOrganizationController::class, 'store']);
+        Route::patch('/organizations/{organization}', [SuperAdminOrganizationController::class, 'update']);
+        Route::delete('/organizations/{organization}', [SuperAdminOrganizationController::class, 'destroy']);
+    });
+});
 
+// Tenant membership required for QBO, admin tenant APIs, and time tracking.
+Route::middleware(['auth:sanctum', 'organization', 'throttle:60,1'])->group(function () {
+    Route::middleware('verified.email')->group(function () {
         Route::middleware('admin')->group(function () {
             Route::get('/admin/users', [AdminUserController::class, 'index']);
             Route::post('/admin/users', [AdminUserController::class, 'store']);
