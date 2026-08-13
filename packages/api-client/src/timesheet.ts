@@ -216,7 +216,7 @@ export async function updateTimeTracker(payload: TimeTrackerPayload): Promise<Ti
 }
 
 /**
- * Logs elapsed time as a pending local entry and clears the active session.
+ * Logs elapsed time as a draft local entry and clears the active session.
  * @returns Created local time entry awaiting supervisor approval.
  */
 export async function logTimeTracker(): Promise<TimeEntry> {

@@ -11,6 +11,12 @@ uses(RefreshDatabase::class);
 
 covers(TimeEntry::class);
 
+it('defaults new entries to draft status', function () {
+    $entry = new TimeEntry;
+
+    expect($entry->status)->toBe(TimeEntryStatus::Draft);
+});
+
 it('casts status and datetime attributes', function () {
     $user = User::factory()->create();
     $entry = TimeEntry::factory()->forUser($user)->create([

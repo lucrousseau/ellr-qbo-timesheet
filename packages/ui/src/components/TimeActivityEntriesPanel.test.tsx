@@ -130,6 +130,7 @@ describe('TimeActivityEntriesPanel', () => {
       <LocaleProvider>
         <TimeActivityEntriesPanel
           title="Recent entries"
+          layout="cards"
           entries={[
             {
               id: 'local:1',
@@ -194,6 +195,8 @@ describe('TimeActivityEntriesPanel', () => {
       </LocaleProvider>,
     )
 
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.getByRole('list')).toBeInTheDocument()
     expect(screen.getByText('Draft')).toBeInTheDocument()
     expect(screen.getByText('Pending approval')).toBeInTheDocument()
     expect(screen.getByText('Approved')).toBeInTheDocument()

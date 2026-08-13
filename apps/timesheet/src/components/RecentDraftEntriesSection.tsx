@@ -74,6 +74,7 @@ export function RecentDraftEntriesSection({
         hasMore={hasMore}
         loadingMore={loadingMore}
         onLoadMore={onLoadMore}
+        layout="cards"
         showApprovalStatus
         displayTimezone={displayTimezone}
         draftActions

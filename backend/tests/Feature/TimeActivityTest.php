@@ -235,7 +235,7 @@ describe('authenticated time activities', function () {
             ->assertJsonValidationErrors(['end_time']);
     });
 
-    it('creates a pending local entry with description', function () {
+    it('creates a draft local entry with description', function () {
         $this->postJson('/api/time-activities', [
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',
@@ -245,7 +245,7 @@ describe('authenticated time activities', function () {
             ->assertJsonPath('data.description', 'Billable work');
     });
 
-    it('creates a pending local entry', function () {
+    it('creates a draft local entry', function () {
         $this->postJson('/api/time-activities', [
             'start_time' => '2026-07-27T09:00:00',
             'end_time' => '2026-07-27T17:00:00',

@@ -31,7 +31,7 @@ return new class extends Migration
             $table->timestamp('end_time');
             $table->text('description')->nullable();
             $table->boolean('is_billable')->default(false);
-            $table->string('status', 32)->default('pending');
+            $table->string('status', 32)->default('draft');
             $table->foreignId('reviewed_by_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->text('rejection_reason')->nullable();

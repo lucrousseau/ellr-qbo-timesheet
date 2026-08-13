@@ -206,7 +206,7 @@ it('rejects timer updates with customer refs that are not allowed for the employ
         ->assertJsonPath('message', __('api.time_tracker_invalid_customer'));
 });
 
-it('logs elapsed time as a pending local entry and clears the session', function () {
+it('logs elapsed time as a draft local entry and clears the session', function () {
     $admin = actingAsAdmin();
     QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
     $user = timesheetUserFor($admin);

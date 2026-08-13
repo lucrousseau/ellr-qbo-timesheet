@@ -161,7 +161,7 @@ class TimeTrackerService
     }
 
     /**
-     * Logs elapsed time as a pending local entry and clears the active session.
+     * Logs elapsed time as a draft local entry and clears the active session.
      *
      * @param  User  $user  Authenticated application user.
      * @param  QuickBooksToken  $token  Valid QuickBooks OAuth token.

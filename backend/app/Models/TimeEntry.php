@@ -28,6 +28,15 @@ class TimeEntry extends Model
     use HasFactory;
 
     /**
+     * Default attribute values for newly constructed entries.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'status' => 'draft',
+    ];
+
+    /**
      * Mass-assignable attributes for time entry records.
      *
      * @var list<string>

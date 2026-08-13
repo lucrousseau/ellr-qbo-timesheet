@@ -41,3 +41,33 @@ export function formatEntryDateTime(
 export function formatEntryDuration(durationSeconds: number): string {
   return formatTimeActivityDuration(durationSeconds)
 }
+
+/**
+ * Formats a compact start/end range for stacked entry layouts.
+ * @param startTime ISO start timestamp.
+ * @param endTime ISO end timestamp.
+ * @param locale Active UI locale.
+ * @param timeZone Optional IANA timezone.
+ * @param emptyLabel Fallback when either timestamp is missing.
+ * @returns Localized date with a short time range.
+ */
+export function formatEntryDateTimeRange(
+  startTime: string | null,
+  endTime: string | null,
+  locale: UserLocale,
+  timeZone: string | null | undefined,
+  emptyLabel: string,
+): string {
+  const start = formatEntryDateTime(startTime, locale, timeZone)
+  const end = formatEntryDateTime(endTime, locale, timeZone)
+
+  if (!start && !end) {
+    return emptyLabel
+  }
+
+  if (!start || !end) {
+    return start || end
+  }
+
+  return `${start} → ${end}`
+}

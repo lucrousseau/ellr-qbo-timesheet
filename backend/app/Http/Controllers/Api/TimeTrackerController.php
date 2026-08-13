@@ -71,7 +71,7 @@ class TimeTrackerController extends Controller
     }
 
     /**
-     * Logs elapsed time as a pending local entry and clears the active session.
+     * Logs elapsed time as a draft local entry and clears the active session.
      *
      * @param  Request  $request  Incoming HTTP request.
      * @return JsonResponse
