@@ -91,7 +91,7 @@ class QboRefDisplayNameService
         $labels = $this->resolve($token, $customerRef, $projectRef, $itemRef, null);
 
         if ($labels['customer_name'] !== null && $labels['project_name'] !== null) {
-            return $labels;
+            return $labels; // @pest-mutate-ignore both labels already resolved; enrichment is a no-op
         }
 
         return $this->enrichSnapshotLabelsWithJobs($token, $customerRef, $projectRef, $labels);

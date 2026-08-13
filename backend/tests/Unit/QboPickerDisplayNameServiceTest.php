@@ -411,15 +411,170 @@ it('returns null when employee lookup does not find a match', function () {
 it('skips invalid customer assignments when building assigned customer rows', function () {
     $token = QuickBooksToken::factory()->make();
     $user = User::factory()->create(['qbo_employee_ref' => '7']);
-    $assignment = new UserQboCustomer([
+    $invalid = new UserQboCustomer([
         'user_id' => $user->id,
         'qbo_customer_ref' => 'abc',
     ]);
+    $beta = new UserQboCustomer([
+        'user_id' => $user->id,
+        'qbo_customer_ref' => '12',
+    ]);
+    $acme = new UserQboCustomer([
+        'user_id' => $user->id,
+        'qbo_customer_ref' => '11',
+    ]);
 
     $customers = Mockery::mock(QboCustomerListService::class);
-    $customers->shouldReceive('listForUser')->once()->with($user, $token)->andReturn([]);
+    $customers->shouldReceive('listForUser')
+        ->once()
+        ->with($user, $token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+            ['id' => '12', 'display_name' => 'Beta LLC'],
+        ]);
 
     $service = makeQboPickerDisplayNameService(null, $customers);
 
-    expect($service->assignedCustomerRows($token, $user, [$assignment]))->toBe([]);
+    expect($service->assignedCustomerRows($token, $user, [$invalid, $beta, $acme]))->toBe([
+        ['id' => '11', 'display_name' => 'Acme Corp'],
+        ['id' => '12', 'display_name' => 'Beta LLC'],
+    ]);
+});
+
+it('resolves missing snapshot project labels from a project job ref', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')
+        ->once()
+        ->with($token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldReceive('listForCustomer')
+        ->once()
+        ->with($token, '11')
+        ->andReturn([]);
+    $projects->shouldReceive('findJob')
+        ->once()
+        ->with($token, '22')
+        ->andReturn([
+            'id' => '22',
+            'display_name' => 'Website redesign',
+            'parent_ref' => '11',
+        ]);
+
+    $services = Mockery::mock(QboServiceListService::class);
+    $services->shouldReceive('listActive')->never();
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects, $services);
+
+    expect($service->snapshotDisplayNames($token, '11', '22', null))->toBe([
+        'customer_name' => 'Acme Corp',
+        'project_name' => 'Website redesign',
+        'item_name' => null,
+    ]);
+});
+
+it('ignores blank job display names when enriching snapshot project labels', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')
+        ->once()
+        ->with($token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldReceive('listForCustomer')
+        ->once()
+        ->with($token, '11')
+        ->andReturn([]);
+    $projects->shouldReceive('findJob')
+        ->once()
+        ->with($token, '22')
+        ->andReturn([
+            'id' => '22',
+            'display_name' => '',
+            'parent_ref' => '11',
+        ]);
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects);
+
+    expect($service->snapshotDisplayNames($token, '11', '22', null))->toBe([
+        'customer_name' => 'Acme Corp',
+        'project_name' => null,
+        'item_name' => null,
+    ]);
+});
+
+it('ignores blank customer-job display names when filling snapshot project labels', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')
+        ->twice()
+        ->with($token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldReceive('listForCustomer')->never();
+    $projects->shouldReceive('findJob')
+        ->once()
+        ->with($token, '22')
+        ->andReturn([
+            'id' => '22',
+            'display_name' => '',
+            'parent_ref' => '11',
+        ]);
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects);
+
+    expect($service->snapshotDisplayNames($token, '22', null, null))->toBe([
+        'customer_name' => 'Acme Corp',
+        'project_name' => null,
+        'item_name' => null,
+    ]);
+});
+
+it('keeps an existing snapshot project name when a customer job also has a label', function () {
+    $token = QuickBooksToken::factory()->make();
+
+    $customers = Mockery::mock(QboCustomerListService::class);
+    $customers->shouldReceive('listAllActive')
+        ->twice()
+        ->with($token)
+        ->andReturn([
+            ['id' => '11', 'display_name' => 'Acme Corp'],
+        ]);
+
+    $projects = Mockery::mock(QboProjectListService::class);
+    $projects->shouldReceive('listForCustomer')
+        ->once()
+        ->with($token, '22')
+        ->andReturn([
+            ['id' => '99', 'display_name' => 'Existing project'],
+        ]);
+    $projects->shouldReceive('findJob')
+        ->once()
+        ->with($token, '22')
+        ->andReturn([
+            'id' => '22',
+            'display_name' => 'Should not replace',
+            'parent_ref' => '11',
+        ]);
+
+    $service = makeQboPickerDisplayNameService(null, $customers, $projects);
+
+    expect($service->snapshotDisplayNames($token, '22', '99', null))->toBe([
+        'customer_name' => 'Acme Corp',
+        'project_name' => 'Existing project',
+        'item_name' => null,
+    ]);
 });
