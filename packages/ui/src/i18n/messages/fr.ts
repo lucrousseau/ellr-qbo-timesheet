@@ -190,15 +190,18 @@ export const frMessages: Messages = {
     employeeTimeEntriesHelp: 'Modifiez les entrées de temps QuickBooks récentes pour cet employé.',
     timeApprovalsTitle: 'Approbations d\'entrées de temps en attente',
     timeApprovalsHelp:
-      'Révisez les entrées de temps des employés avant leur synchronisation vers QuickBooks. Les entrées refusées restent uniquement dans Ellr.',
+      'Révisez les entrées de temps des employés avant la synchronisation QuickBooks. Vous pouvez regrouper les entrées correspondantes en une seule activité QuickBooks. Les entrées refusées restent uniquement dans Ellr.',
     approveEntry: 'Approuver',
     approvingEntry: 'Approbation...',
     rejectEntry: 'Refuser',
     rejectingEntry: 'Refus...',
     rejectionReasonLabel: 'Motif du refus (optionnel)',
+    groupForQboLabel: 'Grouper les entrées correspondantes dans QuickBooks',
+    groupForQboHelp:
+      'Si activé, les autres entrées approuvées pour le même employé, jour, client/projet, service et statut facturable partagent une seule activité QuickBooks.',
     approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
     approvalSuccessQueued:
-      'Entrée de temps approuvée. Les entrées correspondantes peuvent être regroupées dans une activité QuickBooks sous peu.',
+      'Entrée de temps approuvée. Les entrées correspondantes sélectionnées seront regroupées dans une activité QuickBooks sous peu.',
     rejectionSuccess: 'Entrée de temps refusée.',
     approvalFailed: 'Impossible de réviser l\'entrée de temps.',
     noPendingApprovals: 'Aucune entrée de temps en attente à réviser.',
@@ -344,7 +347,7 @@ export const frMessages: Messages = {
     noPendingApprovals: 'Aucune entrée de temps en attente ne requiert votre révision.',
     approvalSuccess: 'Entrée de temps approuvée et envoyée à QuickBooks.',
     approvalSuccessQueued:
-      'Entrée de temps approuvée. Les entrées correspondantes peuvent être regroupées dans une activité QuickBooks sous peu.',
+      'Entrée de temps approuvée. Les entrées correspondantes sélectionnées seront regroupées dans une activité QuickBooks sous peu.',
     rejectionSuccess: 'Entrée de temps refusée.',
     approvalFailed: 'Impossible de réviser l\'entrée de temps.',
     syncGroupTitle: 'Temps QuickBooks regroupé',

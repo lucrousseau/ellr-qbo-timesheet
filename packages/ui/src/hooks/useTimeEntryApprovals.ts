@@ -115,13 +115,20 @@ export function useTimeEntryApprovals({
   }, [loadPage])
 
   const approveEntry = useCallback(
-    async (id: string) => {
+    async (id: string, options: { groupForQbo?: boolean } = {}) => {
       setReviewingId(id)
 
       try {
-        const approved = await approveTimeEntry(resolveTimeEntryId(id), { admin })
+        const approved = await approveTimeEntry(resolveTimeEntryId(id), {
+          admin,
+          groupForQbo: options.groupForQbo,
+        })
         onSuccess(
-          approved.qbo_id ? resolvedMessages.approvalSuccess : resolvedMessages.approvalSuccessQueued,
+          approved.qbo_id
+            ? resolvedMessages.approvalSuccess
+            : options.groupForQbo
+              ? resolvedMessages.approvalSuccessQueued
+              : resolvedMessages.approvalSuccess,
         )
         refresh()
       } catch (caught) {

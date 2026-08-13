@@ -58,6 +58,7 @@ class TimeEntryApiResponse
             'reviewed_by_name' => $entry->reviewedBy?->name, // @pest-mutate-ignore API resource field mapping
             'reviewed_at' => $entry->reviewed_at?->toIso8601String(), // @pest-mutate-ignore API resource field mapping
             'rejection_reason' => $entry->rejection_reason, // @pest-mutate-ignore API resource field mapping
+            'group_for_qbo' => (bool) $entry->group_for_qbo, // @pest-mutate-ignore API resource field mapping
             'qbo_id' => $entry->qbo_id, // @pest-mutate-ignore API resource field mapping
             'sync_group_id' => $entry->sync_group_id, // @pest-mutate-ignore API resource field mapping
             'sync_group_public_id' => $syncGroup?->public_id, // @pest-mutate-ignore API resource field mapping
@@ -119,6 +120,7 @@ class TimeEntryApiResponse
             'reviewed_by_name' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'reviewed_at' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'rejection_reason' => null, // @pest-mutate-ignore legacy snapshot resource mapping
+            'group_for_qbo' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'qbo_id' => $snapshot->qbo_id, // @pest-mutate-ignore legacy snapshot resource mapping
             'sync_group_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping
             'sync_group_public_id' => null, // @pest-mutate-ignore legacy snapshot resource mapping

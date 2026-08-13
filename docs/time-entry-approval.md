@@ -96,15 +96,25 @@ Supervisors must belong to the same organization. An employee cannot be their ow
 
 ## Grouped QuickBooks sync
 
-Approved entries that share the same **employee**, **calendar day** (company timezone), **customer/project**, **service item**, and **billable** flag are coalesced into **one** QuickBooks `TimeActivity` before the push.
+Grouping is **opt-in at approval time**. The admin or supervisor chooses whether matching entries should coalesce into one QuickBooks `TimeActivity`.
+
+Approve payload:
+
+```json
+{ "group_for_qbo": true }
+```
+
+Default is `false` (one QuickBooks activity per approved entry). When `group_for_qbo` is `true`, approved entries that share the same **employee**, **calendar day** (company timezone), **customer/project**, **service item**, and **billable** flag are coalesced into **one** QuickBooks `TimeActivity`.
 
 | Mechanism | Behavior |
 |-----------|----------|
-| Unique delayed job | `SyncApprovedTimeEntryToQuickBooksJob` is unique per group key; default delay `QUICKBOOKS_TIME_ENTRY_SYNC_GROUP_DELAY_SECONDS` (15s) lets near-simultaneous approvals share one push |
+| Reviewer choice | Stored on `time_entries.group_for_qbo`; only opted-in siblings are locked together |
+| Unique delayed job | When grouping, `SyncApprovedTimeEntryToQuickBooksJob` is unique per group key; default delay `QUICKBOOKS_TIME_ENTRY_SYNC_GROUP_DELAY_SECONDS` (15s) lets near-simultaneous opt-in approvals share one push |
+| Solo sync | When not grouping, the job key includes `\|solo:{entryId}` and runs without coalesce delay |
 | Local linkage | All member rows get the same `qbo_id` and `sync_group_id` |
 | QBO Description | Summary plus `Details: {FRONTEND_ADMIN_URL}/?sync_group={public_id}` and per-entry clock/notes |
 | Drill-down API | `GET /api/time-entry-sync-groups/{publicId}` for employee, supervisor, or org admin |
-| UI | Timesheet/admin open the group dialog from the status link or the `?sync_group=` deep link |
+| UI | Approval cards expose a “Group matching entries in QuickBooks” checkbox (off by default) |
 
 ### Bidirectional sync notes
 

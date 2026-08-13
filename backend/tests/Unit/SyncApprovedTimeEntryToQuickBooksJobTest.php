@@ -33,6 +33,7 @@ it('stores the quickbooks identifier for an approved entry', function () {
     ]);
     $entry = TimeEntry::factory()->forUser($employee)->create([
         'status' => TimeEntryStatus::Approved,
+        'group_for_qbo' => false,
         'reviewed_by_id' => $admin->id,
         'reviewed_at' => now(),
         'start_time' => now()->subHour(),

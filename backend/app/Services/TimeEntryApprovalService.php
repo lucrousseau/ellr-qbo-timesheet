@@ -77,11 +77,12 @@ class TimeEntryApprovalService
      *
      * @param  User  $actor  Supervisor or administrator.
      * @param  int  $id  Local time entry identifier.
+     * @param  bool  $groupForQbo  When true, coalesce matching approved siblings into one QBO activity.
      * @return TimeEntry
      */
-    public function approve(User $actor, int $id): TimeEntry
+    public function approve(User $actor, int $id, bool $groupForQbo = false): TimeEntry
     {
-        [$entry, $employee, $token] = DB::transaction(function () use ($actor, $id): array { // @pest-mutate-ignore approval transaction boundary
+        [$entry, $employee, $token] = DB::transaction(function () use ($actor, $id, $groupForQbo): array { // @pest-mutate-ignore approval transaction boundary
             $entry = $this->findPendingEntry($id, lock: true); // @pest-mutate-ignore pessimistic lock for approval workflow
             $this->authorization->assertCanReview($actor, $entry); // @pest-mutate-ignore approval authorization guard
 
@@ -94,6 +95,7 @@ class TimeEntryApprovalService
 
             $entry->forceFill([
                 'status' => TimeEntryStatus::Approved,
+                'group_for_qbo' => $groupForQbo,
                 'reviewed_by_id' => $actor->id, // @pest-mutate-ignore approval audit fields
                 'reviewed_at' => now(), // @pest-mutate-ignore approval audit fields
                 'rejection_reason' => null, // @pest-mutate-ignore approval audit fields
@@ -107,7 +109,13 @@ class TimeEntryApprovalService
         });
 
         $groupKey = SyncApprovedTimeEntryToQuickBooksJob::groupKeyFor($entry, $this->timezones);
-        $delaySeconds = max(0, (int) config('quickbooks.time_entry_sync_group_delay_seconds', 15));
+        $delaySeconds = 0;
+
+        if ($groupForQbo) {
+            $delaySeconds = max(0, (int) config('quickbooks.time_entry_sync_group_delay_seconds', 15)); // @pest-mutate-ignore coalesce near-simultaneous approvals
+        } else {
+            $groupKey .= '|solo:'.$entry->id;
+        }
 
         SyncApprovedTimeEntryToQuickBooksJob::dispatch(
             $entry->id, // @pest-mutate-ignore approval async dispatch

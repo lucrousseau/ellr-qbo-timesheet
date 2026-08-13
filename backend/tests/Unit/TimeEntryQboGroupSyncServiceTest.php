@@ -74,7 +74,7 @@ it('pushes sibling approved entries as one quickbooks time activity', function (
     ]);
 
     foreach ($entries as $entry) {
-        app(TimeEntryApprovalService::class)->approve($admin, $entry->id);
+        app(TimeEntryApprovalService::class)->approve($admin, $entry->id, groupForQbo: true);
     }
 
     $dataService = Mockery::mock(DataService::class);
@@ -124,6 +124,56 @@ it('pushes sibling approved entries as one quickbooks time activity', function (
         ->and($entries[1]->sync_group_id)->toBe($entries[2]->sync_group_id);
 });
 
+it('does not group siblings that were approved without grouping', function () {
+    $admin = User::factory()->admin()->create();
+    $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
+    $employee = User::factory()->create([
+        'organization_id' => $admin->organization_id,
+        'qbo_employee_ref' => '7',
+    ]);
+    $day = now()->startOfDay()->addHours(9);
+
+    $grouped = TimeEntry::factory()->forUser($employee)->create([
+        'item_ref' => '33',
+        'status' => TimeEntryStatus::Approved,
+        'group_for_qbo' => true,
+        'reviewed_by_id' => $admin->id,
+        'reviewed_at' => now(),
+        'start_time' => $day->copy(),
+        'end_time' => $day->copy()->addHour(),
+    ]);
+    $solo = TimeEntry::factory()->forUser($employee)->create([
+        'item_ref' => '33',
+        'status' => TimeEntryStatus::Approved,
+        'group_for_qbo' => false,
+        'reviewed_by_id' => $admin->id,
+        'reviewed_at' => now(),
+        'start_time' => $day->copy()->addHours(2),
+        'end_time' => $day->copy()->addHours(3),
+    ]);
+
+    $dataService = Mockery::mock(DataService::class);
+    $dataService->shouldReceive('Add')->once()->andReturn((object) ['Id' => '902']);
+    $dataService->shouldReceive('FindById')
+        ->once()
+        ->with('TimeActivity', '902')
+        ->andReturn(timeActivityQboEntity('902'));
+    $dataService->shouldReceive('getLastError')->andReturn(null);
+
+    $this->mock(QuickBooksService::class, function ($mock) use ($dataService) {
+        $mock->shouldReceive('dataService')->andReturn($dataService);
+    });
+
+    app(TimeEntryQboGroupSyncService::class)->syncApprovedGroup(
+        $grouped->fresh(['organization']),
+        $employee,
+        $token,
+    );
+
+    expect($grouped->refresh()->qbo_id)->toBe('902')
+        ->and($solo->refresh()->qbo_id)->toBeNull();
+});
+
 it('returns null when the trigger entry is already synced', function () {
     $admin = User::factory()->admin()->create();
     $token = QuickBooksToken::factory()->forUser($admin)->create(['realm_id' => 'realm-42']);
@@ -161,6 +211,7 @@ it('does not group entries with a different service item', function () {
     $programming = TimeEntry::factory()->forUser($employee)->create([
         'item_ref' => '33',
         'status' => TimeEntryStatus::Approved,
+        'group_for_qbo' => true,
         'reviewed_by_id' => $admin->id,
         'reviewed_at' => now(),
         'start_time' => $day->copy(),
@@ -169,6 +220,7 @@ it('does not group entries with a different service item', function () {
     TimeEntry::factory()->forUser($employee)->create([
         'item_ref' => '44',
         'status' => TimeEntryStatus::Approved,
+        'group_for_qbo' => true,
         'reviewed_by_id' => $admin->id,
         'reviewed_at' => now(),
         'start_time' => $day->copy()->addHours(2),

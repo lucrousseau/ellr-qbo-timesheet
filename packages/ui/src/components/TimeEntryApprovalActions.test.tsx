@@ -25,7 +25,28 @@ describe('TimeEntryApprovalActions', () => {
     )
 
     await user.click(screen.getByRole('button', { name: 'Approve' }))
-    expect(onApprove).toHaveBeenCalledWith('local:12')
+    expect(onApprove).toHaveBeenCalledWith('local:12', { groupForQbo: false })
+  })
+
+  it('passes the grouping choice when the reviewer enables it', async () => {
+    const user = userEvent.setup()
+    const onApprove = vi.fn().mockResolvedValue(undefined)
+
+    render(
+      <LocaleProvider>
+        <TimeEntryApprovalActions
+          entryId="local:12"
+          reviewing={false}
+          onApprove={onApprove}
+          onReject={vi.fn()}
+        />
+      </LocaleProvider>,
+    )
+
+    await user.click(screen.getByRole('checkbox', { name: /group matching entries/i }))
+    await user.click(screen.getByRole('button', { name: 'Approve' }))
+
+    expect(onApprove).toHaveBeenCalledWith('local:12', { groupForQbo: true })
   })
 
   it('submits a rejection reason from the inline form', async () => {

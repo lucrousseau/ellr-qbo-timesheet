@@ -53,6 +53,7 @@ class TimeEntry extends Model
             'start_time' => 'datetime',
             'end_time' => 'datetime',
             'is_billable' => 'boolean',
+            'group_for_qbo' => 'boolean',
             'status' => TimeEntryStatus::class,
             'reviewed_at' => 'datetime',
         ];

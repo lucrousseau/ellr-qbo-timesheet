@@ -31,6 +31,7 @@ export type TimeEntry = {
   reviewed_by_name?: string | null
   reviewed_at?: string | null
   rejection_reason?: string | null
+  group_for_qbo?: boolean
   qbo_id?: string | null
   sync_group_id?: number | null
   sync_group_public_id?: string | null
@@ -198,16 +199,17 @@ export async function listPendingTimeEntryApprovals(
 /**
  * Approves a pending time entry and synchronizes it to QuickBooks.
  * @param id Local time entry identifier.
- * @param options Optional fetch options for admin vs supervisor routes.
+ * @param options Admin route toggle and optional QuickBooks grouping choice.
  * @returns Approved and synced time entry.
  */
 export async function approveTimeEntry(
   id: number,
-  options: { admin?: boolean } = {},
+  options: { admin?: boolean; groupForQbo?: boolean } = {},
 ): Promise<TimeEntry> {
   const basePath = options.admin ? '/admin/time-entry-approvals' : '/time-entry-approvals'
   const response = await apiFetch<{ data: TimeEntry }>(`${basePath}/${id}/approve`, {
     method: 'POST',
+    body: JSON.stringify({ group_for_qbo: Boolean(options.groupForQbo) }),
   })
 
   return response.data

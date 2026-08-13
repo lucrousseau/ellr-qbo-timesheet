@@ -189,15 +189,18 @@ export const enMessages = {
     employeeTimeEntriesHelp: 'Edit recent QuickBooks time entries for this employee.',
     timeApprovalsTitle: 'Pending time entry approvals',
     timeApprovalsHelp:
-      'Review employee time entries before they are synchronized to QuickBooks. Rejected entries stay in Ellr only.',
+      'Review employee time entries before they sync to QuickBooks. Optionally group matching entries into one QuickBooks activity. Rejected entries stay in Ellr only.',
     approveEntry: 'Approve',
     approvingEntry: 'Approving...',
     rejectEntry: 'Reject',
     rejectingEntry: 'Rejecting...',
     rejectionReasonLabel: 'Rejection reason (optional)',
+    groupForQboLabel: 'Group matching entries in QuickBooks',
+    groupForQboHelp:
+      'When enabled, other approved entries for the same employee, day, client/project, service, and billable flag share one QuickBooks activity.',
     approvalSuccess: 'Time entry approved and sent to QuickBooks.',
     approvalSuccessQueued:
-      'Time entry approved. Matching entries may group into one QuickBooks activity shortly.',
+      'Time entry approved. Matching opted-in entries will group into one QuickBooks activity shortly.',
     rejectionSuccess: 'Time entry rejected.',
     approvalFailed: 'Unable to review the time entry.',
     assignSupervisor: 'Assign supervisor',
@@ -341,7 +344,7 @@ export const enMessages = {
     noPendingApprovals: 'No pending time entries require your review.',
     approvalSuccess: 'Time entry approved and sent to QuickBooks.',
     approvalSuccessQueued:
-      'Time entry approved. Matching entries may group into one QuickBooks activity shortly.',
+      'Time entry approved. Matching opted-in entries will group into one QuickBooks activity shortly.',
     rejectionSuccess: 'Time entry rejected.',
     approvalFailed: 'Unable to review the time entry.',
     syncGroupTitle: 'Grouped QuickBooks time',

@@ -109,10 +109,23 @@ class TimeEntryQboGroupSyncService
      */
     private function lockSiblingEntries(TimeEntry $trigger, string $groupKey, string $timezone): Collection
     {
+        if (! $trigger->group_for_qbo) {
+            $solo = TimeEntry::query()
+                ->whereKey($trigger->id)
+                ->where('status', TimeEntryStatus::Approved)
+                ->whereNull('qbo_id')
+                ->whereNull('sync_group_id')
+                ->lockForUpdate()
+                ->get();
+
+            return $solo->values();
+        }
+
         $candidates = TimeEntry::query()
             ->where('organization_id', $trigger->organization_id)
             ->where('user_id', $trigger->user_id)
             ->where('status', TimeEntryStatus::Approved)
+            ->where('group_for_qbo', true)
             ->whereNull('qbo_id')
             ->whereNull('sync_group_id')
             ->orderBy('start_time')

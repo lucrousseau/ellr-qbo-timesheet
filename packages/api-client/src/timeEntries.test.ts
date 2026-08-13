@@ -121,6 +121,21 @@ describe('time entry api', () => {
     await expect(approveTimeEntry(12)).resolves.toMatchObject({ status: 'approved' })
     expect(apiFetch).toHaveBeenCalledWith('/time-entry-approvals/12/approve', {
       method: 'POST',
+      body: JSON.stringify({ group_for_qbo: false }),
+    })
+  })
+
+  it('approves with quickbooks grouping when requested', async () => {
+    vi.mocked(apiFetch).mockResolvedValue({
+      data: { ...sampleEntry, status: 'approved', group_for_qbo: true },
+    })
+
+    await expect(approveTimeEntry(12, { admin: true, groupForQbo: true })).resolves.toMatchObject({
+      group_for_qbo: true,
+    })
+    expect(apiFetch).toHaveBeenCalledWith('/admin/time-entry-approvals/12/approve', {
+      method: 'POST',
+      body: JSON.stringify({ group_for_qbo: true }),
     })
   })
 

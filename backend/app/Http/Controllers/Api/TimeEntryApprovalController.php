@@ -7,12 +7,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ApproveTimeEntryRequest;
 use App\Http\Requests\ListTimeEntryRequest;
 use App\Http\Requests\RejectTimeEntryRequest;
 use App\Services\TimeEntryApprovalService;
 use App\Services\TimeEntryPresentationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * Lists pending entries and approves or rejects them for QBO synchronization.
@@ -48,13 +48,17 @@ class TimeEntryApprovalController extends Controller
     /**
      * Approves a pending entry and synchronizes it to QuickBooks.
      *
-     * @param  Request  $request  Incoming HTTP request.
+     * @param  ApproveTimeEntryRequest  $request  Validated approval payload.
      * @param  int  $timeEntry  Local time entry identifier.
      * @return JsonResponse
      */
-    public function approve(Request $request, int $timeEntry): JsonResponse
+    public function approve(ApproveTimeEntryRequest $request, int $timeEntry): JsonResponse
     {
-        $entry = $this->approvals->approve($request->user(), $timeEntry);
+        $entry = $this->approvals->approve(
+            $request->user(),
+            $timeEntry,
+            $request->groupForQbo(),
+        );
 
         return response()->json([
             'data' => $this->presentation->resource($entry, $request->user()),
