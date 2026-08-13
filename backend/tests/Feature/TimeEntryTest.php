@@ -169,6 +169,21 @@ describe('employee time entries', function () {
             ->assertJsonPath('data.0.status', 'pending')
             ->assertJsonPath('data.1.status', 'pending');
     });
+
+    it('submits only the requested draft ids in bulk', function () {
+        $user = auth()->user();
+        $first = TimeEntry::factory()->forUser($user)->create();
+        $second = TimeEntry::factory()->forUser($user)->create();
+
+        $this->postJson('/api/time-entries/submit', ['ids' => [$first->id]], frontendHeaders())
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $first->id)
+            ->assertJsonPath('data.0.status', 'pending')
+            ->assertJsonPath('data.0.employee_name', $user->name);
+
+        expect($second->fresh()->status->value)->toBe('draft');
+    });
 });
 
 describe('time entry approvals', function () {
