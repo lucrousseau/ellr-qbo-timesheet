@@ -5,10 +5,10 @@
 import type { UserLocale } from '@ellr/api-client'
 
 /** English support inbox. */
-export const SUPPORT_EMAIL_EN = 'hello@ellr.ca'
+export const SUPPORT_EMAIL_EN = 'timesheet@ellr.ca'
 
 /** French support inbox. */
-export const SUPPORT_EMAIL_FR = 'bonjour@ellr.ca'
+export const SUPPORT_EMAIL_FR = 'timesheet@ellr.ca'
 
 /**
  * Returns the public support email for the active UI locale.

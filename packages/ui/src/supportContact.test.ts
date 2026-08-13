@@ -18,7 +18,7 @@ describe('supportContact', () => {
 
   it('builds a mailto href with a default subject', () => {
     expect(supportMailtoHref('en')).toBe(
-      'mailto:hello@ellr.ca?subject=Ellr%20Timesheet%20support',
+      'mailto:timesheet@ellr.ca?subject=Ellr%20Timesheet%20support',
     )
   })
 })

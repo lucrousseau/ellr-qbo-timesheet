@@ -18,9 +18,9 @@ describe('SupportContactLink', () => {
     const link = screen.getByRole('link', { name: /contact support/i })
     expect(link).toHaveAttribute(
       'href',
-      'mailto:hello@ellr.ca?subject=Ellr%20Timesheet%20support',
+      'mailto:timesheet@ellr.ca?subject=Ellr%20Timesheet%20support',
     )
-    expect(link).toHaveTextContent('hello@ellr.ca')
+    expect(link).toHaveTextContent('timesheet@ellr.ca')
   })
 
   it('links to the French support mailbox for fr locale', () => {
@@ -33,7 +33,7 @@ describe('SupportContactLink', () => {
     const link = screen.getByRole('link', { name: /contacter le support/i })
     expect(link).toHaveAttribute(
       'href',
-      'mailto:bonjour@ellr.ca?subject=Ellr%20Timesheet%20support',
+      'mailto:timesheet@ellr.ca?subject=Ellr%20Timesheet%20support',
     )
   })
 })
