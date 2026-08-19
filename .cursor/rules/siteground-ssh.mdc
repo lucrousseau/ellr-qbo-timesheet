@@ -31,4 +31,4 @@ PHP=/usr/local/php83/bin/php-cli
 
 ## Deploy
 
-GitHub Actions: `.github/workflows/deploy-siteground.yml` (manual `workflow_dispatch` only, `production` environment). Full runbook: `docs/siteground-shared-hosting.md`.
+GitHub Actions: `.github/workflows/deploy-siteground.yml` (manual `workflow_dispatch` only, `production` environment). Run from `main`; optional `git_ref` + `run_migrations` for rollback. Successful runs tag `deploy-*`. Full runbook: `docs/siteground-shared-hosting.md`.

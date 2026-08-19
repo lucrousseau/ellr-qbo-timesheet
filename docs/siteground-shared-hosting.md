@@ -112,6 +112,10 @@ Do **not** build Node on Shared. Do **not** use FTP in CI.
 
 Deploy is **manual only** (`workflow_dispatch`). The job uses the GitHub Environment **`production`** (required reviewer). A push to `main` does not deploy.
 
+Always **Use workflow from `main`**. Pass `git_ref` when you want to deploy another tag or SHA (rollback). Do not start the run from the old tag: the environment is restricted to `main`, and you want the current workflow file with the older application commit. The job refuses commits that are not ancestors of `origin/main` (no random feature-branch deploys via `git_ref`).
+
+Each successful run creates an annotated Git tag `deploy-YYYYMMDD-HHMMSS` (UTC) on the commit that was actually checked out. List recent production deploys with `git tag -l 'deploy-*' --sort=-creatordate`. The GitHub Environment timeline records the workflow branch (`main`), not the `git_ref` input; the tag is the source of truth for which code went live.
+
 ### 1. Enable SSH on SiteGround
 
 1. Site Tools → **Devs** → **SSH Keys Manager** (wording may vary slightly).
@@ -183,17 +187,34 @@ Also set the **API site** PHP version to **8.3** in Site Tools (Devs / PHP Manag
 
 ### 6. Run the workflow
 
-1. Merge to `main`, then **Actions** → **Deploy SiteGround** → **Run workflow** (select `main`).
-2. Approve the pending **production** deployment if a reviewer is required.
-3. On success: `curl -s https://api.timesheet.ellr.ca/api/health`
-4. Smoke login on both SPAs after DNS/SSL are ready.
+1. Merge to `main`, then **Actions** → **Deploy SiteGround** → **Run workflow**.
+2. **Use workflow from `main`**. Leave `git_ref` empty. Leave **Run migrations** checked.
+3. Approve the pending **production** deployment if a reviewer is required.
+4. On success: confirm the new `deploy-*` tag in the job summary, then `curl -s https://api.timesheet.ellr.ca/api/health`.
+5. Smoke login on both SPAs after DNS/SSL are ready.
+
+### 7. Rollback
+
+This restores **application code and SPA builds** by deploying a previous `deploy-*` tag. It does not undo MySQL migrations, data, or the server `.env`.
+
+1. Pick the last known-good tag: `git tag -l 'deploy-*' --sort=-creatordate` (or the Tags page).
+2. **Actions** → **Deploy SiteGround** → **Run workflow**.
+3. **Use workflow from `main`**. Set `git_ref` to that tag (or a commit SHA).
+4. Uncheck **Run migrations**.
+5. Approve `production`. Smoke health + login on both SPAs.
+
+If the bad deploy already applied a schema change, old PHP may not boot. Do not roll back the code until the schema is compatible (forward-fix, or a careful manual `migrate:rollback` only when you are sure it is safe).
+
+A rollback run still creates a **new** `deploy-*` tag on the same commit, so history shows that SHA went live again.
 
 ### What the workflow does
 
-1. `npm ci` + build admin and timesheet with production `VITE_API_URL`
-2. `rsync` backend → `SG_PATH_API` (excludes `.env`, `vendor/`, `storage/`, tests)
-3. `rsync` SPA `dist/` → admin and timesheet roots
-4. SSH: `composer install --no-dev`, `migrate --force`, config/route/view cache, then purge SiteGround Dynamic Cache (SuperCacher) for `timesheet.ellr.ca`, `admin.timesheet.ellr.ca`, and `api.timesheet.ellr.ca` via local NGINX `PURGE`
+1. Checkout `git_ref` if set, otherwise the commit of the selected workflow branch
+2. `npm ci` + build admin and timesheet with production `VITE_API_URL`
+3. `rsync` backend → `SG_PATH_API` (excludes `.env`, `vendor/`, `storage/`, tests)
+4. `rsync` SPA `dist/` → admin and timesheet roots
+5. SSH: `composer install --no-dev`, optional `migrate --force`, config/route/view cache, then purge SiteGround Dynamic Cache (SuperCacher) for `timesheet.ellr.ca`, `admin.timesheet.ellr.ca`, and `api.timesheet.ellr.ca` via local NGINX `PURGE`
+6. On success: annotated tag `deploy-YYYYMMDD-HHMMSS` (UTC) on the deployed commit
 
 ## Manual deploy steps (fallback)
 
