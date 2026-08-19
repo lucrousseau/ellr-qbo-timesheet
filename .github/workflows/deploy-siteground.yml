@@ -116,7 +116,6 @@ jobs:
           port: ${{ secrets.SG_SSH_PORT }}
           username: ${{ secrets.SG_SSH_USER }}
           key: ${{ secrets.SG_SSH_PRIVATE_KEY }}
-          script_stop: true
           script: |
             set -e
             cd "${{ secrets.SG_PATH_API }}"
