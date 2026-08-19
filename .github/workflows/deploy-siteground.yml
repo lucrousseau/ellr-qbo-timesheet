@@ -1,16 +1,34 @@
 # Deploy Ellr QBO Timesheet to SiteGround Shared over SSH/rsync (no FTP).
 # Secrets live on the GitHub Environment "production" (not in this file).
+#
+# Always start the run from branch `main` (environment branch policy). Pass
+# `git_ref` to deploy another tag or SHA (rollback). After a successful run the
+# job creates an annotated tag `deploy-UTC` on the checked-out commit.
 name: Deploy SiteGround
 
 on:
   workflow_dispatch:
+    inputs:
+      git_ref:
+        description: >-
+          Git ref to deploy (tag, branch, or SHA). Leave empty to deploy the
+          commit of the branch selected in Run workflow (use main).
+        required: false
+        type: string
+      run_migrations:
+        description: >-
+          Run php artisan migrate --force. Leave on for a normal deploy. Turn
+          off for rollback (migrations are not reversed).
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
   group: deploy-siteground
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   VITE_API_URL: https://api.timesheet.ellr.ca/api
@@ -23,6 +41,33 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.git_ref || github.sha }}
+          fetch-depth: 0
+
+      - name: Record deploy commit
+        id: meta
+        run: |
+          sha="$(git rev-parse HEAD)"
+          echo "sha=${sha}" >> "${GITHUB_OUTPUT}"
+          echo "Deploying ${sha} (run_migrations=${{ inputs.run_migrations }})"
+          {
+            echo "## SiteGround deploy"
+            echo ""
+            echo "- Commit: \`${sha}\`"
+            echo "- Workflow branch: \`${{ github.ref_name }}\`"
+            echo "- git_ref input: \`${{ inputs.git_ref || '(branch commit)' }}\`"
+            echo "- run_migrations: \`${{ inputs.run_migrations }}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Ensure commit is on main
+        run: |
+          set -euo pipefail
+          git fetch --prune --no-tags origin main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "Refusing to deploy $(git rev-parse HEAD): it is not an ancestor of origin/main."
+            exit 1
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -127,7 +172,11 @@ jobs:
             mkdir -p storage/framework/{sessions,views,cache} storage/logs storage/app/public bootstrap/cache resources/views
             chmod -R ug+rwx storage bootstrap/cache
             "$PHP" -d memory_limit=512M /usr/local/bin/composer.phar install --no-dev --optimize-autoloader --no-interaction
-            "$PHP" artisan migrate --force
+            if [ "${{ inputs.run_migrations }}" = "true" ]; then
+              "$PHP" artisan migrate --force
+            else
+              echo "Skipping artisan migrate --force (run_migrations=false)"
+            fi
             "$PHP" artisan config:cache
             "$PHP" artisan route:cache
             "$PHP" artisan view:cache
@@ -137,3 +186,18 @@ jobs:
               echo "${body}" | grep -q "Successful purge"
               echo "Purged Dynamic Cache for ${host}"
             done
+
+      - name: Tag successful production deploy
+        env:
+          DEPLOY_SHA: ${{ steps.meta.outputs.sha }}
+          RUN_MIGRATIONS: ${{ inputs.run_migrations }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          tag="deploy-$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" "${DEPLOY_SHA}" -m "SiteGround production deploy of ${DEPLOY_SHA} (migrations=${RUN_MIGRATIONS}) ${RUN_URL}"
+          git push origin "refs/tags/${tag}"
+          echo "- Tag: \`${tag}\`" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Created tag ${tag} on ${DEPLOY_SHA}"
