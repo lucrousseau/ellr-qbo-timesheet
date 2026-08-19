@@ -1,0 +1,4 @@
+# GitHub Linguist: Pest/Behat suites are larger than backend/app and would
+# keep the repo labeled PHP on the profile card. Product code is Laravel + TS/React.
+backend/tests/** linguist-detectable=false
+backend/features/** linguist-detectable=false
