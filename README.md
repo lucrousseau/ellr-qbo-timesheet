@@ -137,7 +137,7 @@ On startup, Docker runs `php artisan db:seed` after migrations when `APP_ENV=loc
 
 | Role | Email | Password |
 |------|-------|----------|
-| Platform operator (Ellr staff) | `luc@ellr.ca` | `DEV_SEED_PLATFORM_PASSWORD` |
+| Platform operator (Ellr staff) | `platform@ellr.local` | `DEV_SEED_PLATFORM_PASSWORD` |
 | Tenant admin (sample client org) | `admin@ellr.local` | `EllrDev!2026` |
 
 `npm run docker:smoke` logs in with `DEV_SEED_TENANT_ADMIN_EMAIL` and `DEV_SEED_TENANT_ADMIN_PASSWORD` from `backend/.env` (override with `SMOKE_LOGIN_EMAIL` / `SMOKE_LOGIN_PASSWORD`). The health check also verifies that the shared password policy is loaded.

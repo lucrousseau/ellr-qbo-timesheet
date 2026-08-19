@@ -198,9 +198,9 @@ describe('auth and layout screens', () => {
         title="Admin"
         subtitle="Administration"
         user={{
-          first_name: 'Luc',
-          name: 'Luc Rousseau',
-          email: 'luc@ellr.ca',
+          first_name: 'Pat',
+          name: 'Pat Operator',
+          email: 'platform@ellr.local',
           organization: { name: 'Ellr' },
         }}
         onLogout={vi.fn()}
@@ -210,8 +210,8 @@ describe('auth and layout screens', () => {
     )
 
     expect(screen.getByText('Administration')).toBeInTheDocument()
-    expect(screen.getByText('Hello, Luc')).toBeInTheDocument()
-    expect(screen.getByText('Ellr · luc@ellr.ca')).toBeInTheDocument()
+    expect(screen.getByText('Hello, Pat')).toBeInTheDocument()
+    expect(screen.getByText('Ellr · platform@ellr.local')).toBeInTheDocument()
   })
 
   it('renders the preferences panel and submits locale changes', async () => {

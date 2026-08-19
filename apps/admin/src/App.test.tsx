@@ -50,9 +50,9 @@ describe('Admin App', () => {
   }
   const superAdminUser = {
     id: 3,
-    first_name: 'Luc',
+    first_name: 'Pat',
     name: 'Platform Operator',
-    email: 'luc@ellr.ca',
+    email: 'platform@ellr.local',
     is_admin: false,
     is_super_admin: true,
     organization: {
