@@ -21,9 +21,9 @@ vi.mock('@ellr/api-client', async () => {
 
 const adminUser: User = {
   id: 1,
-  first_name: 'Luc',
-  name: 'Luc Rousseau',
-  email: 'luc@ellr.ca',
+  first_name: 'Alex',
+  name: 'Sample Employee',
+  email: 'employee@ellr.local',
   is_admin: true,
   qbo_employee_ref: null,
 }
@@ -56,7 +56,7 @@ function renderMappingHook(user: User = adminUser) {
 describe('useAdminQboEmployeeMapping', () => {
   beforeEach(() => {
     vi.mocked(fetchQboEmployees).mockResolvedValue([
-      { id: '42', display_name: 'Luc Rousseau', email: 'luc@ellr.ca' },
+      { id: '42', display_name: 'Sample Employee', email: 'employee@ellr.local' },
       { id: '99', display_name: 'Taken Employee', email: 'taken@example.com' },
     ])
     vi.mocked(updateQboEmployee).mockReset()
@@ -76,15 +76,15 @@ describe('useAdminQboEmployeeMapping', () => {
 
     await waitFor(() => {
       expect(result.current.employees).toEqual([
-        { id: '42', display_name: 'Luc Rousseau', email: 'luc@ellr.ca' },
+        { id: '42', display_name: 'Sample Employee', email: 'employee@ellr.local' },
       ])
     })
 
     act(() => {
       result.current.onEmployeeChange({
         id: '42',
-        display_name: 'Luc Rousseau',
-        email: 'luc@ellr.ca',
+        display_name: 'Sample Employee',
+        email: 'employee@ellr.local',
       })
     })
 
@@ -113,8 +113,8 @@ describe('useAdminQboEmployeeMapping', () => {
     act(() => {
       result.current.onEmployeeChange({
         id: '42',
-        display_name: 'Luc Rousseau',
-        email: 'luc@ellr.ca',
+        display_name: 'Sample Employee',
+        email: 'employee@ellr.local',
       })
     })
 

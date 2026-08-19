@@ -19,8 +19,8 @@ return [
     'tenant_admin_name' => env('DEV_SEED_TENANT_ADMIN_NAME', 'Dev Admin'),
 
     'platform_enabled' => filter_var(env('DEV_SEED_PLATFORM_ENABLED', true), FILTER_VALIDATE_BOOL),
-    'platform_email' => env('DEV_SEED_PLATFORM_EMAIL', 'luc@ellr.ca'),
+    'platform_email' => env('DEV_SEED_PLATFORM_EMAIL', 'platform@ellr.local'),
     'platform_password' => env('DEV_SEED_PLATFORM_PASSWORD', 'EllrDev!2026'),
-    'platform_name' => env('DEV_SEED_PLATFORM_NAME', 'Luc Ellr'),
+    'platform_name' => env('DEV_SEED_PLATFORM_NAME', 'Platform Operator'),
 
 ];
