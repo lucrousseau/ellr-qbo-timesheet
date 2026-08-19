@@ -24,6 +24,9 @@ backend/auth.json
 backend/database/*.sqlite
 backend/database/*.sqlite-journal
 
+# Local-only Cursor rules (live SSH identity, machine paths)
+.cursor/rules/*.local.mdc
+
 # IDE / OS
 .idea/
 .vscode/*

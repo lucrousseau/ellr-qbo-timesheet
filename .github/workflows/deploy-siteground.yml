@@ -1,12 +1,9 @@
 # Deploy Ellr QBO Timesheet to SiteGround Shared over SSH/rsync (no FTP).
-# Requires repository secrets documented in docs/siteground-shared-hosting.md.
+# Secrets live on the GitHub Environment "production" (not in this file).
 name: Deploy SiteGround
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 concurrency:
   group: deploy-siteground
@@ -22,6 +19,7 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v7

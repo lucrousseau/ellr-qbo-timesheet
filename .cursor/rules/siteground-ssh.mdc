@@ -7,30 +7,17 @@ alwaysApply: true
 
 Agents **may and should** use SSH to inspect or debug the live SiteGround Shared deployment. Do not assume FTP. Do not paste `.env` secrets or private keys into chat.
 
+Live SSH host, user, port, and filesystem paths **must not** live in this committed file. Use the local SSH host alias and the gitignored companion rule.
+
 ## Connect (Luc’s Mac)
 
 ```bash
-ssh -i ~/.ssh/ellr_timesheet_sg_deploy -p 18765 u3261-ghor3kynhvht@giowm1268.siteground.biz
+ssh ellr-timesheet-sg
 ```
 
-| Item | Value |
-|------|--------|
-| SSH host | `giowm1268.siteground.biz` |
-| Port | `18765` |
-| User | `u3261-ghor3kynhvht` |
-| Deploy key | `~/.ssh/ellr_timesheet_sg_deploy` |
-| Site HTTP IP | `35.208.143.49` |
+The alias is defined in `~/.ssh/config` (`Host ellr-timesheet-sg`) with `IdentitiesOnly yes` and `IdentityFile ~/.ssh/ellr_timesheet_sg_deploy`.
 
-## Paths
-
-| Role | Path |
-|------|------|
-| API app root | `/home/customer/www/api.timesheet.ellr.ca` |
-| API web root | `.../api.timesheet.ellr.ca/public_html` |
-| Admin SPA | `/home/customer/www/admin.timesheet.ellr.ca/public_html` |
-| Timesheet SPA | `/home/customer/www/timesheet.ellr.ca/public_html` |
-
-Hosts: `api.timesheet.ellr.ca`, `admin.timesheet.ellr.ca`, `timesheet.ellr.ca`.
+Absolute paths and the SiteGround account identity are in `.cursor/rules/siteground-ssh.local.mdc` (gitignored). If that file is missing, stop and ask Luc; do not invent hostnames or usernames from git history.
 
 ## PHP / Composer on Shared
 
@@ -44,4 +31,4 @@ PHP=/usr/local/php83/bin/php-cli
 
 ## Deploy
 
-GitHub Actions: `.github/workflows/deploy-siteground.yml` (build off-server, rsync over SSH, Laravel migrate/cache, then SuperCacher Dynamic Cache `PURGE` for the three Ellr hosts). Full runbook: `docs/siteground-shared-hosting.md`. DNS zone is at Rebel (see project memory / that doc); wildcard may still send unset subdomains to Vercel.
+GitHub Actions: `.github/workflows/deploy-siteground.yml` (manual `workflow_dispatch` only, `production` environment). Full runbook: `docs/siteground-shared-hosting.md`.

@@ -83,6 +83,16 @@ MAIL_MAILER=smtp
 # … SMTP …
 ```
 
+## Public repository
+
+This repo may be public. Do **not** commit live SSH hostname, username, port, IP, or absolute filesystem paths. Put those only in:
+
+- GitHub Environment **`production`** secrets
+- `~/.ssh/config` (`Host ellr-timesheet-sg`)
+- `.cursor/rules/siteground-ssh.local.mdc` (gitignored)
+
+Rotate the deploy key if it was ever committed or pasted into a ticket.
+
 ## Cron (Shared)
 
 SiteGround Shared may not expose `crontab` over SSH. Prefer **Site Tools → Devs → Cron Jobs** (or **Site → Cron Jobs**):
@@ -90,7 +100,7 @@ SiteGround Shared may not expose `crontab` over SSH. Prefer **Site Tools → Dev
 | Field | Value |
 |-------|--------|
 | Schedule | Every minute (`* * * * *`) |
-| Command | `cd /home/customer/www/api.timesheet.ellr.ca && /usr/local/php83/bin/php-cli artisan schedule:run` |
+| Command | `cd` into the Laravel app root (`SG_PATH_API`), then `/usr/local/php83/bin/php-cli artisan schedule:run` |
 
 This runs reconcile (hourly), snapshot/failed-job prune, and the queue drain every minute.
 
@@ -100,11 +110,13 @@ SiteGround Shared has no GitOps agent. GitHub is the source of truth: [`.github/
 
 Do **not** build Node on Shared. Do **not** use FTP in CI.
 
+Deploy is **manual only** (`workflow_dispatch`). The job uses the GitHub Environment **`production`** (required reviewer). A push to `main` does not deploy.
+
 ### 1. Enable SSH on SiteGround
 
 1. Site Tools → **Devs** → **SSH Keys Manager** (wording may vary slightly).
 2. Enable SSH for the account if it is off.
-3. Note **SSH hostname**, **username**, and **port** (often `18765` on SiteGround Shared).
+3. Note **SSH hostname**, **username**, and **port** (often `18765` on SiteGround Shared). Keep them out of git.
 
 ### 2. Create a deploy key (local machine)
 
@@ -113,26 +125,20 @@ ssh-keygen -t ed25519 -C "github-actions@timesheet.ellr.ca" -f ~/.ssh/ellr_times
 ```
 
 - Add the **public** key (`*.pub`) in SiteGround SSH Keys Manager (or append to `~/.ssh/authorized_keys` over an existing SSH session).
-- Keep the **private** key for GitHub Secrets only; never commit it.
+- Keep the **private** key for GitHub Environment secrets only; never commit it.
+- Point `Host ellr-timesheet-sg` in `~/.ssh/config` at this key (`IdentitiesOnly yes`).
 
 Test from your machine:
 
 ```bash
-ssh -p 18765 YOUR_USER@YOUR_SSH_HOST "pwd && ls"
+ssh ellr-timesheet-sg "pwd && ls"
 ```
 
 ### 3. Resolve remote paths
 
-Ellr Timesheet on this SiteGround account (confirmed layout):
+SiteGround keeps each site’s web root as `public_html/` under `/home/customer/www/<public-hostname>/`. The Laravel app root is the **parent** of the API `public_html/` (secret `SG_PATH_API`). Admin and timesheet secrets point at those sites’ `public_html/` folders.
 
-```text
-/home/customer/www/api.timesheet.ellr.ca/              ← Laravel app root (SG_PATH_API)
-/home/customer/www/api.timesheet.ellr.ca/public_html/  ← Laravel public/ (web root)
-/home/customer/www/admin.timesheet.ellr.ca/public_html/
-/home/customer/www/timesheet.ellr.ca/public_html/
-```
-
-SiteGround keeps subdomain web roots as `public_html/`. The deploy workflow syncs `backend/` beside that folder and maps `backend/public/` → `public_html/` (Laravel `index.php` already uses `../` for `vendor` / `bootstrap`).
+The deploy workflow syncs `backend/` beside the API `public_html/` and maps `backend/public/` → `public_html/` (Laravel `index.php` already uses `../` for `vendor` / `bootstrap`).
 
 | Secret | Meaning |
 |--------|---------|
@@ -140,21 +146,23 @@ SiteGround keeps subdomain web roots as `public_html/`. The deploy workflow sync
 | `SG_PATH_ADMIN` | Admin SPA document root |
 | `SG_PATH_TIMESHEET` | Timesheet SPA document root |
 
-### 4. GitHub repository secrets
+### 4. GitHub Environment secrets
 
-Repo → **Settings** → **Secrets and variables** → **Actions**. Create:
+Repo → **Settings** → **Environments** → **`production`**. Store secrets on that environment (not in markdown):
 
-| Secret | Value (this account) |
-|--------|----------------------|
-| `SG_SSH_HOST` | `giowm1268.siteground.biz` |
-| `SG_SSH_PORT` | `18765` |
-| `SG_SSH_USER` | `u3261-ghor3kynhvht` |
+| Secret | Value |
+|--------|---------|
+| `SG_SSH_HOST` | SiteGround SSH hostname from Site Tools |
+| `SG_SSH_PORT` | SSH port from Site Tools |
+| `SG_SSH_USER` | SSH username from Site Tools |
 | `SG_SSH_PRIVATE_KEY` | Full private key from `~/.ssh/ellr_timesheet_sg_deploy` |
-| `SG_PATH_API` | `/home/customer/www/api.timesheet.ellr.ca` |
-| `SG_PATH_ADMIN` | `/home/customer/www/admin.timesheet.ellr.ca/public_html` |
-| `SG_PATH_TIMESHEET` | `/home/customer/www/timesheet.ellr.ca/public_html` |
+| `SG_PATH_API` | Laravel backend root (parent of API `public_html/`) |
+| `SG_PATH_ADMIN` | Admin SPA document root |
+| `SG_PATH_TIMESHEET` | Timesheet SPA document root |
 
 The workflow hardcodes `VITE_API_URL=https://api.timesheet.ellr.ca/api` (no secret required for the API base URL).
+
+Restrict the environment to the `main` branch and require a reviewer before the job runs.
 
 ### 5. First-time server bootstrap (before first Actions run)
 
@@ -163,6 +171,7 @@ On the API path only:
 1. Ensure `backend/.env` exists on the server (production Shared baseline above). Never let CI overwrite it (workflow excludes `.env`).
 2. `storage/` and `bootstrap/cache` must be writable by the PHP user.
 3. Configure the minute cron above.
+
 SiteGround Shared often defaults the account PHP CLI to 8.2. The workflow must call:
 
 ```bash
@@ -174,11 +183,10 @@ Also set the **API site** PHP version to **8.3** in Site Tools (Devs / PHP Manag
 
 ### 6. Run the workflow
 
-1. Merge the workflow to `main`, or use **Actions** → **Deploy SiteGround** → **Run workflow**.
-2. On success: `curl -s https://api.timesheet.ellr.ca/api/health`
-3. Smoke login on both SPAs after DNS/SSL are ready.
-
-Push to `main` also triggers deploy. Use `workflow_dispatch` for the first controlled run after secrets are set.
+1. Merge to `main`, then **Actions** → **Deploy SiteGround** → **Run workflow** (select `main`).
+2. Approve the pending **production** deployment if a reviewer is required.
+3. On success: `curl -s https://api.timesheet.ellr.ca/api/health`
+4. Smoke login on both SPAs after DNS/SSL are ready.
 
 ### What the workflow does
 
