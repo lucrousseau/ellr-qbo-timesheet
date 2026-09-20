@@ -1,0 +1,8 @@
+# Personal Claude Code notes (this repo)
+
+Copy to `CLAUDE.local.md` at the repo root. That file is gitignored.
+
+- Owner: Luc Rousseau (Ellr). Chat in the language Luc uses; keep code, docs, and commits in English.
+- Production SSH alias: `ssh ellr-timesheet-sg`. Do not invent host, user, or paths. If `.cursor/rules/siteground-ssh.local.mdc` is missing, ask Luc.
+- Never commit or push unless Luc asked in this session.
+- Prefer existing `@ellr/ui` and `@ellr/api-client` over new abstractions.

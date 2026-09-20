@@ -49,6 +49,11 @@ function makeTimeActivitySyncService(?DataService $dataService = null): TimeActi
     );
 }
 
+function recentLookbackTxnDate(): string
+{
+    return now()->subDays(5)->toDateString();
+}
+
 it('throws QuickBooksException when FindById returns an error', function () {
     $error = Mockery::mock();
     $error->shouldReceive('getResponseBody')->andReturn('not found');
@@ -178,11 +183,12 @@ it('paginates quickbooks windows and purges stale snapshots after a complete sca
         'quickbooks.time_activities_scan_max_pages' => 3,
     ]);
 
+    $txnDate = recentLookbackTxnDate();
     $activity = (object) [
         'Id' => 'fresh',
         'EmployeeRef' => (object) ['value' => '7'],
-        'StartTime' => '2026-07-29T09:00:00',
-        'TxnDate' => '2026-07-29',
+        'StartTime' => $txnDate.'T09:00:00',
+        'TxnDate' => $txnDate,
     ];
 
     $dataService = Mockery::mock(DataService::class);
@@ -196,7 +202,7 @@ it('paginates quickbooks windows and purges stale snapshots after a complete sca
     TimeActivitySnapshot::factory()
         ->forRealm($token->realm_id)
         ->forEmployee('7')
-        ->create(['qbo_id' => 'stale', 'txn_date' => '2026-07-29']);
+        ->create(['qbo_id' => 'stale', 'txn_date' => $txnDate]);
 
     $upserted = makeTimeActivitySyncService($dataService)->reconcileRealm($token);
 
@@ -214,6 +220,7 @@ it('skips invalid activity rows and incomplete multi-page scans avoid purge', fu
         'quickbooks.time_activities_scan_max_pages' => 1,
     ]);
 
+    $txnDate = recentLookbackTxnDate();
     $dataService = Mockery::mock(DataService::class);
     $dataService->shouldReceive('Query')
         ->once()
@@ -222,8 +229,8 @@ it('skips invalid activity rows and incomplete multi-page scans avoid purge', fu
             (object) [
                 'Id' => '1',
                 'EmployeeRef' => (object) ['value' => '7'],
-                'StartTime' => '2026-07-29T09:00:00',
-                'TxnDate' => '2026-07-29',
+                'StartTime' => $txnDate.'T09:00:00',
+                'TxnDate' => $txnDate,
             ],
         ]);
     $dataService->shouldReceive('getLastError')->andReturn(null);
@@ -233,7 +240,7 @@ it('skips invalid activity rows and incomplete multi-page scans avoid purge', fu
     TimeActivitySnapshot::factory()
         ->forRealm($token->realm_id)
         ->forEmployee('7')
-        ->create(['qbo_id' => 'stale', 'txn_date' => '2026-07-29']);
+        ->create(['qbo_id' => 'stale', 'txn_date' => $txnDate]);
 
     expect(makeTimeActivitySyncService($dataService)->reconcileRealm($token))->toBe(1)
         ->and(TimeActivitySnapshot::query()->where('qbo_id', 'stale')->exists())->toBeTrue();

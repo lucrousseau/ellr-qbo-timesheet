@@ -52,6 +52,8 @@ cd backend && composer test:mutation
 10. **JSDoc / PHPDoc** on public exports; project language is **English** (see `.cursor/rules/language.mdc`, `jsdoc.mdc`, `phpdoc.mdc`).
 11. `npm run prepush` (Husky pre-push) includes coverage and mutation thresholds. Use `npm run qa:finance` for a standalone coverage + mutation rerun without the full prepush pipeline.
 12. **Design system:** evolve `@ellr/ui` incrementally on every UI change; prefer Ellr wrappers over raw HTML controls in apps; see `.cursor/rules/ui-design-system.mdc`.
+13. New UI strings go in both `packages/ui/src/i18n/messages/en.ts` and `fr.ts`. Do not hardcode copy when a catalog key exists.
+14. No em dash (U+2014) in UI, docs, commits, or PR prose. Use a comma, semicolon, colon, or parentheses.
 
 ## Git hooks (Husky)
 
@@ -71,9 +73,21 @@ Husky v9+ format: `.husky/*` = npm command only (no `husky.sh`).
 
 Measured Stryker scores: admin ~85 %, timesheet ~91 %, api-client ~93 %.
 
-## Cursor
+## Agent instruction files
 
-- Rules: `.cursor/rules/` (`language.mdc`, `monorepo-commands.mdc`, `dry-solid.mdc` always active; `git-and-pr-workflow.mdc`, `copywriting.mdc`)
+This file is the **canonical** briefing for every coding agent. Do not fork a second copy of these rules.
+
+| Tool | How it loads this repo |
+|------|------------------------|
+| Cursor | This file plus `.cursor/rules/*.mdc` |
+| Claude Code | `CLAUDE.md` imports this file (`@AGENTS.md`). Path-scoped rules in `.claude/rules/`. Nested `CLAUDE.md` in `backend/`, `apps/*`, and `packages/*`. Personal notes: `CLAUDE.local.md` (gitignored). |
+
+When conventions change, edit this file and `.cursor/rules/` first, then keep `.claude/rules/` in sync if the distilled rule would otherwise drift.
+
+## Cursor and Claude Code
+
+- Rules (Cursor): `.cursor/rules/` (`language.mdc`, `monorepo-commands.mdc`, `dry-solid.mdc` always active; `git-and-pr-workflow.mdc`, `copywriting.mdc`)
+- Rules (Claude Code): `.claude/rules/` (path-scoped; same intent as the `.mdc` files)
 - Shared IDE: `.vscode/` (also used by Cursor), `.editorconfig`, `.nvmrc`
 - PR review: `.cursor/BUGBOT.md` (includes DRY/SOLID checklist)
 - Reusability plan: `docs/dry-reusability-plan.md`
